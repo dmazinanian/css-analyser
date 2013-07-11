@@ -2,6 +2,7 @@ package app;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 
 import duplication.Duplication;
@@ -21,17 +22,31 @@ public class CSSParserApp {
 	public static void main(String[] args) throws IOException {
 
 		// System.out.println(System.getProperty("user.dir"));
-		String[] filePaths = new String[] { 
-				"css/netvibes/netvibes.css",
-				"css/netvibes/1.css",
-				"css/netvibes/2.css",
-		};
-		analysefiles(filePaths);
-		System.out.println("Done");
+		
+		//String folderPath = "css/other";
+		//analysefiles(folderPath);
+		
+		CSSParser parser = new CSSParser("css/other/facebook-2.css");
+
+		StyleSheet styleSheet = parser.parseAndCreateStyleSheetObject();
+
+		DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
+		duplicationFinder.apriori();
+		
 	}
 
-	private static void analysefiles(String[] files) throws IOException {
-		for (String filePath : files) {
+	private static void analysefiles(String folderPath) throws IOException {
+		File f = new File(folderPath);
+		File[] files = f.listFiles(new FilenameFilter() {
+		    public boolean accept(File dir, String name) {
+		        return name.endsWith(".css");
+		    }
+		});
+
+		for (File file : files) {
+			
+			String filePath = file.getAbsolutePath();
+			
 			System.out.println("Now doing " + filePath);
 			CSSParser parser = new CSSParser(filePath);
 
@@ -48,24 +63,6 @@ public class CSSParserApp {
 			for (Duplication duplication : identicalSelectorsDuplication)
 				writeFile(fw, duplication.toString());
 			closeFile(fw);
-
-			/*fw = openFile(folderName + "/declarations.intersections.txt");
-			int max = 0;
-			List<Duplication> maxd = new ArrayList<>();
-			for (Duplication duplication: duplicationFinder.findIdenticalPropertyAndValuesIntersection()) {
-				if (duplication.getSize() > max) {
-					maxd.clear();
-					maxd.add(duplication);
-					max = duplication.getSize();
-				}
-				else if (duplication.getSize() == max) {
-					maxd.add(duplication);
-				}
-			}
-			closeFile(fw);
-			System.out.println(max);
-			for (Duplication d : maxd)
-				System.out.println(d);*/
 
 			fw = openFile(folderName + "/identical_declarations.txt");
 			for (Duplication duplication : duplicationFinder.findIdenticalDeclarations()) {
@@ -90,6 +87,7 @@ public class CSSParserApp {
 				writeFile(fw, duplication.toString());
 			}
 			closeFile(fw);
+			System.out.println("Done");
 		}
 	}
 

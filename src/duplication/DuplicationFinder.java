@@ -1,12 +1,14 @@
 package duplication;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import CSSModel.AtomicSelector;
 import CSSModel.Declaration;
+import CSSModel.GroupedSelectors;
 import CSSModel.Selector;
 import CSSModel.StyleSheet;
 
@@ -311,6 +313,122 @@ public class DuplicationFinder {
 
 		return duplicationList;
 	}
+	
+	public DuplicationsList findDeclarationIntersections() {
+		DuplicationsList duplicationsList = new DuplicationsList();
+		
+		return duplicationsList;
+	}
+	
+	
+	public void apriori() {
+		
+		final int MIN_SUPPORT_COUNT =2;
+		
+		List<ItemSetList> c = new ArrayList<>();
+		List<ItemSetList> l = new ArrayList<>();
+		
+		c.add(getC1()); // C1
+		
+		l.add(prune(c.get(0), MIN_SUPPORT_COUNT)); // Generating L1
+		
+		//System.out.println(l.get(0));
+		int k = 1;
+		while (true) {
+			
+			c.add(generateCandidatesAndGetSupports(l.get(k - 1))); // Generate C(k)
+			
+			ItemSetList Lk = prune(c.get(k), MIN_SUPPORT_COUNT); // Generate Lk
+			
+//			System.out.println("L" + k);
+//			System.out.println(Lk);
+			
+			if (Lk.getNumberOfItems() == 0) // If L(k) is empty break
+				break;
+			
+			l.add(Lk); // Add L(k)
+			
+			k++;
+		}
+		
+		for (ItemSetList list : l)
+			System.out.println(list);
+	}
+
+	
+	private ItemSetList getC1() {
+		
+		List<Declaration> allDeclarations = stylesheet.getAllDeclarations();
+		
+		ItemSetList C1 = new ItemSetList(); // List of itemsets and their supports
+
+		// Only look for distinct declarations
+		Set<Declaration> visited = new HashSet<>();
+		
+		for (Declaration currentDeclaration : allDeclarations) {
+					
+			if (visited.contains(currentDeclaration)) 
+				continue;
+			
+			Set<Declaration> declarations = new HashSet<>(); // The 1-itemset
+			declarations.add(currentDeclaration);			
+			C1.addItemSet(declarations, getSupport(declarations));
+			visited.add(currentDeclaration);
+		}
+
+		return C1;
+	}
+
+	private ItemSetList generateCandidatesAndGetSupports(ItemSetList itemSetList) {
+		
+		// itemSetList is L(k-1), which is a table of ItemSetAndSupports
+		ItemSetList toReturn = new ItemSetList();
+		
+		Set<Declaration> unionAll = new HashSet<>(); 
+		// First find the union of all L(k-1)		
+		for (ItemSetAndSupport itemSetAndSupport : itemSetList) {
+			unionAll.addAll(itemSetAndSupport.getItemSet());
+		}
+		
+		
+		for (ItemSetAndSupport itemSetAndSupport  : itemSetList) {
+			Set<Declaration> a = new HashSet<>(); // a is new set
+			a.addAll(itemSetAndSupport.getItemSet()); // we add the itemsets from L(k-1) to a
+			for (Declaration b : unionAll) { // Each time we add one item from unionAll (union of all the declarations in L(k-1)
+				if (!a.contains(b)) { // if new declaration is not in the new set, add it
+					a.add(b);
+					Set<Declaration> newSet = new HashSet<>(a); // Copy a to a newSet  
+					toReturn.addItemSet(newSet, getSupport(a)); // Lets get support for new set
+					a.remove(b); // remove the new 
+				}
+			}
+		}
+//		System.out.println(toReturn);
+		return toReturn;
+	}
+
+	private ItemSetList prune(ItemSetList itemSetList, final int minSupportCount) {
+		
+		ItemSetList Lk = new ItemSetList();
+		
+		for (ItemSetAndSupport itemset : itemSetList) {
+			if (itemset.getSupport() >= minSupportCount)
+				Lk.addItemSet(itemset);
+		}
+		
+		return Lk;	
+	}
+
+	private Set<Selector> getSupport(Set<Declaration> declarations) {
+		Set<Selector> selectors = new HashSet<Selector>();
+		List<Selector> allSelectors = stylesheet.getAllSelectors();
+		for (Selector selector : allSelectors) { // For each transaction in database...
+			if (selector.getAllDeclarations().containsAll(declarations)) {
+				selectors.add(selector);
+			}
+		}
+		return selectors;
+	} 
 
 	/*private boolean isIn(Selector selectorToBeCheckedIn, Selector selectorToFind) {
 		if (selectorToBeCheckedIn instanceof GroupedSelectors) {
