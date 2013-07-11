@@ -8,6 +8,7 @@ import java.io.IOException;
 import duplication.Duplication;
 import duplication.DuplicationFinder;
 import duplication.DuplicationsList;
+import duplication.ItemSetList;
 
 import CSSModel.StyleSheet;
 
@@ -21,17 +22,10 @@ public class CSSParserApp {
 	 */
 	public static void main(String[] args) throws IOException {
 
-		// System.out.println(System.getProperty("user.dir"));
+		//System.out.println(System.getProperty("user.dir"));
 		
-		//String folderPath = "css/other";
-		//analysefiles(folderPath);
-		
-		CSSParser parser = new CSSParser("css/other/facebook-2.css");
-
-		StyleSheet styleSheet = parser.parseAndCreateStyleSheetObject();
-
-		DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
-		duplicationFinder.apriori();
+		String folderPath = "css/other/outlook.com";
+		analysefiles(folderPath);
 		
 	}
 
@@ -59,35 +53,51 @@ public class CSSParserApp {
 			createFolder(folderName);
 				
 			FileWriter fw = openFile(folderName + "/identical_selectors.txt");
+			System.out.println("\nFinding identical selectors in " + filePath);
 			DuplicationsList identicalSelectorsDuplication = duplicationFinder.findIdenticalSelectors();
 			for (Duplication duplication : identicalSelectorsDuplication)
 				writeFile(fw, duplication.toString());
 			closeFile(fw);
 
 			fw = openFile(folderName + "/identical_declarations.txt");
+			System.out.println("\nFinding identical declarations in " + filePath);
 			for (Duplication duplication : duplicationFinder.findIdenticalDeclarations()) {
 				writeFile(fw, duplication.toString());
 			}
 			closeFile(fw);
 
 			fw = openFile(folderName + "/identical_values.txt");
+			System.out.println("\nFinding identical values in " + filePath);
 			for (Duplication duplication : duplicationFinder.findIdenticalValues()) {
 				writeFile(fw, duplication.toString());
 			}
 			closeFile(fw);
 			
 			fw = openFile(folderName + "/identical_effects.txt");
+			System.out.println("\nFinding identical effects (identical selector and declarations together) in " + filePath);
 			for (Duplication duplication : duplicationFinder.findIdenticalEffects(identicalSelectorsDuplication)) {
 				writeFile(fw, duplication.toString());
 			}
 			closeFile(fw);
 			
 			fw = openFile(folderName + "/overriden_values.txt");
+			System.out.println("\nFinding identical values in " + filePath);
 			for (Duplication duplication : duplicationFinder.findOverridenValues(identicalSelectorsDuplication)) {
 				writeFile(fw, duplication.toString());
 			}
 			closeFile(fw);
-			System.out.println("Done");
+			
+			final int MIN_SUPPORT_COUNT = 4;
+			
+			fw = openFile(folderName + "/apriori.txt");
+			System.out.println("\nFinding grouped identical declarations in " + filePath);
+			for (ItemSetList itemsetList : duplicationFinder.apriori(MIN_SUPPORT_COUNT)) {
+				writeFile(fw, itemsetList.toString());
+			}
+			closeFile(fw);
+			
+			
+			System.out.println("\nDone\n\n");
 		}
 	}
 

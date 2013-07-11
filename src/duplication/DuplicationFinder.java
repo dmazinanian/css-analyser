@@ -1,14 +1,12 @@
 package duplication;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import CSSModel.AtomicSelector;
 import CSSModel.Declaration;
-import CSSModel.GroupedSelectors;
 import CSSModel.Selector;
 import CSSModel.StyleSheet;
 
@@ -321,27 +319,21 @@ public class DuplicationFinder {
 	}
 	
 	
-	public void apriori() {
+	public List<ItemSetList> apriori(final int minSupport) {
+				
+		List<ItemSetList> c = new ArrayList<>(); // Keeping C(k), the candidate list of itemsets of size k
+		List<ItemSetList> l = new ArrayList<>(); // Keeping L(k), the frequent itemsets of size k
 		
-		final int MIN_SUPPORT_COUNT =2;
+		c.add(getC1()); // C(1)
 		
-		List<ItemSetList> c = new ArrayList<>();
-		List<ItemSetList> l = new ArrayList<>();
+		l.add(prune(c.get(0), minSupport)); // Generating L(1) by pruning C(1)
 		
-		c.add(getC1()); // C1
-		
-		l.add(prune(c.get(0), MIN_SUPPORT_COUNT)); // Generating L1
-		
-		//System.out.println(l.get(0));
 		int k = 1;
 		while (true) {
 			
-			c.add(generateCandidatesAndGetSupports(l.get(k - 1))); // Generate C(k)
+			c.add(generateCandidates(l.get(k - 1))); // Generate C(k). It also gets the supports
 			
-			ItemSetList Lk = prune(c.get(k), MIN_SUPPORT_COUNT); // Generate Lk
-			
-//			System.out.println("L" + k);
-//			System.out.println(Lk);
+			ItemSetList Lk = prune(c.get(k), minSupport); // Generate L(k)
 			
 			if (Lk.getNumberOfItems() == 0) // If L(k) is empty break
 				break;
@@ -351,12 +343,11 @@ public class DuplicationFinder {
 			k++;
 		}
 		
-		for (ItemSetList list : l)
-			System.out.println(list);
+		return l;
 	}
 
 	
-	private ItemSetList getC1() {
+	private ItemSetList getC1() { // Gets C(1), the individual declarations with their frequencies
 		
 		List<Declaration> allDeclarations = stylesheet.getAllDeclarations();
 		
@@ -379,21 +370,21 @@ public class DuplicationFinder {
 		return C1;
 	}
 
-	private ItemSetList generateCandidatesAndGetSupports(ItemSetList itemSetList) {
+	private ItemSetList generateCandidates(ItemSetList itemSetList) {
 		
 		// itemSetList is L(k-1), which is a table of ItemSetAndSupports
 		ItemSetList toReturn = new ItemSetList();
 		
 		Set<Declaration> unionAll = new HashSet<>(); 
 		// First find the union of all L(k-1)		
-		for (ItemSetAndSupport itemSetAndSupport : itemSetList) {
-			unionAll.addAll(itemSetAndSupport.getItemSet());
+		for (ItemSet itemset : itemSetList) {
+			unionAll.addAll(itemset.getItemSet());
 		}
 		
 		
-		for (ItemSetAndSupport itemSetAndSupport  : itemSetList) {
+		for (ItemSet itemset  : itemSetList) {
 			Set<Declaration> a = new HashSet<>(); // a is new set
-			a.addAll(itemSetAndSupport.getItemSet()); // we add the itemsets from L(k-1) to a
+			a.addAll(itemset.getItemSet()); // we add the itemsets from L(k-1) to a
 			for (Declaration b : unionAll) { // Each time we add one item from unionAll (union of all the declarations in L(k-1)
 				if (!a.contains(b)) { // if new declaration is not in the new set, add it
 					a.add(b);
@@ -411,7 +402,7 @@ public class DuplicationFinder {
 		
 		ItemSetList Lk = new ItemSetList();
 		
-		for (ItemSetAndSupport itemset : itemSetList) {
+		for (ItemSet itemset : itemSetList) {
 			if (itemset.getSupport() >= minSupportCount)
 				Lk.addItemSet(itemset);
 		}

@@ -389,6 +389,8 @@ public class CSSDocumentHandler implements DocumentHandler {
 	}
 
 	private String getValue(LexicalUnit value) {
+		if (value == null)
+			return "";
 		switch (value.getLexicalUnitType()) {
 		case LexicalUnit.SAC_ATTR:
 			return "attr(" + value.getStringValue() + ")";

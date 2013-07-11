@@ -6,16 +6,26 @@ import java.util.Set;
 import CSSModel.Declaration;
 import CSSModel.Selector;
 
-public class ItemSetAndSupport implements Iterable<Declaration> {
+/**
+ * This class keeps the data of a itemset, in addition to its support 
+ * In our definition, every itemset is a set of declarations and
+ * support means the number of selectors that have all these declarations.
+ * In fact, instead of keeping the support as a pure percentage or number of supports,
+ * we keep the selectors for further uses. 
+ * 
+ * @author Davood Mazinanian
+ *
+ */
+public class ItemSet implements Iterable<Declaration> {
 	
 	private Set<Declaration> itemsetField;
 	private Set<Selector> selectors;
 	
-	public ItemSetAndSupport() {
+	public ItemSet() {
 		this(null, null); // Never pass null. I know.
 	}
 	
-	public ItemSetAndSupport(Set<Declaration> declarations, Set<Selector> selectorsList) {
+	public ItemSet(Set<Declaration> declarations, Set<Selector> selectorsList) {
 		itemsetField = declarations;
 		selectors = selectorsList;
 	}
@@ -49,10 +59,10 @@ public class ItemSetAndSupport implements Iterable<Declaration> {
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this) return true;
-		if (!(obj instanceof ItemSetAndSupport))
+		if (!(obj instanceof ItemSet))
 			return false;
 
-		ItemSetAndSupport otherObj = (ItemSetAndSupport)obj; 
+		ItemSet otherObj = (ItemSet)obj; 
 		if (itemsetField.size() != otherObj.itemsetField.size())
 			return false;
 		return itemsetField.containsAll(otherObj.itemsetField);
