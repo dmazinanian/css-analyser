@@ -11,6 +11,7 @@ import java.util.List;
 public class StyleSheet {
 	
 	private final List<Selector> listOfSelectors;
+	private List<Declaration> listOfDeclarations;
 	
 	public StyleSheet() {
 		listOfSelectors = new ArrayList<>();
@@ -64,10 +65,12 @@ public class StyleSheet {
 	 * @return List<Declaration>
 	 */
 	public List<Declaration> getAllDeclarations() {
-		List<Declaration> allDeclarations = new ArrayList<>();
-		for (Selector selector : listOfSelectors) 
-			for (Declaration declaration : selector.getAllDeclarations())
-				allDeclarations.add(declaration);
-		return allDeclarations;
+		if (listOfDeclarations == null) {
+			listOfDeclarations = new ArrayList<>();
+			for (Selector selector : listOfSelectors) 
+				for (Declaration declaration : selector.getAllDeclarations())
+					listOfDeclarations.add(declaration);
+		}
+		return listOfDeclarations;
 	}
 }

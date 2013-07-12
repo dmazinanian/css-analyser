@@ -64,12 +64,12 @@ public class Declaration {
 		if (!(obj instanceof Declaration))
 			return false;
 		Declaration otherDiclaration = (Declaration) obj;
-		if (property == null && otherDiclaration.property != null)
-			return false;
-		if (value == null && otherDiclaration.value != null)
-			return false;
+		//if (property == null && otherDiclaration.property != null)
+		//	return false;
+		//if (value == null && otherDiclaration.value != null)
+		//	return false;
 		return (property.equals(otherDiclaration.property) &&
-				value != null && value.equals(otherDiclaration.value));
+				value.equals(otherDiclaration.value));
 	}
 
 	@Override

@@ -8,7 +8,7 @@ public abstract class Selector {
 	protected int lineNumber;
 	protected int columnNumber;
 	protected Media parentMedia;
-	protected List<Declaration> cssRules;
+	protected List<Declaration> declarations;
 	protected int specificityOfSelector;
 	
 	public int getSpecificity() {
@@ -26,15 +26,15 @@ public abstract class Selector {
 	public Selector(int fileLineNumber, int fileColNumber) {
 		lineNumber = fileColNumber;
 		columnNumber = fileColNumber;
-		cssRules = new LinkedList<>();
+		declarations = new LinkedList<>();
 	}
 
 	public void addCSSRule(Declaration rule) {
-		cssRules.add(rule);
+		declarations.add(rule);
 	}
 
 	public List<Declaration> getAllDeclarations() {
-		return cssRules;
+		return declarations;
 	}
 
 	public int getLineNumber() {

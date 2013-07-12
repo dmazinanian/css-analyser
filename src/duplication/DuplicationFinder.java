@@ -414,7 +414,8 @@ public class DuplicationFinder {
 		Set<Selector> selectors = new HashSet<Selector>();
 		List<Selector> allSelectors = stylesheet.getAllSelectors();
 		for (Selector selector : allSelectors) { // For each transaction in database...
-			if (selector.getAllDeclarations().containsAll(declarations)) {
+			List<Declaration> d = selector.getAllDeclarations();
+			if (d.size() >= declarations.size() && d.containsAll(declarations)) {
 				selectors.add(selector);
 			}
 		}

@@ -4,6 +4,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.util.List;
+
+
 
 import duplication.Duplication;
 import duplication.DuplicationFinder;
@@ -24,7 +29,7 @@ public class CSSParserApp {
 
 		//System.out.println(System.getProperty("user.dir"));
 		
-		String folderPath = "css/other/outlook.com";
+		String folderPath = "css/other/all selectors/";
 		analysefiles(folderPath);
 		
 	}
@@ -48,7 +53,7 @@ public class CSSParserApp {
 
 			DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
 
-			String folderName = filePath + ".analyse";
+			/*String folderName = filePath + ".analyse";
 			
 			createFolder(folderName);
 				
@@ -91,13 +96,19 @@ public class CSSParserApp {
 			
 			fw = openFile(folderName + "/apriori.txt");
 			System.out.println("\nFinding grouped identical declarations in " + filePath);
-			for (ItemSetList itemsetList : duplicationFinder.apriori(MIN_SUPPORT_COUNT)) {
+			ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean(); 
+			long start = threadMXBean.getCurrentThreadCpuTime();
+			List<ItemSetList> l = duplicationFinder.apriori(MIN_SUPPORT_COUNT);
+			long end = threadMXBean.getCurrentThreadCpuTime();
+			long time = (end - start) / 1000000L;
+			System.out.println(time);
+			for (ItemSetList itemsetList : l) {
 				writeFile(fw, itemsetList.toString());
 			}
 			closeFile(fw);
 			
 			
-			System.out.println("\nDone\n\n");
+			System.out.println("\nDone\n\n");*/
 		}
 	}
 

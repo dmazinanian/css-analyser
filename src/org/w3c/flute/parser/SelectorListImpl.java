@@ -52,13 +52,5 @@ public class SelectorListImpl implements SelectorList {
 	}
 	selectors[current++] = selector;
     }
-    
-    Locator locator;
-    public void setLocator(Locator locator) {
-    	this.locator = locator;
-    }
-    
-    public Locator getLocator() {
-    	return this.locator;
-    }
+  
 }

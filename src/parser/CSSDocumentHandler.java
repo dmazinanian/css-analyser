@@ -10,7 +10,7 @@ import org.w3c.css.sac.Locator;
 import org.w3c.css.sac.SACMediaList;
 import org.w3c.css.sac.SelectorList;
 
-import org.w3c.flute.parser.SelectorListImpl;
+import org.w3c.flute.parser.selectors.AdjacentSelector;
 import org.w3c.flute.parser.selectors.AndConditionImpl;
 import org.w3c.flute.parser.selectors.AttributeConditionImpl;
 import org.w3c.flute.parser.selectors.BeginHyphenAttributeConditionImpl;
@@ -26,10 +26,11 @@ import org.w3c.flute.parser.selectors.OneOfAttributeConditionImpl;
 import org.w3c.flute.parser.selectors.PseudoClassConditionImpl;
 import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
 
+import CSSModel.IndirectAdjacentSelector;
 import CSSModel.SelectorConditionType;
 import CSSModel.DescendantSelector;
 import CSSModel.DirectDescendantSelector;
-import CSSModel.ImmediatelyAfterSelector;
+import CSSModel.ImmediatelyAdjacentSelector;
 import CSSModel.AtomicMedia;
 import CSSModel.AtomicSelector;
 import CSSModel.Declaration;
@@ -116,8 +117,10 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 	@Override
 	public void startSelector(SelectorList arg0) throws CSSException {
+		startSelector(arg0, null);
+	}
 
-		Locator loc = ((SelectorListImpl) arg0).getLocator();
+	public void startSelector(SelectorList arg0, Locator loc) {
 		numberOfVisitedElements++;
 		if (arg0.getLength() > 1) {
 			GroupedSelectors groupedSelectors = new GroupedSelectors(
@@ -151,8 +154,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 				System.out.println(ex);
 			}
 		}
-		//System.out.println(currentSelector);
-
+		//System.out.println(currentSelector);		
 	}
 
 	@Override
@@ -256,8 +258,12 @@ public class CSSDocumentHandler implements DocumentHandler {
 					.getSelector());
 			AtomicSelector childSelector = getSelector(sacDirectAdjacentSelector
 					.getSiblingSelector());
-			return new ImmediatelyAfterSelector(parentSelector, childSelector);
-
+			return new ImmediatelyAdjacentSelector(parentSelector, childSelector);
+		} else if (selector instanceof AdjacentSelector) {
+			AdjacentSelector sacAdjacentSelector = (AdjacentSelector)selector;
+			AtomicSelector parentSelector = getSelector(sacAdjacentSelector.getSelector());
+			AtomicSelector childSelector = getSelector(sacAdjacentSelector.getSiblingSelector());
+			return new IndirectAdjacentSelector(parentSelector, childSelector);
 		} else if (selector instanceof ConditionalSelectorImpl) {
 
 			ConditionalSelector sacConditionalSelector = (ConditionalSelectorImpl) selector;

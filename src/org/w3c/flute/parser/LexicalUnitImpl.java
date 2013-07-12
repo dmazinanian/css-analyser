@@ -348,7 +348,7 @@ class LexicalUnitImpl implements LexicalUnit {
 					    null, v);
     }
     static LexicalUnitImpl createMS(int line, int column,
-				    LexicalUnitImpl previous, float v) {
+				    LexicalUnitImpl previous, float v) throws ParseException {
 	if (v < 0) {
 	    throw new ParseException("Time values may not be negative");
 	}
@@ -356,7 +356,7 @@ class LexicalUnitImpl implements LexicalUnit {
 					    SAC_MILLISECOND, null, v);
     }
     static LexicalUnitImpl createS(int line, int column,
-				   LexicalUnitImpl previous, float v) {
+				   LexicalUnitImpl previous, float v) throws ParseException {
 	if (v < 0) {
 	    throw new ParseException("Time values may not be negative");
 	}
@@ -364,7 +364,7 @@ class LexicalUnitImpl implements LexicalUnit {
 					    null, v);
     }
     static LexicalUnitImpl createHZ(int line, int column,
-				    LexicalUnitImpl previous, float v) {
+				    LexicalUnitImpl previous, float v) throws ParseException {
 	if (v < 0) {
 	    throw new ParseException("Frequency values may not be negative");
 	}
@@ -372,7 +372,7 @@ class LexicalUnitImpl implements LexicalUnit {
 					    null, v);
     }
     static LexicalUnitImpl createKHZ(int line, int column,
-				     LexicalUnitImpl previous, float v) {
+				     LexicalUnitImpl previous, float v) throws ParseException {
 	if (v < 0) {
 	    throw new ParseException("Frequency values may not be negative");
 	}
