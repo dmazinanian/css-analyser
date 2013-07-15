@@ -41,7 +41,7 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 		for (AtomicSelector atomicSelector : listOfSelectors)
 			result += atomicSelector + ", ";
 		// Remove last , and space
-		result = result.substring(0, result.length() - 3); 
+		result = result.substring(0, result.length() - 2); 
 		return result;
 	}
 	

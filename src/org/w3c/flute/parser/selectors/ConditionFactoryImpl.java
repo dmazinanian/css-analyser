@@ -19,9 +19,11 @@ import org.w3c.css.sac.AttributeCondition;
 import org.w3c.css.sac.LangCondition;
 import org.w3c.css.sac.ContentCondition;
 import org.w3c.css.sac.CombinatorCondition;
+import org.w3c.css.sac.Locator;
 import org.w3c.css.sac.PositionalCondition;
 import org.w3c.css.sac.NegativeCondition;
 import org.w3c.css.sac.ConditionFactory;
+import org.w3c.css.sac.SelectorList;
 
 /**
  * @version $Revision: 1.2 $
@@ -175,11 +177,11 @@ public class ConditionFactoryImpl implements ConditionFactory {
 							   boolean specified,
 							   String value)
 	    throws CSSException {
-	if ((namespaceURI != null) || specified) {
-	    throw new CSSException(CSSException.SAC_NOT_SUPPORTED_ERR);
-	} else {
-	    return new BeginHyphenAttributeConditionImpl(localName, value);
-	}
+		if ((namespaceURI != null) || specified) {
+			throw new CSSException(CSSException.SAC_NOT_SUPPORTED_ERR);
+		} else {
+			return new BeginHyphenAttributeConditionImpl(localName, value);
+		}
     }
 
     /**
@@ -243,5 +245,50 @@ public class ConditionFactoryImpl implements ConditionFactory {
     public ContentCondition createContentCondition(String data)
 	    throws CSSException {
 	throw new CSSException(CSSException.SAC_NOT_SUPPORTED_ERR);
-    }    
+    }
+
+	public Condition createCaretCondition(String localName,
+			String namespaceURI,
+			boolean specified,
+			String value) {
+		if ((namespaceURI != null) || specified) {
+			throw new CSSException(CSSException.SAC_NOT_SUPPORTED_ERR);
+		} else {
+			return new CaretCondition(localName, value);
+		}
+	}
+
+	public Condition createStarIncludesCondition(String localName,
+			String namespaceURI,
+			boolean specified,
+			String value) {
+		if ((namespaceURI != null) || specified) {
+			throw new CSSException(CSSException.SAC_NOT_SUPPORTED_ERR);
+		} else {
+			return new ContainsCondition(localName, value);
+		}
+	}
+
+	public Condition createEndwithCondition(String localName,
+			String namespaceURI,
+			boolean specified,
+			String value) {
+		if ((namespaceURI != null) || specified) {
+			throw new CSSException(CSSException.SAC_NOT_SUPPORTED_ERR);
+		} else {
+			return new EndsWithCondition(localName, value);
+		}
+	}    
+	
+	public Condition createFunctionCondition(String localName, String value) {
+		return new FunctionPseudoClassCondition(localName, value);
+	}
+
+	public Condition createNegativeCondition(SelectorList l, Locator loc) {
+		return new NegativeConditionImpl(l, loc);
+	}
+
+	public Condition createSelectionPseudoClassCondition(String name) {
+		return new SelectionPseudoClassCondition(name);
+	}
 }

@@ -1,0 +1,64 @@
+/*
+ * ????????????????
+ * Copyright (c) 2000 World Wide Web Consortium,
+ * (Massachusetts Institute of Technology, Institut National de
+ * Recherche en Informatique et en Automatique, Keio University). All
+ * Rights Reserved. This program is distributed under the W3C's Software
+ * Intellectual Property License. This program is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE.
+ * See W3C License http://www.w3.org/Consortium/Legal/ for more details.
+ *
+ * $Id: DirectAdjacentSelectorImpl.java,v 1.2 2000/07/27 21:32:26 plehegar Exp $
+ */
+
+package org.w3c.flute.parser.selectors;
+
+import org.w3c.css.sac.SiblingSelector;
+import org.w3c.css.sac.Selector;
+import org.w3c.css.sac.SimpleSelector;
+
+/**
+ * @version $Revision: 1.0 $
+ * @author  Davood Mazinanian
+ */
+
+public class AdjacentSelector implements SiblingSelector {
+
+    Selector       child;
+    SimpleSelector adjacent;
+
+    /**
+     * An integer indicating the type of <code>Selector</code>
+     */
+    public short getSelectorType() {
+	return 12345;
+    }
+
+    /**
+     * Creates a new DescendantSelectorImpl
+     */
+    public AdjacentSelector(Selector child, SimpleSelector adjacent) {
+        this.child = child;
+        this.adjacent = adjacent;
+    }
+    
+    public short getNodeType() {
+	return 1;
+    }
+        
+    /**
+     * Returns the parent selector.
+     */    
+    public Selector getSelector() {
+	return child;
+    }
+
+    /*
+     * Returns the simple selector.
+     */    
+    public SimpleSelector getSiblingSelector() {
+	return adjacent;
+    }
+}

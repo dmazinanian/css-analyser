@@ -7,6 +7,7 @@ import org.w3c.css.sac.DocumentHandler;
 import org.w3c.css.sac.InputSource;
 import org.w3c.css.sac.LexicalUnit;
 import org.w3c.css.sac.Locator;
+import org.w3c.css.sac.NegativeCondition;
 import org.w3c.css.sac.SACMediaList;
 import org.w3c.css.sac.SelectorList;
 
@@ -14,19 +15,27 @@ import org.w3c.flute.parser.selectors.AdjacentSelector;
 import org.w3c.flute.parser.selectors.AndConditionImpl;
 import org.w3c.flute.parser.selectors.AttributeConditionImpl;
 import org.w3c.flute.parser.selectors.BeginHyphenAttributeConditionImpl;
+import org.w3c.flute.parser.selectors.CaretCondition;
 import org.w3c.flute.parser.selectors.ChildSelectorImpl;
 import org.w3c.flute.parser.selectors.ClassConditionImpl;
 import org.w3c.flute.parser.selectors.ConditionalSelectorImpl;
 import org.w3c.flute.parser.selectors.DescendantSelectorImpl;
 import org.w3c.flute.parser.selectors.DirectAdjacentSelectorImpl;
 import org.w3c.flute.parser.selectors.ElementSelectorImpl;
+import org.w3c.flute.parser.selectors.EndsWithCondition;
+import org.w3c.flute.parser.selectors.FunctionPseudoClassCondition;
 import org.w3c.flute.parser.selectors.IdConditionImpl;
 import org.w3c.flute.parser.selectors.LangConditionImpl;
+import org.w3c.flute.parser.selectors.NegativeConditionImpl;
 import org.w3c.flute.parser.selectors.OneOfAttributeConditionImpl;
 import org.w3c.flute.parser.selectors.PseudoClassConditionImpl;
 import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
+import org.w3c.flute.parser.selectors.ContainsCondition;
+import org.w3c.flute.parser.selectors.SelectionPseudoClassCondition;
 
 import CSSModel.IndirectAdjacentSelector;
+import CSSModel.PseudoNegativeClass;
+import CSSModel.PseudoSelectionClass;
 import CSSModel.SelectorConditionType;
 import CSSModel.DescendantSelector;
 import CSSModel.DirectDescendantSelector;
@@ -151,10 +160,10 @@ public class CSSDocumentHandler implements DocumentHandler {
 				styleSheet.addSelector(currentSelector);
 			} catch (Exception ex) {
 				// TODO: logger.severe..
-				System.out.println(ex);
+				System.out.println("Exception in CSSDocumentHandler.startSelector():" + ex);
 			}
 		}
-		//System.out.println(currentSelector);		
+		System.out.println(currentSelector);		
 	}
 
 	@Override
@@ -216,8 +225,8 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 		} else if (selector instanceof ChildSelectorImpl) {
 			/*
-			 * In fact we have three different occasions wherein this happens: A
-			 * > B :first-letter :first-line
+			 * In fact we have three different occasions wherein this happens: 
+			 * A > B :first-letter :first-line
 			 */
 
 			ChildSelectorImpl sacChildSelectorImpl = (ChildSelectorImpl) selector;
@@ -280,7 +289,9 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 	private void getConditions(Condition sacCondition,
 			AtomicElementSelector atomicElementSelector) throws Exception {
+		
 		if (sacCondition instanceof AndConditionImpl) {
+			
 			AndConditionImpl andCondition = (AndConditionImpl) sacCondition;
 			getConditions(andCondition.getFirstCondition(),
 					atomicElementSelector);
@@ -288,20 +299,28 @@ public class CSSDocumentHandler implements DocumentHandler {
 					atomicElementSelector);
 
 		} else if (sacCondition instanceof ClassConditionImpl) {
+			
 			ClassConditionImpl classCond = (ClassConditionImpl) sacCondition;
 			atomicElementSelector.addClassName(classCond.getValue());
 		} else if (sacCondition instanceof PseudoClassConditionImpl) {
+			
 			PseudoClassConditionImpl pseudoCond = (PseudoClassConditionImpl) sacCondition;
 			atomicElementSelector.addPseudoClass(new PseudoClass(pseudoCond
 					.getValue()));
+			
 		} else if (sacCondition instanceof IdConditionImpl) {
+			
 			IdConditionImpl c = (IdConditionImpl) sacCondition;
 			atomicElementSelector.setIDName(c.getValue());
+			
 		} else if (sacCondition instanceof LangConditionImpl) {
+			
 			LangConditionImpl langCondition = (LangConditionImpl) sacCondition;
 			atomicElementSelector.addPseudoClass(new PseudoClass("lang",
 					langCondition.getLang()));
+			
 		} else if (sacCondition instanceof AttributeConditionImpl) {
+			
 			AttributeConditionImpl attributeConditionImpl = (AttributeConditionImpl) sacCondition;
 			SelectorCondition selectorCondition = new SelectorCondition(
 					attributeConditionImpl.getLocalName());
@@ -313,20 +332,102 @@ public class CSSDocumentHandler implements DocumentHandler {
 						.getValue());
 			}
 			atomicElementSelector.addCondition(selectorCondition);
+			
 		} else if (sacCondition instanceof OneOfAttributeConditionImpl) {
+			
 			OneOfAttributeConditionImpl oneOfAttrCondition = (OneOfAttributeConditionImpl) sacCondition;
 			SelectorCondition selectorCondition = new SelectorCondition(
 					oneOfAttrCondition.getLocalName(),
 					oneOfAttrCondition.getValue(),
-					SelectorConditionType.VALUE_CONTAINS_WORD);
+					SelectorConditionType.VALUE_CONTAINS_WORD_SPACE_SEPARATED);
 			atomicElementSelector.addCondition(selectorCondition);
+			
 		} else if (sacCondition instanceof BeginHyphenAttributeConditionImpl) {
+			
 			BeginHyphenAttributeConditionImpl oneOfAttrCondition = (BeginHyphenAttributeConditionImpl) sacCondition;
 			SelectorCondition selectorCondition = new SelectorCondition(
 					oneOfAttrCondition.getLocalName(),
 					oneOfAttrCondition.getValue(),
-					SelectorConditionType.VALUE_STARTING_WITH);
+					SelectorConditionType.VALUE_START_WITH_DASH_SEPARATED);
 			atomicElementSelector.addCondition(selectorCondition);
+			
+		} else if (sacCondition instanceof CaretCondition) {
+			
+			CaretCondition oneOfAttrCondition = (CaretCondition) sacCondition;
+			SelectorCondition selectorCondition = new SelectorCondition(
+					oneOfAttrCondition.getLocalName(),
+					oneOfAttrCondition.getValue(),
+					SelectorConditionType.VALUE_STARTS_WITH);
+			atomicElementSelector.addCondition(selectorCondition);
+			
+		} else if (sacCondition instanceof ContainsCondition){
+			
+			ContainsCondition oneOfAttrCondition = (ContainsCondition) sacCondition;
+			SelectorCondition selectorCondition = new SelectorCondition(
+					oneOfAttrCondition.getLocalName(),
+					oneOfAttrCondition.getValue(),
+					SelectorConditionType.VALUE_CONTAINS);
+			atomicElementSelector.addCondition(selectorCondition);
+			
+		} else if (sacCondition instanceof EndsWithCondition) {
+			
+			EndsWithCondition oneOfAttrCondition = (EndsWithCondition) sacCondition;
+			SelectorCondition selectorCondition = new SelectorCondition(
+					oneOfAttrCondition.getLocalName(),
+					oneOfAttrCondition.getValue(),
+					SelectorConditionType.VALUE_ENDS_WITH);
+			atomicElementSelector.addCondition(selectorCondition);
+			
+		} else if (sacCondition instanceof NegativeConditionImpl) {
+			
+			Selector s = null;
+			NegativeConditionImpl condition = (NegativeConditionImpl) sacCondition;
+			SelectorList l = condition.getSelectorList();
+			Locator loc = condition.getLocator();
+			if (l.getLength() > 1) {
+				GroupedSelectors groupedSelectors = new GroupedSelectors(
+						loc.getLineNumber(), loc.getColumnNumber());
+				for (int i = 0; i < l.getLength(); i++) {
+					try {
+						AtomicSelector newAtomicSelector = getSelector(l.item(i));
+						newAtomicSelector.setLineNumber(loc.getLineNumber());
+						newAtomicSelector.setColumnNumber(loc.getColumnNumber());
+
+						if (currentMedia != null)
+							newAtomicSelector.setMedia(currentMedia);
+						groupedSelectors.add(newAtomicSelector);
+					} catch (Exception ex) {
+						// TODO: logger.severe
+						System.out.println(ex);
+					}
+				}
+				s = groupedSelectors;
+			} else {
+				try {
+					s = getSelector(l.item(0));
+					s.setLineNumber(loc.getLineNumber());
+					s.setColumnNumber(loc.getColumnNumber());
+					if (currentMedia != null)
+						s.setMedia(currentMedia);
+					styleSheet.addSelector(currentSelector);
+				} catch (Exception ex) {
+					// TODO: logger.severe..
+					System.out.println(ex);
+				}
+			}
+			
+			atomicElementSelector.addPseudoClass(new PseudoNegativeClass("not", s));
+			
+		} else if (sacCondition instanceof FunctionPseudoClassCondition) {
+			
+			FunctionPseudoClassCondition pcs = (FunctionPseudoClassCondition) sacCondition; 
+			atomicElementSelector.addPseudoClass(new PseudoClass(pcs.getLocalName(), pcs.getValue()));
+			
+		} else if (sacCondition instanceof SelectionPseudoClassCondition) {
+			
+			SelectionPseudoClassCondition spcc = (SelectionPseudoClassCondition)sacCondition;
+			atomicElementSelector.addPseudoClass(new PseudoSelectionClass(spcc.getName()));
+			
 		} else {
 			System.out.println(sacCondition);
 			throw new Exception("Condition not supported");

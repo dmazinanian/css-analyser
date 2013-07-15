@@ -63,9 +63,11 @@ public class SelectorCondition {
 			result = conditionName;
 			break;
 		case VALUE_EQUALS_EXACTLY:
-		case VALUE_CONTAINS_WORD:
-		case VALUE_STARTING_WITH:
+		case VALUE_CONTAINS_WORD_SPACE_SEPARATED:
+		case VALUE_START_WITH_DASH_SEPARATED:
 		case VALUE_ENDS_WITH:
+		case VALUE_STARTS_WITH:
+		case VALUE_CONTAINS:
 			result = String.format("%s %s %s", conditionName,
 					conditionType.toString(), conditionValue);
 		}

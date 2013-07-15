@@ -467,17 +467,13 @@ TOKEN :
   | < LBRACE : "{" >
   | < RBRACE : "}">
   | < DASHMATCH : "|=" >
-  | < CARETBEGIN: "^=" >
-  | < STARINCLD	: "*=" >
   | < INCLUDES  : "~=" >
-  | < ENDSWITH	: "$=" >
   | < EQ        : "=" >
   | < PLUS      : "+" >
   | < MINUS     : "-" >
   | < COMMA     : "," >
   | < SEMICOLON : ";" >
   | < PRECEDES  : ">" >
-  | < TILDA		: "~" >
   | < DIV       : "/" >
   | < LBRACKET  : "[" >
   | < RBRACKET  : "]" >
@@ -503,8 +499,8 @@ TOKEN : /* basic tokens */
                          ( <H> )? ( <H> )? 
                     ( [ " ", "\t" , "\n" , "\r", "\f" ] )? >
   | < #ESCAPE     : <UNICODE> | ( "\\" [ " "-"~","\200"-"\377" ] ) >
-  | < #NMSTART    : [ "a"-"z", "_" ] | <NONASCII> | <ESCAPE> >
-  | < #NMCHAR	  : ["a"-"z", "0"-"9", "-", "_"] | <NONASCII> | <ESCAPE> >
+  | < #NMSTART    : [ "a"-"z" ] | <NONASCII> | <ESCAPE> >
+  | < #NMCHAR	  : ["a"-"z", "0"-"9", "-"] | <NONASCII> | <ESCAPE> >
   | < #STRINGCHAR : [ "\t"," ","!","#","$","%","&","("-"~" ] 
                     | "\\\n" | "\\\r\n" | "\\\r" | "\\\f" 
                     | <NONASCII> | <ESCAPE> >
@@ -848,9 +844,6 @@ void skipUnknownRule() :
 | n=<CHARSET_SYM>
 | n=<COMMA>
 | n=<DASHMATCH>
-| n=<CARETBEGIN>
-| n=<STARINCLD>
-| n=<ENDSWITH>
 | n=<FONT_FACE_SYM>
 | n=<FUNCTION>
 | n=<IMPORTANT_SYM>
@@ -891,8 +884,9 @@ char connector = ' ';
 {
     "+" ( <S> )* { return '+'; }
     | ">" ( <S> )* { return '>'; }
-	| "~" ( <S> )* { return '~'; }
-	| <S>  ( ( "+" { connector = '+'; } | ">" { connector = '>'; } | "~" { connector = '~'; } ) ( <S> )* )? { return connector; }
+| <S>  ( ( "+" { connector = '+'; } 
+           | ">" { connector = '>'; } )
+ ( <S> )* )? { return connector; }
 }
 
 /**
@@ -966,9 +960,9 @@ Selector selector() :
 }
 {
  try {
-   selector=simple_selector(null, ' ')
+   selector=simple_selector(null, ' ') 
        ( LOOKAHEAD(2) comb=combinator() 
-	 selector=simple_selector(selector, comb) )*  (<S>)*
+	 selector=simple_selector(selector, comb) )* (<S>)*
    {
        return selector; 
    }
@@ -1043,11 +1037,6 @@ Selector simple_selector(Selector selector, char comb) :
 		    selector = selectorFactory.createChildSelector(selector, 
 								  simple_current);
 		    break;
-		case '~':
-			selector = ((SelectorFactoryImpl)selectorFactory).createAdjacentSelector((short) 1,
-                                                                    selector,
-                                                                   simple_current);
-			break;
 		default:
 		    throw new ParseException("invalid state. send a bug report");
 		}
@@ -1109,10 +1098,7 @@ Condition attrib(Condition pred) :
   "[" ( <S> )* att=<IDENT> ( <S> )*
       ( ( "="           { cases = 1; }
 	  | <INCLUDES>  { cases = 2; }	  
-	  | <DASHMATCH>	{ cases = 3; } 
-	  | <CARETBEGIN>{ cases = 4; }	
-	  | <STARINCLD>	{ cases = 5; }
-	  | <ENDSWITH> 	{ cases = 6; } ) ( <S> )* 
+	  | <DASHMATCH> { cases = 3; } ) ( <S> )* 
 	( val=<IDENT> { attValue = val.image; }
 	  | val=<STRING> { attValue = convertStringIndex(val.image, 1, 
 							 val.image.length() -1);}
@@ -1139,15 +1125,6 @@ Condition attrib(Condition pred) :
 								   false, 
 								   attValue);
 	  break;
-	  case 4:
-	  c = ((ConditionFactoryImpl)conditionFactory).createCaretCondition(name, null, false, attValue);
-	  break;
-	  case 5:
-	  c = ((ConditionFactoryImpl)conditionFactory).createStarIncludesCondition(name, null, false, attValue);
-	  break;
-	  case 6:
-	  c = ((ConditionFactoryImpl)conditionFactory).createEndwithCondition(name, null, false, attValue);
-	  break;
 	  default:
 	  // never reached.
 	  c = null;
@@ -1159,16 +1136,15 @@ Condition attrib(Condition pred) :
       }
   }
 }
+
 /**
  * @exception ParseException exception during the parse
  */
 Condition pseudo(Condition pred) :
-{
-Token n;
-Token value; 
-SelectorList l = null;
+{Token n;
+Token language; 
 }
-{	
+{
     ":" ( n=<IDENT>
 	{
 	    String s = convertIdent(n.image);
@@ -1189,59 +1165,25 @@ SelectorList l = null;
 		    return conditionFactory.createAndCondition(pred, c);
 		}
 	    }
-	}  
-
-	  | n=<FUNCTION> (<S>)* ( LOOKAHEAD(2) value=<IDENT>  (<S>)* ")"
-	  {
-			String f = convertIdent(n.image);
-			Condition d = null;
-			if (f.equals("lang(")) {
-				d = conditionFactory.createLangCondition(convertIdent(value.image));
-			}
-			if (pred == null) {
-			  return d;
-		    } else {
-			  return conditionFactory.createAndCondition(pred, d);
-		    }
-	  }
-	  |  value=<NUMBER> (<S>)* ")"
-	  {
-			String f2 = convertIdent(n.image);
-			Condition d2 = null;
-			if (f2.equals("nth-last-child(") || f2.equals("nth-of-type(")
-					|| f2.equals("nth-last-child(") || f2.equals("nth-child(")
-					|| f2.equals("nth-last-of-type("))
-			{
-				d2= ((ConditionFactoryImpl)conditionFactory).createFunctionCondition(f2.substring(0, f2.length() - 1), convertIdent(value.image));
-			}
-			if (pred == null) {
-			  return d2;
-		    } else {
-			  return conditionFactory.createAndCondition(pred, d2);
-		    }
-	  }
-	  |  l = selectorList() ")" 
+	}
+	  | ( n=<FUNCTION> ( <S> )* language=<IDENT> ( <S> )* ")" 
 	      {
-			String f = convertIdent(n.image);
-			Condition d = null;
-			if (f.equals("not(")) {
-				d = ((ConditionFactoryImpl)conditionFactory).createNegativeCondition(l);
-			}
-		    if (pred == null) {
+		  String f = convertIdent(n.image);
+		  if (f.equals("lang(")) {
+		      Condition d = 
+	      conditionFactory.createLangCondition(convertIdent(language.image));
+		      if (pred == null) {
 			  return d;
-		    } else {
+		      } else {
 			  return conditionFactory.createAndCondition(pred, d);
-		    }
-		  //} else {
-		  //   throw new CSSParseException("invalid pseudo function name " 
-		  //			  + f, getLocator());
-		  //}
-	     }
-	   )
-		
+		      }
+		  } else {
+		      throw new CSSParseException("invalid pseudo function name " 
+						  + f, getLocator());
+		  }
+	      }
+	      )
 	  )
-	  
-	  
 }
 
 /**

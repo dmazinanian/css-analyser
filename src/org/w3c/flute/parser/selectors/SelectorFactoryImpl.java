@@ -237,7 +237,7 @@ public class SelectorFactoryImpl implements SelectorFactory {
 		}
 	}
 
-	public Selector createPrecededSelector(short nodeType, Selector child,
+	public Selector createAdjacentSelector(short nodeType, Selector child,
 			SimpleSelector adjacent) {
 		if (nodeType != 1) {
 			throw new CSSException(CSSException.SAC_NOT_SUPPORTED_ERR);
