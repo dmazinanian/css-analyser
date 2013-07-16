@@ -8,6 +8,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.List;
 
+import org.w3c.flute.parser.selectors.PseudoElementCondition;
+
 
 
 import duplication.Duplication;
@@ -15,6 +17,8 @@ import duplication.DuplicationFinder;
 import duplication.DuplicationsList;
 import duplication.ItemSetList;
 
+import CSSModel.Declaration;
+import CSSModel.Selector;
 import CSSModel.StyleSheet;
 
 import parser.CSSParser;
@@ -29,7 +33,7 @@ public class CSSParserApp {
 
 		//System.out.println(System.getProperty("user.dir"));
 		
-		String folderPath = "css/other/all selectors/";
+		String folderPath = "css/other/test/";
 		analysefiles(folderPath);
 		
 	}
@@ -50,6 +54,8 @@ public class CSSParserApp {
 			CSSParser parser = new CSSParser(filePath);
 
 			StyleSheet styleSheet = parser.parseAndCreateStyleSheetObject();
+			
+			System.out.println(styleSheet);
 
 			DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
 

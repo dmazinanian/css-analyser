@@ -4,31 +4,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class is the main class storing all CSS data
- * in the memory
+ * This class is the main class storing all CSS data in the memory
+ * 
  * @author Davood Mazinanian
  */
 public class StyleSheet {
-	
+
 	private final List<Selector> listOfSelectors;
 	private List<Declaration> listOfDeclarations;
-	
+
 	public StyleSheet() {
 		listOfSelectors = new ArrayList<>();
 	}
-	
+
 	/**
-	 * Adds a new selector (whether atomic or grouped) to 
-	 * the selectors list of this style sheet.
+	 * Adds a new selector (whether atomic or grouped) to the selectors list of
+	 * this style sheet.
+	 * 
 	 * @param selector
 	 */
 	public void addSelector(Selector selector) {
 		listOfSelectors.add(selector);
 	}
-	
+
 	/**
-	 * Returns all the selectors, whether atomic or grouped
-	 * in the style sheet.
+	 * Returns all the selectors, whether atomic or grouped in the style sheet.
+	 * 
 	 * @return List<Selector>
 	 */
 	public List<Selector> getAllSelectors() {
@@ -36,9 +37,10 @@ public class StyleSheet {
 	}
 
 	/**
-	 * This method returns all the atomic selectors in the 
-	 * style sheet, in addition to the all atomic selectors inside the 
-	 * grouped selectors. It preserves the order of atomic selectors.
+	 * This method returns all the atomic selectors in the style sheet, in
+	 * addition to the all atomic selectors inside the grouped selectors. It
+	 * preserves the order of atomic selectors.
+	 * 
 	 * @return List<AtomicSelector>
 	 */
 	public List<AtomicSelector> getAllAtomicSelectors() {
@@ -59,18 +61,34 @@ public class StyleSheet {
 	}
 
 	/**
-	 * This method returns all the declarations inside a 
-	 * style sheet, preserving their order in which they have
-	 * been defined.
+	 * This method returns all the declarations inside a style sheet, preserving
+	 * their order in which they have been defined.
+	 * 
 	 * @return List<Declaration>
 	 */
 	public List<Declaration> getAllDeclarations() {
 		if (listOfDeclarations == null) {
 			listOfDeclarations = new ArrayList<>();
-			for (Selector selector : listOfSelectors) 
+			for (Selector selector : listOfSelectors)
 				for (Declaration declaration : selector.getAllDeclarations())
 					listOfDeclarations.add(declaration);
 		}
 		return listOfDeclarations;
+	}
+
+	@Override
+	public String toString() {
+
+		StringBuilder toReturn = new StringBuilder();
+		for (Selector s : listOfSelectors) {
+			if (s == null)
+				continue;
+			toReturn.append(s + " { \n");
+			for (Declaration d : s.getAllDeclarations())
+				toReturn.append("    " + d + "; \n");
+			toReturn.append("} \n\n");
+		}
+
+		return toReturn.toString();
 	}
 }

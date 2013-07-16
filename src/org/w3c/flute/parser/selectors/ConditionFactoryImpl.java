@@ -288,7 +288,7 @@ public class ConditionFactoryImpl implements ConditionFactory {
 		return new NegativeConditionImpl(l, loc);
 	}
 
-	public Condition createSelectionPseudoClassCondition(String name) {
-		return new SelectionPseudoClassCondition(name);
+	public Condition createPseudoElementCondition(String name) {
+		return new PseudoElementCondition(name);
 	}
 }

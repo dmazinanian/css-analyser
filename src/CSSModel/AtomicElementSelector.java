@@ -9,6 +9,7 @@ public class AtomicElementSelector extends AtomicSelector {
 	private String selectedIDName = "";
 	private final List<SelectorCondition> conditions;
 	private final List<PseudoClass> pseudoClasses;
+	private final List<PseudoElement> pseudoElements;
 
 	public AtomicElementSelector() {
 		this(null);
@@ -28,6 +29,7 @@ public class AtomicElementSelector extends AtomicSelector {
 		conditions = new ArrayList<>();
 		pseudoClasses = new ArrayList<>();
 		selectedClasses = new ArrayList<>();
+		pseudoElements = new ArrayList<>();
 	}
 
 	public void setSelectedElementName(String elementName) {
@@ -63,7 +65,8 @@ public class AtomicElementSelector extends AtomicSelector {
 				(selectedClasses.size() != 0 ? selectedClasses.containsAll(otherObject.selectedClasses) : true)
 				&& (conditions.size() == otherObject.conditions.size()
 				&& conditions.containsAll(otherObject.conditions))
-				&& pseudoClasses.equals(otherObject.pseudoClasses);
+				&& pseudoClasses.equals(otherObject.pseudoClasses) &&
+				pseudoElements.equals(otherObject.pseudoElements);
 	}
 
 	@Override
@@ -79,6 +82,8 @@ public class AtomicElementSelector extends AtomicSelector {
 			result = 31 * result + (condition == null ? 0 : condition.hashCode());
 		for (PseudoClass pseudoClass : pseudoClasses)
 			result = 31 * result + (pseudoClass == null ? 0 : pseudoClass.hashCode());
+		for (PseudoElement pelement : pseudoElements)
+			result = 31 * result + (pelement == null ? 0 : pelement.hashCode());
 		return result;
 	}
 
@@ -94,7 +99,13 @@ public class AtomicElementSelector extends AtomicSelector {
 			result += "[" + condition + "]";
 		for (PseudoClass pseudoClass : pseudoClasses)
 			result += ":" + pseudoClass;
+		for (PseudoElement pelement : pseudoElements)
+			result += "::" + pelement;
 		return result;
+	}
+
+	public void addPseudoElement(PseudoElement pseudoElement) {
+		pseudoElements.add(pseudoElement);
 	}
 
 }

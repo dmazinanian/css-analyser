@@ -1169,7 +1169,19 @@ Token value;
 SelectorList l = null;
 }
 {	
-    ":" ( n=<IDENT>
+    ":" (":" n=<IDENT>
+	{
+		String s2 = convertIdent(n.image);
+		if (s2.equals("selection") || s2.equals("-moz-selection")) {
+			Condition c = ((ConditionFactoryImpl)conditionFactory).createPseudoElementCondition(s2);
+			if (pred == null) {
+				return c;
+			} else {
+				return conditionFactory.createAndCondition(pred, c);
+			}
+		}
+	}
+	| n=<IDENT>
 	{
 	    String s = convertIdent(n.image);
 	    if (s.equals("first-letter") || s.equals("first-line")) {
@@ -1181,8 +1193,7 @@ SelectorList l = null;
 		    return pred;
 		}
 	    } else {
-		Condition c = 
-		conditionFactory.createPseudoClassCondition(null, s);
+		Condition c = conditionFactory.createPseudoClassCondition(null, s);
 		if (pred == null) {
 		    return c;
 		} else {
@@ -1225,7 +1236,7 @@ SelectorList l = null;
 			String f = convertIdent(n.image);
 			Condition d = null;
 			if (f.equals("not(")) {
-				d = ((ConditionFactoryImpl)conditionFactory).createNegativeCondition(l);
+				d = ((ConditionFactoryImpl)conditionFactory).createNegativeCondition(l, getLocator());
 			}
 		    if (pred == null) {
 			  return d;
@@ -1498,32 +1509,77 @@ LexicalUnitImpl function(char operator, LexicalUnitImpl prev) :
 	String f = convertIdent(n.image);
         LexicalUnitImpl l = (LexicalUnitImpl) params;
 	boolean loop = true;
-	if ("rgb(".equals(f)) {
+	if ("rgba(".equals(f)) {
+	// rgba(255, 0, 0, 0)
+		int i = 0;
+	    while (loop && l != null && i < 7) {
+			switch (i) {
+				case 0:
+				case 2:
+				case 4:
+				if ((l.getLexicalUnitType() != LexicalUnit.SAC_INTEGER)
+					&& (l.getLexicalUnitType() != LexicalUnit.SAC_PERCENTAGE)) {
+					loop = false;
+				}
+				break;
+				case 6:
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_REAL)
+					loop = false;
+				break;
+				case 1:
+				case 3:
+				case 5:
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_OPERATOR_COMMA) {
+					loop = false;
+				}
+				break;
+				default:
+					throw new ParseException("implementation error");
+			}
+			if (loop) {
+				l = (LexicalUnitImpl) l.getNextLexicalUnit();
+				i ++;
+			}
+	    }
+	    if ((i == 7) && loop && (l == null)) {
+			return LexicalUnitImpl.createRGBAColor(n.beginLine,
+						      n.beginColumn,
+						      prev, params);
+	    } else {
+			if (errorHandler != null) {
+				errorHandler.error(new CSSParseException("RGBA error", new LocatorImpl(this, n.beginLine,
+						  n.beginColumn)));
+			} else {
+				throw new JumpException();
+			}
+		}
+	}
+	else if ("rgb(".equals(f)) {
 	    // this is a RGB declaration (e.g. rgb(255, 50%, 0) )
 	    int i = 0;
 	    while (loop && l != null && i < 5) {
-		switch (i) {
-		    case 0:
-		    case 2:
-		    case 4:
-			if ((l.getLexicalUnitType() != LexicalUnit.SAC_INTEGER)
-			    && (l.getLexicalUnitType() != LexicalUnit.SAC_PERCENTAGE)) {
-			    loop = false;
+			switch (i) {
+				case 0:
+				case 2:
+				case 4:
+				if ((l.getLexicalUnitType() != LexicalUnit.SAC_INTEGER)
+					&& (l.getLexicalUnitType() != LexicalUnit.SAC_PERCENTAGE)) {
+					loop = false;
+				}
+				break;
+				case 1:
+				case 3:
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_OPERATOR_COMMA) {
+					loop = false;
+				}
+				break;
+				default:
+							throw new ParseException("implementation error");
 			}
-			break;
-		    case 1:
-		    case 3:
-			if (l.getLexicalUnitType() != LexicalUnit.SAC_OPERATOR_COMMA) {
-			    loop = false;
+			if (loop) {
+				l = (LexicalUnitImpl) l.getNextLexicalUnit();
+				i ++;
 			}
-			break;
-		    default:
-                        throw new ParseException("implementation error");
-		}
-		if (loop) {
-		    l = (LexicalUnitImpl) l.getNextLexicalUnit();
-		    i ++;
-		}
 	    }
 	    if ((i == 5) && loop && (l == null)) {
 		return LexicalUnitImpl.createRGBColor(n.beginLine,
@@ -1560,7 +1616,98 @@ LexicalUnitImpl function(char operator, LexicalUnitImpl prev) :
 
 		throw new JumpException();
 	    }
-	} else if ("counter".equals(f)) {
+	} else if ("hsl(".equals(f)) {
+		// hsl(360, 0, 0)
+		int i = 0;
+	    while (loop && l != null && i < 5) {
+			switch (i) {
+				case 0:
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_INTEGER) {
+					loop = false;
+				}
+				break;
+				case 2:
+				case 4:
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_PERCENTAGE) {
+					loop = false;
+				}
+				break;
+				case 1:
+				case 3:
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_OPERATOR_COMMA) {
+					loop = false;
+				}
+				break;
+				default:
+					throw new ParseException("hsl implementation error");
+			}
+			if (loop) {
+				l = (LexicalUnitImpl) l.getNextLexicalUnit();
+				i ++;
+			}
+	    }
+	    if ((i == 5) && loop && (l == null)) {
+			return LexicalUnitImpl.createHSLColor(n.beginLine,
+						      n.beginColumn,
+						      prev, params);
+	    } else {
+			if (errorHandler != null) {
+				errorHandler.error(new CSSParseException("HSL error", new LocatorImpl(this, n.beginLine,
+						  n.beginColumn)));
+			} else {
+				throw new JumpException();
+			}
+		}
+	}
+	else if ("hsla(".equals(f)) {
+		// hsla(360, 20%, 20%, 0.4)
+		int i = 0;
+	    while (loop && l != null && i < 7) {
+			switch (i) {
+				case 0:
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_INTEGER) {
+					loop = false;
+				}
+				break;
+				case 2:
+				case 4:
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_PERCENTAGE) {
+					loop = false;
+				}
+				break;
+				case 6:
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_REAL)
+					loop = false;
+				break;
+				case 1:
+				case 3:
+				case 5:
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_OPERATOR_COMMA) {
+					loop = false;
+				}
+				break;
+				default:
+					throw new ParseException("hsla implementation error");
+			}
+			if (loop) {
+				l = (LexicalUnitImpl) l.getNextLexicalUnit();
+				i ++;
+			}
+	    }
+	    if ((i == 7) && loop && (l == null)) {
+			return LexicalUnitImpl.createHSLAColor(n.beginLine,
+						      n.beginColumn,
+						      prev, params);
+	    } else {
+			if (errorHandler != null) {
+				errorHandler.error(new CSSParseException("RGBA error", new LocatorImpl(this, n.beginLine,
+						  n.beginColumn)));
+			} else {
+				throw new JumpException();
+			}
+		}
+	}
+	else if ("counter".equals(f)) {
 	    int i = 0;
 	    while (loop && l != null && i < 3) {
 		switch (i) {

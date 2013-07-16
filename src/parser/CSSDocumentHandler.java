@@ -1,5 +1,8 @@
 package parser;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.w3c.css.sac.CSSException;
 import org.w3c.css.sac.Condition;
 import org.w3c.css.sac.ConditionalSelector;
@@ -11,6 +14,7 @@ import org.w3c.css.sac.NegativeCondition;
 import org.w3c.css.sac.SACMediaList;
 import org.w3c.css.sac.SelectorList;
 
+import org.w3c.flute.parser.LexicalUnitImpl;
 import org.w3c.flute.parser.selectors.AdjacentSelector;
 import org.w3c.flute.parser.selectors.AndConditionImpl;
 import org.w3c.flute.parser.selectors.AttributeConditionImpl;
@@ -31,11 +35,12 @@ import org.w3c.flute.parser.selectors.OneOfAttributeConditionImpl;
 import org.w3c.flute.parser.selectors.PseudoClassConditionImpl;
 import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
 import org.w3c.flute.parser.selectors.ContainsCondition;
-import org.w3c.flute.parser.selectors.SelectionPseudoClassCondition;
+import org.w3c.flute.parser.selectors.PseudoElementCondition;
 
 import CSSModel.IndirectAdjacentSelector;
+import CSSModel.NamedColors;
 import CSSModel.PseudoNegativeClass;
-import CSSModel.PseudoSelectionClass;
+import CSSModel.PseudoElement;
 import CSSModel.SelectorConditionType;
 import CSSModel.DescendantSelector;
 import CSSModel.DirectDescendantSelector;
@@ -131,39 +136,12 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 	public void startSelector(SelectorList arg0, Locator loc) {
 		numberOfVisitedElements++;
-		if (arg0.getLength() > 1) {
-			GroupedSelectors groupedSelectors = new GroupedSelectors(
-					loc.getLineNumber(), loc.getColumnNumber());
-			for (int i = 0; i < arg0.getLength(); i++) {
-				try {
-					AtomicSelector newAtomicSelector = getSelector(arg0.item(i));
-					newAtomicSelector.setLineNumber(loc.getLineNumber());
-					newAtomicSelector.setColumnNumber(loc.getColumnNumber());
-
-					if (currentMedia != null)
-						newAtomicSelector.setMedia(currentMedia);
-					groupedSelectors.add(newAtomicSelector);
-				} catch (Exception ex) {
-					// TODO: logger.severe
-					System.out.println(ex);
-				}
-			}
-			currentSelector = groupedSelectors;
-			styleSheet.addSelector(groupedSelectors);
-		} else {
-			try {
-				currentSelector = getSelector(arg0.item(0));
-				currentSelector.setLineNumber(loc.getLineNumber());
-				currentSelector.setColumnNumber(loc.getColumnNumber());
-				if (currentMedia != null)
-					currentSelector.setMedia(currentMedia);
-				styleSheet.addSelector(currentSelector);
-			} catch (Exception ex) {
-				// TODO: logger.severe..
-				System.out.println("Exception in CSSDocumentHandler.startSelector():" + ex);
-			}
-		}
-		System.out.println(currentSelector);		
+		
+		currentSelector = getSelector(arg0, loc);
+		
+		styleSheet.addSelector(currentSelector);
+		
+		//System.out.println(currentSelector);		
 	}
 
 	@Override
@@ -189,10 +167,45 @@ public class CSSDocumentHandler implements DocumentHandler {
 		
 	}
 	
+	private Selector getSelector(SelectorList l, Locator loc) {
+		Selector s = null;
+		if (l.getLength() > 1) {
+			GroupedSelectors groupedSelectors = new GroupedSelectors(
+					loc.getLineNumber(), loc.getColumnNumber());
+			for (int i = 0; i < l.getLength(); i++) {
+				try {
+					AtomicSelector newAtomicSelector = SACSelectorToAtomicSelector(l.item(i));
+					newAtomicSelector.setLineNumber(loc.getLineNumber());
+					newAtomicSelector.setColumnNumber(loc.getColumnNumber());
+
+					if (currentMedia != null)
+						newAtomicSelector.setMedia(currentMedia);
+					groupedSelectors.add(newAtomicSelector);
+				} catch (Exception ex) {
+					// TODO: logger.severe
+					System.out.println(ex);
+				}
+			}
+			s = groupedSelectors;
+		} else {
+			try {
+				s = SACSelectorToAtomicSelector(l.item(0));
+				s.setLineNumber(loc.getLineNumber());
+				s.setColumnNumber(loc.getColumnNumber());
+				if (currentMedia != null)
+					s.setMedia(currentMedia);
+				styleSheet.addSelector(currentSelector);
+			} catch (Exception ex) {
+				// TODO: logger.severe..
+				System.out.println(ex);
+			}
+		}
+		return s;
+	}
 
 	// Adapted from GWT
 	// http://google-web-toolkit.googlecode.com/svn-history/r7441/trunk/user/src/com/google/gwt/resources/css/GenerateCssAst.java
-	private AtomicSelector getSelector(org.w3c.css.sac.Selector selector)
+	private AtomicSelector SACSelectorToAtomicSelector(org.w3c.css.sac.Selector selector)
 			throws Exception {
 		// if (selector instanceof CharacterDataSelector) {
 		// Unimplemented in flute?
@@ -214,9 +227,9 @@ public class CSSDocumentHandler implements DocumentHandler {
 		} else if (selector instanceof DescendantSelectorImpl) {
 
 			DescendantSelectorImpl sacDescendantSelector = (DescendantSelectorImpl) selector;
-			AtomicSelector parentAtomicSelector = getSelector(sacDescendantSelector
+			AtomicSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector
 					.getAncestorSelector());
-			AtomicSelector childAtomicSelector = getSelector(sacDescendantSelector
+			AtomicSelector childAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector
 					.getSimpleSelector());
 			DescendantSelector s = new DescendantSelector(parentAtomicSelector,
 					childAtomicSelector);
@@ -231,9 +244,9 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 			ChildSelectorImpl sacChildSelectorImpl = (ChildSelectorImpl) selector;
 
-			AtomicSelector parentAtomicSelector = getSelector(sacChildSelectorImpl
+			AtomicSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl
 					.getAncestorSelector());
-			AtomicSelector childAtomicSelector = getSelector(sacChildSelectorImpl
+			AtomicSelector childAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl
 					.getSimpleSelector());
 
 			AtomicSelector selectorToReturn;
@@ -263,27 +276,26 @@ public class CSSDocumentHandler implements DocumentHandler {
 		} else if (selector instanceof DirectAdjacentSelectorImpl) {
 
 			DirectAdjacentSelectorImpl sacDirectAdjacentSelector = (DirectAdjacentSelectorImpl) selector;
-			AtomicSelector parentSelector = getSelector(sacDirectAdjacentSelector
+			AtomicSelector parentSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector
 					.getSelector());
-			AtomicSelector childSelector = getSelector(sacDirectAdjacentSelector
+			AtomicSelector childSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector
 					.getSiblingSelector());
 			return new ImmediatelyAdjacentSelector(parentSelector, childSelector);
 		} else if (selector instanceof AdjacentSelector) {
 			AdjacentSelector sacAdjacentSelector = (AdjacentSelector)selector;
-			AtomicSelector parentSelector = getSelector(sacAdjacentSelector.getSelector());
-			AtomicSelector childSelector = getSelector(sacAdjacentSelector.getSiblingSelector());
+			AtomicSelector parentSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSelector());
+			AtomicSelector childSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSiblingSelector());
 			return new IndirectAdjacentSelector(parentSelector, childSelector);
 		} else if (selector instanceof ConditionalSelectorImpl) {
 
 			ConditionalSelector sacConditionalSelector = (ConditionalSelectorImpl) selector;
-			AtomicElementSelector atomicElementSelector = (AtomicElementSelector) getSelector(sacConditionalSelector
+			AtomicElementSelector atomicElementSelector = (AtomicElementSelector) SACSelectorToAtomicSelector(sacConditionalSelector
 					.getSimpleSelector());
 			getConditions(sacConditionalSelector.getCondition(),
 					atomicElementSelector);
 			return atomicElementSelector;
 		} else {
-			System.out.println(selector);
-			throw new Exception("Selector not supported");
+			throw new Exception("Selector not supported: " + selector);
 		}
 	}
 
@@ -380,41 +392,11 @@ public class CSSDocumentHandler implements DocumentHandler {
 			
 		} else if (sacCondition instanceof NegativeConditionImpl) {
 			
-			Selector s = null;
+			
 			NegativeConditionImpl condition = (NegativeConditionImpl) sacCondition;
 			SelectorList l = condition.getSelectorList();
 			Locator loc = condition.getLocator();
-			if (l.getLength() > 1) {
-				GroupedSelectors groupedSelectors = new GroupedSelectors(
-						loc.getLineNumber(), loc.getColumnNumber());
-				for (int i = 0; i < l.getLength(); i++) {
-					try {
-						AtomicSelector newAtomicSelector = getSelector(l.item(i));
-						newAtomicSelector.setLineNumber(loc.getLineNumber());
-						newAtomicSelector.setColumnNumber(loc.getColumnNumber());
-
-						if (currentMedia != null)
-							newAtomicSelector.setMedia(currentMedia);
-						groupedSelectors.add(newAtomicSelector);
-					} catch (Exception ex) {
-						// TODO: logger.severe
-						System.out.println(ex);
-					}
-				}
-				s = groupedSelectors;
-			} else {
-				try {
-					s = getSelector(l.item(0));
-					s.setLineNumber(loc.getLineNumber());
-					s.setColumnNumber(loc.getColumnNumber());
-					if (currentMedia != null)
-						s.setMedia(currentMedia);
-					styleSheet.addSelector(currentSelector);
-				} catch (Exception ex) {
-					// TODO: logger.severe..
-					System.out.println(ex);
-				}
-			}
+			Selector s = getSelector(l, loc);
 			
 			atomicElementSelector.addPseudoClass(new PseudoNegativeClass("not", s));
 			
@@ -423,14 +405,13 @@ public class CSSDocumentHandler implements DocumentHandler {
 			FunctionPseudoClassCondition pcs = (FunctionPseudoClassCondition) sacCondition; 
 			atomicElementSelector.addPseudoClass(new PseudoClass(pcs.getLocalName(), pcs.getValue()));
 			
-		} else if (sacCondition instanceof SelectionPseudoClassCondition) {
+		} else if (sacCondition instanceof PseudoElementCondition) {
 			
-			SelectionPseudoClassCondition spcc = (SelectionPseudoClassCondition)sacCondition;
-			atomicElementSelector.addPseudoClass(new PseudoSelectionClass(spcc.getName()));
+			PseudoElementCondition spcc = (PseudoElementCondition)sacCondition;
+			atomicElementSelector.addPseudoElement(new PseudoElement(spcc.getName()));
 			
 		} else {
-			System.out.println(sacCondition);
-			throw new Exception("Condition not supported");
+			throw new Exception("Condition not supported: " + sacCondition);
 		}
 	}
 
@@ -451,7 +432,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 		}
 	}
 
-	private String colorValue(LexicalUnit colors) {
+	private String hexFromRgb(LexicalUnit colors) {
 		LexicalUnit red = colors;
 		int r = getRgbComponentValue(red);
 		LexicalUnit green = red.getNextLexicalUnit().getNextLexicalUnit();
@@ -485,6 +466,71 @@ public class CSSDocumentHandler implements DocumentHandler {
 		return "#" + String.valueOf(sr) + String.valueOf(sg)
 				+ String.valueOf(sb);
 	}
+	
+	private String colorValueFromRGB(LexicalUnit colors) {
+		LexicalUnit red = colors;
+		int r = getRgbComponentValue(red);
+		LexicalUnit green = red.getNextLexicalUnit().getNextLexicalUnit();
+		int g = getRgbComponentValue(green);
+		LexicalUnit blue = green.getNextLexicalUnit().getNextLexicalUnit();
+		int b = getRgbComponentValue(blue);
+		return String.format("rgba(%s, %s, %s, %s)", r, g, b, 1) ;
+	}
+	
+	private String colorRGBA(LexicalUnit colors) {
+		LexicalUnit red = colors;
+		int r = getRgbComponentValue(red);
+		LexicalUnit green = red.getNextLexicalUnit().getNextLexicalUnit();
+		int g = getRgbComponentValue(green);
+		LexicalUnit blue = green.getNextLexicalUnit().getNextLexicalUnit();
+		int b = getRgbComponentValue(blue);
+		LexicalUnit alpha = blue.getNextLexicalUnit().getNextLexicalUnit();
+		float a = Math.min(alpha.getFloatValue(), 1);
+		return String.format("rgba(%s, %s, %s, %s)", r, g, b, a) ;
+	}
+	
+	private String colorFromHSLA(LexicalUnit value) {
+		
+		LexicalUnit hue = value;
+		float h = Math.min(hue.getIntegerValue(), 360) / 360F;
+		LexicalUnit saturation = hue.getNextLexicalUnit().getNextLexicalUnit();
+		float s = Math.min(saturation.getFloatValue(), 100) / 100F;
+		LexicalUnit lightness = saturation.getNextLexicalUnit().getNextLexicalUnit();
+		float l = Math.min(lightness.getFloatValue(), 100) / 100F;
+		float a = 1;
+		if (lightness.getNextLexicalUnit() != null) {
+			LexicalUnit alpha = lightness.getNextLexicalUnit().getNextLexicalUnit();
+			a = Math.min(alpha.getFloatValue(), 1);
+		}
+
+		int r, g, b;
+		float m2;
+		if (l <= 0.5)
+			m2 = l*(s+1);
+		else
+			m2 = l+s-l*s;
+		
+		float m1 = l*2-m2;
+		r = (int)(hue_to_rgb(m1, m2, h+1/3F) * 255);
+		g = (int)(hue_to_rgb(m1, m2, h) * 255);
+		b = (int)(hue_to_rgb(m1, m2, h-1/3F) * 255);
+		
+		return String.format("rgba(%s, %s, %s, %s)", r, g, b, a);
+
+	}
+	
+    private float hue_to_rgb(float m1, float m2, float h) { 
+	       if (h<0) h++;
+	       if (h>1) h--;
+	       if (h*6 < 1)
+	    	   return m1+(m2-m1)*h*6;
+	       if (h*2 < 1)
+	    	   return m2;
+	       if (h*3 < 2)
+	    	   return m1+(m2-m1)*(2/3F-h)*6;
+	       return m1;
+    }
+
 
 	private String extractValueOf(LexicalUnit value) {
 		String accumulator = "";
@@ -502,12 +548,19 @@ public class CSSDocumentHandler implements DocumentHandler {
 		case LexicalUnit.SAC_ATTR:
 			return "attr(" + value.getStringValue() + ")";
 		case LexicalUnit.SAC_IDENT:
-			return /* escapeIdent */(value.getStringValue());
+			String stringValue = value.getStringValue();
+			String colorEquivalent = getColorEquivalent(stringValue);
+			return colorEquivalent != "" ? colorEquivalent : stringValue;
 		case LexicalUnit.SAC_STRING_VALUE:
-			return value.getStringValue();
+			return "'" + value.getStringValue() + "'";
 		case LexicalUnit.SAC_RGBCOLOR:
 			// flute models the commas as operators so no separator needed
-			return colorValue(value.getParameters());
+			return colorValueFromRGB(value.getParameters());
+		case LexicalUnitImpl.RGBA_COLOR:
+			return colorRGBA(value.getParameters());
+		case LexicalUnitImpl.HSL_COLOR:
+		case LexicalUnitImpl.HSLA_COLOR:
+			return colorFromHSLA(value.getParameters());
 		case LexicalUnit.SAC_INTEGER:
 			return String.valueOf(value.getIntegerValue());
 		case LexicalUnit.SAC_REAL:
@@ -531,7 +584,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			return String.valueOf(value.getFloatValue()
 					+ value.getDimensionUnitText());
 		case LexicalUnit.SAC_URI:
-			return "url(" + value.getStringValue() + ")";
+			return "url('" + value.getStringValue() + "')";
 		case LexicalUnit.SAC_OPERATOR_COMMA:
 			return ",";
 		case LexicalUnit.SAC_COUNTER_FUNCTION:
@@ -574,5 +627,11 @@ public class CSSDocumentHandler implements DocumentHandler {
 		}
 		throw new RuntimeException("Unhandled LexicalUnit type "
 				+ value.getLexicalUnitType());
+	}
+
+	private String getColorEquivalent(String stringValue) {
+		
+		return NamedColors.getRGBAColorCSSString(stringValue.toLowerCase());
+		
 	}
 }
