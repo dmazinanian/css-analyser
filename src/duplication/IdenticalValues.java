@@ -19,9 +19,9 @@ public class IdenticalValues extends Duplication {
 	 * the duplications
 	 * @return The value for which we are collecting the duplications
 	 */
-	public String getForWhichValue() {
+	public List<String> getForWhichValue() {
 		if (declarations.get(0) != null)
-			return declarations.get(0).getValue();
+			return declarations.get(0).getValues();
 		return null;
 	}
 	

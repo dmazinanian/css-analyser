@@ -2720,7 +2720,8 @@ SelectorList l = null;
                                 }
                                 break;
                                 case 6:
-                                if (l.getLexicalUnitType() != LexicalUnit.SAC_REAL)
+                                if (l.getLexicalUnitType() != LexicalUnit.SAC_REAL &&
+                                        l.getLexicalUnitType() != LexicalUnit.SAC_INTEGER)
                                         loop = false;
                                 break;
                                 case 1:
@@ -2873,7 +2874,7 @@ SelectorList l = null;
                                 }
                                 break;
                                 case 6:
-                                if (l.getLexicalUnitType() != LexicalUnit.SAC_REAL)
+                                if (l.getLexicalUnitType() != LexicalUnit.SAC_REAL && l.getLexicalUnitType() != LexicalUnit.SAC_INTEGER)
                                         loop = false;
                                 break;
                                 case 1:

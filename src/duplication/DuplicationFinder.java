@@ -171,8 +171,6 @@ public class DuplicationFinder {
 		while (++currentDecIndex < allDeclarations.size()) {
 			
 			Declaration currentDeclaration = allDeclarations.get(currentDecIndex);
-			
-			String currentValue = currentDeclaration.getValue();
 
 			if (visitedDeclarations.contains(currentDecIndex))
 				continue;
@@ -186,9 +184,8 @@ public class DuplicationFinder {
 			while (++checkingDecIndex < allDeclarations.size()) {
 
 				Declaration checkingDeclaration = allDeclarations.get(checkingDecIndex);
-				String checkingValue = checkingDeclaration.getValue();
 				
-				if (currentValue.equals(checkingValue)) {
+				if (currentDeclaration.valuesEquals(checkingDeclaration)) {
 					// Found the desirable duplication
 					duplication.addDeclaration(checkingDeclaration);
 					visitedDeclarations.add(checkingDecIndex);
@@ -271,7 +268,7 @@ public class DuplicationFinder {
 						if (onlyCheckProperties) {
 							for (Declaration checkingDeclaration : checkingDeclarations) {
 								if (currentDeclaration.getProperty().equals(checkingDeclaration.getProperty())
-										&& currentDeclaration.getValue().compareTo(checkingDeclaration.getValue()) != 0) {
+										&& !currentDeclaration.valuesEquals(checkingDeclaration)) {
 									currentEqualDeclarations.add(checkingDeclaration);
 								}
 							}

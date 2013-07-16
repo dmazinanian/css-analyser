@@ -115,7 +115,7 @@ public class IdenticalDeclarations extends Duplication {
 		for (List<Declaration> list : forDeclarations) {
 			if (list == null || list.get(0) == null) 
 				continue;
-			string += "\t" + list.get(0) + " in following places: \n";
+			string += "\t[" + list.get(0) + "] in the following places: \n";
 			for (Declaration declaration : list)
 				string += "\t\t" + declaration.getLineNumber() + " : " + declaration.getColumnNumber() + " \n"; 
 		}

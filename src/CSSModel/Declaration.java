@@ -1,19 +1,21 @@
 package CSSModel;
 
+import java.util.List;
+
 public class Declaration {
 
 	private final String property;
-	private final String value;
+	private final List<String> value;
 	private final Selector belongsTo;
 	private final int lineNumber;
 	private final int colNumber;
 	private final boolean isImportant;
 
-	public Declaration(String property, String value, Selector belongsTo, boolean important) {
+	public Declaration(String property, List<String> value, Selector belongsTo, boolean important) {
 		this(property, value, belongsTo, -1, -1, important);
 	}
 
-	public Declaration(String property, String value, Selector belongsTo,
+	public Declaration(String property, List<String> value, Selector belongsTo,
 			int fileLineNumber, int fileColNumber, boolean important) {
 		this.property = property;
 		this.value = value;
@@ -35,10 +37,15 @@ public class Declaration {
 		return property;
 	}
 
-	public String getValue() {
+	public List<String> getValues() {
 		return value;
 	}
 
+	public boolean valuesEquals(Declaration otherDeclaration) {
+		return (value.size() == otherDeclaration.value.size() &&
+				value.containsAll(otherDeclaration.value));
+	}
+	
 	public int getLineNumber() {
 		return lineNumber;
 	}
@@ -49,7 +56,11 @@ public class Declaration {
 
 	@Override
 	public String toString() {
-		return String.format("%s: %s", property, value);
+		String valueString = "";
+		for (String v : value)
+			valueString += v + " ";
+		valueString = valueString.substring(0, valueString.length()-1);
+		return String.format("%s: %s", property, valueString);
 	}
 
 	/**
@@ -64,19 +75,18 @@ public class Declaration {
 		if (!(obj instanceof Declaration))
 			return false;
 		Declaration otherDiclaration = (Declaration) obj;
-		//if (property == null && otherDiclaration.property != null)
-		//	return false;
-		//if (value == null && otherDiclaration.value != null)
-		//	return false;
 		return (property.equals(otherDiclaration.property) &&
-				value.equals(otherDiclaration.value));
+				valuesEquals(otherDiclaration));
 	}
 
 	@Override
 	public int hashCode() {
 		int result = 17;
 		result = 31 * result + property.hashCode();
-		result = 31 * result + value.hashCode();
+		int h = 0;
+		for (String v : value)
+			h += v.hashCode();
+		result = 31 * result + h;
 		return result;
 	}
 

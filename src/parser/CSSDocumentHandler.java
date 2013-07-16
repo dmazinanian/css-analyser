@@ -163,7 +163,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 	public void property(String arg0, LexicalUnit arg1, boolean arg2, Locator locator)
 			throws CSSException {
 		
-       String value = extractValueOf(arg1);
+       List<String> value = extractValueOf(arg1);
 
 		Declaration newDeclaration = new Declaration(arg0, value,
 				currentSelector, locator.getLineNumber(), locator.getColumnNumber(), arg2);
@@ -480,7 +480,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 		int g = getRgbComponentValue(green);
 		LexicalUnit blue = green.getNextLexicalUnit().getNextLexicalUnit();
 		int b = getRgbComponentValue(blue);
-		return String.format("rgba(%s, %s, %s, %s)", r, g, b, 1) ;
+		return String.format("rgba(%s, %s, %s, %s)", r, g, b, 1F) ;
 	}
 	
 	private String colorRGBA(LexicalUnit colors) {
@@ -491,7 +491,10 @@ public class CSSDocumentHandler implements DocumentHandler {
 		LexicalUnit blue = green.getNextLexicalUnit().getNextLexicalUnit();
 		int b = getRgbComponentValue(blue);
 		LexicalUnit alpha = blue.getNextLexicalUnit().getNextLexicalUnit();
-		float a = Math.min(alpha.getFloatValue(), 1);
+		// The problem is, the value is either in Integer or float so we need to check for both of them
+		float a = Math.min(alpha.getIntegerValue(), 1);
+		if (a == 0) // Lets try float 
+			a = Math.min(alpha.getFloatValue() , 1);
 		return String.format("rgba(%s, %s, %s, %s)", r, g, b, a) ;
 	}
 	
@@ -503,10 +506,13 @@ public class CSSDocumentHandler implements DocumentHandler {
 		float s = Math.min(saturation.getFloatValue(), 100) / 100F;
 		LexicalUnit lightness = saturation.getNextLexicalUnit().getNextLexicalUnit();
 		float l = Math.min(lightness.getFloatValue(), 100) / 100F;
-		float a = 1;
+		float a = 1F;
 		if (lightness.getNextLexicalUnit() != null) {
 			LexicalUnit alpha = lightness.getNextLexicalUnit().getNextLexicalUnit();
-			a = Math.min(alpha.getFloatValue(), 1);
+			// Same as colorRGBA
+			a = Math.min(alpha.getIntegerValue(), 1);
+			if (a == 0)
+				a = Math.min(alpha.getFloatValue(), 1);
 		}
 
 		int r, g, b;
@@ -538,13 +544,13 @@ public class CSSDocumentHandler implements DocumentHandler {
     }
 
 
-	private String extractValueOf(LexicalUnit value) {
-		String accumulator = "";
+	private List<String> extractValueOf(LexicalUnit value) {
+		List<String> accumulator = new ArrayList<>();
 		do {
-			accumulator += getValue(value) + " ";
+			accumulator.add(getValue(value));
 			value = value.getNextLexicalUnit();
 		} while (value != null);
-		return accumulator.substring(0, accumulator.length() - 1);
+		return accumulator;
 	}
 
 	private String getValue(LexicalUnit value) {
@@ -555,10 +561,9 @@ public class CSSDocumentHandler implements DocumentHandler {
 			return "attr(" + value.getStringValue() + ")";
 		case LexicalUnit.SAC_IDENT:
 			String stringValue = value.getStringValue();
-			if (value.getFunctionName() == "color") {
 				String colorEquivalent = getColorEquivalent(stringValue);
-				return colorEquivalent;
-			}
+				if (colorEquivalent != null)
+					stringValue = colorEquivalent;
 			return stringValue;
 		case LexicalUnit.SAC_STRING_VALUE:
 			return "'" + value.getStringValue() + "'";
@@ -600,7 +605,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 		case LexicalUnit.SAC_COUNTERS_FUNCTION:
 		case LexicalUnit.SAC_FUNCTION: 
 			return value.getFunctionName() + "("
-					+ extractValueOf(value.getParameters()) + ")";
+					+ addSeparators(extractValueOf(value.getParameters()), ", ") + ")";
 		case LexicalUnit.SAC_INHERIT:
 			return "inherit";
 		case LexicalUnit.SAC_OPERATOR_EXP:
@@ -627,7 +632,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			return ("~");
 		case LexicalUnit.SAC_RECT_FUNCTION: {
 			// Just return this as a String
-			return "rect(" + extractValueOf(value.getParameters()) + ")";
+			return "rect(" + addSeparators(extractValueOf(value.getParameters()), ", ") + ")";
 		}
 		case LexicalUnit.SAC_SUB_EXPRESSION:
 			// Should have been taken care of by our own traversal
@@ -636,6 +641,13 @@ public class CSSDocumentHandler implements DocumentHandler {
 		}
 		throw new RuntimeException("Unhandled LexicalUnit type "
 				+ value.getLexicalUnitType());
+	}
+
+	private String addSeparators(List<String> listOfStrings, String separator) {
+		String toReturn = "";
+		for (String s : listOfStrings)
+			toReturn += s + separator ;
+		return toReturn.substring(0, toReturn.length() - separator.length());
 	}
 
 	private String getColorEquivalent(String stringValue) {
