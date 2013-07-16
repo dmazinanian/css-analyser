@@ -1,6 +1,8 @@
 package parser;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.w3c.css.sac.CSSException;
@@ -36,6 +38,7 @@ import org.w3c.flute.parser.selectors.PseudoClassConditionImpl;
 import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
 import org.w3c.flute.parser.selectors.ContainsCondition;
 import org.w3c.flute.parser.selectors.PseudoElementCondition;
+import org.xml.sax.helpers.LocatorImpl;
 
 import CSSModel.IndirectAdjacentSelector;
 import CSSModel.NamedColors;
@@ -153,13 +156,16 @@ public class CSSDocumentHandler implements DocumentHandler {
 	public void property(String arg0, LexicalUnit arg1, boolean arg2)
 			throws CSSException {
 		
-		property(arg0, arg1, arg2, null);	
+		//property(arg0, arg1, arg2, null);
+		throw new RuntimeException("No locator provided");
 	}
 	
 	public void property(String arg0, LexicalUnit arg1, boolean arg2, Locator locator)
 			throws CSSException {
+		
+       String value = extractValueOf(arg1);
 
-		Declaration newDeclaration = new Declaration(arg0, getValue(arg1),
+		Declaration newDeclaration = new Declaration(arg0, value,
 				currentSelector, locator.getLineNumber(), locator.getColumnNumber(), arg2);
 
 		if (currentSelector != null) 
@@ -194,7 +200,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 				s.setColumnNumber(loc.getColumnNumber());
 				if (currentMedia != null)
 					s.setMedia(currentMedia);
-				styleSheet.addSelector(currentSelector);
+				//styleSheet.addSelector(currentSelector);
 			} catch (Exception ex) {
 				// TODO: logger.severe..
 				System.out.println(ex);
@@ -535,10 +541,10 @@ public class CSSDocumentHandler implements DocumentHandler {
 	private String extractValueOf(LexicalUnit value) {
 		String accumulator = "";
 		do {
-			accumulator += getValue(value) + ", ";
+			accumulator += getValue(value) + " ";
 			value = value.getNextLexicalUnit();
 		} while (value != null);
-		return accumulator.substring(0, accumulator.length() - 3);
+		return accumulator.substring(0, accumulator.length() - 1);
 	}
 
 	private String getValue(LexicalUnit value) {
@@ -549,8 +555,11 @@ public class CSSDocumentHandler implements DocumentHandler {
 			return "attr(" + value.getStringValue() + ")";
 		case LexicalUnit.SAC_IDENT:
 			String stringValue = value.getStringValue();
-			String colorEquivalent = getColorEquivalent(stringValue);
-			return colorEquivalent != "" ? colorEquivalent : stringValue;
+			if (value.getFunctionName() == "color") {
+				String colorEquivalent = getColorEquivalent(stringValue);
+				return colorEquivalent;
+			}
+			return stringValue;
 		case LexicalUnit.SAC_STRING_VALUE:
 			return "'" + value.getStringValue() + "'";
 		case LexicalUnit.SAC_RGBCOLOR:

@@ -25,7 +25,9 @@ import org.w3c.flute.parser.selectors.ConditionFactoryImpl;
 
 import org.w3c.flute.util.Encoding;
 
+// :)
 import parser.CSSDocumentHandler;
+
 
 /**
  * A CSS2 parser
@@ -2039,14 +2041,15 @@ SelectorList l = null;
       jj_consume_token(COLON);
       n = jj_consume_token(IDENT);
                 String s2 = convertIdent(n.image);
-                if (s2.equals("selection") || s2.equals("-moz-selection")) {
-                        Condition c = ((ConditionFactoryImpl)conditionFactory).createPseudoElementCondition(s2);
+                //if (s2.equals("selection") || s2.equals("-moz-selection")) {
+                        Condition c2 = ((ConditionFactoryImpl)conditionFactory).createPseudoElementCondition(s2);
                         if (pred == null) {
-                                {if (true) return c;}
+                                {if (true) return c2;}
                         } else {
-                                {if (true) return conditionFactory.createAndCondition(pred, c);}
+                                {if (true) return conditionFactory.createAndCondition(pred, c2);}
                         }
-                }
+                //}
+
       break;
     case IDENT:
       n = jj_consume_token(IDENT);
@@ -2226,7 +2229,7 @@ SelectorList l = null;
         jj_la1[86] = jj_gen;
         ;
       }
-      ((CSSDocumentHandler) documentHandler).property(name, exp, important, getLocator());
+         ((CSSDocumentHandler) documentHandler).property(name, exp, important, getLocator());
     } catch (JumpException e) {
      skipAfterExpression();
      // reportWarningSkipText(getLocator(), skipAfterExpression());
@@ -3456,11 +3459,6 @@ SelectorList l = null;
     finally { jj_save(1, xla); }
   }
 
-  private boolean jj_3R_84() {
-    if (jj_scan_token(HASH)) return true;
-    return false;
-  }
-
   private boolean jj_3R_85() {
     if (jj_scan_token(DOT)) return true;
     return false;
@@ -3636,6 +3634,11 @@ SelectorList l = null;
 
   private boolean jj_3R_86() {
     if (jj_scan_token(COLON)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_84() {
+    if (jj_scan_token(HASH)) return true;
     return false;
   }
 

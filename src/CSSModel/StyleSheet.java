@@ -81,8 +81,6 @@ public class StyleSheet {
 
 		StringBuilder toReturn = new StringBuilder();
 		for (Selector s : listOfSelectors) {
-			if (s == null)
-				continue;
 			toReturn.append(s + " { \n");
 			for (Declaration d : s.getAllDeclarations())
 				toReturn.append("    " + d + "; \n");

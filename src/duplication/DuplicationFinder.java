@@ -133,17 +133,17 @@ public class DuplicationFinder {
 				
 			}
 			
-			if (duplication.hasAllSelectorsForADuplication(currentEqualDeclarations)) {
-				duplication.addAllDeclarations(currentEqualDeclarations);
-				mustAdd = false;
-			} else {
-				duplication = new IdenticalDeclarations();
-				duplication.addAllDeclarations(currentEqualDeclarations);
-			}
-
+			
 			// Only if we have at least one declaration in the list (at list one duplication)
-			if (mustAdd)
-				duplicationsList.addDuplication(duplication);
+			if (mustAdd) {
+				if (duplication.hasAllSelectorsForADuplication(currentEqualDeclarations)) {
+					duplication.addAllDeclarations(currentEqualDeclarations);
+				} else {
+					duplication = new IdenticalDeclarations();
+					duplication.addAllDeclarations(currentEqualDeclarations);
+					duplicationsList.addDuplication(duplication);
+				}
+			}
 			
 		}
 		return duplicationsList;

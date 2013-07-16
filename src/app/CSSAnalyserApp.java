@@ -23,7 +23,7 @@ import CSSModel.StyleSheet;
 
 import parser.CSSParser;
 
-public class CSSParserApp {
+public class CSSAnalyserApp {
 
 	/**
 	 * @param args
@@ -59,7 +59,7 @@ public class CSSParserApp {
 
 			DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
 
-			/*String folderName = filePath + ".analyse";
+			String folderName = filePath + ".analyse";
 			
 			createFolder(folderName);
 				
@@ -114,7 +114,7 @@ public class CSSParserApp {
 			closeFile(fw);
 			
 			
-			System.out.println("\nDone\n\n");*/
+			System.out.println("\nDone\n\n");
 		}
 	}
 
