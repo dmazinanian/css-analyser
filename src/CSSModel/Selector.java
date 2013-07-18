@@ -1,5 +1,7 @@
 package CSSModel;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -26,9 +28,9 @@ public abstract class Selector {
 	public Selector(int fileLineNumber, int fileColNumber) {
 		lineNumber = fileColNumber;
 		columnNumber = fileColNumber;
-		declarations = new LinkedList<>();
+		declarations = new ArrayList<>();
+		
 	}
-
 	public void addCSSRule(Declaration rule) {
 		declarations.add(rule);
 	}
@@ -36,6 +38,10 @@ public abstract class Selector {
 	public List<Declaration> getAllDeclarations() {
 		return declarations;
 	}
+	
+//	public Collection<Declaration> getAllDeclarationsHS() {
+//		return declarationsHashSet;
+//	}
 
 	public int getLineNumber() {
 		return lineNumber;

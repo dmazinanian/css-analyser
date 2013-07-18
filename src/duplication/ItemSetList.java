@@ -1,7 +1,10 @@
 package duplication;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import CSSModel.Declaration;
@@ -27,7 +30,7 @@ public class ItemSetList implements Iterable<ItemSet> {
 		itemsets.add(itemSetAndSupport);
 	}
 
-	public void addItemSet(Set<Declaration> itemset, Set<Selector> selectors) {
+	public void addItemSet(Set<Declaration> itemset, List<Selector> selectors) {
 		itemsets.add(new ItemSet(itemset, selectors));
 	}
 
@@ -35,7 +38,7 @@ public class ItemSetList implements Iterable<ItemSet> {
 		return itemsets.size();
 	}
 
-	public Set<ItemSet> getItemsetsAndSupports() {
+	public Collection<ItemSet> getItemsetsAndSupports() {
 		return itemsets;
 	}
 
@@ -68,6 +71,13 @@ public class ItemSetList implements Iterable<ItemSet> {
 	@Override
 	public Iterator<ItemSet> iterator() {
 		return itemsets.iterator();
+	}
+
+	public boolean contains(Set<Declaration> declarations) {
+		//if (declarations.size() != itemsets.get(0).getItemSet().size())
+		//	return false;
+		ItemSet i = new ItemSet(declarations, null);
+		return itemsets.contains(i);
 	}
 
 }

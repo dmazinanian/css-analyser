@@ -82,8 +82,8 @@ public class AtomicElementSelector extends AtomicSelector {
 			result = 31 * result + (condition == null ? 0 : condition.hashCode());
 		for (PseudoClass pseudoClass : pseudoClasses)
 			result = 31 * result + (pseudoClass == null ? 0 : pseudoClass.hashCode());
-		for (PseudoElement pelement : pseudoElements)
-			result = 31 * result + (pelement == null ? 0 : pelement.hashCode());
+		for (PseudoElement pElement : pseudoElements)
+			result = 31 * result + (pElement == null ? 0 : pElement.hashCode());
 		return result;
 	}
 

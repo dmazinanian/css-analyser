@@ -25,6 +25,7 @@ public final class NamedColors {
 			put("blue", "rgba(0, 0, 255, 1.0)");
 			put("teal", "rgba(0, 128, 128, 1.0)");
 			put("aqua", "rgba(0, 255, 255, 1.0)");
+			put("transparent", "rgba(0, 0, 0, 0.0");
 
 			// Extended
 			put("aliceblue", "rgba(240, 248, 255, 1.0)");

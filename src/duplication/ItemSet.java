@@ -1,6 +1,8 @@
 package duplication;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import CSSModel.Declaration;
@@ -19,23 +21,23 @@ import CSSModel.Selector;
 public class ItemSet implements Iterable<Declaration> {
 	
 	private Set<Declaration> itemsetField;
-	private Set<Selector> selectors;
+	private List<Selector> supports;
 	
 	public ItemSet() {
 		this(null, null); // Never pass null. I know.
 	}
 	
-	public ItemSet(Set<Declaration> declarations, Set<Selector> selectorsList) {
+	public ItemSet(Set<Declaration> declarations, List<Selector> selectorsList) {
 		itemsetField = declarations;
-		selectors = selectorsList;
+		supports = selectorsList;
 	}
 	
 	public int getSupport() {
-		return selectors.size();
+		return supports.size();
 	}
 	
 	
-	public Set<Declaration> getItemSet() {
+	public Collection<Declaration> getItemSet() {
 		return itemsetField;
 	}
 	
@@ -43,12 +45,12 @@ public class ItemSet implements Iterable<Declaration> {
 		itemsetField = itemset;
 	}
 	
-	public void setSelectorList(Set<Selector> s) {
-		selectors = s;
+	public void setSupports(List<Selector> s) {
+		supports = s;
 	}
 	
-	public Set<Selector> getSelectors() {
-		return selectors;
+	public Collection<Selector> getSelectors() {
+		return supports;
 	}
 
 	@Override
@@ -74,5 +76,9 @@ public class ItemSet implements Iterable<Declaration> {
 		for (Declaration d : itemsetField)
 			result += d.hashCode();
 		return result;
+	}
+
+	public boolean itemsEqual(Collection<Declaration> set) {
+		return itemsetField.size() == set.size() && itemsetField.containsAll(set);
 	}
 }

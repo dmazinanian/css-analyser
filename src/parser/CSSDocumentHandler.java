@@ -40,6 +40,7 @@ import org.w3c.flute.parser.selectors.ContainsCondition;
 import org.w3c.flute.parser.selectors.PseudoElementCondition;
 import org.xml.sax.helpers.LocatorImpl;
 
+import CSSModel.DeclarationValue;
 import CSSModel.IndirectAdjacentSelector;
 import CSSModel.NamedColors;
 import CSSModel.PseudoNegativeClass;
@@ -160,19 +161,177 @@ public class CSSDocumentHandler implements DocumentHandler {
 		throw new RuntimeException("No locator provided");
 	}
 	
-	public void property(String arg0, LexicalUnit arg1, boolean arg2, Locator locator)
-			throws CSSException {
+	public void property(String arg0, LexicalUnit arg1, boolean arg2,
+			Locator locator) throws CSSException {
+
+		List<DeclarationValue> valuesList = getAllValues (arg1);
+
+		// Lets add default values to the short-hand properties
+		//addMissingDefaultValues(valuesList, arg0, arg1);
 		
-       List<String> value = extractValueOf(arg1);
+		Declaration newDeclaration = new Declaration(arg0, valuesList,
+				currentSelector, locator.getLineNumber(),
+				locator.getColumnNumber(), arg2);
 
-		Declaration newDeclaration = new Declaration(arg0, value,
-				currentSelector, locator.getLineNumber(), locator.getColumnNumber(), arg2);
+		if (currentSelector != null)
+			currentSelector.addCSSRule(newDeclaration);
 
-		if (currentSelector != null) 
-				currentSelector.addCSSRule(newDeclaration);
+	}
+	
+	private List<DeclarationValue> getAllValues(LexicalUnit value) {
+		List<DeclarationValue> accumulator = new ArrayList<>();
+		
+		do {
+			accumulator.add(new DeclarationValue(getValue(value), value.getLexicalUnitType()));
+			value = value.getNextLexicalUnit();
+		} while (value != null);
+		return accumulator;
+	}
+
+	private String getValue(LexicalUnit value) {
+		if (value == null)
+			return "";
+		switch (value.getLexicalUnitType()) {
+		case LexicalUnit.SAC_ATTR:
+			return "attr(" + value.getStringValue() + ")";
+		case LexicalUnit.SAC_IDENT:
+			String stringValue = value.getStringValue();
+				String colorEquivalent = getColorEquivalent(stringValue);
+				if (colorEquivalent != null)
+					stringValue = colorEquivalent;
+			return stringValue;
+		case LexicalUnit.SAC_STRING_VALUE:
+			return "'" + value.getStringValue() + "'";
+		case LexicalUnit.SAC_RGBCOLOR:
+			// flute models the commas as operators so no separator needed
+			return colorValueFromRGB(value.getParameters());
+		case LexicalUnitImpl.RGBA_COLOR:
+			return colorRGBA(value.getParameters());
+		case LexicalUnitImpl.HSL_COLOR:
+		case LexicalUnitImpl.HSLA_COLOR:
+			return colorFromHSLA(value.getParameters());
+		case LexicalUnit.SAC_INTEGER:
+			return String.valueOf(value.getIntegerValue());
+		case LexicalUnit.SAC_REAL:
+			return String.valueOf(value.getFloatValue());
+		case LexicalUnit.SAC_CENTIMETER:
+		case LexicalUnit.SAC_DEGREE:
+		case LexicalUnit.SAC_DIMENSION:
+		case LexicalUnit.SAC_EM:
+		case LexicalUnit.SAC_EX:
+		case LexicalUnit.SAC_GRADIAN:
+		case LexicalUnit.SAC_HERTZ:
+		case LexicalUnit.SAC_KILOHERTZ:
+		case LexicalUnit.SAC_MILLIMETER:
+		case LexicalUnit.SAC_MILLISECOND:
+		case LexicalUnit.SAC_PERCENTAGE:
+		case LexicalUnit.SAC_PICA:
+		case LexicalUnit.SAC_PIXEL:
+		case LexicalUnit.SAC_POINT:
+		case LexicalUnit.SAC_RADIAN:
+		case LexicalUnit.SAC_SECOND:
+			return String.valueOf(value.getFloatValue()
+					+ value.getDimensionUnitText());
+		case LexicalUnit.SAC_URI:
+			return "url('" + value.getStringValue() + "')";
+		case LexicalUnit.SAC_OPERATOR_COMMA:
+			return ",";
+		case LexicalUnit.SAC_COUNTER_FUNCTION:
+		case LexicalUnit.SAC_COUNTERS_FUNCTION:
+		case LexicalUnit.SAC_FUNCTION: 
+			return value.getFunctionName() + "("
+					+ addSeparators(getAllValues(value.getParameters()), ", ") + ")";
+		case LexicalUnit.SAC_INHERIT:
+			return "inherit";
+		case LexicalUnit.SAC_OPERATOR_EXP:
+			return "^";
+		case LexicalUnit.SAC_OPERATOR_GE:
+			return ">=";
+		case LexicalUnit.SAC_OPERATOR_GT:
+			return (">");
+		case LexicalUnit.SAC_OPERATOR_LE:
+			return ("<=");
+		case LexicalUnit.SAC_OPERATOR_LT:
+			return ("<");
+		case LexicalUnit.SAC_OPERATOR_MINUS:
+			return ("-");
+		case LexicalUnit.SAC_OPERATOR_MOD:
+			return ("%");
+		case LexicalUnit.SAC_OPERATOR_MULTIPLY:
+			return ("*");
+		case LexicalUnit.SAC_OPERATOR_PLUS:
+			return ("+");
+		case LexicalUnit.SAC_OPERATOR_SLASH:
+			return ("/");
+		case LexicalUnit.SAC_OPERATOR_TILDE:
+			return ("~");
+		case LexicalUnit.SAC_RECT_FUNCTION: {
+			// Just return this as a String
+			return "rect(" + addSeparators(getAllValues(value.getParameters()), ", ") + ")";
+		}
+		case LexicalUnit.SAC_SUB_EXPRESSION:
+			// Should have been taken care of by our own traversal
+		case LexicalUnit.SAC_UNICODERANGE:
+			// Cannot be expressed in CSS2
+		}
+		throw new RuntimeException("Unhandled LexicalUnit type "
+				+ value.getLexicalUnitType());
+	}
+
+	private String addSeparators(List<DeclarationValue> listOfStrings, String separator) {
+		String toReturn = "";
+		for (DeclarationValue dv : listOfStrings)
+			toReturn += dv + separator ;
+		return toReturn.substring(0, toReturn.length() - separator.length());
+	}
+
+	private String getColorEquivalent(String stringValue) {
+		
+		return NamedColors.getRGBAColorCSSString(stringValue.toLowerCase());
 		
 	}
 	
+	/* Add the missing default values to the shorthand values
+	// Values adapted from http://www.w3.org/community/webed/wiki/CSS_shorthand_reference
+	private void addMissingDefaultValues(List<DeclarationValue> valuesList, String forProperty,
+			LexicalUnit arg1) {
+		// TODO Auto-generated method stub
+		switch (forProperty) {
+		case "background":
+			
+			if (!containsAtListOneValue(valuesList, false, "scroll", "fixed", "local"))
+				valuesList.add(new DeclarationValue("scroll", LexicalUnit.SAC_IDENT));
+			
+			if (!containsAtListOneValue(valuesList, true, "url")) //search for url in the list of values.
+				valuesList.add(new DeclarationValue("none", LexicalUnit.SAC_URI));
+			
+			if (!containsAtListOneValue(valuesList, true, "rgba"))
+				valuesList.add(new DeclarationValue(NamedColors.getRGBAColorCSSString("transparent"), LexicalUnitImpl.RGBA_COLOR));
+			
+			if (!containsAtListOneValue(valuesList, true, "repeat", "repeat-x", "repeat-y", "no-repeat"))
+		}
+	}*/
+
+	/**
+	 * Searches a list of values to see whether there is at least one of the given values in the list or not
+	 * @param valuesList The list to search
+	 * @param substringIsEnough Indicates whether it is enough for the list to have at least
+	 * one of the given values as a substring of one of its values, or method must search for the
+	 * exact string
+	 * @param values A list of items to search
+	 * @return True if the method finds the string or substring in its values which is equal to 
+	 * on of valueList values
+	 */
+	private boolean containsAtListOneValue(List<DeclarationValue> valuesList, boolean substringIsEnough, String... values) {
+
+		for (DeclarationValue listValue : valuesList)
+			for (String toFind : values)
+				if ((substringIsEnough && listValue.getValue().contains(toFind))
+						|| (!substringIsEnough && listValue.getValue().equals(toFind)))
+						return true;
+		return false;
+	}
+
 	private Selector getSelector(SelectorList l, Locator loc) {
 		Selector s = null;
 		if (l.getLength() > 1) {
@@ -544,115 +703,5 @@ public class CSSDocumentHandler implements DocumentHandler {
     }
 
 
-	private List<String> extractValueOf(LexicalUnit value) {
-		List<String> accumulator = new ArrayList<>();
-		do {
-			accumulator.add(getValue(value));
-			value = value.getNextLexicalUnit();
-		} while (value != null);
-		return accumulator;
-	}
-
-	private String getValue(LexicalUnit value) {
-		if (value == null)
-			return "";
-		switch (value.getLexicalUnitType()) {
-		case LexicalUnit.SAC_ATTR:
-			return "attr(" + value.getStringValue() + ")";
-		case LexicalUnit.SAC_IDENT:
-			String stringValue = value.getStringValue();
-				String colorEquivalent = getColorEquivalent(stringValue);
-				if (colorEquivalent != null)
-					stringValue = colorEquivalent;
-			return stringValue;
-		case LexicalUnit.SAC_STRING_VALUE:
-			return "'" + value.getStringValue() + "'";
-		case LexicalUnit.SAC_RGBCOLOR:
-			// flute models the commas as operators so no separator needed
-			return colorValueFromRGB(value.getParameters());
-		case LexicalUnitImpl.RGBA_COLOR:
-			return colorRGBA(value.getParameters());
-		case LexicalUnitImpl.HSL_COLOR:
-		case LexicalUnitImpl.HSLA_COLOR:
-			return colorFromHSLA(value.getParameters());
-		case LexicalUnit.SAC_INTEGER:
-			return String.valueOf(value.getIntegerValue());
-		case LexicalUnit.SAC_REAL:
-			return String.valueOf(value.getFloatValue());
-		case LexicalUnit.SAC_CENTIMETER:
-		case LexicalUnit.SAC_DEGREE:
-		case LexicalUnit.SAC_DIMENSION:
-		case LexicalUnit.SAC_EM:
-		case LexicalUnit.SAC_EX:
-		case LexicalUnit.SAC_GRADIAN:
-		case LexicalUnit.SAC_HERTZ:
-		case LexicalUnit.SAC_KILOHERTZ:
-		case LexicalUnit.SAC_MILLIMETER:
-		case LexicalUnit.SAC_MILLISECOND:
-		case LexicalUnit.SAC_PERCENTAGE:
-		case LexicalUnit.SAC_PICA:
-		case LexicalUnit.SAC_PIXEL:
-		case LexicalUnit.SAC_POINT:
-		case LexicalUnit.SAC_RADIAN:
-		case LexicalUnit.SAC_SECOND:
-			return String.valueOf(value.getFloatValue()
-					+ value.getDimensionUnitText());
-		case LexicalUnit.SAC_URI:
-			return "url('" + value.getStringValue() + "')";
-		case LexicalUnit.SAC_OPERATOR_COMMA:
-			return ",";
-		case LexicalUnit.SAC_COUNTER_FUNCTION:
-		case LexicalUnit.SAC_COUNTERS_FUNCTION:
-		case LexicalUnit.SAC_FUNCTION: 
-			return value.getFunctionName() + "("
-					+ addSeparators(extractValueOf(value.getParameters()), ", ") + ")";
-		case LexicalUnit.SAC_INHERIT:
-			return "inherit";
-		case LexicalUnit.SAC_OPERATOR_EXP:
-			return "^";
-		case LexicalUnit.SAC_OPERATOR_GE:
-			return ">=";
-		case LexicalUnit.SAC_OPERATOR_GT:
-			return (">");
-		case LexicalUnit.SAC_OPERATOR_LE:
-			return ("<=");
-		case LexicalUnit.SAC_OPERATOR_LT:
-			return ("<");
-		case LexicalUnit.SAC_OPERATOR_MINUS:
-			return ("-");
-		case LexicalUnit.SAC_OPERATOR_MOD:
-			return ("%");
-		case LexicalUnit.SAC_OPERATOR_MULTIPLY:
-			return ("*");
-		case LexicalUnit.SAC_OPERATOR_PLUS:
-			return ("+");
-		case LexicalUnit.SAC_OPERATOR_SLASH:
-			return ("/");
-		case LexicalUnit.SAC_OPERATOR_TILDE:
-			return ("~");
-		case LexicalUnit.SAC_RECT_FUNCTION: {
-			// Just return this as a String
-			return "rect(" + addSeparators(extractValueOf(value.getParameters()), ", ") + ")";
-		}
-		case LexicalUnit.SAC_SUB_EXPRESSION:
-			// Should have been taken care of by our own traversal
-		case LexicalUnit.SAC_UNICODERANGE:
-			// Cannot be expressed in CSS2
-		}
-		throw new RuntimeException("Unhandled LexicalUnit type "
-				+ value.getLexicalUnitType());
-	}
-
-	private String addSeparators(List<String> listOfStrings, String separator) {
-		String toReturn = "";
-		for (String s : listOfStrings)
-			toReturn += s + separator ;
-		return toReturn.substring(0, toReturn.length() - separator.length());
-	}
-
-	private String getColorEquivalent(String stringValue) {
-		
-		return NamedColors.getRGBAColorCSSString(stringValue.toLowerCase());
-		
-	}
+	
 }

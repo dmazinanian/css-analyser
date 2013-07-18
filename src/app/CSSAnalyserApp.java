@@ -33,7 +33,7 @@ public class CSSAnalyserApp {
 
 		//System.out.println(System.getProperty("user.dir"));
 		
-		String folderPath = "css/other/test/";
+		String folderPath = "css/facebook";
 		analysefiles(folderPath);
 		
 	}
@@ -55,7 +55,7 @@ public class CSSAnalyserApp {
 
 			StyleSheet styleSheet = parser.parseAndCreateStyleSheetObject();
 			
-			System.out.println(styleSheet);
+			//System.out.println(styleSheet);
 
 			DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
 
@@ -98,9 +98,8 @@ public class CSSAnalyserApp {
 			}
 			closeFile(fw);
 			
-			final int MIN_SUPPORT_COUNT = 4;
+			final int MIN_SUPPORT_COUNT = 2;
 			
-			fw = openFile(folderName + "/apriori.txt");
 			System.out.println("\nFinding grouped identical declarations in " + filePath);
 			ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean(); 
 			long start = threadMXBean.getCurrentThreadCpuTime();
@@ -108,6 +107,7 @@ public class CSSAnalyserApp {
 			long end = threadMXBean.getCurrentThreadCpuTime();
 			long time = (end - start) / 1000000L;
 			System.out.println(time);
+			fw = openFile(folderName + "/apriori.txt");
 			for (ItemSetList itemsetList : l) {
 				writeFile(fw, itemsetList.toString());
 			}

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import CSSModel.Declaration;
+import CSSModel.DeclarationValue;
 
 public class IdenticalValues extends Duplication {
 
@@ -19,7 +20,7 @@ public class IdenticalValues extends Duplication {
 	 * the duplications
 	 * @return The value for which we are collecting the duplications
 	 */
-	public List<String> getForWhichValue() {
+	public List<DeclarationValue> getForWhichValue() {
 		if (declarations.get(0) != null)
 			return declarations.get(0).getValues();
 		return null;
