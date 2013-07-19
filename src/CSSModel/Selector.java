@@ -1,8 +1,6 @@
 package CSSModel;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
 public abstract class Selector {

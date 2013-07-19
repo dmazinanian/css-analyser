@@ -46,7 +46,8 @@ public class Declaration {
 	public boolean valuesEqual(Declaration otherDeclaration) {
 		if (values.size() != otherDeclaration.values.size()) 
 			return false;
-		// What a subtle error could be here if we don't do values.containsAll(otherDeclaration.values)); consider [border-width: 17 17] and [border-width: 17 28]
+		// What a subtle logical error could be here if we don't do values.containsAll(otherDeclaration.values));
+		// consider [border-width: 17 17] and [border-width: 17 28]
 		// First copy:
 		List<DeclarationValue> temp = new ArrayList<>(otherDeclaration.values);
 		for (DeclarationValue value : values) {
@@ -68,10 +69,10 @@ public class Declaration {
 
 	@Override
 	public String toString() {
-		String valueString = "";
+		StringBuilder valueString = new StringBuilder("");
 		for (DeclarationValue v : values)
-			valueString += v + " ";
-		valueString = valueString.substring(0, valueString.length()-1);
+			valueString.append(v + " ");
+		valueString.delete(valueString.length()-1, valueString.length());
 		return String.format("%s: %s", property, valueString);
 	}
 

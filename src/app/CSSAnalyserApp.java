@@ -8,17 +8,11 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.List;
 
-import org.w3c.flute.parser.selectors.PseudoElementCondition;
-
-
-
 import duplication.Duplication;
 import duplication.DuplicationFinder;
 import duplication.DuplicationsList;
 import duplication.ItemSetList;
 
-import CSSModel.Declaration;
-import CSSModel.Selector;
 import CSSModel.StyleSheet;
 
 import parser.CSSParser;
@@ -33,7 +27,7 @@ public class CSSAnalyserApp {
 
 		//System.out.println(System.getProperty("user.dir"));
 		
-		String folderPath = "css/facebook";
+		String folderPath = "css/100tour.fr";
 		analysefiles(folderPath);
 		
 	}
@@ -106,11 +100,12 @@ public class CSSAnalyserApp {
 			List<ItemSetList> l = duplicationFinder.apriori(MIN_SUPPORT_COUNT);
 			long end = threadMXBean.getCurrentThreadCpuTime();
 			long time = (end - start) / 1000000L;
-			System.out.println(time);
 			fw = openFile(folderName + "/apriori.txt");
 			for (ItemSetList itemsetList : l) {
 				writeFile(fw, itemsetList.toString());
 			}
+			String s = "CPU time (miliseconds) for apriori algithm: %s\n" ;
+			writeFile(fw, String.format(s, time));
 			closeFile(fw);
 			
 			
@@ -128,6 +123,7 @@ public class CSSAnalyserApp {
 	private static void writeFile(FileWriter fw, String line)
 			throws IOException {
 		fw.append(line + "\r\n");
+		fw.flush();
 	}
 
 	private static FileWriter openFile(String path) throws IOException {

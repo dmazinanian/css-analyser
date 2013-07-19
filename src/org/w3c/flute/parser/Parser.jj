@@ -43,6 +43,10 @@ import org.w3c.flute.parser.selectors.ConditionFactoryImpl;
 
 import org.w3c.flute.util.Encoding;
 
+// :)
+import parser.CSSDocumentHandler;
+
+
 /**
  * A CSS2 parser
  *
@@ -503,7 +507,7 @@ TOKEN : /* basic tokens */
                          ( <H> )? ( <H> )? 
                     ( [ " ", "\t" , "\n" , "\r", "\f" ] )? >
   | < #ESCAPE     : <UNICODE> | ( "\\" [ " "-"~","\200"-"\377" ] ) >
-  | < #NMSTART    : [ "a"-"z", "_" ] | <NONASCII> | <ESCAPE> >
+  | < #NMSTART    : [ "a"-"z", "_", "-" ] | <NONASCII> | <ESCAPE> >
   | < #NMCHAR	  : ["a"-"z", "0"-"9", "-", "_"] | <NONASCII> | <ESCAPE> >
   | < #STRINGCHAR : [ "\t"," ","!","#","$","%","&","("-"~" ] 
                     | "\\\n" | "\\\r\n" | "\\\r" | "\\\f" 
@@ -919,7 +923,7 @@ void styleRule() :
      l=selectorList() { save = token; } <LBRACE> (<S>)*
      {
 	 start = true;
-	 documentHandler.startSelector(l);
+	 ((CSSDocumentHandler) documentHandler).startSelector(l, getLocator());
      }
      ( declaration() )? ( ";" ( <S> )* ( declaration() )? )*
      <RBRACE> (<S>)*
@@ -1172,14 +1176,14 @@ SelectorList l = null;
     ":" (":" n=<IDENT>
 	{
 		String s2 = convertIdent(n.image);
-		if (s2.equals("selection") || s2.equals("-moz-selection")) {
-			Condition c = ((ConditionFactoryImpl)conditionFactory).createPseudoElementCondition(s2);
+		//if (s2.equals("selection") || s2.equals("-moz-selection")) {
+			Condition c2 = ((ConditionFactoryImpl)conditionFactory).createPseudoElementCondition(s2);
 			if (pred == null) {
-				return c;
+				return c2;
 			} else {
-				return conditionFactory.createAndCondition(pred, c);
+				return conditionFactory.createAndCondition(pred, c2);
 			}
-		}
+		//}
 	}
 	| n=<IDENT>
 	{
@@ -1288,7 +1292,7 @@ void declaration() :
      { save = token; }
      ":" ( <S> )* exp=expr() ( important=prio() )?
      {
-	 documentHandler.property(name, exp, important);
+	 ((CSSDocumentHandler) documentHandler).property(name, exp, important, getLocator());
      }
  } catch (JumpException e) {
      skipAfterExpression();
@@ -1523,7 +1527,8 @@ LexicalUnitImpl function(char operator, LexicalUnitImpl prev) :
 				}
 				break;
 				case 6:
-				if (l.getLexicalUnitType() != LexicalUnit.SAC_REAL)
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_REAL &&
+					l.getLexicalUnitType() != LexicalUnit.SAC_INTEGER)
 					loop = false;
 				break;
 				case 1:
@@ -1676,7 +1681,7 @@ LexicalUnitImpl function(char operator, LexicalUnitImpl prev) :
 				}
 				break;
 				case 6:
-				if (l.getLexicalUnitType() != LexicalUnit.SAC_REAL)
+				if (l.getLexicalUnitType() != LexicalUnit.SAC_REAL && l.getLexicalUnitType() != LexicalUnit.SAC_INTEGER)
 					loop = false;
 				break;
 				case 1:
@@ -1920,8 +1925,9 @@ LexicalUnitImpl hexcolor(LexicalUnitImpl prev) :
 						params, r);
      } else {
 	 first = null;
-	 throw new CSSParseException("invalid hexadecimal notation for RGB: " + s, 
-				     getLocator());
+	 //throw new CSSParseException("invalid hexadecimal notation for RGB: " + s, 
+	//			     getLocator());
+	return LexicalUnitImpl.createIdent(n.beginLine, n.beginColumn, prev, n.image);
      }
      return LexicalUnitImpl.createRGBColor(n.beginLine, n.beginColumn,
 					   prev, first); 

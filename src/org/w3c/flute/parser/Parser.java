@@ -3109,8 +3109,10 @@ SelectorList l = null;
                                                 params, r);
      } else {
          first = null;
-         {if (true) throw new CSSParseException("invalid hexadecimal notation for RGB: " + s,
-                                     getLocator());}
+         {//if (true) throw new CSSParseException("invalid hexadecimal notation for RGB: " + s,
+          //                           getLocator());
+        	 return LexicalUnitImpl.createIdent(n.beginLine, n.beginColumn, prev, n.image);
+        	 }
      }
      {if (true) return LexicalUnitImpl.createRGBColor(n.beginLine, n.beginColumn,
                                            prev, first);}

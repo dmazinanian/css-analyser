@@ -37,12 +37,12 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 
 	@Override
 	public String toString() {
-		String result = "";
+		StringBuilder result = new StringBuilder("");
 		for (AtomicSelector atomicSelector : listOfSelectors)
-			result += atomicSelector + ", ";
+			result.append(atomicSelector + ", ");
 		// Remove last , and space
-		result = result.substring(0, result.length() - 2); 
-		return result;
+		result.delete(result.length() - 2, result.length()); 
+		return result.toString();
 	}
 	
 	@Override

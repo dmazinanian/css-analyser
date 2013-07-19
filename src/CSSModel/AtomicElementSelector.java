@@ -89,19 +89,19 @@ public class AtomicElementSelector extends AtomicSelector {
 
 	@Override
 	public String toString() {
-		String result = selectedElementName != null ? selectedElementName : "";
+		StringBuilder result = new StringBuilder(selectedElementName != null ? selectedElementName : "");
 		if (selectedIDName != "")
-			result += "#" + selectedIDName;
+			result.append("#" + selectedIDName);
 		if (selectedClasses.size() > 0)
 			for (String c : selectedClasses)
-				result += "." + c;
+				result.append("." + c);
 		for (SelectorCondition condition : conditions)
-			result += "[" + condition + "]";
+			result.append("[" + condition + "]");
 		for (PseudoClass pseudoClass : pseudoClasses)
-			result += ":" + pseudoClass;
+			result.append(":" + pseudoClass);
 		for (PseudoElement pelement : pseudoElements)
-			result += "::" + pelement;
-		return result;
+			result.append("::" + pelement);
+		return result.toString();
 	}
 
 	public void addPseudoElement(PseudoElement pseudoElement) {
