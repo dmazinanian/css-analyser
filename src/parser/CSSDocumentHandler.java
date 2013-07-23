@@ -279,6 +279,8 @@ public class CSSDocumentHandler implements DocumentHandler {
 			// ?
 		case LexicalUnit.SAC_UNICODERANGE:
 			// Cannot be expressed in CSS2
+		case LexicalUnitImpl.PARAN:
+			return "(" + addSeparators(getAllValues(value.getParameters()), " ") + ")" ;
 		}
 		throw new RuntimeException("Unhandled LexicalUnit type "
 				+ value.getLexicalUnitType());

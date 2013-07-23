@@ -27,7 +27,7 @@ public class CSSAnalyserApp {
 
 		//System.out.println(System.getProperty("user.dir"));
 		
-		String folderPath = "css/100tour.fr";
+		String folderPath = "css/my tests/shorthand test";
 		analysefiles(folderPath);
 		
 	}
@@ -49,9 +49,9 @@ public class CSSAnalyserApp {
 
 			StyleSheet styleSheet = parser.parseAndCreateStyleSheetObject();
 			
-			//System.out.println(styleSheet);
+			System.out.println(styleSheet);
 
-			DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
+			/*DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
 
 			String folderName = filePath + ".analyse";
 			
@@ -109,7 +109,7 @@ public class CSSAnalyserApp {
 			closeFile(fw);
 			
 			
-			System.out.println("\nDone\n\n");
+			System.out.println("\nDone\n\n");*/
 		}
 	}
 

@@ -5,8 +5,8 @@ import java.util.List;
 
 public class Declaration {
 
-	private final String property;
-	private final List<DeclarationValue> values;
+	protected final String property;
+	protected final List<DeclarationValue> values;
 	private final Selector belongsTo;
 	private final int lineNumber;
 	private final int colNumber;

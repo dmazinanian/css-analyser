@@ -56,7 +56,7 @@ import parser.CSSDocumentHandler;
 public class Parser implements org.w3c.css.sac.Parser {
 
     // replaces all \t, \n, etc with this StringBuffer.
-    static final StringBuffer SPACE = new StringBuffer(" ");
+    static final StringBuilder SPACE = new StringBuilder(" ");
 
     // the document handler for the parser
     protected DocumentHandler documentHandler;
@@ -1359,8 +1359,9 @@ LexicalUnit expr() :
     char op;
 }
 {
-    first=term(null) { res = first; }
-    ( ( res=operator(res) )? res=term(res) )*
+
+	first= term(null) { res = first; }
+    ( ( res=operator(res) )? res=term(res) )* 
   { return first; }
 }
 
@@ -1381,9 +1382,16 @@ LexicalUnitImpl term(LexicalUnitImpl prev) :
 { LexicalUnitImpl result = null;
   Token n = null;
   char op = ' ';
+  LexicalUnit params = null;
 }
 {
-  ( ( ( op=unaryOperator() )?
+  
+  ( 
+  (n="(" ( <S> )* ( params=expr() )? ")" 
+	{ result = LexicalUnitImpl.createParan(n.beginLine, n.beginColumn, prev, params); }
+	) |
+  ( 
+	( op=unaryOperator() )?
     ( n=<NUMBER>
 	{ result = LexicalUnitImpl.createNumber(n.beginLine, n.beginColumn,
 						prev, number(op, n, 0)); }
@@ -1496,7 +1504,7 @@ LexicalUnitImpl term(LexicalUnitImpl prev) :
 }
 
 /**
- * Handle all CSS2 functions.
+ * Handle all CSS2 functions. and CSS3?!
  * @exception ParseException exception during the parse
  */
 LexicalUnitImpl function(char operator, LexicalUnitImpl prev) :

@@ -23,6 +23,7 @@ public class LexicalUnitImpl implements LexicalUnit {
 	public static final short RGBA_COLOR = 43;
 	public static final short HSL_COLOR = 44;
 	public static final short HSLA_COLOR = 45;
+	public static final short PARAN = 46;
 	
 	LexicalUnit prev;
 	LexicalUnit next;
@@ -72,6 +73,12 @@ public class LexicalUnitImpl implements LexicalUnit {
 			String fname, LexicalUnitImpl params) {
 		this(type, line, column, previous);
 		this.fname = fname;
+		this.params = params;
+	}
+	
+	LexicalUnitImpl(short type, int line, int column, LexicalUnitImpl previous,
+			LexicalUnitImpl params) {
+		this(type, line, column, previous);
 		this.params = params;
 	}
 
@@ -267,8 +274,11 @@ public class LexicalUnitImpl implements LexicalUnit {
 		case SAC_SUB_EXPRESSION:
 			text = getSubValues().toString();
 			break;
+		case PARAN:
+			text = "(" + getSubValues().toString() + ")";
+			break;
 		default:
-			text = "@unknown";
+			text = "@unknown ";
 			break;
 		}
 		if (next != null) {
@@ -481,5 +491,10 @@ public class LexicalUnitImpl implements LexicalUnit {
 	static LexicalUnitImpl createSlash(int line, int column,
 			LexicalUnitImpl previous) {
 		return new LexicalUnitImpl(SAC_OPERATOR_SLASH, line, column, previous);
+	}
+
+	public static LexicalUnitImpl createParan(int beginLine, int beginColumn,
+			LexicalUnitImpl prev, LexicalUnit param) {
+		return new LexicalUnitImpl(PARAN, beginLine, beginColumn, prev, (LexicalUnitImpl)param);
 	}
 }

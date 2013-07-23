@@ -19,6 +19,8 @@ import org.w3c.css.sac.LexicalUnit;
 import org.w3c.flute.parser.selectors.SelectorFactoryImpl;
 import org.w3c.flute.parser.selectors.ConditionFactoryImpl;
 import org.w3c.flute.util.Encoding;
+// :)
+import parser.CSSDocumentHandler;
 
 /** Token Manager. */
 public class ParserTokenManager implements ParserConstants
@@ -3140,8 +3142,8 @@ static final long[] jjtoMore = {
 protected CharStream input_stream;
 private final int[] jjrounds = new int[335];
 private final int[] jjstateSet = new int[670];
-private final StringBuffer jjimage = new StringBuffer();
-private StringBuffer image = jjimage;
+private final StringBuilder jjimage = new StringBuilder();
+private StringBuilder image = jjimage;
 private int jjimageLen;
 private int lengthOfMatch;
 protected char curChar;
