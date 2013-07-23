@@ -105,6 +105,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 	@Override
 	public void importStyle(String arg0, SACMediaList arg1, String arg2)
 			throws CSSException {
+		//According to CSS3 '@import' rules must occur before all rules other than '@charset' rules
 		File file = new File(styleSheet.getFilePath());
 		String parentFolder = file.getParent(); 
 		CSSParser parser = new CSSParser(parentFolder + "/" + arg0);
@@ -118,19 +119,52 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 	@Override
 	public void startMedia(SACMediaList arg0) throws CSSException {
+		if (currentMedia == null) {
+			currentMedia = getMedia(arg0);
+		} else {
+			GroupedMedia groupedMedia;
+			if (currentMedia instanceof AtomicMedia) {
+				groupedMedia = new GroupedMedia();
+				groupedMedia.addMedia((AtomicMedia) currentMedia);
+			} else {
+				groupedMedia = (GroupedMedia)currentMedia;
+			}
+			Media tempMedia = getMedia(arg0);
+			if (tempMedia instanceof AtomicMedia)
+				groupedMedia.addMedia((AtomicMedia)tempMedia);
+			else 
+				groupedMedia.addAllMedia((GroupedMedia)tempMedia);
+			currentMedia = groupedMedia;
+		}	
+	}
+	
+	private Media getMedia(SACMediaList arg0) {
+		Media media;
 		if (arg0.getLength() == 1) {
-			currentMedia = new AtomicMedia(arg0.item(0));
+			media = new AtomicMedia(arg0.item(0));
 		} else {
 			GroupedMedia groupedMedia = new GroupedMedia();
 			for (int i = 0; i < arg0.getLength(); i++)
 				groupedMedia.addMedia(new AtomicMedia(arg0.item(i)));
-			currentMedia = groupedMedia;
+			media = groupedMedia;
 		}
+		return media;
 	}
 
 	@Override
 	public void endMedia(SACMediaList arg0) throws CSSException {
-		currentMedia = null;
+		if (currentMedia instanceof AtomicMedia) {
+			currentMedia = null;
+		} else {
+			GroupedMedia groupedMedia = (GroupedMedia)currentMedia;
+			for (int i = 0; i < arg0.getLength(); i++) {
+				groupedMedia.removeMedia(arg0.item(i));
+			}
+			if (groupedMedia.size() == 1)
+				currentMedia = new AtomicMedia(groupedMedia.getAtomicMedia(0).getMediaName());
+			else if (groupedMedia.size() == 0)
+				currentMedia = null;
+		}
 	}
 
 	@Override

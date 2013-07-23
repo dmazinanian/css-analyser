@@ -25,6 +25,25 @@ public class GroupedMedia extends Media implements Iterable<AtomicMedia> {
 		listOfAtomicMedia.add(media);
 	}
 
+	public void addAllMedia(GroupedMedia groupedMedia) {
+		for (AtomicMedia atomicMedia : groupedMedia) {
+			addMedia(atomicMedia);
+		}
+	}
+	
+	public void removeMedia(String item) {
+		for (int i = 0; i < listOfAtomicMedia.size(); i++) {
+			AtomicMedia atomicMedia = listOfAtomicMedia.get(i);
+			if (atomicMedia.getMediaName().equals(item))
+				listOfAtomicMedia.remove(i);
+		}
+	}
+	
+	public int size() {
+		return listOfAtomicMedia.size();
+	}
+
+
 	public AtomicMedia getAtomicMedia(int index) {
 		return listOfAtomicMedia.get(index);
 	}
@@ -63,5 +82,4 @@ public class GroupedMedia extends Media implements Iterable<AtomicMedia> {
 		result = result.substring(0, result.length() - 2);
 		return result;
 	}
-
 }

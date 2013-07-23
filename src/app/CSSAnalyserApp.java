@@ -27,7 +27,7 @@ public class CSSAnalyserApp {
 
 		//System.out.println(System.getProperty("user.dir"));
 		
-		String folderPath = "css/my tests/import test";
+		String folderPath = "css/my tests/media test";
 		analysefiles(folderPath);
 		
 	}
