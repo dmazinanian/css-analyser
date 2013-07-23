@@ -12,9 +12,11 @@ public class StyleSheet {
 
 	private final List<Selector> listOfSelectors;
 	private List<Declaration> listOfDeclarations;
+	private final String cssFilePath;
 
-	public StyleSheet() {
+	public StyleSheet(String path) {
 		listOfSelectors = new ArrayList<>();
+		cssFilePath = path;
 	}
 
 	/**
@@ -88,5 +90,14 @@ public class StyleSheet {
 		}
 
 		return toReturn.toString();
+	}
+
+	public void addSelectors(StyleSheet s) {
+		for (Selector selector : s.getAllSelectors())
+			addSelector(selector);
+	}
+	
+	public String getFilePath() {
+		return cssFilePath;
 	}
 }

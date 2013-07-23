@@ -1,5 +1,6 @@
 package parser;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -104,7 +105,10 @@ public class CSSDocumentHandler implements DocumentHandler {
 	@Override
 	public void importStyle(String arg0, SACMediaList arg1, String arg2)
 			throws CSSException {
-		
+		File file = new File(styleSheet.getFilePath());
+		String parentFolder = file.getParent(); 
+		CSSParser parser = new CSSParser(parentFolder + "/" + arg0);
+		styleSheet.addSelectors(parser.parseAndCreateStyleSheetObject());
 	}
 
 	@Override
@@ -162,9 +166,19 @@ public class CSSDocumentHandler implements DocumentHandler {
 			Locator locator) throws CSSException {
 
 		List<DeclarationValue> valuesList = getAllValues(arg1);
-
-		// Add default values to the short-hand properties??
-		// addMissingDefaultValues(valuesList, arg0, arg1);
+		
+		/*String[] shorthandProperties = new String[] {
+					"background", 
+					"font",
+					"list-style",
+					"margin",
+					"padding",
+					"border",
+					"border-color",
+					"border-style",
+					"border-width," +
+					"border-image" +
+					"border-top", "border-right", "border-bottom", "border-left" }; */
 
 		Declaration newDeclaration = new Declaration(arg0, valuesList,
 				currentSelector, locator.getLineNumber(),
@@ -299,53 +313,6 @@ public class CSSDocumentHandler implements DocumentHandler {
 		return NamedColors.getRGBAColorCSSString(stringValue.toLowerCase());
 
 	}
-
-	/*
-	 * Add the missing default values to the shorthand values // Values adapted
-	 * from http://www.w3.org/community/webed/wiki/CSS_shorthand_reference
-	 * private void addMissingDefaultValues(List<DeclarationValue> valuesList,
-	 * String forProperty, LexicalUnit arg1) {
-	 * stub switch (forProperty) { case "background":
-	 * 
-	 * if (!containsAtListOneValue(valuesList, false, "scroll", "fixed",
-	 * "local")) valuesList.add(new DeclarationValue("scroll",
-	 * LexicalUnit.SAC_IDENT));
-	 * 
-	 * if (!containsAtListOneValue(valuesList, true, "url")) //search for url in
-	 * the list of values. valuesList.add(new DeclarationValue("none",
-	 * LexicalUnit.SAC_URI));
-	 * 
-	 * if (!containsAtListOneValue(valuesList, true, "rgba")) valuesList.add(new
-	 * DeclarationValue(NamedColors.getRGBAColorCSSString("transparent"),
-	 * LexicalUnitImpl.RGBA_COLOR));
-	 * 
-	 * if (!containsAtListOneValue(valuesList, true, "repeat", "repeat-x",
-	 * "repeat-y", "no-repeat")) } }
-	 */
-
-	/* *
-	 * Searches a list of values to see whether there is at least one of the
-	 * given values in the list or not
-	 * 
-	 * @param valuesList The list to search
-	 * 
-	 * @param substringIsEnough Indicates whether it is enough for the list to
-	 * have at least one of the given values as a substring of one of its
-	 * values, or method must search for the exact string
-	 * 
-	 * @param values A list of items to search
-	 * 
-	 * @return True if the method finds the string or substring in its values
-	 * which is equal to on of valueList values
-	 * 
-	 * private boolean containsAtListOneValue(List<DeclarationValue> valuesList,
-	 * boolean substringIsEnough, String... values) {
-	 * 
-	 * for (DeclarationValue listValue : valuesList) for (String toFind :
-	 * values) if ((substringIsEnough && listValue.getValue().contains(toFind))
-	 * || (!substringIsEnough && listValue.getValue().equals(toFind))) return
-	 * true; return false; }
-	 */
 
 	private Selector getSelector(SelectorList l, Locator loc) {
 		Selector s = null;
@@ -618,31 +585,6 @@ public class CSSDocumentHandler implements DocumentHandler {
 							+ color, null);
 		}
 	}
-
-	/*
-	 * private String hexFromRgb(LexicalUnit colors) { LexicalUnit red = colors;
-	 * int r = getRgbComponentValue(red); LexicalUnit green =
-	 * red.getNextLexicalUnit().getNextLexicalUnit(); int g =
-	 * getRgbComponentValue(green); LexicalUnit blue =
-	 * green.getNextLexicalUnit().getNextLexicalUnit(); int b =
-	 * getRgbComponentValue(blue);
-	 * 
-	 * String sr = Integer.toHexString(r); if (sr.length() == 1) { sr = "0" +
-	 * sr; }
-	 * 
-	 * String sg = Integer.toHexString(g); if (sg.length() == 1) { sg = "0" +
-	 * sg; }
-	 * 
-	 * String sb = Integer.toHexString(b); if (sb.length() == 1) { sb = "0" +
-	 * sb; }
-	 * 
-	 * // #AABBCC --> #ABC if (sr.charAt(0) == sr.charAt(1) && sg.charAt(0) ==
-	 * sg.charAt(1) && sb.charAt(0) == sb.charAt(1)) { sr = sr.substring(1); sg
-	 * = sg.substring(1); sb = sb.substring(1); }
-	 * 
-	 * return "#" + String.valueOf(sr) + String.valueOf(sg) +
-	 * String.valueOf(sb); }
-	 */
 
 	private String colorValueFromRGB(LexicalUnit colors) {
 		LexicalUnit red = colors;

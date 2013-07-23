@@ -27,7 +27,7 @@ public class CSSParser {
 
 	public StyleSheet parseAndCreateStyleSheetObject() {
 
-		StyleSheet styleSheet = new StyleSheet();
+		StyleSheet styleSheet = new StyleSheet(path);
 
 		try {
 

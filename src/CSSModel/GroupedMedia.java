@@ -60,7 +60,7 @@ public class GroupedMedia extends Media implements Iterable<AtomicMedia> {
 		String result = "";
 		for (AtomicMedia atomicMedia : listOfAtomicMedia)
 			result += atomicMedia + ", ";
-		result = result.substring(0, result.length() - 3);
+		result = result.substring(0, result.length() - 2);
 		return result;
 	}
 

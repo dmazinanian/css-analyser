@@ -27,7 +27,7 @@ public class CSSAnalyserApp {
 
 		//System.out.println(System.getProperty("user.dir"));
 		
-		String folderPath = "css/my tests/shorthand test";
+		String folderPath = "css/my tests/import test";
 		analysefiles(folderPath);
 		
 	}
@@ -49,7 +49,7 @@ public class CSSAnalyserApp {
 
 			StyleSheet styleSheet = parser.parseAndCreateStyleSheetObject();
 			
-			System.out.println(styleSheet);
+			//System.out.println(styleSheet);
 
 			/*DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
 
