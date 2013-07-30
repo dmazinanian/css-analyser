@@ -3,21 +3,21 @@ package CSSModel;
 public class DeclarationValue {
 	
 	private final String value;
-	private final short type;
+	//private final short type;
 	//private int hashCode = -1;
 	
-	public DeclarationValue(String value, short type) {
+	public DeclarationValue(String value) {
 		this.value = value;
-		this.type = type;
+	//	this.type = type;
 	}
 	
 	public String getValue() {
 		return value;
 	}
 	
-	public short getType() {
-		return type;
-	}
+	//public short getType() {
+	//	return type;
+	//}
 
 	@Override
 	public int hashCode() {

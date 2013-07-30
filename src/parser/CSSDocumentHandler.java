@@ -200,23 +200,16 @@ public class CSSDocumentHandler implements DocumentHandler {
 			Locator locator) throws CSSException {
 
 		List<DeclarationValue> valuesList = getAllValues(arg1);
-		
-		/*String[] shorthandProperties = new String[] {
-					"background", 
-					"font",
-					"list-style",
-					"margin",
-					"padding",
-					"border",
-					"border-color",
-					"border-style",
-					"border-width," +
-					"border-image" +
-					"border-top", "border-right", "border-bottom", "border-left" }; */
 
-		Declaration newDeclaration = new Declaration(arg0, valuesList,
-				currentSelector, locator.getLineNumber(),
-				locator.getColumnNumber(), arg2);
+		Declaration newDeclaration = null;
+
+		//if (ShorthandDeclaration.isShorthandProperty(arg0)) {
+		//	newDeclaration = new ShorthandDeclaration(arg0, valuesList, currentSelector, arg2);
+		//} else {
+
+			newDeclaration = new Declaration(arg0, valuesList, currentSelector,
+					locator.getLineNumber(), locator.getColumnNumber(), arg2);
+		//}
 
 		if (currentSelector != null)
 			currentSelector.addCSSRule(newDeclaration);
@@ -230,8 +223,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 		if (value != null) {
 			do {
-				accumulator.add(new DeclarationValue(getValue(value), value
-						.getLexicalUnitType()));
+				accumulator.add(new DeclarationValue(getValue(value))); //, value.getLexicalUnitType()));
 				value = value.getNextLexicalUnit();
 			} while (value != null);
 		}

@@ -7,24 +7,42 @@ public class Declaration {
 
 	protected final String property;
 	protected final List<DeclarationValue> values;
-	private final Selector belongsTo;
-	private final int lineNumber;
-	private final int colNumber;
-	private final boolean isImportant;
+	protected final Selector belongsTo;
+	protected final int lineNumber;
+	protected final int colNumber;
+	protected final boolean isImportant;
 	private int hashCode = -1;
+	private final boolean hasLayeredValues; // For CSS3 background, we have comma separated list of values
 
 	public Declaration(String property, List<DeclarationValue> values, Selector belongsTo, boolean important) {
 		this(property, values, belongsTo, -1, -1, important);
 	}
-
+	
+	public Declaration(String property, DeclarationValue value, Selector belongsTo,
+			int fileLineNumber, int fileColNumber, boolean important) {
+		this(property, getDecValueListForSingleValue(value), belongsTo, fileLineNumber, fileColNumber, important);
+	}
+	
+	private static List<DeclarationValue> getDecValueListForSingleValue(DeclarationValue val) {
+		List<DeclarationValue> vals = new ArrayList<>();
+		vals.add(val);
+		return vals;
+	}
+	
 	public Declaration(String property, List<DeclarationValue> values, Selector belongsTo,
 			int fileLineNumber, int fileColNumber, boolean important) {
+		this(property, values, belongsTo, fileLineNumber, fileColNumber, important, false);
+	}
+
+	public Declaration(String property, List<DeclarationValue> values, Selector belongsTo,
+			int fileLineNumber, int fileColNumber, boolean important, boolean commaSeparatedValues) {
 		this.property = property;
 		this.values = values;
 		this.belongsTo = belongsTo;
 		lineNumber = fileLineNumber;
 		colNumber = fileColNumber;
 		isImportant = important;
+		hasLayeredValues = commaSeparatedValues;
 	}
 	
 	public boolean isImportant() {
@@ -41,6 +59,10 @@ public class Declaration {
 
 	public List<DeclarationValue> getValues() {
 		return values;
+	}
+	
+	public void addValue(DeclarationValue value) {
+		values.add(value);
 	}
 
 	public boolean valuesEqual(Declaration otherDeclaration) {
@@ -70,9 +92,16 @@ public class Declaration {
 	@Override
 	public String toString() {
 		StringBuilder valueString = new StringBuilder("");
-		for (DeclarationValue v : values)
-			valueString.append(v + " ");
-		valueString.delete(valueString.length()-1, valueString.length());
+		for (DeclarationValue v : values) {
+			if (hasLayeredValues)
+				valueString.append(v + ", ");
+			else 
+				valueString.append(v + " ");
+		}
+		if (hasLayeredValues)
+			valueString.delete(valueString.length() - 2, valueString.length());
+		else 
+			valueString.delete(valueString.length() - 1, valueString.length());
 		return String.format("%s: %s", property, valueString);
 	}
 
