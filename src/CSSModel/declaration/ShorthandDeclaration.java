@@ -1,7 +1,7 @@
 /**
  * 
  */
-package CSSModel;
+package CSSModel.declaration;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import CSSModel.selectors.Selector;
 
 /**
  * This class is another representation for shorthand properties.

@@ -1,7 +1,10 @@
-package CSSModel;
+package CSSModel.selectors;
 
 /**
- * selector1 selector2
+ * Represents CSS "selector1 selector2" selectors
+ * selector1 and selector2 are of type {@link AtomicSelector}
+ * so for example, for selector1 selector2 selector 3, we have two selectors
+ * one of which is again a {@link DescendantSelector} and anoter is an {@link DescendantSelector}
  * @author Davood Mazinanian
  */
 public class DescendantSelector extends AtomicSelector {
@@ -14,10 +17,20 @@ public class DescendantSelector extends AtomicSelector {
 		childSelector = child;
 	}
 	
+	/**
+	 * Returns the parent selector (the selector on the left hand side
+	 * of a descendant selector)
+	 * @return
+	 */
 	public AtomicSelector getParentSelector() {
 		return parentSelector;
 	}
 	
+	/**
+	 * Returns the child selector (the selector on the right hand side
+	 * of a descendant selector)
+	 * @return
+	 */
 	public AtomicSelector getChildSelector() {
 		return childSelector;
 	}

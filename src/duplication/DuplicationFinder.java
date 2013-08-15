@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import CSSModel.AtomicSelector;
-import CSSModel.Declaration;
-import CSSModel.Selector;
 import CSSModel.StyleSheet;
+import CSSModel.declaration.Declaration;
+import CSSModel.selectors.AtomicSelector;
+import CSSModel.selectors.Selector;
 
 /**
  * This class is responsible for finding various types of duplications in a
@@ -260,7 +260,7 @@ public class DuplicationFinder {
 			while (++currentSelectorIndex < identicalSelectors.size()) {
 				
 				Selector currentSelector = identicalSelectors.get(currentSelectorIndex);
-				List<Declaration> currentDeclarations = currentSelector.getAllDeclarations();
+				List<Declaration> currentDeclarations = currentSelector.getDeclarations();
 				
 				/* For each declaration for the current selector, 
 				 * check all selectors to see whther they have the same declarations or not
@@ -273,7 +273,7 @@ public class DuplicationFinder {
 					int checkingSelectorIndex = currentSelectorIndex;
 					while (++checkingSelectorIndex < identicalSelectors.size()) {
 						Selector checkingSelector = identicalSelectors.get(checkingSelectorIndex);
-						List<Declaration> checkingDeclarations = checkingSelector.getAllDeclarations();
+						List<Declaration> checkingDeclarations = checkingSelector.getDeclarations();
 	
 						if (onlyCheckProperties) {
 							for (Declaration checkingDeclaration : checkingDeclarations) {

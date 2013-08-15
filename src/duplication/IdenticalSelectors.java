@@ -3,7 +3,7 @@ package duplication;
 import java.util.ArrayList;
 import java.util.List;
 
-import CSSModel.Selector;
+import CSSModel.selectors.Selector;
 
 public class IdenticalSelectors extends Duplication {
 

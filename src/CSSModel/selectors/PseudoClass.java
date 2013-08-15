@@ -1,7 +1,10 @@
-package CSSModel;
+package CSSModel.selectors;
 
 /**
- * Represents pseudo classes like :after
+ * Represents pseudo classes like :hover
+ * Note that in CSS2.1, there is no deference between pseudo classes
+ * and pseudo elements in terms of the prefix, both use ":" (like p:before).
+ * In CSS3, we've got "::" for pseudo elements, like "::"
  * 
  * @author Davood Mazinanian
  */
@@ -35,7 +38,11 @@ public class PseudoClass {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof PseudoClass))
+		if (obj == null)
+			return false;
+		if (obj == this)
+			return true;
+		if (obj.getClass() != getClass())
 			return false;
 		PseudoClass otherPseudoClass = (PseudoClass)obj;
 		if (name.equals(otherPseudoClass.name) &&

@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import CSSModel.Declaration;
-import CSSModel.Selector;
+import CSSModel.declaration.Declaration;
+import CSSModel.selectors.Selector;
 
 /**
  * This class represents the occurrences of same declarations

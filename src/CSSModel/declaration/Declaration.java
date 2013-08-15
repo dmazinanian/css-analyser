@@ -1,7 +1,9 @@
-package CSSModel;
+package CSSModel.declaration;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import CSSModel.selectors.Selector;
 
 public class Declaration {
 

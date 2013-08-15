@@ -6,8 +6,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import CSSModel.Declaration;
-import CSSModel.Selector;
+import CSSModel.declaration.Declaration;
+import CSSModel.selectors.Selector;
 
 /**
  * This class is mainly used for representing C and L tables in the APriori

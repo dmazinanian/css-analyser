@@ -1,4 +1,4 @@
-package CSSModel;
+package CSSModel.declaration;
 
 public class DeclarationValue {
 	

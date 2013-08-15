@@ -1,7 +1,11 @@
-package CSSModel;
+package CSSModel.selectors;
 /**
- * Represents pseudo elements like ::selector
+ * Represents CSS3 pseudo elements like ::selector.
+ * Have a look at {@link PseudoClass <code>PseudoClass</code>} for 
+ * more information
+ * 
  * @author Davood Mazinanian
+ * 
  */
 public class PseudoElement {
 	

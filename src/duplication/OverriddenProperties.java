@@ -3,8 +3,8 @@ package duplication;
 import java.util.ArrayList;
 import java.util.List;
 
-import CSSModel.Declaration;
-import CSSModel.Selector;
+import CSSModel.declaration.Declaration;
+import CSSModel.selectors.Selector;
 
 /**
  * This class represents the overridden properties (in cases 

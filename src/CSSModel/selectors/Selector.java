@@ -1,7 +1,11 @@
-package CSSModel;
+package CSSModel.selectors;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import CSSModel.declaration.Declaration;
+import CSSModel.media.AtomicMedia;
+import CSSModel.media.Media;
 
 public abstract class Selector {
 	
@@ -33,7 +37,7 @@ public abstract class Selector {
 		declarations.add(rule);
 	}
 
-	public List<Declaration> getAllDeclarations() {
+	public List<Declaration> getDeclarations() {
 		return declarations;
 	}
 	

@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.css.sac.CSSException;
 import org.w3c.css.sac.Condition;
 import org.w3c.css.sac.ConditionalSelector;
@@ -37,28 +39,32 @@ import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
 import org.w3c.flute.parser.selectors.ContainsCondition;
 import org.w3c.flute.parser.selectors.PseudoElementCondition;
 
-import CSSModel.DeclarationValue;
-import CSSModel.IndirectAdjacentSelector;
+import dom.DOMHelper;
+
 import CSSModel.NamedColors;
-import CSSModel.PseudoNegativeClass;
-import CSSModel.PseudoElement;
-import CSSModel.SelectorConditionType;
-import CSSModel.DescendantSelector;
-import CSSModel.DirectDescendantSelector;
-import CSSModel.ImmediatelyAdjacentSelector;
-import CSSModel.AtomicMedia;
-import CSSModel.AtomicSelector;
-import CSSModel.Declaration;
-import CSSModel.AtomicElementSelector;
-import CSSModel.GroupedMedia;
-import CSSModel.PseudoClass;
-import CSSModel.Selector;
-import CSSModel.GroupedSelectors;
-import CSSModel.SelectorCondition;
 import CSSModel.StyleSheet;
-import CSSModel.Media;
+import CSSModel.conditions.SelectorCondition;
+import CSSModel.conditions.SelectorConditionType;
+import CSSModel.declaration.Declaration;
+import CSSModel.declaration.DeclarationValue;
+import CSSModel.media.AtomicMedia;
+import CSSModel.media.GroupedMedia;
+import CSSModel.media.Media;
+import CSSModel.selectors.AtomicElementSelector;
+import CSSModel.selectors.AtomicSelector;
+import CSSModel.selectors.DescendantSelector;
+import CSSModel.selectors.DirectDescendantSelector;
+import CSSModel.selectors.GroupedSelectors;
+import CSSModel.selectors.IndirectAdjacentSelector;
+import CSSModel.selectors.ImmediatelyAdjacentSelector;
+import CSSModel.selectors.PseudoClass;
+import CSSModel.selectors.PseudoElement;
+import CSSModel.selectors.PseudoNegativeClass;
+import CSSModel.selectors.Selector;
 
 public class CSSDocumentHandler implements DocumentHandler {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(CSSDocumentHandler.class);
 
 	private Selector currentSelector;
 	private Media currentMedia;
@@ -356,8 +362,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 						newAtomicSelector.setMedia(currentMedia);
 					groupedSelectors.add(newAtomicSelector);
 				} catch (Exception ex) {
-					// TODO: logger.severe
-					System.out.println(ex);
+					LOGGER.warn(ex.toString());
 				}
 			}
 			s = groupedSelectors;
@@ -370,8 +375,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 					s.setMedia(currentMedia);
 				// styleSheet.addSelector(currentSelector);
 			} catch (Exception ex) {
-				// TODO: logger.severe..
-				System.out.println(ex);
+				LOGGER.warn(ex.toString());
 			}
 		}
 		return s;
@@ -501,7 +505,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 		} else if (sacCondition instanceof IdConditionImpl) {
 
 			IdConditionImpl c = (IdConditionImpl) sacCondition;
-			atomicElementSelector.setIDName(c.getValue());
+			atomicElementSelector.setElementID(c.getValue());
 
 		} else if (sacCondition instanceof LangConditionImpl) {
 
@@ -518,7 +522,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			if (value != null) {
 				selectorCondition
 						.setConditionType(SelectorConditionType.VALUE_EQUALS_EXACTLY);
-				selectorCondition.setConditionValue(attributeConditionImpl
+				selectorCondition.setValue(attributeConditionImpl
 						.getValue());
 			}
 			atomicElementSelector.addCondition(selectorCondition);
@@ -574,9 +578,12 @@ public class CSSDocumentHandler implements DocumentHandler {
 			SelectorList l = condition.getSelectorList();
 			Locator loc = condition.getLocator();
 			Selector s = getSelector(l, loc);
-
-			atomicElementSelector.addPseudoClass(new PseudoNegativeClass("not",
-					s));
+			// Selector "s" shoule be a simple selector, based on W3C http://www.w3.org/TR/css3-selectors/
+			if ((s instanceof AtomicElementSelector)) {
+				atomicElementSelector.addPseudoClass(new PseudoNegativeClass((AtomicElementSelector)s));
+			} else {
+				// Logger...
+			}
 
 		} else if (sacCondition instanceof FunctionPseudoClassCondition) {
 

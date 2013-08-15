@@ -3,6 +3,11 @@ package CSSModel;
 import java.util.ArrayList;
 import java.util.List;
 
+import CSSModel.declaration.Declaration;
+import CSSModel.selectors.AtomicSelector;
+import CSSModel.selectors.GroupedSelectors;
+import CSSModel.selectors.Selector;
+
 /**
  * This class is the main class storing all CSS data in the memory
  * 
@@ -16,7 +21,7 @@ public class StyleSheet {
 
 	public StyleSheet(String path) {
 		listOfSelectors = new ArrayList<>();
-		cssFilePath = path;
+		cssFilePath = path; 
 	}
 
 	/**
@@ -28,7 +33,7 @@ public class StyleSheet {
 	public void addSelector(Selector selector) {
 		listOfSelectors.add(selector);
 	}
-
+	
 	/**
 	 * Returns all the selectors, whether atomic or grouped in the style sheet.
 	 * 
@@ -72,7 +77,7 @@ public class StyleSheet {
 		if (listOfDeclarations == null) {
 			listOfDeclarations = new ArrayList<>();
 			for (Selector selector : listOfSelectors)
-				for (Declaration declaration : selector.getAllDeclarations())
+				for (Declaration declaration : selector.getDeclarations())
 					listOfDeclarations.add(declaration);
 		}
 		return listOfDeclarations;
@@ -84,7 +89,7 @@ public class StyleSheet {
 		StringBuilder toReturn = new StringBuilder();
 		for (Selector s : listOfSelectors) {
 			toReturn.append(s + " { \n");
-			for (Declaration d : s.getAllDeclarations())
+			for (Declaration d : s.getDeclarations())
 				toReturn.append("    " + d + "; \n");
 			toReturn.append("} \n\n");
 		}

@@ -1,9 +1,11 @@
-package CSSModel;
+package CSSModel.selectors;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+
+import CSSModel.declaration.Declaration;
 
 public class GroupedSelectors extends Selector implements Collection<AtomicSelector> {
 

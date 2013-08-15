@@ -1,12 +1,22 @@
-package CSSModel;
+package CSSModel.selectors;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import CSSModel.conditions.SelectorCondition;
+
+/**
+ * An atomic element selector, is a selector 
+ * in the format element#id.class1.class2....:PseudoClass1...:PseudoClassK::PseudoElement
+ * 
+ * @author Davood Mazinanian
+ *
+ */
 public class AtomicElementSelector extends AtomicSelector {
+	
 	private String selectedElementName = "";
 	private List<String> selectedClasses;
-	private String selectedIDName = "";
+	private String selectedID = "";
 	private final List<SelectorCondition> conditions;
 	private final List<PseudoClass> pseudoClasses;
 	private final List<PseudoElement> pseudoElements;
@@ -23,6 +33,17 @@ public class AtomicElementSelector extends AtomicSelector {
 		this(null, fileColNumber, fileLineNumber);
 	}
 
+	/**
+	 * 
+	 * @param 	parent Parent GroupedSelectors object. In a selector 
+	 * 			like "p, div", the "p, div" is a parent GroupedSelectors
+	 * 			object and "p" and "div" would be the atomic element selectors
+	 * @param fileLineNumber
+	 * 			Line number of the source of container stylesheet.
+	 * @param fileColumnNumber
+	 * 			Column number of the source of container stylesheet.
+	 * 
+	 */
 	public AtomicElementSelector(GroupedSelectors parent, int fileLineNumber,
 			int fileColumnNumber) {
 		super(parent, fileLineNumber, fileColumnNumber);
@@ -36,22 +57,73 @@ public class AtomicElementSelector extends AtomicSelector {
 		selectedElementName = elementName;
 	}
 
+	public String getSelectedElementName() {
+		return selectedElementName;
+	}
+	
 	public void addClassName(String className) {
 		selectedClasses.add(className);
 	}
-
-	public void setIDName(String idName) {
-		selectedIDName = idName;
+	
+	public List<String> getClassNames() {
+		return selectedClasses;
 	}
 
+	public void setElementID(String idName) {
+		selectedID = idName;
+	}
+	
+	/**
+	 * Returns the ID of the current selector. For example,
+	 * selector "#test" would have "test" as its ID name
+	 * @return
+	 */
+	public String getElementID() {
+		return selectedID;
+	}
+
+	/**
+	 * Adds different conditions to current selector.
+	 * @param condition
+	 * @see CSSModel.conditions.SelectorCondition
+	 * @see CSSModel.conditions.SelectorConditionType
+	 */
 	public void addCondition(SelectorCondition condition) {
 		conditions.add(condition);
+	}
+	
+	public List<SelectorCondition> getConditions() {
+		return conditions;
 	}
 
 	public void addPseudoClass(PseudoClass pseudoClass) {
 		pseudoClasses.add(pseudoClass);
 	}
+	
+	/**
+	 * Returns all PseudoClasses of current selector
+	 * @return
+	 */
+	public List<PseudoClass> getPseudoClasses() {
+		return pseudoClasses;
+	}
 
+	/**
+	 * Adds a PseudoElement to current selector
+	 * @param pseudoElement
+	 */
+	public void addPseudoElement(PseudoElement pseudoElement) {
+		pseudoElements.add(pseudoElement);
+	}
+	
+	/**
+	 * Returns the pseudo elements of current selector (like ::selector)
+	 * @return
+	 */
+	public List<PseudoElement> getPseudoElements() {
+		return pseudoElements;
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof AtomicElementSelector))
@@ -60,7 +132,7 @@ public class AtomicElementSelector extends AtomicSelector {
 
 		// First check for element name, ID and Class which have to be the same
 		return selectedElementName.equals(otherObject.selectedElementName)
-				&& selectedIDName.equals(otherObject.selectedIDName)
+				&& selectedID.equals(otherObject.selectedID)
 				&& selectedClasses.size() == otherObject.selectedClasses.size() && 
 				(selectedClasses.size() != 0 ? selectedClasses.containsAll(otherObject.selectedClasses) : true)
 				&& (conditions.size() == otherObject.conditions.size()
@@ -72,8 +144,8 @@ public class AtomicElementSelector extends AtomicSelector {
 	@Override
 	public int hashCode() {
 		int result = 17;
-		if (selectedIDName != null)
-			result = 31 * result + selectedIDName.hashCode();
+		if (selectedID != null)
+			result = 31 * result + selectedID.hashCode();
 		if (selectedElementName != null)
 			result = 31 * result + selectedElementName.hashCode();
 		for (String c : selectedClasses)
@@ -90,8 +162,8 @@ public class AtomicElementSelector extends AtomicSelector {
 	@Override
 	public String toString() {
 		StringBuilder result = new StringBuilder(selectedElementName != null ? selectedElementName : "");
-		if (selectedIDName != "")
-			result.append("#" + selectedIDName);
+		if (selectedID != "")
+			result.append("#" + selectedID);
 		if (selectedClasses.size() > 0)
 			for (String c : selectedClasses)
 				result.append("." + c);
@@ -102,10 +174,6 @@ public class AtomicElementSelector extends AtomicSelector {
 		for (PseudoElement pelement : pseudoElements)
 			result.append("::" + pelement);
 		return result.toString();
-	}
-
-	public void addPseudoElement(PseudoElement pseudoElement) {
-		pseudoElements.add(pseudoElement);
 	}
 
 }

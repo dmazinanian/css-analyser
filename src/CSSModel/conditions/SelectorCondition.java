@@ -1,4 +1,4 @@
-package CSSModel;
+package CSSModel.conditions;
 
 /**
  * Selector conditions which are come inside the brackets like div[align]
@@ -24,33 +24,69 @@ public class SelectorCondition {
 		conditionType = SelectorConditionType.HAS_ATTRIBUTE;
 	}
 
-	public SelectorCondition(String nameOfCondition, String valueOfCondition,
-			SelectorConditionType typeOfCondition) {
-		conditionName = nameOfCondition;
-		conditionValue = valueOfCondition;
-		conditionType = typeOfCondition;
-	}
-
-	public String getConditionName() {
-		return conditionName;
-	}
-
-	public void setName(String name) {
-		conditionName = name;
-	}
-
-	public String getConditionValue() {
-		return conditionValue;
-	}
-
-	public void setConditionValue(String value) {
+	/**
+	 * Constructor of the SelectorCondition
+	 * @param attributeName Name of the attribute
+	 * @param value Value of the condition
+	 * @param type Type of the condition, based on {@link SelectorConditionType <code>SelectorConditionType</code>}
+	 * @see SelectorConditionType
+	 */
+	public SelectorCondition(String attributeName, String value, SelectorConditionType type) {
+		conditionName = attributeName;
 		conditionValue = value;
-	}
-
-	public void setConditionType(SelectorConditionType type) {
 		conditionType = type;
 	}
 
+	/**
+	 * In the selector[attr operand value] format, returns attr
+	 * @return
+	 */
+	public String getAttributeName() {
+		return conditionName;
+	}
+
+	/**
+	 * Sets the name of the attr,  in the selector[attr operand value] format
+	 * @param name
+	 */
+	public void setAttributeName(String name) {
+		conditionName = name;
+	}
+	
+	/**
+	 * In the selector[attr operand value] format, returns value
+	 * @return
+	 */
+	public String getValue() {
+		return conditionValue;
+	}
+
+	/**
+	 * In the selector[attr operand value] format, returns type of the operand
+	 * based on {@link SelectorConditionType <code>SelectorConditionType</code>}
+	 * @see SelectorConditionType 
+	 * @param value
+	 */
+	public void setValue(String value) {
+		conditionValue = value;
+	}
+
+	/**
+	 * In the selector[attr operand value] format, sets the type of the operand
+	 * based on {@link SelectorConditionType <code>SelectorConditionType</code>}
+	 * @see SelectorConditionType
+	 * @param type Type of the condition
+	 */
+	public void setConditionType(SelectorConditionType type) {
+		conditionType = type;
+	}
+	
+	/**
+	 * In the selector[attr operand value] format, returns type of the operand
+	 * based on {@link SelectorConditionType <code>SelectorConditionType</code>}
+	 * @see SelectorConditionType
+	 * @return
+	 */
 	public SelectorConditionType getConditionType() {
 		return conditionType;
 	}

@@ -1,4 +1,4 @@
-package CSSModel;
+package CSSModel.selectors;
 
 /**
  * Selector1 > Selector2

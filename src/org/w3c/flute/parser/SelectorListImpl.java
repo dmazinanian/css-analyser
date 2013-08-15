@@ -13,7 +13,6 @@
  */
 package org.w3c.flute.parser;
 
-import org.w3c.css.sac.Locator;
 import org.w3c.css.sac.SelectorList;
 import org.w3c.css.sac.Selector;
 

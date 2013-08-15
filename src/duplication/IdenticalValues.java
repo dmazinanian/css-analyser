@@ -3,8 +3,8 @@ package duplication;
 import java.util.ArrayList;
 import java.util.List;
 
-import CSSModel.Declaration;
-import CSSModel.DeclarationValue;
+import CSSModel.declaration.Declaration;
+import CSSModel.declaration.DeclarationValue;
 
 public class IdenticalValues extends Duplication {
 

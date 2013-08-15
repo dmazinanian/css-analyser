@@ -1,4 +1,4 @@
-package CSSModel;
+package CSSModel.media;
 
 import java.util.ArrayList;
 import java.util.Iterator;

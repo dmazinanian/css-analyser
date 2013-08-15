@@ -1,15 +1,15 @@
-package CSSModel;
+package CSSModel.selectors;
 
 /**
- * selector1 + selector2
+ * selector1 ~ selector2
  * @author Davood Mazinanian
  */
-public class ImmediatelyAdjacentSelector extends AtomicSelector {
+public class IndirectAdjacentSelector extends AtomicSelector {
 	
 	protected final AtomicSelector beforeMainSelector;
 	protected final AtomicSelector mainSelector;
 	
-	public ImmediatelyAdjacentSelector(AtomicSelector firstSelector, AtomicSelector secondSelector) {
+	public IndirectAdjacentSelector(AtomicSelector firstSelector, AtomicSelector secondSelector) {
 		beforeMainSelector = firstSelector;
 		mainSelector = secondSelector;
 	}
@@ -24,14 +24,14 @@ public class ImmediatelyAdjacentSelector extends AtomicSelector {
 	
 	@Override
 	public String toString() {
-		return beforeMainSelector + " + " + mainSelector;
+		return beforeMainSelector + " ~ " + mainSelector;
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof ImmediatelyAdjacentSelector))
+		if (!(obj instanceof IndirectAdjacentSelector))
 			return false;
-		ImmediatelyAdjacentSelector otherObj = (ImmediatelyAdjacentSelector)obj;
+		IndirectAdjacentSelector otherObj = (IndirectAdjacentSelector)obj;
 		if (beforeMainSelector.equals(otherObj.beforeMainSelector) &&
 				mainSelector.equals(otherObj.mainSelector))
 			return true;

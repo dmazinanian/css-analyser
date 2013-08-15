@@ -724,7 +724,7 @@ void media() :
   <MEDIA_SYM> ( <S> )*
    mediaStatement(ml)
    { start = true; documentHandler.startMedia(ml); }
-   <LBRACE> ( <S> )* ( styleRule() | skipUnknownRule() )* <RBRACE> ( <S> )*
+   <LBRACE> ( <S> )* ( styleRule() | media() | skipUnknownRule() )* <RBRACE> ( <S> )*
  } catch (ParseException e) {
      reportError(getLocator(), e);
      skipStatement();
@@ -861,7 +861,7 @@ void skipUnknownRule() :
 | n=<IMPORT_SYM>
 | n=<INCLUDES>
 | n=<LBRACE>
-| n=<MEDIA_SYM>
+ 
 | n=<NONASCII>
 | n=<NUMBER>
 | n=<PAGE_SYM>
