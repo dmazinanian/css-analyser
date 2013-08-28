@@ -115,55 +115,57 @@ public interface ParserConstants {
   /** RegularExpression Id. */
   int GRAD = 55;
   /** RegularExpression Id. */
-  int MS = 56;
+  int TURN = 56;
   /** RegularExpression Id. */
-  int SECOND = 57;
+  int MS = 57;
   /** RegularExpression Id. */
-  int HZ = 58;
+  int SECOND = 58;
   /** RegularExpression Id. */
-  int KHZ = 59;
+  int HZ = 59;
   /** RegularExpression Id. */
-  int DIMEN = 60;
+  int KHZ = 60;
   /** RegularExpression Id. */
-  int HASH = 61;
+  int DIMEN = 61;
   /** RegularExpression Id. */
-  int IMPORT_SYM = 62;
+  int HASH = 62;
   /** RegularExpression Id. */
-  int MEDIA_SYM = 63;
+  int IMPORT_SYM = 63;
   /** RegularExpression Id. */
-  int CHARSET_SYM = 64;
+  int MEDIA_SYM = 64;
   /** RegularExpression Id. */
-  int PAGE_SYM = 65;
+  int CHARSET_SYM = 65;
   /** RegularExpression Id. */
-  int FONT_FACE_SYM = 66;
+  int PAGE_SYM = 66;
   /** RegularExpression Id. */
-  int ATKEYWORD = 67;
+  int FONT_FACE_SYM = 67;
   /** RegularExpression Id. */
-  int IMPORTANT_SYM = 68;
+  int ATKEYWORD = 68;
   /** RegularExpression Id. */
-  int RANGE0 = 69;
+  int IMPORTANT_SYM = 69;
   /** RegularExpression Id. */
-  int RANGE1 = 70;
+  int RANGE0 = 70;
   /** RegularExpression Id. */
-  int RANGE2 = 71;
+  int RANGE1 = 71;
   /** RegularExpression Id. */
-  int RANGE3 = 72;
+  int RANGE2 = 72;
   /** RegularExpression Id. */
-  int RANGE4 = 73;
+  int RANGE3 = 73;
   /** RegularExpression Id. */
-  int RANGE5 = 74;
+  int RANGE4 = 74;
   /** RegularExpression Id. */
-  int RANGE6 = 75;
+  int RANGE5 = 75;
   /** RegularExpression Id. */
-  int RANGE = 76;
+  int RANGE6 = 76;
   /** RegularExpression Id. */
-  int UNI = 77;
+  int RANGE = 77;
   /** RegularExpression Id. */
-  int UNICODERANGE = 78;
+  int UNI = 78;
   /** RegularExpression Id. */
-  int FUNCTION = 79;
+  int UNICODERANGE = 79;
   /** RegularExpression Id. */
-  int UNKNOWN = 80;
+  int FUNCTION = 80;
+  /** RegularExpression Id. */
+  int UNKNOWN = 81;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -228,6 +230,7 @@ public interface ParserConstants {
     "<DEG>",
     "<RAD>",
     "<GRAD>",
+    "<TURN>",
     "<MS>",
     "<SECOND>",
     "<HZ>",

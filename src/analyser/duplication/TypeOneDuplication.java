@@ -1,4 +1,4 @@
-package duplication;
+package analyser.duplication;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -11,25 +11,28 @@ import CSSModel.selectors.Selector;
 /**
  * This class represents the occurrences of same declarations
  * for different selectors.
+ * 
  * @author Davood Mazinanian
  *
  */
-public class IdenticalDeclarations extends Duplication {
+public class TypeOneDuplication implements Duplication {
 
 	/* We keep a list of declarations which are the same 
 	 * across different selectors
 	 */
-	private final List<List<Declaration>> forDeclarations;
+	protected final List<List<Declaration>> forDeclarations;
 	
 	/*
 	 * Although in the Declaration class we have a reference 
 	 * to the parent Selector, but we also keep references 
 	 * to the selectors as well.
 	 */
-	private final Set<Selector> forSelectors;
+	protected final Set<Selector> forSelectors;
 	
-	public IdenticalDeclarations() {
-		super(DuplicationType.IDENTICAL_PROPERTY_AND_VALUE);
+	protected static DuplicationType duplicationType;
+	
+	public TypeOneDuplication() {
+		duplicationType = DuplicationType.TYPE_I;
 		forDeclarations = new ArrayList<>();
 		forSelectors = new HashSet<>();
 	}
@@ -51,6 +54,10 @@ public class IdenticalDeclarations extends Duplication {
 		return forSelectors.size();
 	}
 	
+	public Set<Selector> getSelectors() {
+		return forSelectors;
+	}
+	
 	/**
 	 * Add a new but distinct selector to the set
 	 * of selectors.
@@ -62,44 +69,6 @@ public class IdenticalDeclarations extends Duplication {
 		forSelectors.add(selector);
 	}
 	
-	/**
-	 * Adds a new declaration to the list of declarations.
-	 * When a declaration is added, if it is equal to one
-	 * of the existing declarations, they would be added to
-	 * the same list. If not, another list for containing this
-	 * declaration (and all other future declarations which are
-	 * the same with this declaration) would be created.
-	 * @param declaration Declaration to be added.
-	 * @return Returns true if the addition is successful.
-	 */
-	public boolean addDeclaration(Declaration declaration) {
-		boolean added = false;
-		for (List<Declaration> declarations : forDeclarations) {
-			if (declarations.get(0)!= null && 
-					declarations.get(0).equals(declaration)) {
-				// If we can find the declaration in one of the lists, add it to that list.
-				// Consider looking at the Declaration.equals() method!
-				declarations.add(declaration);
-				added = true;
-			}
-		}
-		if (!added) {
-			/* So we could not find the list containing a similar
-			 * declaration to the new declaration (or the
-			 * addition was unsuccessful). So create a list, add the new
-			 * declaration to it, and add the list to the list of lists! 
-			 */
-			ArrayList<Declaration> newList = new ArrayList<>();
-			newList.add(declaration);
-			forDeclarations.add(newList);
-			added = true;
-		}
-		// Lets add the parent selector as well.
-		if (added)
-			forSelectors.add(declaration.getSelector());
-		
-		return added;
-	}
 	
 	@Override
 	public String toString() {
@@ -133,7 +102,7 @@ public class IdenticalDeclarations extends Duplication {
 		if (!super.equals(obj))
 			return false;
 		
-		IdenticalDeclarations otherDuplication = (IdenticalDeclarations)obj;
+		TypeOneDuplication otherDuplication = (TypeOneDuplication)obj;
 		
 		if (forSelectors.size() != otherDuplication.forSelectors.size() || 
 				!forSelectors.containsAll(otherDuplication.forSelectors))
@@ -167,7 +136,7 @@ public class IdenticalDeclarations extends Duplication {
 	
 	/**
 	 * TODO: The implementation is buggy and is not
-	 * in conformance with the equals method. 
+	 * in conformity with the equals method. 
 	 */
 	@Override
 	public int hashCode() {
@@ -193,17 +162,33 @@ public class IdenticalDeclarations extends Duplication {
 		return false;
 	}
 
-	public void addAllDeclarations(List<Declaration> currentEqualDeclarations) {
-		for (Declaration declaration : currentEqualDeclarations)
-			addDeclaration(declaration);
+	/**
+	 * Adds a list of declarations
+	 * @param declarations
+	 */
+	public void addAllDeclarations(List<Declaration> declarations) {
+		for (Declaration declaration : declarations)
+			forSelectors.add(declaration.getSelector());
+		forDeclarations.add(declarations);
 	}
 
-	public boolean hasAllSelectorsForADuplication(List<Declaration> currentEqualDeclarations) {
+	/**
+	 * Determines whether all selectors which are the containers of the given
+	 * declarations exist in the given selectors
+	 * @param declarations
+	 * @return
+	 */
+	public boolean hasAllSelectorsForADuplication(List<Declaration> declarations) {
 		List<Selector> parentSelectors = new ArrayList<>();
-		for (Declaration declaration : currentEqualDeclarations)
+		for (Declaration declaration : declarations)
 			parentSelectors.add(declaration.getSelector());
 		return (parentSelectors.size() == forSelectors.size() && 
 				forSelectors.containsAll(parentSelectors));
+	}
+
+	@Override
+	public DuplicationType getType() {
+		return duplicationType;
 	}
 
 }

@@ -1,4 +1,4 @@
-package duplication;
+package analyser.duplication;
 
 import java.util.Collection;
 import java.util.Iterator;

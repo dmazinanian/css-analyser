@@ -53,12 +53,12 @@ public final class IOHelper {
 				}
 			}
 
-		} else {
-
-			folder.mkdir();
-			LOGGER.info("Created folder " + folderPath);
-
 		}
+
+		folder.mkdir();
+		LOGGER.info("Created folder " + folderPath);
+
+		
 
 	}
 
@@ -67,7 +67,8 @@ public final class IOHelper {
 	}
 
 	public static FileWriter openFile(String path) throws IOException {
-		FileWriter fw = new FileWriter(new File(path));
+		File f = new File(path);
+		FileWriter fw = new FileWriter(f);
 		return fw;
 	}
 

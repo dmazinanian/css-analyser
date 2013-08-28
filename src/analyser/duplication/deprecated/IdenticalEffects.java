@@ -1,7 +1,10 @@
-package duplication;
-
+package analyser.duplication.deprecated;
+/*
 import java.util.ArrayList;
 import java.util.List;
+
+import duplication.Duplication;
+import duplication.DuplicationType;
 
 import CSSModel.declaration.Declaration;
 import CSSModel.selectors.Selector;
@@ -12,7 +15,7 @@ import CSSModel.selectors.Selector;
  * all the repeating declarations and just keep one.
  * 
  * @author Davood Mazinanian
- */
+ * /
 public class IdenticalEffects extends Duplication {
 
 	// The first selector of this list would be representative
@@ -61,4 +64,4 @@ public class IdenticalEffects extends Duplication {
 	}
 
 	// TODO: equals() and hashCode()
-}
+}*/

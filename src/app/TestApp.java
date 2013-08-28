@@ -1,19 +1,19 @@
 package app;
 
-import java.io.File;
+//import java.io.File;
 import java.io.IOException;
 
-import org.apache.commons.io.FileUtils;
+//import org.apache.commons.io.FileUtils;
 
 import com.crawljax.browser.EmbeddedBrowser.BrowserType;
-import com.crawljax.condition.NotRegexCondition;
+//import com.crawljax.condition.NotRegexCondition;
 import com.crawljax.core.CrawljaxRunner;
 import com.crawljax.core.configuration.BrowserConfiguration;
 import com.crawljax.core.configuration.CrawljaxConfiguration;
 import com.crawljax.core.configuration.CrawljaxConfiguration.CrawljaxConfigurationBuilder;
 import com.crawljax.core.configuration.Form;
 import com.crawljax.core.configuration.InputSpecification;
-import com.crawljax.core.plugin.OnInvariantViolationPlugin;
+//import com.crawljax.core.plugin.OnInvariantViolationPlugin;
 import com.crawljax.plugins.crawloverview.CrawlOverview;
 
 public class TestApp {

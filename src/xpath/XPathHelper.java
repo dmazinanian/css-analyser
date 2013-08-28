@@ -216,13 +216,19 @@ public final class XPathHelper {
 						 * Select the element if it has no children and text nodes 
 						 * xpath must be element[not(*) and not(normalize-space())]
 						 */
-						xpathConditions.add(String.format("not(*) and not(normalize-space())", elementSelector.getSelectedElementName().toUpperCase()));
+						xpathConditions.add("not(*) and not(normalize-space())");
 						break;
 					case "checked":
 						/*
 						 * Select only input and option elements which are selected 
 						 */
 						xpathConditions.add("(@selected or @checked) and (name() = 'INPUT' or name() = 'OPTION')");
+						break;
+					case "contains": 
+						/*
+						 * Seems to be deprecated, but we are supporting it
+						 */
+						xpathConditions.add(String.format("contains(., '%s')", pseudoClass.getValue()));
 						break;
 					case "not":
 						PseudoNegativeClass negPseudoClass = (PseudoNegativeClass)pseudoClass;
@@ -235,7 +241,6 @@ public final class XPathHelper {
 							insideConditions += insideCondition;
 						}
 						xpathConditions.add(String.format(finalCondition, insideConditions));
-						// TODO: test it!
 						break;
 					}
 				}

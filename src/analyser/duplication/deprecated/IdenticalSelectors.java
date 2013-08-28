@@ -1,7 +1,10 @@
-package duplication;
-
+package analyser.duplication.deprecated;
+/*
 import java.util.ArrayList;
 import java.util.List;
+
+import duplication.Duplication;
+import duplication.DuplicationType;
 
 import CSSModel.selectors.Selector;
 
@@ -10,7 +13,7 @@ public class IdenticalSelectors extends Duplication {
 	/*
 	 * This field is used to keep all the repeating selectors
 	 * of the same type.
-	 */
+	 * /
 	private final List<Selector> forWhichSelector;
 	
 	public IdenticalSelectors(Selector selector) {
@@ -22,7 +25,7 @@ public class IdenticalSelectors extends Duplication {
 	/**
 	 * Adds a selector object which is repeating
 	 * @param selector
-	 */
+	 * /
 	public void addSelector(Selector selector) {
 		forWhichSelector.add(selector);
 	}
@@ -31,7 +34,7 @@ public class IdenticalSelectors extends Duplication {
 	 * Returns the number of cases that the 
 	 * selector is repeating.
 	 * @return
-	 */
+	 * /
 	public int getNumberOfOccurrences() {
 		return forWhichSelector.size();
 	}
@@ -67,4 +70,4 @@ public class IdenticalSelectors extends Duplication {
 			string += "\t" + selector.getLineNumber() + " : " + selector.getColumnNumber() + "\n";
 		return string;
 	}
-}
+}*/

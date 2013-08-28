@@ -3,8 +3,15 @@ package analyser;
 import io.IOHelper;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+ 
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +19,15 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import analyser.duplication.Duplication;
+import analyser.duplication.DuplicationFinder;
+import analyser.duplication.DuplicationsList;
+import analyser.duplication.ItemSetList;
+import analyser.duplication.TypeOneDuplication;
+
 import parser.CSSParser;
 import CSSModel.StyleSheet;
+import CSSModel.declaration.value.DeclarationEquivalentValue;
 import CSSModel.selectors.AtomicSelector;
 import CSSModel.selectors.Selector;
 import dom.DOMHelper;
@@ -32,6 +46,8 @@ public class CSSAnalyser {
 	
 	private final Model model;
 	
+	private final String analaysedWebSitename;
+	
 	/**
 	 * Through this constructor, one should pass the
 	 * folder containing all CSS files. Program will search
@@ -39,11 +55,12 @@ public class CSSAnalyser {
 	 * analysis for these files 
 	 * @param cssContainingFolder
 	 */
-	public CSSAnalyser(String domStateHTMLPath, String cssContainingFolder) {
+	public CSSAnalyser(String domStateHTMLPath, String cssContainingFolder, String websiteName) {
 		
 		folderPath = cssContainingFolder;
 		Document document = DOMHelper.getDocument(domStateHTMLPath);
 		model = new Model(document);
+		analaysedWebSitename = websiteName;
 		parseStyleSheets();
 		
 	}
@@ -78,15 +95,27 @@ public class CSSAnalyser {
 	 * @throws IOException
 	 */
 	public void analyse() throws IOException {
+		float sumOfAverages = 0,
+			  totalSelectors = 0,
+			  totalTypeISelectors = 0;
+		FileWriter summaryFileWriter = IOHelper.openFile(folderPath + "/summary.txt");
+		IOHelper.writeFile(summaryFileWriter, String.format("\r\n\r%45s\t'%s'\n\r\n\r", "STATISTICS FOR", analaysedWebSitename));
+		IOHelper.writeFile(summaryFileWriter, String.format("%45s\t%15s\t%15s\t%15s\n\r\n\r", "FILE NAME", "#SELECTORS", "#TYPE I", "%"));
+		
+		for (StyleSheet styleSheet: model.getStyleSheets()) {
+		
+			totalSelectors+=styleSheet.getAllSelectors().size();
+		
+		}
 		
 		// Do the analysis for each CSS file
 		for (StyleSheet styleSheet: model.getStyleSheets()) {
 			
 			// String filePath = styleSheet.getFilePath();
 			
-			//LOGGER.info(styleSheet);
+			//System.out.println(styleSheet);
 			
-			for (Selector selector : styleSheet.getAllSelectors()) {
+			/*for (Selector selector : styleSheet.getAllSelectors()) {
 				if (selector instanceof AtomicSelector) {
 					AtomicSelector atomicSelector = (AtomicSelector)selector;
 					String XPath = xpath.XPathHelper.AtomicSelectorToXPath(atomicSelector);
@@ -100,17 +129,48 @@ public class CSSAnalyser {
 						System.out.println(e.getNodeName() + e.getTextContent());
 					}
 				}
-			}
+			}*/
 			
-			/*LOGGER.info("Finding different kinds of duplication in " + filePath);
+			String filePath = styleSheet.getFilePath(); 
+			
+			LOGGER.info("Finding different kinds of duplication in " + filePath);
 			
 			DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
+			duplicationFinder.findDuplications();
 
 			String folderName = filePath + ".analyse";
 			
-			FileUtils.createFolder(folderName, true);
+			IOHelper.createFolder(folderName, true);
+			
+			FileWriter fw = IOHelper.openFile(folderName + "/typeI.txt");
+			
+			Set<Selector> selectors = new HashSet<>();
+			
+			for (Duplication duplication : duplicationFinder.typeOneDuplications) {
+				selectors.addAll(((TypeOneDuplication)duplication).getSelectors());
+				IOHelper.writeFile(fw, duplication.toString());
+			}
+			IOHelper.closeFile(fw);
+			
+			float currentAverage = 100 * selectors.size() / (float)styleSheet.getAllSelectors().size();
+			
+			sumOfAverages += currentAverage * (styleSheet.getAllSelectors().size() / (float)totalSelectors);
+			//totalSelectors += styleSheet.getAllSelectors().size();
+			totalTypeISelectors += selectors.size(); 
+			
+			IOHelper.writeFile(summaryFileWriter, String.format("%45s\t%15d\t%15d\t%15.3f\n", 
+													filePath.substring(filePath.lastIndexOf('\\') + 1), 
+													styleSheet.getAllSelectors().size(), 
+													selectors.size(), 
+													currentAverage));
+			
+			fw = IOHelper.openFile(folderName + "/typeII.txt");
+			for (Duplication duplication : duplicationFinder.typeTwoDuplications)
+				IOHelper.writeFile(fw, duplication.toString());
+			IOHelper.closeFile(fw);
+			
 				
-			LOGGER.info("Finding identical selectors in " + filePath);
+			/*LOGGER.info("Finding identical selectors in " + filePath);
 			FileWriter fw = FileUtils.openFile(folderName + "/identical_selectors.txt");
 			DuplicationsList identicalSelectorsDuplication = duplicationFinder.findIdenticalSelectors();
 			for (Duplication duplication : identicalSelectorsDuplication)
@@ -144,7 +204,7 @@ public class CSSAnalyser {
 				FileUtils.writeFile(fw, duplication.toString());
 			}
 			FileUtils.closeFile(fw);
-			
+			*/
 			
 			final int MIN_SUPPORT_COUNT = 2;
 			
@@ -155,20 +215,28 @@ public class CSSAnalyser {
 			List<ItemSetList> l = duplicationFinder.apriori(MIN_SUPPORT_COUNT);
 			long end = threadMXBean.getCurrentThreadCpuTime();
 			long time = (end - start) / 1000000L;
-			fw = FileUtils.openFile(folderName + "/apriori.txt");
+			fw = IOHelper.openFile(folderName + "/apriori.txt");
 			for (ItemSetList itemsetList : l) {
-				FileUtils.writeFile(fw, itemsetList.toString());
+				IOHelper.writeFile(fw, itemsetList.toString());
 			}
-			String s = "CPU time (miliseconds) for apriori algithm: %s\n" ;
-			FileUtils.writeFile(fw, String.format(s, time));
-			FileUtils.closeFile(fw);
+			String s = "CPU time (miliseconds) for apriori algorithm: %s\n" ;
+			IOHelper.writeFile(fw, String.format(s, time));
+			IOHelper.closeFile(fw);
 			
-			LOGGER.info(s);*/
+			LOGGER.info(s);
 
 			
 			
 			LOGGER.info("Done");
 		}
+
+		IOHelper.writeFile(summaryFileWriter, String.format("\n\r\n\r%45s\t%15.3f\t%15.3f\t%15.3f", 
+															"Average", 
+															totalSelectors / (float)model.getStyleSheets().size(), 
+															totalTypeISelectors / (float)model.getStyleSheets().size(), 
+															sumOfAverages )
+							);
+		IOHelper.closeFile(summaryFileWriter);
 	}
 
 	

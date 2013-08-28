@@ -45,7 +45,7 @@ public class CSSAnalyserApp {
 			// Remove .html
 			String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
 			
-			CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), outputFolderPath + "/css/" + correspondingCSSFolderName);
+			CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), outputFolderPath + "/css/" + correspondingCSSFolderName, PAGE_URI);
 			cssAnalyser.analyse();
 			
 		}

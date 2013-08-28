@@ -3,9 +3,10 @@ package dom;
 import java.util.ArrayList;
 import java.util.List;
 
+import CSSModel.StyleSheet;
+
 import org.w3c.dom.Document;
 
-import CSSModel.StyleSheet;
 
 /**
  * A model contains one DOM state and all its corresponding external stylesheets.

@@ -1,10 +1,11 @@
-package CSSModel;
+package CSSHelper;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public final class NamedColors {
 
+	// TODO Its better to have an external file like an XML
 	@SuppressWarnings("serial")
 	private static final Map<String, String> colorValues = new HashMap<String, String>() {
 		{
@@ -161,8 +162,13 @@ public final class NamedColors {
 			put("yellowgreen", "rgba(154, 205, 50, 1.0)");
 		}
 	};
-
-	public static String getRGBAColorCSSString(String namedColor) {
+	
+	/**
+	 * Returns the RGBA equivalence for named colors
+	 * @param namedColor
+	 * @return
+	 */
+	public static String getRGBAColor(String namedColor) {
 		return colorValues.get(namedColor);
 	}
 }

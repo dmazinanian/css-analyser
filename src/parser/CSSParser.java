@@ -3,11 +3,12 @@ package parser;
 import java.io.InputStream;
 import java.net.URL;
 
+import CSSModel.StyleSheet;
+
 import org.w3c.css.sac.InputSource;
 import org.w3c.css.sac.Parser;
 import org.w3c.css.sac.helpers.ParserFactory;
 
-import CSSModel.StyleSheet;
 
 public class CSSParser {
 
@@ -19,8 +20,7 @@ public class CSSParser {
 
 	public CSSParser(String path) {
 
-		System.setProperty("org.w3c.css.sac.parser",
-				"org.w3c.flute.parser.Parser");
+		System.setProperty("org.w3c.css.sac.parser", "org.w3c.flute.parser.Parser");
 
 		this.path = path;
 	}

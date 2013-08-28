@@ -1,7 +1,10 @@
-package duplication;
-
+package analyser.duplication.deprecated;
+/*
 import java.util.ArrayList;
 import java.util.List;
+
+import duplication.Duplication;
+import duplication.DuplicationType;
 
 import CSSModel.declaration.Declaration;
 import CSSModel.selectors.Selector;
@@ -12,7 +15,7 @@ import CSSModel.selectors.Selector;
  * same values).
  * @author Davood Mazinanian
  *
- */
+ * /
 public class OverriddenProperties extends Duplication {
 
 	private final Selector forSelector;
@@ -66,4 +69,4 @@ public class OverriddenProperties extends Duplication {
 	}
 
 	// TODO: implement equals and hashCode
-}
+}*/

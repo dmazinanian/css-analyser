@@ -11,6 +11,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import CSSModel.declaration.value.DeclarationValue;
+import CSSModel.declaration.value.ValueType;
 import CSSModel.selectors.Selector;
 
 /**
@@ -96,15 +98,15 @@ public class ShorthandDeclaration extends Declaration {
 			
 			//background-color: 	Specifies the background color to be used				1
 			// Background color could only become at the final-bg-layer so it is safe to look in all layers 
-			DeclarationValue bgColorValue = searchVorValue(values, "rgba(.*)");
+			DeclarationValue bgColorValue = searchVorValue(declarationValues, "rgba(.*)");
 			if (bgColorValue == null) { // There is not an rgba in the converted values for this property 
-				bgColorValue = new DeclarationValue("transparent");
+				bgColorValue = new DeclarationValue("transparent", ValueType.COLOR);
 			}
-			Declaration bgColorDeclaration = new Declaration("background-color", bgColorValue , belongsTo, lineNumber, colNumber, isImportant);
+			Declaration bgColorDeclaration = new Declaration("background-color", bgColorValue , belongsToSelector, lineNumber, colNumber, isImportant);
 			constitutiveDeclarations.add(bgColorDeclaration);
 
 			// Try to separate the layers using comma
-			DeclarationValue comma = new DeclarationValue(",");
+			DeclarationValue comma = new DeclarationValue(",", ValueType.SEPARATOR);
 			List<DeclarationValue> currentLayerValues = new ArrayList<>();
 			List<DeclarationValue> bgImageValues = new ArrayList<>();
 			List<DeclarationValue> bgSizeValues = new ArrayList<>();
@@ -114,9 +116,9 @@ public class ShorthandDeclaration extends Declaration {
 			List<DeclarationValue> bgOriginValues = new ArrayList<>();
 			
 			int i = -1;
-			while (++i < values.size()) {
-				DeclarationValue currentValue = values.get(i);
-				if (currentValue.equals(comma) || i == values.size() - 1) {
+			while (++i < declarationValues.size()) {
+				DeclarationValue currentValue = declarationValues.get(i);
+				if (currentValue.equals(comma) || i == declarationValues.size() - 1) {
 					
 					DeclarationValue backgroundImage = searchVorValue(currentLayerValues, "url(.*)");
 					if (backgroundImage != null)
@@ -157,7 +159,7 @@ public class ShorthandDeclaration extends Declaration {
 					if (round.equals("round"))
 						bgSizeString += " " + round;
 					
-					bgSizeValues.add(new DeclarationValue(bgSizeString));
+					//bgSizeValues.add(new DeclarationValue(bgSizeString, ValueType.UNKNOWN));
 					
 						
 					// Doing background-position
@@ -248,28 +250,28 @@ public class ShorthandDeclaration extends Declaration {
 					}
 					
 					if (posFound) {
-						bgPositionValues.add(new DeclarationValue(positionLeft + " " + positionTop));
+						//bgPositionValues.add(new DeclarationValue(positionLeft + " " + positionTop));
 					}
 						
 					
 					// Now doing background repeat
 					DeclarationValue backgroundRepeat = searchVorValue(currentLayerValues, "no-repeat|repeat-x|repeat-y");
 					if (backgroundRepeat == null)
-						backgroundRepeat = new DeclarationValue("repeat");
+						//backgroundRepeat = new DeclarationValue("repeat");
 					
 					bgRepatValues.add(backgroundRepeat);
 					
 					// Now doing background origin
 					DeclarationValue backgroundOrigin = searchVorValue(currentLayerValues, "border-box|content-box");
-					if (backgroundOrigin == null)
-						backgroundOrigin = new DeclarationValue("padding-box");
+					if (backgroundOrigin == null);
+						//backgroundOrigin = new DeclarationValue("padding-box");
 					
 					bgRepatValues.add(backgroundRepeat);
 					
 					// Now doing background attachment
 					DeclarationValue backgroundAttachment = searchVorValue(currentLayerValues, "fixed|local");
-					if (backgroundAttachment == null)
-						backgroundAttachment = new DeclarationValue("scroll");
+					if (backgroundAttachment == null);
+						//backgroundAttachment = new DeclarationValue("scroll");
 					
 					bgAttachementValues.add(backgroundAttachment);
 					
@@ -280,9 +282,9 @@ public class ShorthandDeclaration extends Declaration {
 			}
 			//background-image		Specifies ONE or MORE background images to be used		1 (3)
 			// Add the Default value if missing
-			if (bgImageValues.size() == 0)
-				bgImageValues.add(new DeclarationValue("none"));
-			Declaration bgImageDeclaration = new Declaration("background-image", bgImageValues, belongsTo, lineNumber, colNumber, isImportant, true);
+			if (bgImageValues.size() == 0);
+				//bgImageValues.add(new DeclarationValue("none"));
+			/*Declaration bgImageDeclaration = new Declaration("background-image", bgImageValues, belongsTo, lineNumber, colNumber, isImportant, true);
 			constitutiveDeclarations.add(bgImageDeclaration);
 			
 			//background-size		Specifies the size of the background images				3
@@ -308,7 +310,7 @@ public class ShorthandDeclaration extends Declaration {
 			//						scrolls with the rest of the page						1
 			Declaration bgAttachmentDeclaration = new Declaration("background-attachment", bgAttachementValues, belongsTo, lineNumber, colNumber, isImportant, true);
 			constitutiveDeclarations.add(bgAttachmentDeclaration);
-			
+			*/
 			
 			
 			break;

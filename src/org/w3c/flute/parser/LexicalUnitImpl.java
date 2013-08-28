@@ -23,7 +23,9 @@ public class LexicalUnitImpl implements LexicalUnit {
 	public static final short RGBA_COLOR = 43;
 	public static final short HSL_COLOR = 44;
 	public static final short HSLA_COLOR = 45;
-	public static final short PARAN = 46;
+	//public static final short PARAN = 46;
+	public static final short HEX_COLOR = 46;
+	public static final short TURN = 47;
 	
 	LexicalUnit prev;
 	LexicalUnit next;
@@ -80,6 +82,13 @@ public class LexicalUnitImpl implements LexicalUnit {
 			LexicalUnitImpl params) {
 		this(type, line, column, previous);
 		this.params = params;
+	}
+
+	public LexicalUnitImpl(short type, int line, int column,
+			LexicalUnitImpl previous, String fname, String string) {
+		this(type, line, column, previous);
+		this.fname = fname;
+		this.s = string;
 	}
 
 	public int getLineNumber() {
@@ -144,6 +153,8 @@ public class LexicalUnitImpl implements LexicalUnit {
 			return "rad";
 		case SAC_GRADIAN:
 			return "grad";
+		case TURN:
+			return "turn";
 		case SAC_MILLISECOND:
 			return "ms";
 		case SAC_SECOND:
@@ -234,13 +245,14 @@ public class LexicalUnitImpl implements LexicalUnit {
 		case SAC_PERCENTAGE:
 		case SAC_DEGREE:
 		case SAC_GRADIAN:
+		case TURN:
 		case SAC_RADIAN:
 		case SAC_MILLISECOND:
 		case SAC_SECOND:
 		case SAC_HERTZ:
 		case SAC_KILOHERTZ:
 		case SAC_DIMENSION:
-			String fs = null;
+			//String fs = null;
 			int i = (int) f;
 			if (((float) i) == f) {
 				text = i + getDimensionUnitText();
@@ -274,9 +286,9 @@ public class LexicalUnitImpl implements LexicalUnit {
 		case SAC_SUB_EXPRESSION:
 			text = getSubValues().toString();
 			break;
-		case PARAN:
-			text = "(" + getSubValues().toString() + ")";
-			break;
+		//case PARAN:
+		//	text = "(" + getSubValues().toString() + ")";
+		//	break;
 		default:
 			text = "@unknown ";
 			break;
@@ -366,6 +378,11 @@ public class LexicalUnitImpl implements LexicalUnit {
 			LexicalUnitImpl previous, float v) {
 		return new LexicalUnitImpl(line, column, previous, SAC_GRADIAN, null, v);
 	}
+	
+	static LexicalUnitImpl createTURN(int line, int column,
+			LexicalUnitImpl previous, float v) {
+		return new LexicalUnitImpl(line, column, previous, TURN, null, v);
+	}
 
 	static LexicalUnitImpl createMS(int line, int column,
 			LexicalUnitImpl previous, float v) throws ParseException {
@@ -443,6 +460,11 @@ public class LexicalUnitImpl implements LexicalUnit {
 		return new LexicalUnitImpl(SAC_COUNTERS_FUNCTION, line, column,
 				previous, "counters", (LexicalUnitImpl) params);
 	}
+	
+	static LexicalUnitImpl createHexColor(int line, int column, LexicalUnitImpl previous, String hexValue) {
+		return new LexicalUnitImpl(HEX_COLOR, line, column, previous,
+				"color", hexValue);
+	}
 
 	static LexicalUnitImpl createRGBColor(int line, int column,
 			LexicalUnitImpl previous, LexicalUnit params) {
@@ -493,8 +515,8 @@ public class LexicalUnitImpl implements LexicalUnit {
 		return new LexicalUnitImpl(SAC_OPERATOR_SLASH, line, column, previous);
 	}
 
-	public static LexicalUnitImpl createParan(int beginLine, int beginColumn,
+	/*public static LexicalUnitImpl createParan(int beginLine, int beginColumn,
 			LexicalUnitImpl prev, LexicalUnit param) {
 		return new LexicalUnitImpl(PARAN, beginLine, beginColumn, prev, (LexicalUnitImpl)param);
-	}
+	}*/
 }

@@ -28,7 +28,7 @@ public abstract class Selector {
 	}
 
 	public Selector(int fileLineNumber, int fileColNumber) {
-		lineNumber = fileColNumber;
+		lineNumber = fileLineNumber;
 		columnNumber = fileColNumber;
 		declarations = new ArrayList<>();
 		

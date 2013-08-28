@@ -4,6 +4,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import CSSHelper.ColorHelper;
+import CSSHelper.NamedColors;
+import CSSModel.StyleSheet;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.css.sac.CSSException;
@@ -39,14 +43,13 @@ import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
 import org.w3c.flute.parser.selectors.ContainsCondition;
 import org.w3c.flute.parser.selectors.PseudoElementCondition;
 
-import dom.DOMHelper;
 
-import CSSModel.NamedColors;
-import CSSModel.StyleSheet;
 import CSSModel.conditions.SelectorCondition;
 import CSSModel.conditions.SelectorConditionType;
 import CSSModel.declaration.Declaration;
-import CSSModel.declaration.DeclarationValue;
+import CSSModel.declaration.value.DeclarationEquivalentValue;
+import CSSModel.declaration.value.DeclarationValue;
+import CSSModel.declaration.value.ValueType;
 import CSSModel.media.AtomicMedia;
 import CSSModel.media.GroupedMedia;
 import CSSModel.media.Media;
@@ -105,28 +108,27 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 	@Override
 	public void ignorableAtRule(String arg0) throws CSSException {
-		// TODO the rules starting with @ which are ignorable
+		// the rules starting with @ which are ignorable
 	}
 
 	@Override
-	public void importStyle(String arg0, SACMediaList arg1, String arg2)
+	public void importStyle(String path, SACMediaList forMedia, String arg2)
 			throws CSSException {
-		//According to CSS3 '@import' rules must occur before all rules other than '@charset' rules
+		//According to CSS3 '@import' rules must occur before all rules other than '@charset' rule
 		File file = new File(styleSheet.getFilePath());
 		String parentFolder = file.getParent(); 
-		CSSParser parser = new CSSParser(parentFolder + "/" + arg0);
+		CSSParser parser = new CSSParser(parentFolder + "/" + path);
 		styleSheet.addSelectors(parser.parseAndCreateStyleSheetObject());
 	}
 
 	@Override
-	public void namespaceDeclaration(String arg0, String arg1)
-			throws CSSException {
+	public void namespaceDeclaration(String arg0, String arg1) throws CSSException {
 	}
 
 	@Override
-	public void startMedia(SACMediaList arg0) throws CSSException {
+	public void startMedia(SACMediaList mediaList) throws CSSException {
 		if (currentMedia == null) {
-			currentMedia = getMedia(arg0);
+			currentMedia = getMedia(mediaList);
 		} else {
 			GroupedMedia groupedMedia;
 			if (currentMedia instanceof AtomicMedia) {
@@ -135,7 +137,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			} else {
 				groupedMedia = (GroupedMedia)currentMedia;
 			}
-			Media tempMedia = getMedia(arg0);
+			Media tempMedia = getMedia(mediaList);
 			if (tempMedia instanceof AtomicMedia)
 				groupedMedia.addMedia((AtomicMedia)tempMedia);
 			else 
@@ -144,27 +146,27 @@ public class CSSDocumentHandler implements DocumentHandler {
 		}	
 	}
 	
-	private Media getMedia(SACMediaList arg0) {
+	private Media getMedia(SACMediaList sacMedia) {
 		Media media;
-		if (arg0.getLength() == 1) {
-			media = new AtomicMedia(arg0.item(0));
+		if (sacMedia.getLength() == 1) {
+			media = new AtomicMedia(sacMedia.item(0));
 		} else {
 			GroupedMedia groupedMedia = new GroupedMedia();
-			for (int i = 0; i < arg0.getLength(); i++)
-				groupedMedia.addMedia(new AtomicMedia(arg0.item(i)));
+			for (int i = 0; i < sacMedia.getLength(); i++)
+				groupedMedia.addMedia(new AtomicMedia(sacMedia.item(i)));
 			media = groupedMedia;
 		}
 		return media;
 	}
 
 	@Override
-	public void endMedia(SACMediaList arg0) throws CSSException {
+	public void endMedia(SACMediaList mediaList) throws CSSException {
 		if (currentMedia instanceof AtomicMedia) {
 			currentMedia = null;
 		} else {
 			GroupedMedia groupedMedia = (GroupedMedia)currentMedia;
-			for (int i = 0; i < arg0.getLength(); i++) {
-				groupedMedia.removeMedia(arg0.item(i));
+			for (int i = 0; i < mediaList.getLength(); i++) {
+				groupedMedia.removeMedia(mediaList.item(i));
 			}
 			if (groupedMedia.size() == 1)
 				currentMedia = new AtomicMedia(groupedMedia.getAtomicMedia(0).getMediaName());
@@ -174,14 +176,14 @@ public class CSSDocumentHandler implements DocumentHandler {
 	}
 
 	@Override
-	public void startSelector(SelectorList arg0) throws CSSException {
-		startSelector(arg0, null);
+	public void startSelector(SelectorList selectorList) throws CSSException {
+		throw new CSSException("No locator is provided.");
 	}
 
-	public void startSelector(SelectorList arg0, Locator loc) {
+	public void startSelector(SelectorList selectorList, Locator loc) {
 		numberOfVisitedElements++;
 
-		currentSelector = getSelector(arg0, loc);
+		currentSelector = getSelector(selectorList, loc);
 
 		if (currentSelector != null)
 			styleSheet.addSelector(currentSelector);
@@ -190,174 +192,51 @@ public class CSSDocumentHandler implements DocumentHandler {
 	}
 
 	@Override
-	public void endSelector(SelectorList arg0) throws CSSException {
+	public void endSelector(SelectorList selectorList) throws CSSException {
 		currentSelector = null;
 	}
 
 	@Override
-	public void property(String arg0, LexicalUnit arg1, boolean arg2)
+	public void property(String propertyName, LexicalUnit values, boolean isImportant)
 			throws CSSException {
 
 		// property(arg0, arg1, arg2, null);
 		throw new RuntimeException("No locator provided");
 	}
 
-	public void property(String arg0, LexicalUnit arg1, boolean arg2,
-			Locator locator) throws CSSException {
-
-		List<DeclarationValue> valuesList = getAllValues(arg1);
-
-		Declaration newDeclaration = null;
-
-		//if (ShorthandDeclaration.isShorthandProperty(arg0)) {
-		//	newDeclaration = new ShorthandDeclaration(arg0, valuesList, currentSelector, arg2);
-		//} else {
-
-			newDeclaration = new Declaration(arg0, valuesList, currentSelector,
-					locator.getLineNumber(), locator.getColumnNumber(), arg2);
-		//}
-
-		if (currentSelector != null)
-			currentSelector.addCSSRule(newDeclaration);
-
-	}
-
-	// LexicalUnit is a linked list of values for a css property
-	private List<DeclarationValue> getAllValues(LexicalUnit value) {
-
-		List<DeclarationValue> accumulator = new ArrayList<>();
-
-		if (value != null) {
-			do {
-				accumulator.add(new DeclarationValue(getValue(value))); //, value.getLexicalUnitType()));
-				value = value.getNextLexicalUnit();
-			} while (value != null);
-		}
+	public void property(String propertyName, LexicalUnit values, boolean isImportant, Locator locator) {
 		
-		return accumulator;
-	}
-
-	private String getValue(LexicalUnit value) {
-		if (value == null)
-			return "";
-		switch (value.getLexicalUnitType()) {
-		case LexicalUnit.SAC_ATTR:
-			return "attr(" + value.getStringValue() + ")";
-		case LexicalUnit.SAC_IDENT:
-			String stringValue = value.getStringValue();
-			String colorEquivalent = getColorEquivalent(stringValue);
-			if (colorEquivalent != null)
-				stringValue = colorEquivalent;
-			return stringValue;
-		case LexicalUnit.SAC_STRING_VALUE:
-			return "'" + value.getStringValue() + "'";
-		case LexicalUnit.SAC_RGBCOLOR:
-			// flute models the commas as operators so no separator needed
-			return colorValueFromRGB(value.getParameters());
-		case LexicalUnitImpl.RGBA_COLOR:
-			return colorRGBA(value.getParameters());
-		case LexicalUnitImpl.HSL_COLOR:
-		case LexicalUnitImpl.HSLA_COLOR:
-			return colorFromHSLA(value.getParameters());
-		case LexicalUnit.SAC_INTEGER:
-			return String.valueOf(value.getIntegerValue());
-		case LexicalUnit.SAC_REAL:
-			return String.valueOf(value.getFloatValue());
-		case LexicalUnit.SAC_CENTIMETER:
-		case LexicalUnit.SAC_DEGREE:
-		case LexicalUnit.SAC_DIMENSION:
-		case LexicalUnit.SAC_EM:
-		case LexicalUnit.SAC_EX:
-		case LexicalUnit.SAC_GRADIAN:
-		case LexicalUnit.SAC_HERTZ:
-		case LexicalUnit.SAC_KILOHERTZ:
-		case LexicalUnit.SAC_MILLIMETER:
-		case LexicalUnit.SAC_MILLISECOND:
-		case LexicalUnit.SAC_PERCENTAGE:
-		case LexicalUnit.SAC_PICA:
-		case LexicalUnit.SAC_PIXEL:
-		case LexicalUnit.SAC_POINT:
-		case LexicalUnit.SAC_RADIAN:
-		case LexicalUnit.SAC_SECOND:
-			return String.valueOf(value.getFloatValue()
-					+ value.getDimensionUnitText());
-		case LexicalUnit.SAC_URI:
-			return "url('" + value.getStringValue() + "')";
-		case LexicalUnit.SAC_OPERATOR_COMMA:
-			return ",";
-		case LexicalUnit.SAC_COUNTER_FUNCTION:
-		case LexicalUnit.SAC_COUNTERS_FUNCTION:
-		case LexicalUnit.SAC_FUNCTION:
-			return value.getFunctionName() + "("
-					+ addSeparators(getAllValues(value.getParameters()), " ")
-					+ ")";
-		case LexicalUnit.SAC_INHERIT:
-			return "inherit";
-		case LexicalUnit.SAC_OPERATOR_EXP:
-			return "^";
-		case LexicalUnit.SAC_OPERATOR_GE:
-			return ">=";
-		case LexicalUnit.SAC_OPERATOR_GT:
-			return (">");
-		case LexicalUnit.SAC_OPERATOR_LE:
-			return ("<=");
-		case LexicalUnit.SAC_OPERATOR_LT:
-			return ("<");
-		case LexicalUnit.SAC_OPERATOR_MINUS:
-			return ("-");
-		case LexicalUnit.SAC_OPERATOR_MOD:
-			return ("%");
-		case LexicalUnit.SAC_OPERATOR_MULTIPLY:
-			return ("*");
-		case LexicalUnit.SAC_OPERATOR_PLUS:
-			return ("+");
-		case LexicalUnit.SAC_OPERATOR_SLASH:
-			return ("/");
-		case LexicalUnit.SAC_OPERATOR_TILDE:
-			return ("~");
-		case LexicalUnit.SAC_RECT_FUNCTION: {
-			// Just return this as a String
-			return "rect("
-					+ addSeparators(getAllValues(value.getParameters()), " ")
-					+ ")";
+		try {
+			List<DeclarationValue> valuesList = getAllValues(propertyName, values);
+	
+			Declaration newDeclaration = null;
+	
+			newDeclaration = new Declaration(propertyName, valuesList, currentSelector, locator.getLineNumber(), locator.getColumnNumber(), isImportant);
+		
+			if (currentSelector != null)
+				currentSelector.addCSSRule(newDeclaration);
+			
+		} catch (Exception ex) {
+			LOGGER.warn(ex.toString());
 		}
-		case LexicalUnit.SAC_SUB_EXPRESSION:
-			// ?
-		case LexicalUnit.SAC_UNICODERANGE:
-			// Cannot be expressed in CSS2
-		case LexicalUnitImpl.PARAN:
-			return "(" + addSeparators(getAllValues(value.getParameters()), " ") + ")" ;
-		}
-		throw new RuntimeException("Unhandled LexicalUnit type "
-				+ value.getLexicalUnitType());
-	}
-
-	private String addSeparators(List<DeclarationValue> listOfStrings,
-			String separator) {
-		String toReturn = "";
-		for (DeclarationValue dv : listOfStrings)
-			toReturn += dv + separator;
-		return toReturn.substring(0, toReturn.length() - separator.length());
-	}
-
-	private String getColorEquivalent(String stringValue) {
-
-		return NamedColors.getRGBAColorCSSString(stringValue.toLowerCase());
 
 	}
-
-	private Selector getSelector(SelectorList l, Locator loc) {
+	
+	/**
+	 * Gets a {@link Selector} from a SAC Selector List
+	 * @param list a SAC selector list, a list of comma separated SAC selectors
+	 * @param locator SAC Locator pointing to the location of the selector list 
+	 * @return
+	 */
+	private Selector getSelector(SelectorList list, Locator locator) {
 		Selector s = null;
-		if (l.getLength() > 1) {
-			GroupedSelectors groupedSelectors = new GroupedSelectors(
-					loc.getLineNumber(), loc.getColumnNumber());
-			for (int i = 0; i < l.getLength(); i++) {
+		if (list.getLength() > 1) {
+			GroupedSelectors groupedSelectors = new GroupedSelectors(locator.getLineNumber(), locator.getColumnNumber());
+			for (int i = 0; i < list.getLength(); i++) {
 				try {
-					AtomicSelector newAtomicSelector = SACSelectorToAtomicSelector(l
-							.item(i));
-					newAtomicSelector.setLineNumber(loc.getLineNumber());
-					newAtomicSelector.setColumnNumber(loc.getColumnNumber());
-
+					AtomicSelector newAtomicSelector = SACSelectorToAtomicSelector(list.item(i));
+					newAtomicSelector.setLineNumber(locator.getLineNumber());
+					newAtomicSelector.setColumnNumber(locator.getColumnNumber());
 					if (currentMedia != null)
 						newAtomicSelector.setMedia(currentMedia);
 					groupedSelectors.add(newAtomicSelector);
@@ -368,9 +247,9 @@ public class CSSDocumentHandler implements DocumentHandler {
 			s = groupedSelectors;
 		} else {
 			try {
-				s = SACSelectorToAtomicSelector(l.item(0));
-				s.setLineNumber(loc.getLineNumber());
-				s.setColumnNumber(loc.getColumnNumber());
+				s = SACSelectorToAtomicSelector(list.item(0));
+				s.setLineNumber(locator.getLineNumber());
+				s.setColumnNumber(locator.getColumnNumber());
 				if (currentMedia != null)
 					s.setMedia(currentMedia);
 				// styleSheet.addSelector(currentSelector);
@@ -381,10 +260,14 @@ public class CSSDocumentHandler implements DocumentHandler {
 		return s;
 	}
 
-	// Adapted from GWT
-	// http://google-web-toolkit.googlecode.com/svn-history/r7441/trunk/user/src/com/google/gwt/resources/css/GenerateCssAst.java
-	private AtomicSelector SACSelectorToAtomicSelector(
-			org.w3c.css.sac.Selector selector) throws Exception {
+	/**
+	 * Returns an {@link AtomicSelector} from a given SAC selector
+	 * Adapted from GWT http://google-web-toolkit.googlecode.com/svn-history/r7441/trunk/user/src/com/google/gwt/resources/css/GenerateCssAst.java
+	 * @param selector
+	 * @return
+	 * @throws Exception
+	 */
+	private AtomicSelector SACSelectorToAtomicSelector(org.w3c.css.sac.Selector selector) throws Exception {
 		// if (selector instanceof CharacterDataSelector) {
 		// Unimplemented in flute?
 		// }
@@ -393,11 +276,13 @@ public class CSSDocumentHandler implements DocumentHandler {
 			ElementSelectorImpl sacElementSelector = (ElementSelectorImpl) selector;
 			AtomicElementSelector atomicElementSelector = new AtomicElementSelector();
 			String elementName;
+			
 			if (sacElementSelector.getLocalName() == null) {
 				elementName = "*";
 			} else {
 				elementName = sacElementSelector.getLocalName();
 			}
+			
 			atomicElementSelector.setSelectedElementName(elementName);
 
 			return atomicElementSelector;
@@ -405,12 +290,9 @@ public class CSSDocumentHandler implements DocumentHandler {
 		} else if (selector instanceof DescendantSelectorImpl) {
 
 			DescendantSelectorImpl sacDescendantSelector = (DescendantSelectorImpl) selector;
-			AtomicSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector
-					.getAncestorSelector());
-			AtomicSelector childAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector
-					.getSimpleSelector());
-			DescendantSelector s = new DescendantSelector(parentAtomicSelector,
-					childAtomicSelector);
+			AtomicSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getAncestorSelector());
+			AtomicSelector childAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getSimpleSelector());
+			DescendantSelector s = new DescendantSelector(parentAtomicSelector, childAtomicSelector);
 
 			return s;
 
@@ -422,21 +304,16 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 			ChildSelectorImpl sacChildSelectorImpl = (ChildSelectorImpl) selector;
 
-			AtomicSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl
-					.getAncestorSelector());
-			AtomicSelector childAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl
-					.getSimpleSelector());
+			AtomicSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getAncestorSelector());
+			AtomicSelector childAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getSimpleSelector());
 
 			AtomicSelector selectorToReturn;
 
 			if (sacChildSelectorImpl.getSimpleSelector() instanceof PseudoElementSelectorImpl) {
 				selectorToReturn = parentAtomicSelector;
-				PseudoElementSelectorImpl pseudoClass = (PseudoElementSelectorImpl) sacChildSelectorImpl
-						.getSimpleSelector();
+				PseudoElementSelectorImpl pseudoClass = (PseudoElementSelectorImpl) sacChildSelectorImpl.getSimpleSelector();
 
-				((AtomicElementSelector) selectorToReturn)
-						.addPseudoClass(new PseudoClass(pseudoClass
-								.getLocalName()));
+				((AtomicElementSelector) selectorToReturn).addPseudoClass(new PseudoClass(pseudoClass.getLocalName()));
 
 			} else {
 				selectorToReturn = new DirectDescendantSelector(
@@ -446,42 +323,46 @@ public class CSSDocumentHandler implements DocumentHandler {
 			return selectorToReturn;
 
 		} else if (selector instanceof PseudoElementSelectorImpl) {
+			
 			PseudoElementSelectorImpl pseudoElementSelector = (PseudoElementSelectorImpl) selector;
 			AtomicElementSelector atomicElementSelector = new AtomicElementSelector();
-			atomicElementSelector.addPseudoClass(new PseudoClass(
-					pseudoElementSelector.getLocalName()));
+			atomicElementSelector.addPseudoClass(new PseudoClass(pseudoElementSelector.getLocalName()));
 			return atomicElementSelector;
+			
 		} else if (selector instanceof DirectAdjacentSelectorImpl) {
 
 			DirectAdjacentSelectorImpl sacDirectAdjacentSelector = (DirectAdjacentSelectorImpl) selector;
-			AtomicSelector parentSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector
-					.getSelector());
-			AtomicSelector childSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector
-					.getSiblingSelector());
-			return new ImmediatelyAdjacentSelector(parentSelector,
-					childSelector);
+			AtomicSelector parentSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSelector());
+			AtomicSelector childSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSiblingSelector());
+			return new ImmediatelyAdjacentSelector(parentSelector, childSelector);
+			
 		} else if (selector instanceof AdjacentSelector) {
+			
 			AdjacentSelector sacAdjacentSelector = (AdjacentSelector) selector;
-			AtomicSelector parentSelector = SACSelectorToAtomicSelector(sacAdjacentSelector
-					.getSelector());
-			AtomicSelector childSelector = SACSelectorToAtomicSelector(sacAdjacentSelector
-					.getSiblingSelector());
+			AtomicSelector parentSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSelector());
+			AtomicSelector childSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSiblingSelector());
 			return new IndirectAdjacentSelector(parentSelector, childSelector);
+			
 		} else if (selector instanceof ConditionalSelectorImpl) {
 
 			ConditionalSelector sacConditionalSelector = (ConditionalSelectorImpl) selector;
-			AtomicElementSelector atomicElementSelector = (AtomicElementSelector) SACSelectorToAtomicSelector(sacConditionalSelector
-					.getSimpleSelector());
-			getConditions(sacConditionalSelector.getCondition(),
-					atomicElementSelector);
+			AtomicElementSelector atomicElementSelector = (AtomicElementSelector) SACSelectorToAtomicSelector(sacConditionalSelector.getSimpleSelector());
+			getConditions(sacConditionalSelector.getCondition(), atomicElementSelector);
 			return atomicElementSelector;
+			
 		} else {
 			throw new Exception("Selector not supported: " + selector);
 		}
 	}
 
-	private void getConditions(Condition sacCondition,
-			AtomicElementSelector atomicElementSelector) throws Exception {
+	/**
+	 * Adds the conditions (like pseudo classes, etc) to the given selector,
+	 * based on the SAC conditions
+	 * @param sacCondition
+	 * @param atomicElementSelector
+	 * @throws Exception
+	 */
+	private void getConditions(Condition sacCondition, AtomicElementSelector atomicElementSelector) throws Exception {
 		if (sacCondition == null)
 			return;
 		if (sacCondition instanceof AndConditionImpl) {
@@ -582,7 +463,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			if ((s instanceof AtomicElementSelector)) {
 				atomicElementSelector.addPseudoClass(new PseudoNegativeClass((AtomicElementSelector)s));
 			} else {
-				// Logger...
+				LOGGER.warn("The parameter of not() pseudo-element should be a simple CSS selector. ");
 			}
 
 		} else if (sacCondition instanceof FunctionPseudoClassCondition) {
@@ -602,96 +483,378 @@ public class CSSDocumentHandler implements DocumentHandler {
 		}
 	}
 
+	/**
+	 * This method gives a <code>List<CSSModel.declaration.DeclarationValue></code>
+	 * From a given LexicalUnit value from SAC. <br />
+	 * Note that in SAC, LexicalUnit is a linked list of values for a CSS property
+	 * @param value
+	 */
+	// TODO Add equivalent values here, like left: 0 or whatever.
+	private List<DeclarationValue> getAllValues(String propertyName, LexicalUnit value) throws Exception {
+
+		List<DeclarationValue> accumulator = new ArrayList<>();
+
+		if (value != null) {
+			do {
+				
+				DeclarationValue decValue = getValue(propertyName, value);
+				if (value != null)
+					accumulator.add(decValue);
+				value = value.getNextLexicalUnit();
+			} while (value != null);
+		}
+		
+		return accumulator;
+	}
+
+	/**
+	 * This method mainly returns {@link DeclarationValue} or {@link DeclarationEquivalentValue},
+	 * based on the given SAC value and SAC property
+	 * @param value
+	 */
+	private DeclarationValue getValue(String propertyName, LexicalUnit value) throws Exception {
+		if (value == null)
+			return null;
+		switch (value.getLexicalUnitType()) {
+		case LexicalUnit.SAC_ATTR:
+			/* 
+			 * attr(). The W3C CSS3 specification says that they may
+			 * drop this kind of value but we still support it
+			 * http://www.w3.org/TR/2013/CR-css3-values-20130730/
+			 */
+			return new DeclarationValue("attr(" + value.getStringValue() + ")", ValueType.ATTR);
+		case LexicalUnit.SAC_IDENT:
+			/*
+			 * Different types of values may be in this group, like
+			 * color values, etc.
+			 */
+			String colorEquivalent;
+			String stringValue = value.getStringValue();
+			if ("currentColor".equals(stringValue))
+				colorEquivalent = "currentColor";
+			else 
+				colorEquivalent = NamedColors.getRGBAColor(stringValue.toLowerCase());
+			if (colorEquivalent != null)
+				return new DeclarationEquivalentValue(stringValue, colorEquivalent, ValueType.COLOR);
+			
+			switch (stringValue) {
+			case "none":
+				return new DeclarationEquivalentValue(stringValue, stringValue, ValueType.IDENT);
+			case "left":
+			case "top":
+				switch (propertyName) {
+				case "background-position":
+				case "background":
+				case "perspective-origin":
+				case "transform-origin":
+					return new DeclarationEquivalentValue(stringValue, "0.0px", ValueType.LENGTH);
+				}
+			case "right":
+			case "bottom":
+				switch (propertyName) {
+				case "background-position":
+				case "background":
+				case "perspective-origin":
+				case "transform-origin":
+					return new DeclarationEquivalentValue(stringValue, "100.0%", ValueType.LENGTH);
+				}
+			case "center":
+				switch (propertyName) {
+				case "background-position":
+				case "background":
+				case "perspective-origin":
+				case "transform-origin":
+					return new DeclarationEquivalentValue(stringValue, "50.0%", ValueType.LENGTH);
+				}
+			}
+
+			return new DeclarationValue(stringValue, ValueType.IDENT);
+			
+		case LexicalUnit.SAC_STRING_VALUE:
+			// Values coming between ' and " are modeled in this way in SAC
+			return new DeclarationValue("'" + value.getStringValue() + "'", ValueType.STRING);
+			
+		// All color could be converted to RGBA
+		case LexicalUnitImpl.HEX_COLOR:
+			// Three or six-digit hex value
+			return new DeclarationEquivalentValue("#" + value.getStringValue().toLowerCase(), ColorHelper.RGBAFromHEX(value.getStringValue()), ValueType.COLOR);
+		case LexicalUnit.SAC_RGBCOLOR:
+			// flute models the commas as operators so no separator needed - from GWT
+			String realVal = "rgb(" + addSeparators(getAllValues("rgb", value.getParameters()), ", ") + ")";
+			String eqVal = ColorHelper.RGBAfromRGB(value.getParameters());
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.COLOR);
+		case LexicalUnitImpl.RGBA_COLOR:
+			realVal = "rgba(" + addSeparators(getAllValues("rgba", value.getParameters()), ", ") + ")";
+			eqVal = ColorHelper.RGBA(value.getParameters());
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.COLOR);
+		case LexicalUnitImpl.HSL_COLOR:
+			realVal = "hsl(" + addSeparators(getAllValues("hsl", value.getParameters()), ", ") + ")";
+			eqVal = ColorHelper.RGBAFromHSLA(value.getParameters());
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.COLOR);
+		case LexicalUnitImpl.HSLA_COLOR:
+			realVal = "hsla(" + addSeparators(getAllValues("hsla", value.getParameters()), ", ") + ")";
+			eqVal = ColorHelper.RGBAFromHSLA(value.getParameters());
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.COLOR);
+			
+		case LexicalUnit.SAC_INTEGER:
+			int val = value.getIntegerValue();
+			if (val == 0)
+				switch (propertyName) {
+				case "margin":
+				case "margin-left":
+				case "margin-right":
+				case "margin-top":
+				case "margin-bottom":
+				case "padding":
+				case "padding-left":
+				case "padding-right":
+				case "padding-bottom":
+				case "padding-top":
+				case "top":
+				case "left":
+				case "bottom":
+				case "right":
+				case "height":
+				case "width":
+				case "max-height":
+				case "max-width":
+				case "min-height":
+				case "min-width":
+				case "background-position":
+				case "background-size":
+				case "background":
+				case "border":				
+				case "border-bottom":
+				case "border-left":				
+				case "border-right":				
+				case "border-top":				
+				case "outline":
+				case "border-top-width":
+				case "border-bottom-width":
+				case "border-left-width":
+				case "border-right-width":
+				case "border-width":
+				case "outline-width":
+				case "border-radius":
+				case "-webkit-border-radius":
+				case "-moz-border-radius":
+				case "border-bottom-left-radius":
+				case "border-bottom-right-radius":
+				case "border-bottom-top-radius":
+				case "border-bottom-bottom-radius":
+				case "column-width":
+				case "-webkit-column-width":
+				case "-moz-column-width":
+				case "column-rule-width":
+				case "-moz-column-rule-width":
+				case "-webkit-column-rule-width":
+				case "column-gap":
+				case "-moz-column-gap":
+				case "-webkit-column-gap":
+				case "perspective-origin":
+				case "-webkit-perspective-origin":
+				/*
+				 * Dangorous to do!
+				 * case "transform-origin":
+				 * case "-ms-transform-origin":
+				 * case "-webkit-transform-origin":
+				 */
+					
+					return new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH);	
+				}
+			return new DeclarationValue(String.valueOf(val), ValueType.INTEGER);
+		case LexicalUnit.SAC_REAL:
+			return new DeclarationValue(String.valueOf(value.getFloatValue()), ValueType.REAL);
+			
+		// Length values may be convertible to each other
+		case LexicalUnit.SAC_PICA:
+			// 1pc = 12pt = 16px
+			realVal = String.valueOf(value.getFloatValue()) + "pc";
+			eqVal = String.valueOf(value.getFloatValue() * 16) + "px";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+		case LexicalUnit.SAC_POINT:
+			// 72pt is 96px
+			realVal = String.valueOf(value.getFloatValue()) + "pt";
+			eqVal = String.valueOf(value.getFloatValue() / 72F * 96F) + "px";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+		case LexicalUnit.SAC_INCH:
+			// Every inch is 96px
+			realVal = String.valueOf(value.getFloatValue()) + "in";
+			eqVal = String.valueOf(value.getFloatValue() * 96F) + "px";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+		case LexicalUnit.SAC_CENTIMETER:
+			// Every cm is (2.54^-1 * 96)px
+			// In browser, every cm is about 38px
+			realVal = String.valueOf(value.getFloatValue()) + "cm";
+			eqVal = String.valueOf(value.getFloatValue() * 38F) + "px";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+		case LexicalUnit.SAC_MILLIMETER:
+			//every mm is 0.01 cm
+			realVal = String.valueOf(value.getFloatValue()) + "mm";
+			eqVal = String.valueOf(value.getFloatValue() * 38F / 100F) + "px";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+		case LexicalUnit.SAC_PIXEL:
+			realVal = eqVal = String.valueOf(value.getFloatValue()) + "px";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+			
+		// We convert all angle values to degree.
+		case LexicalUnit.SAC_GRADIAN:
+			// 1grad = 0.9deg
+			realVal = String.valueOf(value.getFloatValue()) + "grad";
+			eqVal = String.valueOf(value.getFloatValue() * 0.9F) + "deg";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.ANGLE);
+		case LexicalUnit.SAC_RADIAN:
+			// 2pi rad = 360deg
+			realVal = String.valueOf(value.getFloatValue()) + "rad";
+			eqVal = String.valueOf(value.getFloatValue() / (2 * 3.1415926F) * 360) + "deg";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.ANGLE);
+		case LexicalUnitImpl.TURN:
+			// 1turn = 360deg
+			realVal = String.valueOf(value.getFloatValue()) + "turn";
+			eqVal = String.valueOf(value.getFloatValue() * 360) + "deg";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.ANGLE);
+		case LexicalUnit.SAC_DEGREE:
+			realVal = eqVal = String.valueOf(value.getFloatValue()) + "deg";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.ANGLE);
+			
+		case LexicalUnit.SAC_KILOHERTZ:
+			// 1KHz = 1000Hz
+			realVal = String.valueOf(value.getFloatValue()) + "KHz";
+			eqVal = String.valueOf(value.getFloatValue() * 1000) + "hz";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.FREQUENCY);
+		case LexicalUnit.SAC_HERTZ:
+			realVal = eqVal = value.getFloatValue() + "hz";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.FREQUENCY);
+			
+		// s and ms are convertible to each other
+		case LexicalUnit.SAC_SECOND:
+			// Each second is 1000 ms
+			realVal = String.valueOf(value.getFloatValue()) + "s";
+			eqVal = String.valueOf(value.getFloatValue() * 1000) + "ms";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.TIME);
+		case LexicalUnit.SAC_MILLISECOND:
+			realVal = eqVal = value.getFloatValue() + "ms";
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.TIME);
+			
+		// EM and % are somehow the same. 	
+		case LexicalUnit.SAC_EM:
+			// 1em = 100%, if we are talking about font
+			realVal = String.valueOf(value.getFloatValue()) + "em";
+			if ("font".equals(propertyName) || "font-size".equals(propertyName)) {
+				eqVal = String.valueOf(value.getFloatValue() * 100) + "%";
+				return new DeclarationEquivalentValue(realVal, eqVal, ValueType.PERCENTAGE);
+			} 
+			return new DeclarationValue(realVal, ValueType.TIME);
+		case LexicalUnit.SAC_PERCENTAGE:
+			realVal = eqVal = String.valueOf(value.getFloatValue() + "%");
+			if (value.getFloatValue() == 0) {
+				switch (propertyName) {
+				case "background-position":
+				case "background-size":
+				case "border-radius":
+				case "-webkit-border-radius":
+				case "-moz-border-radius":
+				case "border-bottom-left-radius":
+				case "border-bottom-right-radius":
+				case "border-bottom-top-radius":
+				case "border-bottom-bottom-radius":
+				case "transform-origin":
+					eqVal = "0.0px";
+					break;
+				case "rgb":
+				case "rgba":
+				case "hsl":
+				case "hsla":
+					eqVal = "0";
+				}
+			}
+			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.PERCENTAGE);
+		
+			
+		case LexicalUnit.SAC_EX:
+			/*
+			 *  EX is calculated in a different way across different browsers
+			 * (IE-not known in which version-: 1ex = 0.5em, while not other browsers)
+			 */
+		case LexicalUnit.SAC_DIMENSION:
+			//Unknown dimension :)
+			return new DeclarationValue(String.valueOf(value.getFloatValue() + value.getDimensionUnitText().toLowerCase()), ValueType.DIMENSION);
+			
+		case LexicalUnit.SAC_URI:
+			realVal = "url('" + value.getStringValue() + "')";
+			if ("".equals(value.getStringValue().trim()))
+				return new DeclarationEquivalentValue(realVal, "none", ValueType.URL);
+			return new DeclarationValue(realVal, ValueType.URL);
+		case LexicalUnit.SAC_OPERATOR_COMMA:
+			return new DeclarationValue(",", ValueType.SEPARATOR);
+		case LexicalUnit.SAC_COUNTER_FUNCTION:
+		case LexicalUnit.SAC_COUNTERS_FUNCTION:
+		case LexicalUnit.SAC_FUNCTION:
+			return new DeclarationValue(value.getFunctionName() + "(" + addSeparators(getAllValues(value.getFunctionName(), value.getParameters()), " ")	+ ")", ValueType.FUNCTION);
+		case LexicalUnit.SAC_INHERIT:
+			return new DeclarationValue("inherit", ValueType.INHERIT);
+		case LexicalUnit.SAC_OPERATOR_EXP:
+			return new DeclarationValue("^", ValueType.OPERATOR);
+		case LexicalUnit.SAC_OPERATOR_GE:
+			return new DeclarationValue(">=", ValueType.OPERATOR);
+		case LexicalUnit.SAC_OPERATOR_GT:
+			return new DeclarationValue(">", ValueType.OPERATOR);
+		case LexicalUnit.SAC_OPERATOR_LE:
+			return new DeclarationValue("<=", ValueType.OPERATOR);
+		case LexicalUnit.SAC_OPERATOR_LT:
+			return new DeclarationValue("<", ValueType.OPERATOR);
+		case LexicalUnit.SAC_OPERATOR_MINUS:
+			return new DeclarationValue("-", ValueType.OPERATOR);
+		case LexicalUnit.SAC_OPERATOR_MOD:
+			return new DeclarationValue("%", ValueType.OPERATOR);
+		case LexicalUnit.SAC_OPERATOR_MULTIPLY:
+			return new DeclarationValue("*", ValueType.OPERATOR);
+		case LexicalUnit.SAC_OPERATOR_PLUS:
+			return new DeclarationValue("+", ValueType.OPERATOR);
+		case LexicalUnit.SAC_OPERATOR_SLASH:
+			return new DeclarationValue("/", ValueType.OPERATOR);
+		case LexicalUnit.SAC_OPERATOR_TILDE:
+			return new DeclarationValue("~", ValueType.OPERATOR);
+		case LexicalUnit.SAC_RECT_FUNCTION: {
+			return new DeclarationValue( "rect(" + addSeparators(getAllValues("rect", value.getParameters()), " ") + ")", ValueType.FUNCTION);
+		}
+		case LexicalUnit.SAC_SUB_EXPRESSION:
+			// Never happens cause parser does not support it?
+		case LexicalUnit.SAC_UNICODERANGE:
+			// Cannot be expressed in CSS2
+			
+		/* One of the old versions of CSS3 working drafts pointed to background: (10px 10px) which was dropped at some point.
+		 * So I dropped it as well
+		 */
+		//case LexicalUnitImpl.PARAN: 
+		//	return "(" + addSeparators(getAllValues(value.getParameters()), " ") + ")" ;
+		}
+		throw new RuntimeException("Unhandled LexicalUnit type " + value.getLexicalUnitType());
+	}
+
+	/**
+	 * Adds separators between a list of values and returns the string
+	 * containing those values separated with those separators
+	 * @param listOfStrings
+	 * @param separator
+	 * @return
+	 */
+	private String addSeparators(List<DeclarationValue> listOfStrings, String separator) {
+		String toReturn = "";
+		for (DeclarationValue dv : listOfStrings)
+			if (!separator.trim().equals(dv.toString().trim()))
+				toReturn += dv + separator;
+		return toReturn.substring(0, toReturn.length() - separator.length());
+	}
+
+	/**
+	 * Returns the number of visited selector in the stylesheet
+	 * @return
+	 */
 	public int getNumberOfVisitedSelectors() {
 		return numberOfVisitedElements;
 	}
 
-	private int getRgbComponentValue(LexicalUnit color) {
-		switch (color.getLexicalUnitType()) {
-		case LexicalUnit.SAC_INTEGER:
-			return Math.min(color.getIntegerValue(), 255);
-		case LexicalUnit.SAC_PERCENTAGE:
-			return (int) Math.min(color.getFloatValue() * 255, 255);
-		default:
-			throw new CSSException(CSSException.SAC_SYNTAX_ERR,
-					"RGB component value must be integer or percentage, was "
-							+ color, null);
-		}
-	}
-
-	private String colorValueFromRGB(LexicalUnit colors) {
-		LexicalUnit red = colors;
-		int r = getRgbComponentValue(red);
-		LexicalUnit green = red.getNextLexicalUnit().getNextLexicalUnit();
-		int g = getRgbComponentValue(green);
-		LexicalUnit blue = green.getNextLexicalUnit().getNextLexicalUnit();
-		int b = getRgbComponentValue(blue);
-		return String.format("rgba(%s, %s, %s, %s)", r, g, b, 1F);
-	}
-
-	private String colorRGBA(LexicalUnit colors) {
-		LexicalUnit red = colors;
-		int r = getRgbComponentValue(red);
-		LexicalUnit green = red.getNextLexicalUnit().getNextLexicalUnit();
-		int g = getRgbComponentValue(green);
-		LexicalUnit blue = green.getNextLexicalUnit().getNextLexicalUnit();
-		int b = getRgbComponentValue(blue);
-		LexicalUnit alpha = blue.getNextLexicalUnit().getNextLexicalUnit();
-		// The problem is, the value is either in Integer or float so we need to
-		// check for both of them
-		float a = Math.min(alpha.getIntegerValue(), 1);
-		if (a == 0) // Lets try float
-			a = Math.min(alpha.getFloatValue(), 1);
-		return String.format("rgba(%s, %s, %s, %s)", r, g, b, a);
-	}
-
-	private String colorFromHSLA(LexicalUnit value) {
-
-		LexicalUnit hue = value;
-		float h = Math.min(hue.getIntegerValue(), 360) / 360F;
-		LexicalUnit saturation = hue.getNextLexicalUnit().getNextLexicalUnit();
-		float s = Math.min(saturation.getFloatValue(), 100) / 100F;
-		LexicalUnit lightness = saturation.getNextLexicalUnit()
-				.getNextLexicalUnit();
-		float l = Math.min(lightness.getFloatValue(), 100) / 100F;
-		float a = 1F;
-		if (lightness.getNextLexicalUnit() != null) {
-			LexicalUnit alpha = lightness.getNextLexicalUnit()
-					.getNextLexicalUnit();
-			// Same as colorRGBA
-			a = Math.min(alpha.getIntegerValue(), 1);
-			if (a == 0)
-				a = Math.min(alpha.getFloatValue(), 1);
-		}
-
-		int r, g, b;
-		float m2;
-		if (l <= 0.5)
-			m2 = l * (s + 1);
-		else
-			m2 = l + s - l * s;
-
-		float m1 = l * 2 - m2;
-		r = (int) (hue_to_rgb(m1, m2, h + 1 / 3F) * 255);
-		g = (int) (hue_to_rgb(m1, m2, h) * 255);
-		b = (int) (hue_to_rgb(m1, m2, h - 1 / 3F) * 255);
-
-		return String.format("rgba(%s, %s, %s, %s)", r, g, b, a);
-
-	}
-
-	private float hue_to_rgb(float m1, float m2, float h) {
-		if (h < 0)
-			h++;
-		if (h > 1)
-			h--;
-		if (h * 6 < 1)
-			return m1 + (m2 - m1) * h * 6;
-		if (h * 2 < 1)
-			return m2;
-		if (h * 3 < 2)
-			return m1 + (m2 - m1) * (2 / 3F - h) * 6;
-		return m1;
-	}
+	
 
 }
