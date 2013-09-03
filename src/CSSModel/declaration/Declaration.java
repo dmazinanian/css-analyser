@@ -1,11 +1,10 @@
 package CSSModel.declaration;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import sun.security.util.Length;
-
-import CSSHelper.ColorHelper;
 import CSSHelper.ListStyleHelper;
 import CSSHelper.NamedColors;
 import CSSModel.declaration.value.DeclarationEquivalentValue;
@@ -20,7 +19,7 @@ import CSSModel.selectors.Selector;
  * @author Davood Mazinanian
  *
  */
-public class Declaration {
+public class Declaration implements Cloneable {
 
 	protected final String property;
 	protected final List<DeclarationValue> declarationValues;
@@ -28,24 +27,34 @@ public class Declaration {
 	protected final int lineNumber;
 	protected final int colNumber;
 	protected final boolean isImportant;
-	private final boolean commaSeparatedListOfValues; 
+	protected final boolean isCommaSeparatedListOfValues;
 
-	
-	public Declaration(String property, List<DeclarationValue> values, Selector belongsTo, boolean important) {
-		this(property, values, belongsTo, -1, -1, important);
-	}
-	
-	public Declaration(String property, DeclarationValue value, Selector belongsTo, int fileLineNumber, int fileColNumber, boolean important) {
-		this(property, getDecValueListForSingleValue(value), belongsTo, fileLineNumber, fileColNumber, important);
-	}
-	
-	private static List<DeclarationValue> getDecValueListForSingleValue(DeclarationValue val) {
-		List<DeclarationValue> vals = new ArrayList<>();
-		vals.add(val);
-		return vals;
-	}
-	
+	/**
+	 * Creates a new instance of Declaration and 
+	 * add missing values (initial values) for properties in which user can eliminate some values.
+	 * 
+	 * @param propertyName
+	 * @param values
+	 * @param belongsTo
+	 * @param fileLineNumber
+	 * @param fileColNumber
+	 * @param important
+	 */
 	public Declaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int fileLineNumber, int fileColNumber, boolean important) {
+		this(propertyName, values, belongsTo, fileLineNumber, fileColNumber, important, true); 
+	}
+	
+	/**
+	 * 
+	 * @param propertyName
+	 * @param values
+	 * @param belongsTo
+	 * @param fileLineNumber
+	 * @param fileColNumber
+	 * @param important
+	 * @param addMissingValues
+	 */
+	public Declaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int fileLineNumber, int fileColNumber, boolean important, boolean addMissingValues) {
 		property = propertyName;
 		declarationValues = values;
 		belongsToSelector = belongsTo;
@@ -54,6 +63,7 @@ public class Declaration {
 		isImportant = important;
 		switch (propertyName) {
 		case "font-family":
+		case "font": // ?
 		case "background":
 		case "background-clip":
 		case "background-origin":
@@ -70,19 +80,29 @@ public class Declaration {
 		case "overflow-style":
 		case "animation":
 		case "src": // for @font-face
-			commaSeparatedListOfValues = true;
+			isCommaSeparatedListOfValues = true;
 			break;
 		default:
-			commaSeparatedListOfValues = false;
+			isCommaSeparatedListOfValues = false;
 		}
 		
-		addMissingValues();
+		if (addMissingValues)
+			addMissingValues();
 	}
-
 	
+	/**
+	 * This methid adds missing values to the different properties
+	 * which can have more than one value (like background-position).
+	 * 
+	 */
 	
 	private void addMissingValues() {
-		switch (property) {
+		
+		if (declarationValues == null || declarationValues.size() == 0)
+			return;
+
+		switch (getNonVendorProperty(property)) {
+		
 		case "background-position": 
 			//http://www.w3.org/TR/css3-background/#the-background-position
 			switch (declarationValues.size()) {
@@ -100,6 +120,7 @@ public class Declaration {
 				
 			}
 			break;
+			
 		case "background-size":
 			//http://www.w3.org/TR/css3-background/#the-background-size
 			if (declarationValues.size() == 1) {
@@ -109,11 +130,12 @@ public class Declaration {
 				}
 			}
 			break;
+			
 		case "border-top-left-radius":
 		case "border-top-right-radius":
 		case "border-bottom-right-radius":
 		case "border-bottom-left-radius":
-			
+			// http://www.w3.org/TR/css3-background/
 			if (declarationValues.size() == 1) {
 				String val = declarationValues.get(0).getValue();
 				addMissingValue(new DeclarationValue(val, ValueType.LENGTH), 1);
@@ -121,52 +143,100 @@ public class Declaration {
 			break;
 		
 		case "border-radius":
-		case "-webkit-border-radius":
-		case "-moz-border-radius":
+
 			//http://www.w3.org/TR/css3-background/#the-border-radius
+			DeclarationValue borderTLHRadius, borderTLVRadius,
+							 borderTRHRadius, borderTRVRadius,
+							 borderBRHRadius, borderBRVRadius,
+							 borderBLHRadius, borderBLVRadius;
+			
 			int slashPosition = declarationValues.indexOf(new DeclarationValue("/", ValueType.SEPARATOR));
+			if (declarationValues.size() == 0) 
+				return;
+			borderTLHRadius = declarationValues.get(0);
+			borderTRHRadius = borderTLHRadius.clone(); 
+			borderBRHRadius = borderTLHRadius.clone();
+			borderBLHRadius = borderTLHRadius.clone();
+		
+			/*
+			 * If there is no slash, check number of declarations
+			 * else, check the number of declarations before slash 
+			 */
 			switch (slashPosition < 0 ? declarationValues.size() : slashPosition) {
 			case 1:
-				DeclarationValue v1 = declarationValues.get(0).clone(); 
-				for (int i = 1; i <= 3; i++)
-					addMissingValue(v1, i);
+				addMissingValue(borderTRHRadius, 1);
+				addMissingValue(borderBRHRadius, 2);
+				addMissingValue(borderBLHRadius, 3);
 				break;
 			case 2:
-				v1 = declarationValues.get(0).clone(); 
-				DeclarationValue v2 = declarationValues.get(1).clone(); 
-				addMissingValue(v1, 2);
-				addMissingValue(v2, 3);
+				borderTRHRadius = declarationValues.get(1); 
+				borderBLHRadius = borderTRHRadius.clone();
+				addMissingValue(borderBRHRadius, 2);
+				addMissingValue(borderBLHRadius, 3);
 				break;
 			case 3:
-				v2 = declarationValues.get(1).clone();
-				addMissingValue(v2, 3);
+				borderTRHRadius = declarationValues.get(1); 
+				borderBRHRadius = declarationValues.get(2);
+				borderBLHRadius = borderTRHRadius.clone(); 
+				addMissingValue(borderBLHRadius, 3);
+				break;
+			case 4:
+				borderTRHRadius = declarationValues.get(1); 
+				borderBRHRadius = declarationValues.get(2); 
+				borderBLHRadius = declarationValues.get(3);
 			}
 
 			if (slashPosition < 0)
 				addMissingValue(new DeclarationValue("/", ValueType.SEPARATOR), 4);
 			
+			borderTLVRadius = borderTLHRadius.clone(); 
+			borderTRVRadius = borderTRHRadius.clone(); 
+			borderBRVRadius = borderBRHRadius.clone();
+			borderBLVRadius = borderBLHRadius.clone();
+			
 			switch (declarationValues.size()) {
-			case 5:
-				for (int i = 5; i <= 8; i++)
-					addMissingValue(new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH), i);
+			case 5: // no item after slash
+				addMissingValue(borderTLVRadius, 5);
+				addMissingValue(borderTRVRadius, 6);
+				addMissingValue(borderBRVRadius, 7);
+				addMissingValue(borderBLVRadius, 8);
 				break;
-			case 6:
-				for (int i = 6; i <= 8; i++)
-					addMissingValue(declarationValues.get(5).clone(), i);
+			case 6: // 1 item after slash
+				borderTLVRadius = declarationValues.get(5);
+				borderTRVRadius = borderTLVRadius.clone(); 
+				borderBRVRadius = borderTLVRadius.clone();
+				borderBLVRadius = borderTLVRadius.clone();
+				addMissingValue(borderTRVRadius, 6);
+				addMissingValue(borderBRVRadius, 7);
+				addMissingValue(borderBLVRadius, 8);
 				break;
-			case 7:
-				addMissingValue(declarationValues.get(5).clone(), 7);
-				addMissingValue(declarationValues.get(6).clone(), 8);
+			case 7: // 2 items after slash
+				borderTLVRadius = declarationValues.get(5);
+				borderTRVRadius = declarationValues.get(6); 
+				borderBRVRadius = borderTLVRadius.clone();
+				borderBLVRadius = borderTRVRadius.clone();
+				addMissingValue(borderBRVRadius, 7);
+				addMissingValue(borderBLVRadius, 8);
 				break;
-			case 8:
-				addMissingValue(declarationValues.get(6).clone(), 8);
+			case 8: // 3 items after slash
+				borderTLVRadius = declarationValues.get(5);
+				borderTRVRadius = declarationValues.get(6); 
+				borderBRVRadius = declarationValues.get(7);
+				borderBLVRadius = borderTRVRadius.clone();
+				addMissingValue(borderBLVRadius, 8);
 			}
+
+			// Add shorthand values
+			ShorthandDeclaration shorthand = (ShorthandDeclaration)this;
+			shorthand.addIndividualDeclaration("border-top-left-radius", borderTLHRadius, borderTLVRadius);
+			shorthand.addIndividualDeclaration("border-top-right-radius", borderTRHRadius, borderTRVRadius);
+			shorthand.addIndividualDeclaration("border-bottom-right-radius", borderBRHRadius, borderBRVRadius);
+			shorthand.addIndividualDeclaration("border-bottom-left-radius", borderBLHRadius, borderBLVRadius);
 			
 			break;
 				
 		case "transform-origin":
-		case "-ms-transform-origin":
-		case "-webkit-transform-origin":
+			// http://www.w3.org/TR/css3-transforms
 			if (declarationValues.size() == 1) {
 				addMissingValue(new DeclarationEquivalentValue("center", "50%", ValueType.LENGTH), 1);
 				addMissingValue(new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH), 2);
@@ -176,7 +246,7 @@ public class Declaration {
 			break;
 		 
 		case "perspective-origin":
-		case "-webkit-perspective-origin":
+			// http://www.w3.org/TR/css3-transforms/
 			if (declarationValues.size() == 1)
 				addMissingValue(new DeclarationEquivalentValue("center", "50%", ValueType.LENGTH), 1);
 			break;
@@ -184,28 +254,61 @@ public class Declaration {
 			if (declarationValues.size() == 1)
 				addMissingValue(declarationValues.get(0).clone(), 1);
 			break;
+			
 		case "margin":
 		case "padding":
 		case "border-width":
 		case "border-style":
 		case "border-color":
+			
+			if (declarationValues.size() == 0)
+				return;
+			
+			DeclarationValue val1 = declarationValues.get(0),
+							 val2 = val1.clone(),
+							 val3 = val1.clone(),				 
+							 val4 = val1.clone();
+					
 			switch (declarationValues.size()) {
 			case 1:
-				DeclarationValue v1 = declarationValues.get(0).clone(); 
-				for (int i = 1; i <= 3; i++)
-					addMissingValue(v1, i);
+				addMissingValue(val2, 1);
+				addMissingValue(val3, 2);
+				addMissingValue(val4, 3);
 				break;
 			case 2:
-				v1 = declarationValues.get(0).clone(); 
-				DeclarationValue v2 = declarationValues.get(1).clone(); 
-				addMissingValue(v1, 2);
-				addMissingValue(v2, 3);
+				val2 = declarationValues.get(1);
+				val4 = val2.clone(); 
+				addMissingValue(val3, 2);
+				addMissingValue(val4, 3);
 				break;
 			case 3:
-				v2 = declarationValues.get(1).clone();
-				addMissingValue(v2, 3);
+				val2 = declarationValues.get(1);
+				val3 = declarationValues.get(2);
+				val4 = val2.clone();
+				addMissingValue(val4, 3);
+				break;
+			case 4:
+				val2 = declarationValues.get(1);
+				val3 = declarationValues.get(2);
+				val4 = declarationValues.get(3);
 			}
+			
+			shorthand = (ShorthandDeclaration)this;
+			int insertionPoint = property.indexOf("border");
+			String prefix = "", postfix = "";
+			if (insertionPoint >= 0) {
+				prefix = "border";
+				postfix = property.substring(insertionPoint + 6);
+			} else {
+				prefix = property;
+			}
+			shorthand.addIndividualDeclaration(prefix + "-top" + postfix, val1);
+			shorthand.addIndividualDeclaration(prefix + "-right" + postfix, val2);
+			shorthand.addIndividualDeclaration(prefix + "-bottom" + postfix, val3);
+			shorthand.addIndividualDeclaration(prefix + "-left" + postfix, val4);
+						
 			break;
+			
 		case "border":				
 		case "border-bottom":
 		case "border-left":				
@@ -213,45 +316,51 @@ public class Declaration {
 		case "border-top":				
 		case "outline":
 		case "column-rule":
-		case "-webkit-column-rule":
-		case "-moz-column-rule":
 			// http://www.w3.org/TR/css3-background/#the-border-shorthands
 			// http://www.w3.org/TR/css3-ui/#outline-properties (working draft)
-			DeclarationValue borderColor = null,
-							 borderWidth = null,
-							 borderStyle = null;
+			// http://www.w3.org/TR/css3-multicol/
+			DeclarationValue valueColor = null,
+							 valueWidth = null,
+							 valueStyle = null;
+			
 			for (DeclarationValue v : declarationValues) {
 				if (v.getType() == ValueType.COLOR) {
-					borderColor = v;
+					valueColor = v;
 				} else if (v.getType() == ValueType.LENGTH) {
-					borderWidth = v;
+					valueWidth = v;
 				} else if (v.getType() == ValueType.IDENT) {
 					if ("thin".equals(v.getValue()) || "medium".equals(v.getValue()) || "thick".equals(v.getValue()))
-						borderWidth = v;
+						valueWidth = v;
 					else
-						borderStyle = v;
+						valueStyle = v;
 				}
 			}
 			
-			if (borderWidth == null) {
-				borderWidth = new DeclarationValue("medium", ValueType.LENGTH);
-				addMissingValue(borderWidth, 0);
+			if (valueWidth == null) {
+				valueWidth = new DeclarationValue("medium", ValueType.LENGTH);
+				addMissingValue(valueWidth, 0);
 			}
 			
-			if (borderStyle == null) {
-				borderStyle = new DeclarationValue("none", ValueType.IDENT);
-				addMissingValue(borderStyle, 1);
+			if (valueStyle == null) {
+				valueStyle = new DeclarationValue("none", ValueType.IDENT);
+				addMissingValue(valueStyle, 1);
 			}
 			
-			if (borderColor == null) {
-				borderColor = new DeclarationValue("currentColor", ValueType.COLOR);
-				addMissingValue(borderColor, 2);
+			if (valueColor == null) {
+				valueColor = new DeclarationValue("currentColor", ValueType.COLOR);
+				addMissingValue(valueColor, 2);
 			}
+			
+			shorthand = (ShorthandDeclaration)this;
+			shorthand.addIndividualDeclaration(property + "-style", valueStyle);
+			shorthand.addIndividualDeclaration(property + "-color", valueColor);
+			shorthand.addIndividualDeclaration(property + "-width", valueWidth);
+			
 			
 			break;
+			
 		case "columns":
-		case "-webkit-columns":
-		case "-moz-columns":
+			// http://www.w3.org/TR/css3-multicol/
 			DeclarationValue colWidth = null,
 							 colCount = null;
 			for (DeclarationValue v : declarationValues) {
@@ -271,72 +380,93 @@ public class Declaration {
 				addMissingValue(colCount, 1);
 			}
 			
+			shorthand = (ShorthandDeclaration)this;
+			
+			shorthand.addIndividualDeclaration("column-width", colWidth);
+			shorthand.addIndividualDeclaration("column-count", colCount);
+			
 			break;
+			
 		case "list-style":
+			// http://www.w3.org/TR/CSS21/generate.html
 			
-			if (declarationValues.size() < 3) {
-				// If some of the values are missing, we should add initial values
-			
-				boolean listTypeFound = false;
-				boolean listPositionFound = false;
-				boolean listImageFound = false;
-				int numberOfNones = 0;
-				for (DeclarationValue v : declarationValues) {
-					if (v.getType() == ValueType.URL)
-						listImageFound = true;
-					else if (v.getType() == ValueType.IDENT) {
-						String val = v.getValue();
-						switch (val) {
-						case "inside":
-						case "hanging":
-						case "outside":
-							listPositionFound = true;
-							break;
-						case "inline":
-							listTypeFound = true;
-						case "none":
-							numberOfNones++;
-							break;
-						case "inherit":
-							break;
-						default:
-							if (ListStyleHelper.isStyleTypeName(val))
-								listTypeFound = true;
-						}
-					}
-				}
-				
-				if (declarationValues.size() == 1) {
-					switch (declarationValues.get(0).getValue()) {
-					case "inherit":
+			DeclarationValue listType = null,
+							 listPosition = null,
+							 listImage = null;
+			List<Integer> nonValues = new ArrayList<>();
+			for (int i = 0; i < declarationValues.size(); i++) {
+				DeclarationValue v  = declarationValues.get(i);
+				if (v.getType() == ValueType.URL)
+					listImage = v;
+				else if (v.getType() == ValueType.IDENT) {
+					String val = v.getValue();
+					switch (val) {
+					case "inside":
+					case "hanging":
+					case "outside":
+						listPosition = v;
+						break;
+					case "inline":
+						listType = v;
 					case "none":
-						addMissingValue(new DeclarationValue(declarationValues.get(0).getValue(), ValueType.IDENT), 1);
-						addMissingValue(new DeclarationValue(declarationValues.get(0).getValue(), ValueType.IDENT), 2);
-						listPositionFound = true;
-						listTypeFound = true;
-						listImageFound = true;
+						nonValues.add(i);
+						break;
+					case "inherit":
+						break;
+					default:
+						if (ListStyleHelper.isStyleTypeName(val))
+							listType = v;
 					}
-					
 				}
-				
-				if (!listPositionFound) {
-					addMissingValue(new DeclarationValue("outside", ValueType.IDENT), 1);
-				}
-				
-				if (!listTypeFound && numberOfNones <= 1) {
-						addMissingValue(new DeclarationValue("none", ValueType.IDENT), 0);
-						numberOfNones++;
-				}
-				
-				if (!listImageFound && numberOfNones <= 1) {
-						addMissingValue(new DeclarationValue("none", ValueType.IDENT), 2);
-				}
-								
 			}
+
+			if (declarationValues.size() == 1) {
+				switch (declarationValues.get(0).getValue()) {
+				case "inherit":
+				case "none":
+					return;
+				default:
+					// throw new Exception("Invalid list-style declaration");
+				}
+
+			}
+			
+			if (nonValues.size() >= 2) {
+				listType = declarationValues.get(nonValues.get(0));
+				listImage = declarationValues.get(nonValues.get(1));
+			} else if (nonValues.size() == 1) {
+				if (nonValues.contains(0))
+					listType = declarationValues.get(nonValues.get(0));
+				else
+					listImage = declarationValues.get(nonValues.get(0));
+			}
+
+			if (listType == null) {
+				listType = new DeclarationValue("none", ValueType.IDENT);
+				addMissingValue(listType, 0);
+			}
+
+			if (listPosition== null) {
+				listPosition = new DeclarationValue("outside", ValueType.IDENT);
+				addMissingValue(listPosition, 1);
+			}
+
+			if (listImage == null) {
+				listImage = new DeclarationValue("none", ValueType.IDENT);
+				addMissingValue(listImage, 2);
+			}
+						
+			
+			shorthand = (ShorthandDeclaration)this;
+
+			shorthand.addIndividualDeclaration("list-style-type", listType);
+			shorthand.addIndividualDeclaration("list-style-position", listPosition);
+			shorthand.addIndividualDeclaration("list-style-image", listImage);
+			
 			break;
 			
 		case "transition":
-		case "-webkit-transition":
+
 			// http://www.w3.org/TR/css3-transitions/#transition-shorthand-property
 			// transition is comma-separated
 			
@@ -350,7 +480,7 @@ public class Declaration {
 			for (int currentValueIndex = 0; currentValueIndex < allValues.size(); currentValueIndex++) {
 				DeclarationValue currentValue = allValues.get(currentValueIndex);
 				
-				if (currentValue.getType() == ValueType.OPERATOR && ",".equals(currentValue.getValue())) {
+				if (currentValue.getType() == ValueType.SEPARATOR && ",".equals(currentValue.getValue())) {
 					DeclarationValue transitionProperty = null,
 							 		 transitionTimingFunction = null,
 							 		 transitionDuration = null,
@@ -358,13 +488,19 @@ public class Declaration {
 					
 					for (int currentLayerValueIndex = currentLayerStartIndex; currentLayerValueIndex < currentValueIndex; currentLayerValueIndex++) {
 						DeclarationValue currentLayerCurrentValue = allValues.get(currentLayerValueIndex);
-						switch (currentValue.getType()) {
+						switch (currentLayerCurrentValue.getType()) {
 						case TIME:
 							// First time value is for duration, second for delay, based on W3C
 							if (transitionDuration == null)
 								transitionDuration = currentLayerCurrentValue;
 							else
 								transitionDelay = currentLayerCurrentValue;
+							break;
+						case FUNCTION:
+							if (currentLayerCurrentValue.getValue().startsWith("steps") || 
+									currentLayerCurrentValue.getValue().startsWith("cubic-bezier")) {
+									transitionTimingFunction = currentLayerCurrentValue;
+							}
 							break;
 						case IDENT:
 							switch (currentLayerCurrentValue.getValue()) {
@@ -379,12 +515,7 @@ public class Declaration {
 								transitionTimingFunction = currentLayerCurrentValue;
 								break;
 							default:
-								if (currentLayerCurrentValue.getValue().startsWith("steps") || 
-									currentLayerCurrentValue.getValue().startsWith("cubic-bezier")) {
-									transitionTimingFunction = currentLayerCurrentValue;
-								} else {
-									transitionProperty = currentLayerCurrentValue;
-								}
+								transitionProperty = currentLayerCurrentValue;
 							}
 							break;
 							default:
@@ -411,7 +542,7 @@ public class Declaration {
 					}
 					
 					if (transitionTimingFunction == null) {
-						transitionDuration = new DeclarationValue("ease", ValueType.IDENT);
+						transitionTimingFunction = new DeclarationValue("ease", ValueType.IDENT);
 						addMissingValue(transitionTimingFunction, currentLayerStartIndex + missingValueOffset + 2);
 						totalAddedMissingValues++;
 					}
@@ -421,21 +552,306 @@ public class Declaration {
 						addMissingValue(transitionDelay, currentLayerStartIndex + missingValueOffset + 3);
 						totalAddedMissingValues++;
 					}
-						
+					currentLayerStartIndex = currentValueIndex + 1;	
+					
+					shorthand = (ShorthandDeclaration)this;
+					shorthand.addIndividualDeclaration("transition-duration", transitionDuration);
+					shorthand.addIndividualDeclaration("transition-timing-function", transitionTimingFunction);
+					shorthand.addIndividualDeclaration("transition-delay", transitionDelay);
+					shorthand.addIndividualDeclaration("transition-property", transitionProperty);				
+					
 				}
-				currentLayerStartIndex = currentValueIndex + 1;
-			}
 				
+			}
+			
 			break;
 			
-		// TODO
+		case "font":
+			DeclarationValue fontStyle = new DeclarationValue("normal", ValueType.IDENT),
+							 fontVarient = new DeclarationValue("normal", ValueType.IDENT),
+							 fontWeight = new DeclarationValue("normal", ValueType.IDENT),
+							 fontStretch = new DeclarationValue("normal", ValueType.IDENT),
+							 fontSize = new DeclarationValue("medium", ValueType.IDENT),
+							 lineHeight = new DeclarationValue("normal", ValueType.IDENT);
+			
+			boolean fontStyleFound = false,
+					fontVarianFound = false,
+					fontWeightFound = false,
+					fontStretchFound = false,
+					fontSizeFound = false,
+					lineHeightFound = false;
+
+			List<DeclarationValue> fontFamilies = new ArrayList<>();
+			List<Integer> normalPositions = new ArrayList<>();
+			slashPosition = -1;
+			boolean slashFound = false;
+			for (int currentValueIndex = 0; currentValueIndex < declarationValues.size(); currentValueIndex++) {
+				DeclarationValue currentValue = declarationValues.get(currentValueIndex);
+				switch (currentValue.getType()) {
+				case IDENT:
+					switch (currentValue.getValue()) {
+					case "caption":
+					case "icon":
+					case "menu":
+					case "message-box":
+					case "small-caption":
+					case "status-bar":
+						return;
+					case "italic":
+					case "oblique": // normal
+						fontStyle = currentValue;
+						fontStyleFound = true;
+						break;
+					case "small-caps":
+						fontVarient = currentValue;
+						fontVarianFound = true;
+						break;
+					case "bold":
+					case "bolder":
+					case "lighter":
+						fontWeight = currentValue;
+						fontWeightFound = true;
+						break;
+					case "ultra-condensed":
+					case "extra-condensed":
+					case "condensed":
+					case "semi-condensed":
+					case "semi-expanded":
+					case "expanded":
+					case "extra-expanded":
+					case "ultra-expanded":
+						fontStretch = currentValue;
+						fontStretchFound = true;
+						break;
+					case "xx-small":
+					case "x-small":
+					case "small":
+					case "medium":
+					case "large":
+					case "x-large":
+					case "xx-large":
+					case "larger":
+					case "smaller":
+						fontSize = currentValue;
+						fontSizeFound = true;
+						break;
+					case "normal":
+						normalPositions.add(currentValueIndex);
+					case "inherit":
+						//?
+						break;
+					default:
+						fontFamilies.add(currentValue);
+					}
+					break;
+				case STRING:
+					fontFamilies.add(currentValue);
+					break;
+				case OPERATOR:
+					if ("/".equals(currentValue.getValue()) && currentValueIndex + 1 < declarationValues.size()) {
+						lineHeight = declarationValues.get(currentValueIndex + 1);
+						slashPosition = currentValueIndex;
+						slashFound = true;
+						lineHeightFound = true;
+					}
+					break;
+				case INTEGER:
+					if (currentValueIndex > 0 && "/".equals(declarationValues.get(currentValueIndex - 1).getValue())) {
+						lineHeight = currentValue;
+						lineHeightFound = true;
+					}
+					else {
+						for (int weight = 100; weight <= 900; weight += 100) {
+							if (String.valueOf(weight).equals(currentValue.getValue()))
+							{
+								fontWeight = currentValue;
+								fontWeightFound = true;
+								break;
+							}
+						}
+					}
+					break;
+				case PERCENTAGE:
+				case LENGTH:
+					if (currentValueIndex > 0 && "/".equals(declarationValues.get(currentValueIndex - 1).getValue())) {
+						lineHeight = currentValue;
+						lineHeightFound = true;
+					}
+					else {
+						fontSize = currentValue;
+						fontSizeFound = true;
+					}
+					break;				
+				default:
+				}
+			}
+			
+			int numberOfNormalsBeforeSlash = normalPositions.size();
+			if (slashFound && normalPositions.contains(slashPosition + 1))
+				numberOfNormalsBeforeSlash--;
+			
+			if (!fontStyleFound && numberOfNormalsBeforeSlash < 4) {			 
+				addMissingValue(fontStyle, 0);
+				numberOfNormalsBeforeSlash++;
+			}
+			
+			if (!fontVarianFound && numberOfNormalsBeforeSlash < 4) {
+				addMissingValue(fontVarient, 1);
+				numberOfNormalsBeforeSlash++;
+			}
+			
+			if (!fontWeightFound && numberOfNormalsBeforeSlash < 4) {
+				addMissingValue(fontWeight, 2);
+				numberOfNormalsBeforeSlash++;
+			}
+			
+			if (!fontStretchFound && numberOfNormalsBeforeSlash < 4) {
+				addMissingValue(fontStretch, 3);
+				numberOfNormalsBeforeSlash++;
+			}
+			
+			if (!fontSizeFound) {
+				addMissingValue(fontSize, 4);			
+			}
+			
+			if (!slashFound) {
+				addMissingValue(new DeclarationValue("/", ValueType.OPERATOR), 5);
+				slashPosition = 5;
+				if (!lineHeightFound) {
+					addMissingValue(lineHeight, slashPosition + 1);
+				}
+			}
+			
+			if (fontFamilies.size() == 0) {
+				DeclarationValue font = new DeclarationValue("inherit", ValueType.IDENT);
+				fontFamilies.add(font);
+				addMissingValue(font, declarationValues.size());
+			}
+			
+			shorthand = (ShorthandDeclaration)this;
+
+			shorthand.addIndividualDeclaration("font-style", fontStyle);
+			shorthand.addIndividualDeclaration("font-variant", fontVarient);
+			shorthand.addIndividualDeclaration("font-weight", fontWeight);
+			shorthand.addIndividualDeclaration("font-stretch", fontStretch);
+			shorthand.addIndividualDeclaration("font-size", fontSize);
+			shorthand.addIndividualDeclaration("line-height", lineHeight);
+			for (DeclarationValue fontFamily : fontFamilies)
+				shorthand.addIndividualDeclaration("font-family", fontFamily);
+			
+			break;
+		
 		case "text-shadow":
 		case "box-shadow":
+			/* 
+			 * They are comma separated
+			 * http://www.w3.org/TR/css3-background/#box-shadow
+			 * http://www.w3.org/TR/2013/CR-css-text-decor-3-20130801/#text-shadow-property
+			 * They are the same, except for "inset" keyword and
+			 * spread value (fourth numeric value) which are not allowed for text-shadow 
+			 */ 
+			allValues = new ArrayList<>(declarationValues);
+			sentinel = new DeclarationValue(",", ValueType.SEPARATOR);
+			allValues.add(sentinel);
+			
+			currentLayerStartIndex = 0;
+			totalAddedMissingValues = 0;
+			
+			for (int currentValueIndex = 0; currentValueIndex < allValues.size(); currentValueIndex++) {
+				DeclarationValue currentValue = allValues.get(currentValueIndex);
+				
+				if (currentValue.getType() == ValueType.SEPARATOR && ",".equals(currentValue.getValue())) {
+					DeclarationValue inset = null,
+									 //hOffset = null,
+							 		 vOffset = null,
+							 		 blurRadius = null,
+							 		 spreadDistance = null,
+							 		 color = null;
+					int numberOfLengths = 0;
+					for (int currentLayerValueIndex = currentLayerStartIndex; currentLayerValueIndex < currentValueIndex; currentLayerValueIndex++) {
+						DeclarationValue currentLayerCurrentValue = allValues.get(currentLayerValueIndex);
+						switch (currentLayerCurrentValue.getType()) {
+						case COLOR:
+							color = currentLayerCurrentValue;
+							break;
+						case IDENT:
+							if ("inset".equals(currentLayerCurrentValue.getValue()))
+								inset = currentLayerCurrentValue;
+							else if ("none".equals(currentLayerCurrentValue.getValue()))
+								return;
+							break;
+						case LENGTH:
+							numberOfLengths++;
+							switch (numberOfLengths) {
+							case 1:
+								//hOffset = currentLayerCurrentValue;
+								break;
+							case 2:
+								vOffset = currentLayerCurrentValue;
+								break;
+							case 3:
+								blurRadius = currentLayerCurrentValue;
+								break;
+							case 4:
+								spreadDistance = currentLayerCurrentValue;
+							}
+						default:
+						}
+					}
+					
+					int missingValueOffset = totalAddedMissingValues;
+					
+					int vOffsetPosition = 1, blurPosition = 2, distancePosition = 3, colorPosition = 3;
+					if ("box-shadow".equals(getNonVendorProperty(property))) {
+						colorPosition++;
+						if (inset != null) {
+							vOffsetPosition++;
+							colorPosition++;
+							blurPosition++;
+							distancePosition++;
+						}
+					}
+					
+					if (vOffset == null) {
+						vOffset = new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH);
+						addMissingValue(vOffset, vOffsetPosition);
+						totalAddedMissingValues++;
+					}
+					
+					if (blurRadius == null) {
+						blurRadius = new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH);
+						addMissingValue(blurRadius, blurPosition);
+						totalAddedMissingValues++;
+					}
+					
+					if ("box-shadow".equals(property) && spreadDistance == null) {
+						spreadDistance = new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH);
+						addMissingValue(spreadDistance, distancePosition);
+						totalAddedMissingValues++;
+					}
+					
+					if (color == null) {
+						color = new DeclarationValue("currentColor", ValueType.COLOR);
+						addMissingValue(color, currentLayerStartIndex + missingValueOffset + colorPosition);
+						totalAddedMissingValues++;
+					}
+					
+					currentLayerStartIndex = currentValueIndex + 1;
+					
+					//TODO: Add individual
+				}
+				
+				
+			}
+			/*for (DeclarationValue v : declarationValues) {
+				System.out.print(v + " ");
+			}
+			System.out.println();*/
 			break;
 			
 		case "background":
 			// Background is comma separated.
-
+			
 			allValues = new ArrayList<>(declarationValues);
 			sentinel = new DeclarationValue(",", ValueType.SEPARATOR);
 			allValues.add(sentinel);
@@ -450,7 +866,7 @@ public class Declaration {
 			for (int currentValueIndex = 0; currentValueIndex < allValues.size(); currentValueIndex++) {
 				DeclarationValue currentValue = allValues.get(currentValueIndex);
 				if (currentValue.getType() == ValueType.SEPARATOR) {
-					boolean isLastLayer = currentValueIndex == declarationValues.size();
+					boolean isLastLayer = currentValueIndex == allValues.size() - 1;
 					DeclarationValue bgImage = null, 
 									 bgRepeat = null, 
 									 bgAttachement = null,
@@ -464,7 +880,7 @@ public class Declaration {
 					
 					int numberOfBoxes = 0;
 					List<Integer> lenghtValuesIndices = new ArrayList<>();
-					boolean slashFound = false;
+					slashFound = false;
 
 					for (int currentLayerValueIndex = currentLayerStartIndex; currentLayerValueIndex < currentValueIndex; currentLayerValueIndex++) {
 						// Current layer indices are from currentLayerValueIndex to currentValueIndex
@@ -627,16 +1043,52 @@ public class Declaration {
 						addMissingValue(bgColor, currentLayerStartIndex + missingValueOffset + 10);
 					}
 							
-
-					currentLayerStartIndex = currentValueIndex + 1;
-				} else {
+					shorthand = (ShorthandDeclaration)this;
 					
+					shorthand.addIndividualDeclaration("background-image", bgImage);
+					shorthand.addIndividualDeclaration("background-repeat", bgRepeat);
+					shorthand.addIndividualDeclaration("background-attachement", bgAttachement);
+					shorthand.addIndividualDeclaration("background-origin", bgOrigin);
+					shorthand.addIndividualDeclaration("background-clip", bgClip);
+					shorthand.addIndividualDeclaration("background-position", bgPositionX, bgPositionY);
+					shorthand.addIndividualDeclaration("background-size", bgSizeH, bgSizeW);
+					if (isLastLayer)
+						shorthand.addIndividualDeclaration("background-color", bgColor);
+					
+					currentLayerStartIndex = currentValueIndex + 1;
 				}
 			}
 			
 			break;
+			
+		// TODO: Not supported yet.
+		case "animation":
+			break;
+			
 		}
 		
+	}
+
+	/**
+	 * For properties which have vendor prefixes
+	 * (like -moz-, -webkit-, etc.)
+	 * return the property without prefix
+	 * @return
+	 */
+	public static String getNonVendorProperty(String property) {
+		String torReturn = property;
+		Set<String> prefixes = new HashSet<>();
+		prefixes.add("-webkit-");
+		prefixes.add("-moz-");
+		prefixes.add("-ms-");
+		prefixes.add("-o-");
+		
+		for (String prefix : prefixes)
+			if (torReturn.startsWith(prefix)) {
+				torReturn = torReturn.substring(prefix.length());
+				break;
+			}
+		return torReturn;
 	}
 
 	/**
@@ -690,7 +1142,7 @@ public class Declaration {
 	 * @param
 	 */
 	public void addMissingValue(DeclarationValue value, int position) {
-		value.isAMissingValue(true);
+		value.setIsAMissingValue(true);
 		declarationValues.add(position, value);
 	}
 
@@ -734,7 +1186,7 @@ public class Declaration {
 	
 		if (allValues.size() != otherAllValues.size())
 			return false;
-		
+				
 		int numberOfMissingValues1 = 0;
 		int numberOfMissingValues2 = 0;
 		if (onlyCheckEquality) {
@@ -749,7 +1201,7 @@ public class Declaration {
 				otherAllValues = temp;
 			}
 		}
-		
+				
 		int numberOfValuesForWhichOrderIsImportant = 0;
 		for (DeclarationValue v : allValues)
 			if (!v.isKeyword() || "inherit".equals(v.getValue()) || "none".equals(v.getValue()) || NamedColors.getRGBAColor(v.getValue()) != null)
@@ -858,19 +1310,30 @@ public class Declaration {
 	@Override
 	public String toString() {
 		StringBuilder valueString = new StringBuilder("");
-		for (DeclarationValue v : declarationValues) {
+		for (int i = 0; i < declarationValues.size(); i++) {
+			DeclarationValue v = declarationValues.get(i);
 			if (v.isAMissingValue())
 				continue;
-			if (commaSeparatedListOfValues)
-				valueString.append(v + ", ");
-			else 
-				valueString.append(v + " ");
+			boolean addSpace = true;
+			if (addSpace) {
+				// Find the next value which is not missing. If it is a comma, don't add space to get "a, b" style values. 
+				int k = i;
+				while (++k < declarationValues.size()) {
+					DeclarationValue tv = declarationValues.get(k);
+					if (!tv.isAMissingValue()) {
+						addSpace = tv.getType() != ValueType.SEPARATOR;
+						break;
+					}
+				}
+			}  
+			valueString.append(v + (addSpace ? " " : ""));
 		}
-		if (commaSeparatedListOfValues)
-			valueString.delete(valueString.length() - 2, valueString.length());
-		else 
-			valueString.delete(valueString.length() - 1, valueString.length());
-		return String.format("%s: %s", property, valueString);
+		
+		String toReturn = valueString.toString();
+		if (toReturn.length() > 0)
+			toReturn = toReturn.substring(0, toReturn.length() - 1);
+		
+		return String.format("%s: %s", property, toReturn);
 	}
 
 	/**
@@ -901,6 +1364,19 @@ public class Declaration {
 		hashCode = 31 * hashCode + h;
 
 		return hashCode;
+	}
+	
+	/**
+	 * Provides a deep copy of current {@link Declaration}.
+	 * Values are also deeply copied.
+	 */
+	@Override
+	protected Declaration clone() {
+		List<DeclarationValue> values = new ArrayList<>();
+		for (DeclarationValue v : declarationValues) {
+			values.add(v.clone());
+		}
+		return new Declaration(property, values, belongsToSelector, lineNumber, colNumber, isImportant, false);
 	}
 
 }

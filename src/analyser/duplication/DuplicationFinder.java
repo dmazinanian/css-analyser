@@ -5,11 +5,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import CSSModel.StyleSheet;
 
 import CSSModel.declaration.Declaration;
+import CSSModel.declaration.ShorthandDeclaration;
+import CSSModel.declaration.value.DeclarationValue;
 
 import CSSModel.selectors.Selector;
 
@@ -45,7 +48,7 @@ public class DuplicationFinder {
 	public void findDuplications() {
 		
 		findTypeOneAndTwoDuplications();
-		//findTypeThreeDuplication();
+		findTypeThreeDuplication();
 		//findTypeFourDuplication();
 	}
 
@@ -172,7 +175,43 @@ public class DuplicationFinder {
 	}
 	
 	public void findTypeThreeDuplication() {
-		// TODO Auto-generated method stub
+		
+		List<Selector> selectors = stylesheet.getAllSelectors();
+		
+		for (Selector selector : selectors) {
+			Map<String, Set<Declaration>> shorthandedDeclarations = new HashMap<>();	
+			for (Declaration declaration : selector.getDeclarations()) {
+				String property = declaration.getProperty();
+				Set<String> shorthands = ShorthandDeclaration.getShorthandPropertyNames(property);
+				for (String shorthand : shorthands) {
+					Set<Declaration> currentIndividuals = shorthandedDeclarations.get(shorthand);
+					if (currentIndividuals == null)
+						currentIndividuals = new HashSet<>();
+					currentIndividuals.add(declaration);
+					shorthandedDeclarations.put(shorthand, currentIndividuals);	
+				}
+			}
+			
+			for (Entry<String, Set<Declaration>> entry : shorthandedDeclarations.entrySet()) {
+				ShorthandDeclaration shorthand = new ShorthandDeclaration(entry.getKey(), new ArrayList<DeclarationValue>(), selector, -1, -1, false);
+				StringBuilder s = new StringBuilder();
+				for (Declaration dec : entry.getValue()) {
+					shorthand.addIndividualDeclaration(dec);
+					s.append(String.format("%s (%s, %s); ", dec, dec.getLineNumber(), dec.getColumnNumber()));
+				}
+				
+				for (Declaration checkingDeclaration : stylesheet.getAllDeclarations()) {
+					if (checkingDeclaration instanceof ShorthandDeclaration &&
+							shorthand.individualDeclarationsEqual((ShorthandDeclaration)checkingDeclaration)) {
+						
+						System.out.println(String.format("%s (%s, %s) = %s", checkingDeclaration, 
+								checkingDeclaration.getLineNumber(),
+								checkingDeclaration.getColumnNumber(),
+								s.substring(0, s.length()-2)));
+					}
+				}
+			}
+		}
 		
 	}
 	

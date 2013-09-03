@@ -53,7 +53,7 @@ public class DeclarationValue implements Cloneable {
 	/**
 	 * @return True if current value is missing in 
 	 * the real CSS file but we have added it later.
-	 * @see #isAMissingValue(boolean)
+	 * @see #setIsAMissingValue(boolean)
 	 */
 	public boolean isAMissingValue() {
 		return isAMissingValue;
@@ -69,7 +69,7 @@ public class DeclarationValue implements Cloneable {
 	 * because <code>margin: 1px</code> is actually <code>margin: 1px 1px 1px 1px</code>)
 	 * @param isMissing
 	 */
-	public void isAMissingValue(boolean isMissing) {
+	public void setIsAMissingValue(boolean isMissing) {
 		isAMissingValue = isMissing;
 	}
 	

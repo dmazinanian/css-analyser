@@ -47,6 +47,7 @@ import org.w3c.flute.parser.selectors.PseudoElementCondition;
 import CSSModel.conditions.SelectorCondition;
 import CSSModel.conditions.SelectorConditionType;
 import CSSModel.declaration.Declaration;
+import CSSModel.declaration.DeclarationFactory;
 import CSSModel.declaration.value.DeclarationEquivalentValue;
 import CSSModel.declaration.value.DeclarationValue;
 import CSSModel.declaration.value.ValueType;
@@ -211,7 +212,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 	
 			Declaration newDeclaration = null;
 	
-			newDeclaration = new Declaration(propertyName, valuesList, currentSelector, locator.getLineNumber(), locator.getColumnNumber(), isImportant);
+			newDeclaration = DeclarationFactory.getDeclaration(propertyName, valuesList, currentSelector, locator.getLineNumber(), locator.getColumnNumber(), isImportant);
 		
 			if (currentSelector != null)
 				currentSelector.addCSSRule(newDeclaration);
@@ -653,6 +654,8 @@ public class CSSDocumentHandler implements DocumentHandler {
 				case "-webkit-column-gap":
 				case "perspective-origin":
 				case "-webkit-perspective-origin":
+				case "text-shadow":
+				case "box-shadow":
 				/*
 				 * Dangorous to do!
 				 * case "transform-origin":

@@ -27,7 +27,7 @@ public class TypeTwoDuplication extends TypeOneDuplication {
 				continue;
 			string += "\t[" + list.get(0) + "]  (or its equivalences) in the following places: \n";
 			for (Declaration declaration : list)
-				string += "\t\t" + declaration.getLineNumber() + " : " + declaration.getColumnNumber() + " :" + declaration + " \n"; 
+				string += "\t\t" + declaration.getLineNumber() + " : " + declaration.getColumnNumber() + " :" + declaration + "\n"; 
 		}
 		return string;
 	}
