@@ -5,9 +5,9 @@ import java.util.List;
 import CSSModel.declaration.Declaration;
 import CSSModel.selectors.Selector;
 
-public class TypeTwoDuplication extends TypeOneDuplication {
+public class TypeIIDuplication extends TypeIDuplication {
 
-	public TypeTwoDuplication() {
+	public TypeIIDuplication() {
 		duplicationType = DuplicationType.TYPE_II;
 	}
 		

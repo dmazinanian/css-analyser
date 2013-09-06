@@ -141,6 +141,7 @@ public class AtomicElementSelector extends AtomicSelector {
 				pseudoElements.equals(otherObject.pseudoElements);
 	}
 
+	
 	@Override
 	public int hashCode() {
 		int result = 17;

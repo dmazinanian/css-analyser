@@ -42,7 +42,7 @@ public class ItemSetList implements Iterable<ItemSet> {
 		return itemsets.size();
 	}
 
-	public Collection<ItemSet> getItemsetsAndSupports() {
+	public Collection<ItemSet> getItemsets() {
 		return itemsets;
 	}
 

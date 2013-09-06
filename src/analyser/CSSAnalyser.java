@@ -16,19 +16,14 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 import analyser.duplication.Duplication;
 import analyser.duplication.DuplicationFinder;
-import analyser.duplication.DuplicationsList;
 import analyser.duplication.ItemSetList;
-import analyser.duplication.TypeOneDuplication;
+import analyser.duplication.TypeIDuplication;
 
 import parser.CSSParser;
 import CSSModel.StyleSheet;
-import CSSModel.declaration.value.DeclarationEquivalentValue;
-import CSSModel.selectors.AtomicSelector;
 import CSSModel.selectors.Selector;
 import dom.DOMHelper;
 import dom.Model;
@@ -41,7 +36,7 @@ import dom.Model;
 public class CSSAnalyser {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSSAnalyser.class);
-	
+		
 	private final String folderPath;
 	
 	private final Model model;
@@ -146,8 +141,8 @@ public class CSSAnalyser {
 			
 			Set<Selector> selectors = new HashSet<>();
 			
-			for (Duplication duplication : duplicationFinder.typeOneDuplications) {
-				selectors.addAll(((TypeOneDuplication)duplication).getSelectors());
+			for (Duplication duplication : duplicationFinder.getTypeIDuplications()) {
+				selectors.addAll(((TypeIDuplication)duplication).getSelectors());
 				IOHelper.writeFile(fw, duplication.toString());
 			}
 			IOHelper.closeFile(fw);
@@ -165,46 +160,15 @@ public class CSSAnalyser {
 													currentAverage));
 			
 			fw = IOHelper.openFile(folderName + "/typeII.txt");
-			for (Duplication duplication : duplicationFinder.typeTwoDuplications)
+			for (Duplication duplication : duplicationFinder.getTypeIIDuplications())
 				IOHelper.writeFile(fw, duplication.toString());
 			IOHelper.closeFile(fw);
 			
-				
-			/*LOGGER.info("Finding identical selectors in " + filePath);
-			FileWriter fw = FileUtils.openFile(folderName + "/identical_selectors.txt");
-			DuplicationsList identicalSelectorsDuplication = duplicationFinder.findIdenticalSelectors();
-			for (Duplication duplication : identicalSelectorsDuplication)
-				FileUtils.writeFile(fw, duplication.toString());
-			FileUtils.closeFile(fw);
-
-			LOGGER.info("Finding identical declarations in " + filePath);
-			fw = FileUtils.openFile(folderName + "/identical_declarations.txt");
-			for (Duplication duplication : duplicationFinder.findIdenticalDeclarations()) {
-				FileUtils.writeFile(fw, duplication.toString());
-			}
-			FileUtils.closeFile(fw);
-
-			LOGGER.info("Finding identical values in " + filePath);
-			fw = FileUtils.openFile(folderName + "/identical_values.txt");
-			for (Duplication duplication : duplicationFinder.findIdenticalValues()) {
-				FileUtils.writeFile(fw, duplication.toString());
-			}
-			FileUtils.closeFile(fw);
+			fw = IOHelper.openFile(folderName + "/typeIII.txt");
+			for (Duplication duplication : duplicationFinder.getTypeIIIDuplications())
+				IOHelper.writeFile(fw, duplication.toString());
+			IOHelper.closeFile(fw);
 			
-			LOGGER.info("Finding identical effects (identical selector and declarations at the same time) in " + filePath);
-			fw = FileUtils.openFile(folderName + "/identical_effects.txt");
-			for (Duplication duplication : duplicationFinder.findIdenticalEffects(identicalSelectorsDuplication)) {
-				FileUtils.writeFile(fw, duplication.toString());
-			}
-			FileUtils.closeFile(fw);
-			
-			LOGGER.info("Finding overriden values in " + filePath);
-			fw = FileUtils.openFile(folderName + "/overriden_values.txt");
-			for (Duplication duplication : duplicationFinder.findOverridenValues(identicalSelectorsDuplication)) {
-				FileUtils.writeFile(fw, duplication.toString());
-			}
-			FileUtils.closeFile(fw);
-			*/
 			
 			final int MIN_SUPPORT_COUNT = 2;
 			

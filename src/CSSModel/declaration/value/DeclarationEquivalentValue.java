@@ -78,6 +78,9 @@ public class DeclarationEquivalentValue extends DeclarationValue {
 		return equivalentValue;
 	}
 	
+	/**
+	 * Clones this object, giving a new DeclarationEquivalentValue.
+	 */
 	@Override
 	public DeclarationEquivalentValue clone() {
 		return new DeclarationEquivalentValue(realInFileValue, equivalentValue, isAMissingValue, valueType);

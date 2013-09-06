@@ -27,8 +27,9 @@ public class Declaration implements Cloneable {
 	protected final int lineNumber;
 	protected final int colNumber;
 	protected final boolean isImportant;
+	protected int numberOfMissingValues;
 	protected final boolean isCommaSeparatedListOfValues;
-
+	
 	/**
 	 * Creates a new instance of Declaration and 
 	 * add missing values (initial values) for properties in which user can eliminate some values.
@@ -1068,7 +1069,7 @@ public class Declaration implements Cloneable {
 		}
 		
 	}
-
+	
 	/**
 	 * For properties which have vendor prefixes
 	 * (like -moz-, -webkit-, etc.)
@@ -1089,6 +1090,14 @@ public class Declaration implements Cloneable {
 				break;
 			}
 		return torReturn;
+	}
+	
+	/**
+	 * Returns the number of missing values this declaration have
+	 * @return
+	 */
+	public int getNumberOfMissingValues() {
+		return numberOfMissingValues;
 	}
 
 	/**
@@ -1129,6 +1138,8 @@ public class Declaration implements Cloneable {
 	 * @param value
 	 */
 	public void addValue(DeclarationValue value) {
+		if (value.isAMissingValue())
+			numberOfMissingValues++;
 		declarationValues.add(value);
 	}
 	
@@ -1136,6 +1147,8 @@ public class Declaration implements Cloneable {
 	 * Adds a missing value (a value which is missing from the 
 	 * real declaration in the file, but is implied in the W3C 
 	 * recommendations.) <br />
+	 * Note that it calls {@link DeclarationValue#setIsAMissingValue(true)}
+	 * for given declaration.
 	 * @param {@link DeclarationValue} to be added
 	 * @param position The position in the value list to which 
 	 * this value should be added (zero based)
@@ -1143,6 +1156,8 @@ public class Declaration implements Cloneable {
 	 */
 	public void addMissingValue(DeclarationValue value, int position) {
 		value.setIsAMissingValue(true);
+		if (value.isAMissingValue())
+			numberOfMissingValues++;
 		declarationValues.add(position, value);
 	}
 
@@ -1180,32 +1195,28 @@ public class Declaration implements Cloneable {
 		 * 
 		 */
 		
-		List<DeclarationValue> allValues = new ArrayList<>(getRealValues()); 
-		List<DeclarationValue> otherAllValues = new ArrayList<>(otherDeclaration.getRealValues()); 
-		// Copy, because we are going to modify it during the process
+		List<DeclarationValue> allValues = getRealValues(); 
+		List<DeclarationValue> otherAllValues = otherDeclaration.getRealValues(); 
 	
 		if (allValues.size() != otherAllValues.size())
 			return false;
 				
-		int numberOfMissingValues1 = 0;
-		int numberOfMissingValues2 = 0;
-		if (onlyCheckEquality) {
-			for (DeclarationValue v : allValues)
-				if (v.isAMissingValue()) numberOfMissingValues1++;
-			for (DeclarationValue v : otherAllValues)
-				if (v.isAMissingValue()) numberOfMissingValues2++;
-			
-			if (numberOfMissingValues2 < numberOfMissingValues1) {
+		/*
+		 * Swap two lists if numberOfMissingValues is less in the first list
+		 * because we loop over first list 
+		 */
+		if (onlyCheckEquality && numberOfMissingValues < otherDeclaration.numberOfMissingValues) {
 				List<DeclarationValue> temp = allValues;
 				allValues = otherAllValues;
 				otherAllValues = temp;
-			}
 		}
 				
 		int numberOfValuesForWhichOrderIsImportant = 0;
 		for (DeclarationValue v : allValues)
 			if (!v.isKeyword() || "inherit".equals(v.getValue()) || "none".equals(v.getValue()) || NamedColors.getRGBAColor(v.getValue()) != null)
 				numberOfValuesForWhichOrderIsImportant++;
+		
+		int[] checkedValues = new int[allValues.size()];
 		
 		for (int i = 0; i < allValues.size(); i++) {
 			
@@ -1218,6 +1229,9 @@ public class Declaration implements Cloneable {
 				boolean valueFound = false;
 				for (int k = 0; k < otherAllValues.size(); k++) {
 					
+					if (checkedValues[k] == 1)
+						continue;
+					
 					DeclarationValue checkingValue = otherAllValues.get(k);
 					
 					if (checkingValue == null || (onlyCheckEquality && checkingValue.isAMissingValue()))
@@ -1229,7 +1243,7 @@ public class Declaration implements Cloneable {
 						 * Removing the checking value is necessary for special cases like
 						 * background-position: 0px 0px VS background-position: 0px 10px
 						 */
-						otherAllValues.set(k, null);
+						checkedValues[k] = 1;
 						valueFound = true;
 						break;
 					}
@@ -1242,14 +1256,16 @@ public class Declaration implements Cloneable {
 				
 				// Non-keyword values should appear at the same position in the other declaration
 				DeclarationValue checkingValue = otherAllValues.get(i);
-				if (checkingValue == null || (onlyCheckEquality && checkingValue.isAMissingValue()))
+
+				if (checkedValues[i] == 1 || checkingValue == null || (onlyCheckEquality && checkingValue.isAMissingValue()))
 					return false;
+				
 				if ((!onlyCheckEquality && twoValuesAreEquivalent(currentValue, checkingValue)) ||
 						(onlyCheckEquality && currentValue.equals(checkingValue)))
-					otherAllValues.set(i, null);
+					checkedValues[i] = 1;
 				else
 					return false;
-			
+
 			}
 		}
 
@@ -1353,16 +1369,18 @@ public class Declaration implements Cloneable {
 		return (property.equals(otherDeclaration.property) && valuesEquivalent(otherDeclaration, true));
 	}
 
+	private int hashCode = -1;
 	@Override
 	public int hashCode() {
-		int hashCode = 17;
-		hashCode = 31 * hashCode + property.hashCode();
-		int h = 0;
-		for (DeclarationValue v : declarationValues)
-			if (!v.isAMissingValue())
-				h += v.hashCode();
-		hashCode = 31 * hashCode + h;
-
+		if (hashCode == -1) {
+			hashCode = 17;
+			hashCode = 31 * hashCode + property.hashCode();
+			int h = 0;
+			for (DeclarationValue v : declarationValues)
+				if (!v.isAMissingValue())
+					h += v.hashCode();
+			hashCode = 31 * hashCode + h;
+		}
 		return hashCode;
 	}
 	

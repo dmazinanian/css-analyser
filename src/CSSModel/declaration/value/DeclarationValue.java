@@ -1,5 +1,6 @@
 package CSSModel.declaration.value;
 
+
 /**
  * Represents the values of declarations.
  * Note that we keep values such as colors which have a equivalent value
@@ -14,6 +15,7 @@ public class DeclarationValue implements Cloneable {
 	protected final String realInFileValue;
 	protected boolean isAMissingValue;
 	protected final ValueType valueType;
+	private final boolean isKeyword;
 	
 	/**
 	 * 
@@ -39,6 +41,8 @@ public class DeclarationValue implements Cloneable {
 		this.realInFileValue = value;
 		isAMissingValue = isMissing;
 		valueType = type;
+		// only alphabets or dashes
+		isKeyword = realInFileValue.matches("[a-zA-Z\\-]+");
 	}
 	
 	/**
@@ -80,8 +84,7 @@ public class DeclarationValue implements Cloneable {
 	 * @return
 	 */
 	public boolean isKeyword() {
-		// If it is just one word and -
-		return (realInFileValue.matches("[a-zA-Z\\-]+"));
+		return isKeyword;
 	}
 	
 	
@@ -95,14 +98,11 @@ public class DeclarationValue implements Cloneable {
 	}
 	
 	/**
-	 * Hash code will be computed based on the realValue
+	 * Hash code is computed based on the realValue
 	 */
 	@Override
 	public int hashCode() {
-			final int prime = 31;
-			int hashCode = 1;
-			hashCode = prime * hashCode + ((realInFileValue == null) ? 0 : realInFileValue.hashCode());
-		return hashCode;
+		return realInFileValue.hashCode();
 	}
 
 	/**
@@ -134,6 +134,10 @@ public class DeclarationValue implements Cloneable {
 		return realInFileValue;
 	}
 	
+	/**
+	 * Clones the current value, giving a new <code>DeclarationValu</code>
+	 * object.
+	 */
 	@Override
 	public DeclarationValue clone() {
 		return new DeclarationValue(realInFileValue, isAMissingValue, valueType);

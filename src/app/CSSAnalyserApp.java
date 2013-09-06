@@ -15,7 +15,7 @@ public class CSSAnalyserApp {
 
 	public static void main(String[] args) throws IOException {
 
-		final String PAGE_URI = "http://yahoo.com";	
+		final String PAGE_URI = "http://test.com";	
 		
 		String outputFolderPath = "E:/davood/" + PAGE_URI.replace("http://", "").replace("/", "_");
 		

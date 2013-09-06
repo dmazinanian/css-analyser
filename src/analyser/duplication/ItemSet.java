@@ -1,6 +1,8 @@
 package analyser.duplication;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -18,14 +20,10 @@ import CSSModel.selectors.Selector;
  * @author Davood Mazinanian
  *
  */
-public class ItemSet implements Iterable<Declaration> {
+public class ItemSet implements Iterable<Declaration>, Cloneable {
 	
-	private Set<Declaration> itemsetField;
-	private List<Selector> supports;
-	
-	public ItemSet() {
-		this(null, null); // Never pass null. I know.
-	}
+	private final Set<Declaration> itemsetField;
+	private final List<Selector> supports;
 	
 	public ItemSet(Set<Declaration> declarations, List<Selector> selectorsList) {
 		itemsetField = declarations;
@@ -41,14 +39,6 @@ public class ItemSet implements Iterable<Declaration> {
 		return itemsetField;
 	}
 	
-	public void setItemSet(Set<Declaration> itemset) {
-		itemsetField = itemset;
-	}
-	
-	public void setSupports(List<Selector> s) {
-		supports = s;
-	}
-	
 	public Collection<Selector> getSelectors() {
 		return supports;
 	}
@@ -60,25 +50,30 @@ public class ItemSet implements Iterable<Declaration> {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (obj == this) return true;
-		if (!(obj instanceof ItemSet))
+		if (obj == this) 
+			return true;
+		
+		if (obj == null)
+			return false;
+		
+		if (getClass() != obj.getClass())
 			return false;
 
 		ItemSet otherObj = (ItemSet)obj; 
-		if (itemsetField.size() != otherObj.itemsetField.size())
-			return false;
-		return itemsetField.containsAll(otherObj.itemsetField);
+		return itemsetField.equals(otherObj.itemsetField);
 	}
 	
 	@Override
 	public int hashCode() {
-		int result = 17;
-		for (Declaration d : itemsetField)
-			result += d.hashCode();
-		return result;
+		return itemsetField.hashCode();
 	}
 
 	public boolean itemsEqual(Collection<Declaration> set) {
 		return itemsetField.size() == set.size() && itemsetField.containsAll(set);
+	}
+	
+	@Override
+	protected ItemSet clone() {
+		return new ItemSet(new HashSet<Declaration>(itemsetField), new ArrayList<Selector>(supports));
 	}
 }

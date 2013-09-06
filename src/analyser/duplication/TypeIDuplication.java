@@ -15,7 +15,7 @@ import CSSModel.selectors.Selector;
  * @author Davood Mazinanian
  *
  */
-public class TypeOneDuplication implements Duplication {
+public class TypeIDuplication implements Duplication {
 
 	/* We keep a list of declarations which are the same 
 	 * across different selectors
@@ -31,7 +31,7 @@ public class TypeOneDuplication implements Duplication {
 	
 	protected static DuplicationType duplicationType;
 	
-	public TypeOneDuplication() {
+	public TypeIDuplication() {
 		duplicationType = DuplicationType.TYPE_I;
 		forDeclarations = new ArrayList<>();
 		forSelectors = new HashSet<>();
@@ -102,7 +102,7 @@ public class TypeOneDuplication implements Duplication {
 		if (!super.equals(obj))
 			return false;
 		
-		TypeOneDuplication otherDuplication = (TypeOneDuplication)obj;
+		TypeIDuplication otherDuplication = (TypeIDuplication)obj;
 		
 		if (forSelectors.size() != otherDuplication.forSelectors.size() || 
 				!forSelectors.containsAll(otherDuplication.forSelectors))

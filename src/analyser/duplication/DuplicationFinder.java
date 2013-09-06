@@ -32,24 +32,39 @@ public class DuplicationFinder {
 	 */
 	private Map<Declaration, List<Selector>> declarationSelector = new HashMap<>();
 	
-	// TODO !!!!
-	public DuplicationsList typeOneDuplications;
-	public DuplicationsList typeTwoDuplications;
-	private DuplicationsList typeThreeDuplications;
-	private DuplicationsList typeFourDuplications;
-
 	public DuplicationFinder(StyleSheet stylesheet) {
 		this.stylesheet = stylesheet;
 	}
 
+	private DuplicationsList typeOneDuplications;
+	private DuplicationsList typeTwoDuplications;
+	private DuplicationsList typeThreeDuplications;
+	private DuplicationsList typeFourDuplications;
+	
+	public DuplicationsList getTypeIDuplications() {
+		return typeOneDuplications;
+	}
+	
+	public DuplicationsList getTypeIIDuplications() {
+		return typeTwoDuplications;
+	}
+	
+	public DuplicationsList getTypeIIIDuplications() {
+		return typeThreeDuplications;
+	}
+	
+	public DuplicationsList getTypeIVDuplications() {
+		return typeFourDuplications;
+	}
+	
 	/**
-	 * 
+	 * Performs typeI through typeIV duplication finding in the
+	 * current stylesheet which has been given through constructor
 	 */
 	public void findDuplications() {
-		
 		findTypeOneAndTwoDuplications();
 		findTypeThreeDuplication();
-		//findTypeFourDuplication();
+		findTypeFourDuplication();
 	}
 
 	/**
@@ -69,8 +84,8 @@ public class DuplicationFinder {
 		Set<Integer> visitedIdenticalDeclarations = new HashSet<>();
 		Set<Integer> visitedEquivalentDeclarations = new HashSet<>();
 		
-		TypeOneDuplication typeOneDuplication = new TypeOneDuplication();
-		TypeTwoDuplication typeTwoDuplication = new TypeTwoDuplication();
+		TypeIDuplication typeOneDuplication = new TypeIDuplication();
+		TypeIIDuplication typeTwoDuplication = new TypeIIDuplication();
 		
 		int currentDeclarationIndex = -1;		
 		while (++currentDeclarationIndex < allDeclarations.size()) {
@@ -107,12 +122,7 @@ public class DuplicationFinder {
 			currentTypeIIDuplicatedDeclarations.add(currentDeclaration);
 			boolean mustAddCurrentTypeTwoDuplication = false;
 			
-			/*
-			 * selectors object will be used to keep all selectors for a
-			 * declaration
-			 */
-			List<Selector> selectors = new ArrayList<>(); 
-			selectors.add(currentDeclaration.getSelector());
+			addSupport(currentDeclaration, currentDeclaration.getSelector());
 			
 			
 			while (++checkingDecIndex < allDeclarations.size()) {
@@ -131,7 +141,8 @@ public class DuplicationFinder {
 					visitedIdenticalDeclarations.add(checkingDecIndex);
 					mustAddCurrentTypeIDuplication = true;
 					// This only used in apriori
-					selectors.add(checkingDeclaration.getSelector());
+					addSupport(currentDeclaration, checkingDeclaration.getSelector());
+					addSupport(checkingDeclaration, currentDeclaration.getSelector());
 				}
 				if (!visitedEquivalentDeclarations.contains(checkingDecIndex) && 
 						(!equals && currentDeclaration.equivalent(checkingDeclaration))) {// || (equals && currentTypeIIDuplicatedDeclarations.size() > 1)) {
@@ -141,21 +152,20 @@ public class DuplicationFinder {
 					currentTypeIIDuplicatedDeclarations.add(checkingDeclaration);
 					visitedEquivalentDeclarations.add(checkingDecIndex);
 					mustAddCurrentTypeTwoDuplication = true;
-					selectors.add(checkingDeclaration.getSelector());
+					addSupport(currentDeclaration, checkingDeclaration.getSelector());
+					addSupport(checkingDeclaration, currentDeclaration.getSelector());
 				}
 				
 			}
 
 			if (!visitedIdenticalDeclarations.contains(currentDeclarationIndex) && !visitedEquivalentDeclarations.contains(currentDeclarationIndex))
-			// This only used in apriori
-				declarationSelector.put(currentDeclaration, selectors);
 			
 			// Only if we have at least one declaration in the list (at list one duplication)
 			if (mustAddCurrentTypeIDuplication) {
 				if (typeOneDuplication.hasAllSelectorsForADuplication(currentTypeIDuplicatedDeclarations)) {
 					typeOneDuplication.addAllDeclarations(currentTypeIDuplicatedDeclarations);
 				} else {
-					typeOneDuplication = new TypeOneDuplication();
+					typeOneDuplication = new TypeIDuplication();
 					typeOneDuplication.addAllDeclarations(currentTypeIDuplicatedDeclarations);
 					typeOneDuplications.addDuplication(typeOneDuplication);
 				}
@@ -165,7 +175,7 @@ public class DuplicationFinder {
 				if (typeTwoDuplication.hasAllSelectorsForADuplication(currentTypeIIDuplicatedDeclarations)) {
 					typeTwoDuplication.addAllDeclarations(currentTypeIIDuplicatedDeclarations);
 				} else {
-					typeTwoDuplication = new TypeTwoDuplication();
+					typeTwoDuplication = new TypeIIDuplication();
 					typeTwoDuplication.addAllDeclarations(currentTypeIIDuplicatedDeclarations);
 					typeTwoDuplications.addDuplication(typeTwoDuplication);
 				}
@@ -174,12 +184,24 @@ public class DuplicationFinder {
 
 	}
 	
+	private void addSupport(Declaration declaration, Selector selector) {
+		List<Selector> selectorSupport = declarationSelector.get(declaration);
+		if (selectorSupport == null)
+			selectorSupport = new ArrayList<>();
+		selectorSupport.add(selector);
+		declarationSelector.put(declaration, selectorSupport);
+	}
+
 	public void findTypeThreeDuplication() {
+		
+		typeThreeDuplications = new DuplicationsList();
 		
 		List<Selector> selectors = stylesheet.getAllSelectors();
 		
 		for (Selector selector : selectors) {
-			Map<String, Set<Declaration>> shorthandedDeclarations = new HashMap<>();	
+			
+			Map<String, Set<Declaration>> shorthandedDeclarations = new HashMap<>();
+			
 			for (Declaration declaration : selector.getDeclarations()) {
 				String property = declaration.getProperty();
 				Set<String> shorthands = ShorthandDeclaration.getShorthandPropertyNames(property);
@@ -193,21 +215,20 @@ public class DuplicationFinder {
 			}
 			
 			for (Entry<String, Set<Declaration>> entry : shorthandedDeclarations.entrySet()) {
+				// Create a shorthand and compare it with a real shorthand
 				ShorthandDeclaration shorthand = new ShorthandDeclaration(entry.getKey(), new ArrayList<DeclarationValue>(), selector, -1, -1, false);
-				StringBuilder s = new StringBuilder();
 				for (Declaration dec : entry.getValue()) {
 					shorthand.addIndividualDeclaration(dec);
-					s.append(String.format("%s (%s, %s); ", dec, dec.getLineNumber(), dec.getColumnNumber()));
 				}
 				
 				for (Declaration checkingDeclaration : stylesheet.getAllDeclarations()) {
 					if (checkingDeclaration instanceof ShorthandDeclaration &&
 							shorthand.individualDeclarationsEqual((ShorthandDeclaration)checkingDeclaration)) {
+						TypeIIIDuplication duplication = new TypeIIIDuplication((ShorthandDeclaration)checkingDeclaration, entry.getValue());
+						typeThreeDuplications.addDuplication(duplication);
 						
-						System.out.println(String.format("%s (%s, %s) = %s", checkingDeclaration, 
-								checkingDeclaration.getLineNumber(),
-								checkingDeclaration.getColumnNumber(),
-								s.substring(0, s.length()-2)));
+						// For apriori
+						addSupport(checkingDeclaration, selector);
 					}
 				}
 			}
@@ -221,7 +242,7 @@ public class DuplicationFinder {
 	}
 	
 	public List<ItemSetList> apriori(final int minSupport) {
-				
+					
 		List<ItemSetList> c = new ArrayList<>(); // Keeping C(k), the candidate list of itemsets of size k
 		List<ItemSetList> l = new ArrayList<>(); // Keeping L(k), the frequent itemsets of size k
 		
@@ -235,6 +256,7 @@ public class DuplicationFinder {
 			c.add(generateCandidates(l.get(k - 1))); // Generate C(k). It also gets the supports
 			
 			ItemSetList Lk = prune(c.get(k), minSupport); // Generate L(k)
+			
 			
 			if (Lk.getNumberOfItems() == 0) // If L(k) is empty break
 				break;
@@ -297,7 +319,7 @@ public class DuplicationFinder {
 			for (Declaration declaration : unionAll) {
 				/* Each time we add one item from unionAll ( union of all the declarations in L(k-1) )
 				 * to create itemset with k members.
-				 * newItemSet must not contain new declaratio, otherwise, after 
+				 * newItemSet must not contain new declaration, otherwise, after 
 				 * adding this new declaration, newItemSet would not have k members
 				 */
 				if (!newItemSet.contains(declaration)) {
@@ -306,7 +328,7 @@ public class DuplicationFinder {
 					 * Also, C(k) should not contain this new itemset.
 					 */
 					if (!toReturn.contains(newItemSet)) {
-						
+												
 						/* Lets apply apriori attribute:
 						 * We need to see whether all subsets of size k-1
 						 * of newItemSet are in L(k-1). If not, this itemset
@@ -324,7 +346,7 @@ public class DuplicationFinder {
 						boolean dontAddCurrentSet = false;
 
 						for (Declaration declarationToBeRemoved : newItemSet) {
-							// Remove declaration, one at a time to get k-1 memebrs
+							// Remove declaration, one at a time to get k-1 members
 							newSetTemp.remove(declarationToBeRemoved);
 							
 							// Lets see if this subset of size k-1 is in L(k-1) or not
@@ -360,6 +382,7 @@ public class DuplicationFinder {
 	}
 
 	private List<Selector> getSupport(Set<Declaration> declarations) {
+		
 		List<Selector> selectors = null; // Put first declaration's selector set into the selectors list 
 
 		//int size = declarations.size();
@@ -371,21 +394,8 @@ public class DuplicationFinder {
 			}
 			else
 				selectors.retainAll(declarationSelector.get(d));
-		
+	
 		return selectors;
 	} 
-
-	
-	
-	/*private boolean isIn(Selector selectorToBeCheckedIn, Selector selectorToFind) {
-		if (selectorToBeCheckedIn instanceof GroupedSelectors) {
-			GroupedSelectors group2 = (GroupedSelectors) selectorToBeCheckedIn;
-			if (group2.contains(selectorToFind))
-				return true;
-		} else if (selectorToBeCheckedIn instanceof AtomicSelector) {
-			return selectorToFind.equals(selectorToBeCheckedIn);
-		}
-		return false;
-	}*/
 
 }

@@ -46,17 +46,18 @@ public final class IOHelper {
 			
 			if (replaceExisting) {
 				LOGGER.warn("Folder " + folderPath + " already exists. Contents would be overriden.");
-				try {
-					deleteDirectory(folder);
-				} catch (IOException ex) {
-					LOGGER.warn("Folder " + folderPath + " could not be deleted.");
-				}
+				//try {
+				//	deleteDirectory(folder);
+				//} catch (IOException ex) {
+				//	LOGGER.warn("Folder " + folderPath + " could not be deleted.");
+				//}
 			}
 
-		}
+		} else {
 
-		folder.mkdir();
-		LOGGER.info("Created folder " + folderPath);
+			folder.mkdir();
+			LOGGER.info("Created folder " + folderPath);
+		}
 
 		
 
