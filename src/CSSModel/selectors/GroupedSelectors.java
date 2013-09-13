@@ -3,13 +3,15 @@ package CSSModel.selectors;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import CSSModel.declaration.Declaration;
 
 public class GroupedSelectors extends Selector implements Collection<AtomicSelector> {
 
-	private final List<AtomicSelector> listOfSelectors;
+	private final Set<AtomicSelector> listOfSelectors;
 	
 	public GroupedSelectors() {
 		this(-1, -1);
@@ -17,11 +19,12 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 
 	public GroupedSelectors(int line, int col) {
 		super(line, col);
-		listOfSelectors = new ArrayList<AtomicSelector>();
+		// To preserve the order of selectors as in the CSS file, we
+		// use LinkedHashSet
+		listOfSelectors = new LinkedHashSet<>();
 	}
 
-	
-	public List<AtomicSelector> getAtomicSelectors() {
+	public Set<AtomicSelector> getAtomicSelectors() {
 		return listOfSelectors;
 	}
 
@@ -47,25 +50,70 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 		return result.toString();
 	}
 	
+	/**
+	 * Returns true of the list of selector for both
+	 * GroupedSelectors are the same, regardless of the
+	 * order of their selectors.
+	 * @param otherSelector
+	 * @return
+	 */
+	@Override
+	public boolean selectorEquals(Selector otherSelector) {
+		if (!generalEquals(otherSelector))
+			return false;
+		GroupedSelectors otherObj = (GroupedSelectors)otherSelector;
+		if (listOfSelectors.size() != otherObj.listOfSelectors.size())
+			return false;
+		//return listOfSelectors.containsAll(otherObj.listOfSelectors);
+		List<AtomicSelector> tempList = new ArrayList<>(otherObj.listOfSelectors);
+		for (Selector selector : listOfSelectors) {
+			boolean valueFound = false;
+			for (int i = 0; i < tempList.size(); i++) {
+				if (tempList.get(i) != null && tempList.get(i).selectorEquals(selector)) {
+					valueFound = true;
+					tempList.set(i, null);
+					break;
+				}
+			}
+			if (!valueFound)
+				return false;
+		}
+		return true;
+	}
+
+	private boolean generalEquals(Object otherSelector) {
+		if (otherSelector == null)
+			return false;
+		if (otherSelector == this)
+			return true;
+		if (!(otherSelector instanceof GroupedSelectors))
+			return false;
+		return true;
+	}
+	
+	/**
+	 * Two grouped selectors are equal if they are
+	 * in the same line and columns in the file and 
+	 * their atomic selectors are equal. The order of 
+	 * selectors are important for being equal.
+	 */
 	@Override
 	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof GroupedSelectors))
+		if (!generalEquals(obj))
 			return false;
 		GroupedSelectors otherObj = (GroupedSelectors)obj;
-		if (size() != otherObj.size())
-			return false;
-		if (!otherObj.listOfSelectors.containsAll(listOfSelectors)) 
-				return false;
-		return true;
+
+		return lineNumber == otherObj.lineNumber &&
+				columnNumber == otherObj.columnNumber &&
+				otherObj.listOfSelectors.equals(listOfSelectors);
 	}
 	
 	@Override
 	public int hashCode() {
 		int result = 17;
-		for (AtomicSelector atomicSelector : listOfSelectors)
-			result = 31 * result * atomicSelector.hashCode();
+		result = result * 31 + lineNumber;
+		result = result * 31 + columnNumber;
+		result = result * 31 + listOfSelectors.hashCode();
 		return result;
 	}
 

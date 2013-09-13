@@ -1,4 +1,4 @@
-package CSSModel.conditions;
+package CSSModel.selectors.conditions;
 
 /**
  * Selector conditions which are come inside the brackets like div[align]
@@ -111,17 +111,41 @@ public class SelectorCondition {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof SelectorCondition))
-			return false;
-		SelectorCondition otherObject = (SelectorCondition) obj;
-		return (conditionName.equals(otherObject.conditionName)
-				&& conditionValue.equals(otherObject.conditionValue) && conditionType
-					.equals(otherObject.conditionType));
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((conditionName == null) ? 0 : conditionName.hashCode());
+		result = prime * result
+				+ ((conditionType == null) ? 0 : conditionType.hashCode());
+		result = prime * result
+				+ ((conditionValue == null) ? 0 : conditionValue.hashCode());
+		return result;
 	}
 
 	@Override
-	public int hashCode() {
-		return toString().hashCode();
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SelectorCondition other = (SelectorCondition) obj;
+		if (conditionName == null) {
+			if (other.conditionName != null)
+				return false;
+		} else if (!conditionName.equals(other.conditionName))
+			return false;
+		if (conditionType != other.conditionType)
+			return false;
+		if (conditionValue == null) {
+			if (other.conditionValue != null)
+				return false;
+		} else if (!conditionValue.equals(other.conditionValue))
+			return false;
+		return true;
 	}
+
+	
 }

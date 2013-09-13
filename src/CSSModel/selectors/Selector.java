@@ -72,4 +72,15 @@ public abstract class Selector {
 	public void setMedia(String name) {
 		setMedia(new AtomicMedia(name));
 	}
+	
+	/**
+	 * The equals() method for different selectors have different meanings
+	 * but in all of them selectors should be exactly the same and are appeared
+	 * in the same location in the file. This method provides a way to compare
+	 * two selectors to see weather they are equal, regardless of their
+	 * definition location
+	 * @param otherSelector
+	 * @return
+	 */
+	public abstract boolean selectorEquals(Selector otherSelector);
 }

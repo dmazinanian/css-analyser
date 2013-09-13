@@ -15,9 +15,12 @@ public class CSSAnalyserApp {
 
 	public static void main(String[] args) throws IOException {
 
-		final String PAGE_URI = "http://test.com";	
+		final String PAGE_URI = "http://test.com";
+		
+		final int MIN_APRIORI_SUPPORT = 2;
 		
 		String outputFolderPath = "E:/davood/" + PAGE_URI.replace("http://", "").replace("/", "_");
+	
 		
 //		File folder = new File(outputFolderPath);
 //		// Clean the folder before running
@@ -39,6 +42,8 @@ public class CSSAnalyserApp {
 		// Get all dom states in outputFolder/crawljax/doms		
 		List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "/crawljax/doms", "html");
 		
+		
+		
 		for (File domStateHtml : allStatesFiles) {
 			
 			String stateName = domStateHtml.getName();
@@ -46,7 +51,7 @@ public class CSSAnalyserApp {
 			String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
 			
 			CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), outputFolderPath + "/css/" + correspondingCSSFolderName, PAGE_URI);
-			cssAnalyser.analyse();
+			cssAnalyser.analyse(MIN_APRIORI_SUPPORT);
 			
 		}
 		

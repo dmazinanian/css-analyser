@@ -97,6 +97,10 @@ public class DeclarationValue implements Cloneable {
 		return valueType;
 	}
 	
+	public boolean equivalent(DeclarationValue otherValue) {
+		return equals(otherValue);
+	}
+		
 	/**
 	 * Hash code is computed based on the realValue
 	 */

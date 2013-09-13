@@ -1,4 +1,4 @@
-package CSSModel.conditions;
+package CSSModel.selectors.conditions;
 
 /**
  * All CSS3 Selector condition types which come inside

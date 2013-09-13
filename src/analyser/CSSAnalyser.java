@@ -2,6 +2,7 @@ package analyser;
 
 import io.IOHelper;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -71,9 +72,9 @@ public class CSSAnalyser {
 			
 			LOGGER.info("Now parsing " + filePath);
 			
-			CSSParser parser = new CSSParser(filePath);
+			CSSParser parser = new CSSParser();
 
-			StyleSheet styleSheet = parser.parseAndCreateStyleSheetObject();
+			StyleSheet styleSheet = parser.parseExternalCSS(filePath);
 			
 			model.addStyleSheet(styleSheet);
 			
@@ -89,11 +90,11 @@ public class CSSAnalyser {
 	 * separate files inside this folder.
 	 * @throws IOException
 	 */
-	public void analyse() throws IOException {
+	public void analyse(final int MIN_SUPPORT) throws IOException {
 		float sumOfAverages = 0,
 			  totalSelectors = 0,
 			  totalTypeISelectors = 0;
-		FileWriter summaryFileWriter = IOHelper.openFile(folderPath + "/summary.txt");
+		BufferedWriter summaryFileWriter = IOHelper.openFile(folderPath + "/summary.txt");
 		IOHelper.writeFile(summaryFileWriter, String.format("\r\n\r%45s\t'%s'\n\r\n\r", "STATISTICS FOR", analaysedWebSitename));
 		IOHelper.writeFile(summaryFileWriter, String.format("%45s\t%15s\t%15s\t%15s\n\r\n\r", "FILE NAME", "#SELECTORS", "#TYPE I", "%"));
 		
@@ -105,27 +106,7 @@ public class CSSAnalyser {
 		
 		// Do the analysis for each CSS file
 		for (StyleSheet styleSheet: model.getStyleSheets()) {
-			
-			// String filePath = styleSheet.getFilePath();
-			
-			//System.out.println(styleSheet);
-			
-			/*for (Selector selector : styleSheet.getAllSelectors()) {
-				if (selector instanceof AtomicSelector) {
-					AtomicSelector atomicSelector = (AtomicSelector)selector;
-					String XPath = xpath.XPathHelper.AtomicSelectorToXPath(atomicSelector);
-					System.out.println(atomicSelector + "->" + XPath);
-					if (XPath == null) continue;
-					NodeList nodeList = DOMHelper.queryDocument(model.getDocument(), XPath);
-					if (nodeList == null)
-						continue;
-					for (int i = 0; i < nodeList.getLength(); ++i) {
-						Element e = (Element) nodeList.item(i);
-						System.out.println(e.getNodeName() + e.getTextContent());
-					}
-				}
-			}*/
-			
+						
 			String filePath = styleSheet.getFilePath(); 
 			
 			LOGGER.info("Finding different kinds of duplication in " + filePath);
@@ -137,7 +118,7 @@ public class CSSAnalyser {
 			
 			IOHelper.createFolder(folderName, true);
 			
-			FileWriter fw = IOHelper.openFile(folderName + "/typeI.txt");
+			BufferedWriter fw = IOHelper.openFile(folderName + "/typeI.txt");
 			
 			Set<Selector> selectors = new HashSet<>();
 			
@@ -170,24 +151,23 @@ public class CSSAnalyser {
 			IOHelper.closeFile(fw);
 			
 			
-			final int MIN_SUPPORT_COUNT = 2;
+			//LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT);
 			
-			LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT_COUNT);
+			//ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean(); 
+			//long start = threadMXBean.getCurrentThreadCpuTime();
+			/*List<ItemSetList> l = */duplicationFinder.apriori(MIN_SUPPORT, folderName + "/apriori.txt");
+			//long end = threadMXBean.getCurrentThreadCpuTime();
+			//long time = (end - start) / 1000000L;
+			//fw = IOHelper.openFile(folderName + "/apriori.txt");
+			//for (ItemSetList itemsetList : l) {
+				//IOHelper.writeFile(fw, itemsetList.toString());
+			//}
+			//String s = String.format("CPU time (miliseconds) for apriori algorithm: %s\n", time) ;
+
+			//IOHelper.writeFile(fw, s);
+			//IOHelper.closeFile(fw);
 			
-			ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean(); 
-			long start = threadMXBean.getCurrentThreadCpuTime();
-			List<ItemSetList> l = duplicationFinder.apriori(MIN_SUPPORT_COUNT);
-			long end = threadMXBean.getCurrentThreadCpuTime();
-			long time = (end - start) / 1000000L;
-			fw = IOHelper.openFile(folderName + "/apriori.txt");
-			for (ItemSetList itemsetList : l) {
-				IOHelper.writeFile(fw, itemsetList.toString());
-			}
-			String s = "CPU time (miliseconds) for apriori algorithm: %s\n" ;
-			IOHelper.writeFile(fw, String.format(s, time));
-			IOHelper.closeFile(fw);
-			
-			LOGGER.info(s);
+			//LOGGER.info(s);
 
 			
 			

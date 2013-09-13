@@ -44,8 +44,6 @@ import org.w3c.flute.parser.selectors.ContainsCondition;
 import org.w3c.flute.parser.selectors.PseudoElementCondition;
 
 
-import CSSModel.conditions.SelectorCondition;
-import CSSModel.conditions.SelectorConditionType;
 import CSSModel.declaration.Declaration;
 import CSSModel.declaration.DeclarationFactory;
 import CSSModel.declaration.value.DeclarationEquivalentValue;
@@ -65,6 +63,8 @@ import CSSModel.selectors.PseudoClass;
 import CSSModel.selectors.PseudoElement;
 import CSSModel.selectors.PseudoNegativeClass;
 import CSSModel.selectors.Selector;
+import CSSModel.selectors.conditions.SelectorCondition;
+import CSSModel.selectors.conditions.SelectorConditionType;
 
 public class CSSDocumentHandler implements DocumentHandler {
 	
@@ -118,8 +118,8 @@ public class CSSDocumentHandler implements DocumentHandler {
 		//According to CSS3 '@import' rules must occur before all rules other than '@charset' rule
 		File file = new File(styleSheet.getFilePath());
 		String parentFolder = file.getParent(); 
-		CSSParser parser = new CSSParser(parentFolder + "/" + path);
-		styleSheet.addSelectors(parser.parseAndCreateStyleSheetObject());
+		CSSParser parser = new CSSParser();
+		styleSheet.addSelectors(parser.parseExternalCSS(parentFolder + "/" + path));
 	}
 
 	@Override

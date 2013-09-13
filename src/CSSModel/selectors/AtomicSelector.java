@@ -2,6 +2,7 @@ package CSSModel.selectors;
 
 /**
  * Represents the selectors which are not grouped
+ * (not combined using any combinator)
  * 
  * @author Davood Mazinanian
  * 
@@ -34,7 +35,7 @@ public abstract class AtomicSelector extends Selector {
 	public GroupedSelectors getParentGroupSelector() {
 		return parentGroupSelector;
 	}
-
+	
 	/*
 	 * http://www.w3.org/TR/CSS21/cascade.html#specificity
 	 * 

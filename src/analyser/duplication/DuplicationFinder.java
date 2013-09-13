@@ -1,5 +1,12 @@
 package analyser.duplication;
 
+import io.IOHelper;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,7 +37,7 @@ public class DuplicationFinder {
 	 *  This map contains all selectors for a given declaration
 	 *  In apriori algorithm, this map is used in order to accelerate finding supports 
 	 */
-	private Map<Declaration, List<Selector>> declarationSelector = new HashMap<>();
+	private Map<Declaration, Item> declarationItemMap = new HashMap<>();
 	
 	public DuplicationFinder(StyleSheet stylesheet) {
 		this.stylesheet = stylesheet;
@@ -57,6 +64,9 @@ public class DuplicationFinder {
 		return typeFourDuplications;
 	}
 	
+	// For apriori
+	private ItemSetList C1;
+	
 	/**
 	 * Performs typeI through typeIV duplication finding in the
 	 * current stylesheet which has been given through constructor
@@ -76,6 +86,8 @@ public class DuplicationFinder {
 		
 		typeOneDuplications = new DuplicationsList();
 		typeTwoDuplications = new DuplicationsList();
+		
+		C1 = new ItemSetList();
 		
 		// Lets get all the declarations
 		List<Declaration> allDeclarations = stylesheet.getAllDeclarations();
@@ -112,7 +124,7 @@ public class DuplicationFinder {
 			 * that we have really found a duplication
 			 */
 			boolean mustAddCurrentTypeIDuplication = false;
-		
+			
 			
 			/*
 			 * As we are going to find the duplications of type II, we repeat three previous expressions
@@ -122,16 +134,20 @@ public class DuplicationFinder {
 			currentTypeIIDuplicatedDeclarations.add(currentDeclaration);
 			boolean mustAddCurrentTypeTwoDuplication = false;
 			
-			addSupport(currentDeclaration, currentDeclaration.getSelector());
-			
+			Item newItem = declarationItemMap.get(currentDeclaration);
+			if (newItem == null) {
+				newItem = new Item(currentDeclaration);
+				declarationItemMap.put(currentDeclaration, newItem);
+			}
 			
 			while (++checkingDecIndex < allDeclarations.size()) {
 
 				Declaration checkingDeclaration = allDeclarations.get(checkingDecIndex);
 				
-				boolean equals = currentDeclaration.equals(checkingDeclaration);
+				boolean equals = currentDeclaration.declarationEquals(checkingDeclaration);
 
-				if (equals && !visitedIdenticalDeclarations.contains(currentDeclarationIndex) && !visitedIdenticalDeclarations.contains(checkingDecIndex) ) {
+				if (equals && !visitedIdenticalDeclarations.contains(currentDeclarationIndex) && 
+						!visitedIdenticalDeclarations.contains(checkingDecIndex) ) {
 					
 					/*
 					 * We have found type I duplication
@@ -140,25 +156,27 @@ public class DuplicationFinder {
 					currentTypeIDuplicatedDeclarations.add(checkingDeclaration);
 					visitedIdenticalDeclarations.add(checkingDecIndex);
 					mustAddCurrentTypeIDuplication = true;
+					
 					// This only used in apriori
-					addSupport(currentDeclaration, checkingDeclaration.getSelector());
-					addSupport(checkingDeclaration, currentDeclaration.getSelector());
+					newItem.add(checkingDeclaration);
+					declarationItemMap.put(checkingDeclaration, newItem);
 				}
-				if (!visitedEquivalentDeclarations.contains(checkingDecIndex) && 
-						(!equals && currentDeclaration.equivalent(checkingDeclaration))) {// || (equals && currentTypeIIDuplicatedDeclarations.size() > 1)) {
+				if (!equals && !visitedEquivalentDeclarations.contains(checkingDecIndex) && 
+						(currentDeclaration.declarationIsEquivalent(checkingDeclaration))) {// || (equals && currentTypeIIDuplicatedDeclarations.size() > 1)) {
 					/*
 					 * We have found type II duplication
 					 */
 					currentTypeIIDuplicatedDeclarations.add(checkingDeclaration);
 					visitedEquivalentDeclarations.add(checkingDecIndex);
 					mustAddCurrentTypeTwoDuplication = true;
-					addSupport(currentDeclaration, checkingDeclaration.getSelector());
-					addSupport(checkingDeclaration, currentDeclaration.getSelector());
+					
+					newItem.add(checkingDeclaration);
+					declarationItemMap.put(checkingDeclaration, newItem);
 				}
 				
 			}
 
-			if (!visitedIdenticalDeclarations.contains(currentDeclarationIndex) && !visitedEquivalentDeclarations.contains(currentDeclarationIndex))
+			//if (!visitedIdenticalDeclarations.contains(currentDeclarationIndex) && !visitedEquivalentDeclarations.contains(currentDeclarationIndex))
 			
 			// Only if we have at least one declaration in the list (at list one duplication)
 			if (mustAddCurrentTypeIDuplication) {
@@ -180,17 +198,17 @@ public class DuplicationFinder {
 					typeTwoDuplications.addDuplication(typeTwoDuplication);
 				}
 			}
+		
+			// for apriori
+			ItemSet itemSet = new ItemSet();
+			itemSet.add(newItem);
+			C1.add(itemSet);
+			
 		}
 
 	}
 	
-	private void addSupport(Declaration declaration, Selector selector) {
-		List<Selector> selectorSupport = declarationSelector.get(declaration);
-		if (selectorSupport == null)
-			selectorSupport = new ArrayList<>();
-		selectorSupport.add(selector);
-		declarationSelector.put(declaration, selectorSupport);
-	}
+	
 
 	public void findTypeThreeDuplication() {
 		
@@ -223,12 +241,13 @@ public class DuplicationFinder {
 				
 				for (Declaration checkingDeclaration : stylesheet.getAllDeclarations()) {
 					if (checkingDeclaration instanceof ShorthandDeclaration &&
-							shorthand.individualDeclarationsEqual((ShorthandDeclaration)checkingDeclaration)) {
+							shorthand.individualDeclarationsEquivalent((ShorthandDeclaration)checkingDeclaration)) {
 						TypeIIIDuplication duplication = new TypeIIIDuplication((ShorthandDeclaration)checkingDeclaration, entry.getValue());
 						typeThreeDuplications.addDuplication(duplication);
 						
 						// For apriori
-						addSupport(checkingDeclaration, selector);
+						
+						//addSupport(checkingDeclaration, selector);
 					}
 				}
 			}
@@ -237,40 +256,75 @@ public class DuplicationFinder {
 	}
 	
 	public void findTypeFourDuplication() {
-		// TODO Auto-generated method stub
+		// String filePath = styleSheet.getFilePath();
+
+		//System.out.println(styleSheet);
 		
+		/*for (Selector selector : styleSheet.getAllSelectors()) {
+			if (selector instanceof AtomicSelector) {
+				AtomicSelector atomicSelector = (AtomicSelector)selector;
+				String XPath = xpath.XPathHelper.AtomicSelectorToXPath(atomicSelector);
+				System.out.println(atomicSelector + "->" + XPath);
+				if (XPath == null) continue;
+				NodeList nodeList = DOMHelper.queryDocument(model.getDocument(), XPath);
+				if (nodeList == null)
+					continue;
+				for (int i = 0; i < nodeList.getLength(); ++i) {
+					Element e = (Element) nodeList.item(i);
+					System.out.println(e.getNodeName() + e.getTextContent());
+				}
+			}
+		}*/
 	}
 	
-	public List<ItemSetList> apriori(final int minSupport) {
+	public List<ItemSetList> apriori(final int minSupport, String path) throws IOException {
 					
-		List<ItemSetList> c = new ArrayList<>(); // Keeping C(k), the candidate list of itemsets of size k
+		//List<ItemSetList> c = new ArrayList<>(); // Keeping C(k), the candidate list of itemsets of size k
 		List<ItemSetList> l = new ArrayList<>(); // Keeping L(k), the frequent itemsets of size k
 		
-		c.add(getC1()); // C(1)
+		l.add(getLfromC(C1, minSupport)); // Generating L(1) by pruning C(1)
 		
-		l.add(prune(c.get(0), minSupport)); // Generating L(1) by pruning C(1)
+		ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean(); 
+		long nowTime, startTime, overallEndTime, overallStartTime = threadMXBean.getCurrentThreadCpuTime();
 		
+		BufferedWriter fw = IOHelper.openFile(path, true);
+
 		int k = 1;
+		startTime = overallStartTime;
 		while (true) {
+
+			l.add(generateCandidates(l.get(k - 1), minSupport));
 			
-			c.add(generateCandidates(l.get(k - 1))); // Generate C(k). It also gets the supports
+			//ItemSetList Lk = getLfromC(c.get(k), minSupport);
 			
-			ItemSetList Lk = prune(c.get(k), minSupport); // Generate L(k)
+			nowTime = threadMXBean.getCurrentThreadCpuTime();
 			
-			
-			if (Lk.getNumberOfItems() == 0) // If L(k) is empty break
+			if (l.get(k).size() == 0) // If L(k) is empty break
 				break;
+			else {
+				String s = String.format("Number of rows: %7s\tTime for completion: %5s", l.get(k).size(), (nowTime - startTime) / 1000000);
+				System.out.println(k + "-itemsets. " + s);
+				System.out.println("Writing to file...");
+				IOHelper.writeFile(fw, l.get(k).toString());
+				IOHelper.writeFile(fw, s);
+				System.out.println("Finieshed writing to file.");
+			}
 			
-			l.add(Lk); // Add L(k)
-			
+			//l.add(Lk); // Add L(k)
 			k++;
+			startTime = nowTime;
 		}
+		overallEndTime = threadMXBean.getCurrentThreadCpuTime(); 
+		String s = String.format("Overall time for completing apriori: %5s", l.get(k).size(), (nowTime - overallStartTime) / 1000000);
+		System.out.println(s);
+		IOHelper.writeFile(fw, s);
+		fw.close();
 		
 		return l;
 	}
 
 	
-	private ItemSetList getC1() { // Gets C(1), the individual declarations with their frequencies
+	/*private ItemSetList getC1() { // Gets C(1), the individual declarations with their frequencies
 		
 		//List<Declaration> allDeclarations = 
 		
@@ -292,110 +346,113 @@ public class DuplicationFinder {
 		}
 
 		return C1;
-	}
+	}*/
 
-	private ItemSetList generateCandidates(ItemSetList itemSetList) {
+	private ItemSetList generateCandidates(ItemSetList itemSetList, int minSupport) {
 		
-		/* itemSetList is L(k-1), which is a table of ItemSetAndSupports
+		/* itemSetList is L(k-1), which is a table of ItemSets
 		 * toReturn is C(k)
 		 */
 		ItemSetList toReturn = new ItemSetList();
 		
-		Set<Declaration> unionAll = new HashSet<>(); 
+		Set<Item> unionAll = new HashSet<>(); 
 		/*
 		 * First find the union of all L(k-1) declarations
 		 * This set will be used later in order to create itemsets with k declarations.		
 		 */
 		for (ItemSet itemset : itemSetList) {
-			unionAll.addAll(itemset.getItemSet());
+			unionAll.addAll(itemset);
 		}
-		
+
 		for (ItemSet itemset : itemSetList) {
 			/* First we create a new set, which will be our new item set. Initially,
 			 * this set contains first member of L(k-1). One at a time, we
 			 * add one new member to this set,  to create an itemset with k members.
 			 */
-			Set<Declaration> newItemSet = new HashSet<>(itemset.getItemSet());
-			for (Declaration declaration : unionAll) {
-				/* Each time we add one item from unionAll ( union of all the declarations in L(k-1) )
+			
+			for (Item item : unionAll) {
+				/* 
+				 * Each time we add one item from unionAll ( union of all the declarations in L(k-1) )
 				 * to create itemset with k members.
 				 * newItemSet must not contain new declaration, otherwise, after 
 				 * adding this new declaration, newItemSet would not have k members
 				 */
-				if (!newItemSet.contains(declaration)) {
-					newItemSet.add(declaration);
+				ItemSet newItemSet = itemset.clone();
+				if (!newItemSet.contains(item)) {
+					newItemSet.add(item);
 					/*
 					 * Also, C(k) should not contain this new itemset.
 					 */
-					if (!toReturn.contains(newItemSet)) {
-												
-						/* Lets apply apriori attribute:
+					if (newItemSet.getSupport().size() >= minSupport && !toReturn.contains(newItemSet)) {
+
+						/* Lets apply apriori attribute: (pruning)
 						 * We need to see whether all subsets of size k-1
 						 * of newItemSet are in L(k-1). If not, this itemset
 						 * must not be added.
 						 * To do this, we remove one member of newItemSet at a 
 						 * time and check if this new set is in L(k-1).
-						 */
+						 * /
 						
 						/* First we copy newItemSet because we cannot modify it while we are
 						 * iterating over its values
-						 */
-						Set<Declaration> newSetTemp = new HashSet<>(newItemSet);
+						 * /
+						Set<Item> newSetTemp = newItemSet.clone();
 
 						// Flag too see whether we need to add this itemset or not
 						boolean dontAddCurrentSet = false;
 
-						for (Declaration declarationToBeRemoved : newItemSet) {
+						for (Item itemToBeRemoved : newItemSet) {
 							// Remove declaration, one at a time to get k-1 members
-							newSetTemp.remove(declarationToBeRemoved);
+							newSetTemp.remove(itemToBeRemoved);
 							
 							// Lets see if this subset of size k-1 is in L(k-1) or not
 							if (!itemSetList.contains(newSetTemp)) { 
 								dontAddCurrentSet = true;
+								System.out.println("yes");
 								break;
 							}
-							newSetTemp.add(declarationToBeRemoved);
+							newSetTemp.add(itemToBeRemoved);
 						}
 						
-						if (!dontAddCurrentSet) {
-							Set<Declaration> newSet = new HashSet<>(newItemSet); 
-							toReturn.addItemSet(newSet, getSupport(newSet)); 
-						}
-					}
-					newItemSet.remove(declaration); // remove the newly added declaration
+						if (!dontAddCurrentSet) {*/
+							//Set<Selector> supp = newItemSet.getSupport();
+							// Copy
+							toReturn.add(newItemSet.clone()); 
+						//} 
+					} 
+					//newItemSet.remove(item); // remove the newly added declaration
 				}
 			}
 		}
 		return toReturn;
 	}
 
-	private ItemSetList prune(ItemSetList itemSetList, final int minSupportCount) {
+	private ItemSetList getLfromC(ItemSetList itemSetList, final int minSupportCount) {
 		
 		ItemSetList Lk = new ItemSetList();
-		
 		for (ItemSet itemset : itemSetList) {
-			if (itemset.getSupport() >= minSupportCount)
-				Lk.addItemSet(itemset);
+			if (itemset.getSupport().size() >= minSupportCount) {
+				Lk.add(itemset);
+			}
 		}
-		
 		return Lk;	
 	}
 
-	private List<Selector> getSupport(Set<Declaration> declarations) {
+	/*private Set<Selector> getSupport(Set<Declaration> declarations) {
 		
-		List<Selector> selectors = null; // Put first declaration's selector set into the selectors list 
+		Set<Selector> selectors = null; // Put first declaration's selector set into the selectors list 
 
 		//int size = declarations.size();
 		boolean mustAdd = true;
 		for (Declaration d : declarations)
 			if (mustAdd) {
-				selectors = new ArrayList<>(declarationSelector.get(d));
+				selectors = new HashSet<>(declarationSelector.get(d));
 				mustAdd = false;
 			}
 			else
 				selectors.retainAll(declarationSelector.get(d));
 	
 		return selectors;
-	} 
+	} */
 
 }

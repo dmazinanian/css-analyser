@@ -29,20 +29,45 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof IndirectAdjacentSelector))
+		if (!generalEquality(obj))
 			return false;
 		IndirectAdjacentSelector otherObj = (IndirectAdjacentSelector)obj;
-		if (beforeMainSelector.equals(otherObj.beforeMainSelector) &&
+		if (lineNumber == otherObj.lineNumber &&
+				columnNumber == otherObj.columnNumber &&
+				beforeMainSelector.equals(otherObj.beforeMainSelector) &&
 				mainSelector.equals(otherObj.mainSelector))
 			return true;
 		return false;
 	}
 	
+	private boolean generalEquality(Object obj) {
+		if (obj == null)
+			return false;
+		if (obj == this)
+			return true;
+		if (!(obj instanceof IndirectAdjacentSelector))
+			return false;
+		return true;
+	}
+	
+	@Override
+	public boolean selectorEquals(Selector otherSelector) {
+		if (!generalEquality(otherSelector))
+			return false;
+		IndirectAdjacentSelector otherIndirectAdjacentSelector = (IndirectAdjacentSelector)otherSelector;
+		return mainSelector.selectorEquals(otherIndirectAdjacentSelector.mainSelector) &&
+				beforeMainSelector.selectorEquals(otherIndirectAdjacentSelector.beforeMainSelector);
+				
+	}
+
 	@Override
 	public int hashCode() {
 		int result = 17;
+		result = 31 * result + lineNumber;
+		result = 31 * result + columnNumber;
 		result = 31 * result + (beforeMainSelector == null ? 0 : beforeMainSelector.hashCode());
 		result = 31 * result + (mainSelector == null ? 0 : mainSelector.hashCode());
 		return result;
 	}
+
 }

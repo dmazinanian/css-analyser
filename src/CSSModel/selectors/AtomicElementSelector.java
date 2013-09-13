@@ -3,7 +3,7 @@ package CSSModel.selectors;
 import java.util.ArrayList;
 import java.util.List;
 
-import CSSModel.conditions.SelectorCondition;
+import CSSModel.selectors.conditions.SelectorCondition;
 
 /**
  * An atomic element selector, is a selector 
@@ -85,8 +85,8 @@ public class AtomicElementSelector extends AtomicSelector {
 	/**
 	 * Adds different conditions to current selector.
 	 * @param condition
-	 * @see CSSModel.conditions.SelectorCondition
-	 * @see CSSModel.conditions.SelectorConditionType
+	 * @see CSSModel.selectors.conditions.SelectorCondition
+	 * @see CSSModel.selectors.conditions.SelectorConditionType
 	 */
 	public void addCondition(SelectorCondition condition) {
 		conditions.add(condition);
@@ -125,26 +125,55 @@ public class AtomicElementSelector extends AtomicSelector {
 	}
 	
 	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof AtomicElementSelector))
+	public boolean selectorEquals(Selector otherSelector) {
+		if (!checkGeneralEquality(otherSelector))
 			return false;
-		AtomicElementSelector otherObject = (AtomicElementSelector) obj;
+		
+		AtomicElementSelector otherAtomicSelector = (AtomicElementSelector)otherSelector;
+		
+		return selectedElementName.equalsIgnoreCase(otherAtomicSelector.selectedElementName)
+				&& selectedID.equalsIgnoreCase(otherAtomicSelector.selectedID)
+				&& selectedClasses.size() == otherAtomicSelector.selectedClasses.size() && 
+				(selectedClasses.size() != 0 ? selectedClasses.containsAll(otherAtomicSelector.selectedClasses) : true)
+				&& (conditions.size() == otherAtomicSelector.conditions.size()
+				&& conditions.containsAll(otherAtomicSelector.conditions))
+				&& pseudoClasses.equals(otherAtomicSelector.pseudoClasses) &&
+				pseudoElements.equals(otherAtomicSelector.pseudoElements);
+	}
+	
+	/**
+	 * Two atomic element selectors are equal
+	 * if they are in the same line anc column in the file, 
+	 */
+	@Override
+	public boolean equals(Object obj) {
 
-		// First check for element name, ID and Class which have to be the same
-		return selectedElementName.equals(otherObject.selectedElementName)
-				&& selectedID.equals(otherObject.selectedID)
-				&& selectedClasses.size() == otherObject.selectedClasses.size() && 
-				(selectedClasses.size() != 0 ? selectedClasses.containsAll(otherObject.selectedClasses) : true)
-				&& (conditions.size() == otherObject.conditions.size()
-				&& conditions.containsAll(otherObject.conditions))
-				&& pseudoClasses.equals(otherObject.pseudoClasses) &&
-				pseudoElements.equals(otherObject.pseudoElements);
+		if (!checkGeneralEquality(obj))
+		return false;
+		
+		AtomicElementSelector otherAtomicSelector = (AtomicElementSelector) obj;
+
+		return (lineNumber == otherAtomicSelector.lineNumber &&
+				columnNumber == otherAtomicSelector.columnNumber &&
+				/*parentMedia == otherAtomicSelector.parentMedia &&*/
+				selectorEquals(otherAtomicSelector));
 	}
 
-	
+	private boolean checkGeneralEquality(Object obj) {
+		if (obj == null)
+			return false;
+		if (obj == this)
+			return true;
+		if (obj.getClass() != AtomicElementSelector.class)
+			return false;
+		return true;
+	}
+
 	@Override
 	public int hashCode() {
 		int result = 17;
+		result = 31 * result + lineNumber;
+		result = 31 * result + columnNumber;
 		if (selectedID != null)
 			result = 31 * result + selectedID.hashCode();
 		if (selectedElementName != null)
@@ -152,7 +181,7 @@ public class AtomicElementSelector extends AtomicSelector {
 		for (String c : selectedClasses)
 			result += c.hashCode();
 		for (SelectorCondition condition : conditions)
-			result = 31 * result + (condition == null ? 0 : condition.hashCode());
+			result += (condition == null ? 0 : condition.hashCode());
 		for (PseudoClass pseudoClass : pseudoClasses)
 			result = 31 * result + (pseudoClass == null ? 0 : pseudoClass.hashCode());
 		for (PseudoElement pElement : pseudoElements)

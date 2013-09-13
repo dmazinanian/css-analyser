@@ -180,7 +180,7 @@ public class ShorthandDeclaration extends Declaration {
 				individual.getRealValues().add(v);
 			}
 		} else {
-			individual = DeclarationFactory.getDeclaration(propertyName, valuesList, belongsToSelector, lineNumber, colNumber, isImportant);
+			individual = DeclarationFactory.getDeclaration(propertyName, valuesList, parentSelector, lineNumber, colNumber, isImportant);
 		}
 			
 		addIndividualDeclaration(individual);
@@ -211,12 +211,12 @@ public class ShorthandDeclaration extends Declaration {
 		return individualDeclarations.values();
 	}
 	
-	public boolean individualDeclarationsEqual(ShorthandDeclaration otherDeclaration) {
+	public boolean individualDeclarationsEquivalent(ShorthandDeclaration otherDeclaration) {
 		if (individualDeclarations.size() != otherDeclaration.individualDeclarations.size())
 			return false;
 		for (Entry<String, Declaration> entry : individualDeclarations.entrySet()) {
 			Declaration otherIndividualDeclaration = otherDeclaration.individualDeclarations.get(entry.getKey());
-			if (otherIndividualDeclaration != null && entry.getValue().equivalent(otherIndividualDeclaration)) {
+			if (otherIndividualDeclaration != null && entry.getValue().declarationIsEquivalent(otherIndividualDeclaration)) {
 				;
 			} else {
 				return false;

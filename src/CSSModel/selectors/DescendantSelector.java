@@ -41,17 +41,38 @@ public class DescendantSelector extends AtomicSelector {
 	}
 	
 	@Override
+	public boolean selectorEquals(Selector otherSelector) {
+		if (!checkGeneralEquality(otherSelector))
+			return false;
+		DescendantSelector otherDesendantSelector = (DescendantSelector)otherSelector;
+		return parentSelector.selectorEquals(otherDesendantSelector.parentSelector) &&
+				childSelector.selectorEquals(otherDesendantSelector.childSelector);
+	}
+	
+	@Override
 	public boolean equals(Object obj) {
+		checkGeneralEquality(obj);
+		DescendantSelector otherDesendantSelector = (DescendantSelector)obj;
+		return (lineNumber == otherDesendantSelector.lineNumber &&
+				columnNumber == otherDesendantSelector.columnNumber &&
+				selectorEquals(otherDesendantSelector));
+	}
+
+	private boolean checkGeneralEquality(Object obj) {
+		if (obj == null)
+			return false;
+		if (obj == this)
+			return true;
 		if (!(obj instanceof DescendantSelector))
 			return false;
-		DescendantSelector otherObj = (DescendantSelector)obj;
-		return (parentSelector.equals(otherObj.parentSelector) &&
-				childSelector.equals(otherObj.childSelector));
+		return true;
 	}
 	
 	@Override
 	public int hashCode() {
 		int result = 17;
+		result = 31 * result + lineNumber;
+		result = 31 * result + columnNumber;
 		result = 31 * result + (parentSelector == null ? 0 : parentSelector.hashCode());
 		result = 31 * result + (childSelector == null ? 0 : childSelector.hashCode());
 		return result;

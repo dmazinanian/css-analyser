@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import CSSModel.conditions.SelectorCondition;
 import CSSModel.selectors.AtomicElementSelector;
 import CSSModel.selectors.AtomicSelector;
 import CSSModel.selectors.DescendantSelector;
@@ -18,6 +17,7 @@ import CSSModel.selectors.ImmediatelyAdjacentSelector;
 import CSSModel.selectors.IndirectAdjacentSelector;
 import CSSModel.selectors.PseudoClass;
 import CSSModel.selectors.PseudoNegativeClass;
+import CSSModel.selectors.conditions.SelectorCondition;
 
 /**
  * This class provides functionalities for working with

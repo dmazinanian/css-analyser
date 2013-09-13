@@ -1,5 +1,6 @@
 package io;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
@@ -63,17 +64,20 @@ public final class IOHelper {
 
 	}
 
-	public static void writeFile(FileWriter fw, String line) throws IOException {
+	public static void writeFile(BufferedWriter fw, String line) throws IOException {
 		fw.append(line + "\r\n");
 	}
 
-	public static FileWriter openFile(String path) throws IOException {
+	public static BufferedWriter openFile(String path) throws IOException {
+		return openFile(path, false);
+	}
+	public static BufferedWriter openFile(String path, boolean append) throws IOException {
 		File f = new File(path);
-		FileWriter fw = new FileWriter(f);
+		BufferedWriter fw = new BufferedWriter(new FileWriter(f, append));
 		return fw;
 	}
 
-	public static void closeFile(FileWriter fw) throws IOException {
+	public static void closeFile(BufferedWriter fw) throws IOException {
 		fw.close();
 	}
 	

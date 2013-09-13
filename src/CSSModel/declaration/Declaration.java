@@ -14,7 +14,7 @@ import CSSModel.selectors.Selector;
 
 /**
  * The representation of a single CSS declaration which consists of a
- * list of a property (as a String) and a list of values. 
+ * a property (as a String) and a list of values (as {@link DeclarationValue}s. 
  * 
  * @author Davood Mazinanian
  *
@@ -23,7 +23,7 @@ public class Declaration implements Cloneable {
 
 	protected final String property;
 	protected final List<DeclarationValue> declarationValues;
-	protected final Selector belongsToSelector;
+	protected final Selector parentSelector;
 	protected final int lineNumber;
 	protected final int colNumber;
 	protected final boolean isImportant;
@@ -58,11 +58,25 @@ public class Declaration implements Cloneable {
 	public Declaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int fileLineNumber, int fileColNumber, boolean important, boolean addMissingValues) {
 		property = propertyName;
 		declarationValues = values;
-		belongsToSelector = belongsTo;
+		parentSelector = belongsTo;
 		lineNumber = fileLineNumber;
 		colNumber = fileColNumber;
 		isImportant = important;
-		switch (propertyName) {
+		isCommaSeparatedListOfValues = isCommaSeparated(property);
+		
+		if (addMissingValues)
+			addMissingValues();
+	}
+	
+	/**
+	 * Gets a property name (as String) and 
+	 * determines whether the property can have a list of 
+	 * comma-separated values (like CSS3 background, font, etc.)
+	 * @param property
+	 * @return
+	 */
+	public static boolean isCommaSeparated(String property) {
+		switch (property) {
 		case "font-family":
 		case "font": // ?
 		case "background":
@@ -81,22 +95,15 @@ public class Declaration implements Cloneable {
 		case "overflow-style":
 		case "animation":
 		case "src": // for @font-face
-			isCommaSeparatedListOfValues = true;
-			break;
-		default:
-			isCommaSeparatedListOfValues = false;
+			return true;
 		}
-		
-		if (addMissingValues)
-			addMissingValues();
+		return false;
 	}
-	
+
 	/**
-	 * This methid adds missing values to the different properties
+	 * This method adds missing values to the different properties
 	 * which can have more than one value (like background-position).
-	 * 
 	 */
-	
 	private void addMissingValues() {
 		
 		if (declarationValues == null || declarationValues.size() == 0)
@@ -118,7 +125,6 @@ public class Declaration implements Cloneable {
 				}
 				break;
 			// TODO add four-valued background-position
-				
 			}
 			break;
 			
@@ -1113,7 +1119,7 @@ public class Declaration implements Cloneable {
 	 * @return
 	 */
 	public Selector getSelector() {
-		return belongsToSelector;
+		return parentSelector;
 	}
 
 	/**
@@ -1156,8 +1162,7 @@ public class Declaration implements Cloneable {
 	 */
 	public void addMissingValue(DeclarationValue value, int position) {
 		value.setIsAMissingValue(true);
-		if (value.isAMissingValue())
-			numberOfMissingValues++;
+		numberOfMissingValues++;
 		declarationValues.add(position, value);
 	}
 
@@ -1198,25 +1203,16 @@ public class Declaration implements Cloneable {
 		List<DeclarationValue> allValues = getRealValues(); 
 		List<DeclarationValue> otherAllValues = otherDeclaration.getRealValues(); 
 	
-		if (allValues.size() != otherAllValues.size())
+		if (allValues.size() != otherAllValues.size() ||
+				(onlyCheckEquality && numberOfMissingValues != otherDeclaration.numberOfMissingValues))
 			return false;
-				
-		/*
-		 * Swap two lists if numberOfMissingValues is less in the first list
-		 * because we loop over first list 
-		 */
-		if (onlyCheckEquality && numberOfMissingValues < otherDeclaration.numberOfMissingValues) {
-				List<DeclarationValue> temp = allValues;
-				allValues = otherAllValues;
-				otherAllValues = temp;
-		}
 				
 		int numberOfValuesForWhichOrderIsImportant = 0;
 		for (DeclarationValue v : allValues)
 			if (!v.isKeyword() || "inherit".equals(v.getValue()) || "none".equals(v.getValue()) || NamedColors.getRGBAColor(v.getValue()) != null)
 				numberOfValuesForWhichOrderIsImportant++;
 		
-		int[] checkedValues = new int[allValues.size()];
+		boolean[] checkedValues = new boolean[allValues.size()];
 		
 		for (int i = 0; i < allValues.size(); i++) {
 			
@@ -1229,7 +1225,7 @@ public class Declaration implements Cloneable {
 				boolean valueFound = false;
 				for (int k = 0; k < otherAllValues.size(); k++) {
 					
-					if (checkedValues[k] == 1)
+					if (checkedValues[k])
 						continue;
 					
 					DeclarationValue checkingValue = otherAllValues.get(k);
@@ -1237,13 +1233,13 @@ public class Declaration implements Cloneable {
 					if (checkingValue == null || (onlyCheckEquality && checkingValue.isAMissingValue()))
 						continue;
 					
-					if ((!onlyCheckEquality && twoValuesAreEquivalent(currentValue, checkingValue)) ||
+					if ((!onlyCheckEquality && currentValue.equivalent(checkingValue)) ||
 						(onlyCheckEquality && currentValue.equals(checkingValue))) {
 						/*
 						 * Removing the checking value is necessary for special cases like
 						 * background-position: 0px 0px VS background-position: 0px 10px
 						 */
-						checkedValues[k] = 1;
+						checkedValues[k] = true;
 						valueFound = true;
 						break;
 					}
@@ -1257,12 +1253,12 @@ public class Declaration implements Cloneable {
 				// Non-keyword values should appear at the same position in the other declaration
 				DeclarationValue checkingValue = otherAllValues.get(i);
 
-				if (checkedValues[i] == 1 || checkingValue == null || (onlyCheckEquality && checkingValue.isAMissingValue()))
+				if (checkedValues[i] || checkingValue == null || (onlyCheckEquality && checkingValue.isAMissingValue()))
 					return false;
 				
-				if ((!onlyCheckEquality && twoValuesAreEquivalent(currentValue, checkingValue)) ||
+				if ((!onlyCheckEquality && currentValue.equivalent(checkingValue)) ||
 						(onlyCheckEquality && currentValue.equals(checkingValue)))
-					checkedValues[i] = 1;
+					checkedValues[i] = true;
 				else
 					return false;
 
@@ -1273,37 +1269,23 @@ public class Declaration implements Cloneable {
 	}
 
 	/**
-	 * Checks two values to identify if they are equivalent.
-	 * Both values must be of type {@link DeclarationEquivalentValue},
-	 * otherwise, the {@link #equals()} method specifies the equivalency. 
-	 * @param value1
-	 * @param value2
-	 * @return
-	 */
-	private boolean twoValuesAreEquivalent(DeclarationValue value1, DeclarationValue value2) {
-			
-		if (value1 == null || value2 == null)
-				return false;
-		
-		boolean equal = false;
-
-		if (value1 instanceof DeclarationEquivalentValue && value2 instanceof DeclarationEquivalentValue)
-			equal = ((DeclarationEquivalentValue)value1).equivalent((DeclarationEquivalentValue)value2);
-		else 
-			// Equals are equivalent too. 
-			equal = value1.equals(value2);
-		
-		return equal;
-	}
-	
-
-	/**
-	 * Return true if two declarations are equivalent
+	 * Return true if the given declarations is equivalent
+	 * with this declaration
 	 * @param otherDeclaration
 	 * @return
 	 */
-	public boolean equivalent(Declaration otherDeclaration) {
+	public boolean declarationIsEquivalent(Declaration otherDeclaration) {
 		return (property.equals(otherDeclaration.property) && valuesEquivalent(otherDeclaration, false));
+	}
+	
+	/**
+	 * Return true if the given declarations is equal
+	 * with this declaration
+	 * @param otherDeclaration
+	 * @return
+	 */
+	public boolean declarationEquals(Declaration otherDeclaration) {
+		return (property.equals(otherDeclaration.property) && valuesEquivalent(otherDeclaration, true));
 	}
 	
 	/**
@@ -1352,38 +1334,67 @@ public class Declaration implements Cloneable {
 		return String.format("%s: %s", property, toReturn);
 	}
 
-	/**
-	 * The equals method for Declaration only takes the values for 
-	 * "property: value" into account. It doesn't take the Selector 
-	 * to which this declaration belongs into account. Note that
-	 * this method does NOT take equivalent values into account. 
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (obj.getClass() != getClass())
-			return false;
-		Declaration otherDeclaration = (Declaration) obj;
-		
-		return (property.equals(otherDeclaration.property) && valuesEquivalent(otherDeclaration, true));
-	}
-
-	private int hashCode = -1;
+	int hashCode = -1;
 	@Override
 	public int hashCode() {
 		if (hashCode == -1) {
-			hashCode = 17;
-			hashCode = 31 * hashCode + property.hashCode();
-			int h = 0;
-			for (DeclarationValue v : declarationValues)
-				if (!v.isAMissingValue())
-					h += v.hashCode();
-			hashCode = 31 * hashCode + h;
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + colNumber;
+			result = prime
+					* result
+					+ ((declarationValues == null) ? 0 : declarationValues
+							.hashCode());
+			result = prime * result + (isCommaSeparatedListOfValues ? 1231 : 1237);
+			result = prime * result + (isImportant ? 1231 : 1237);
+			result = prime * result + lineNumber;
+			result = prime * result + numberOfMissingValues;
+			result = prime * result
+					+ ((parentSelector == null) ? 0 : parentSelector.hashCode());
+			result = prime * result
+					+ ((property == null) ? 0 : property.hashCode());
+			hashCode = result;
 		}
 		return hashCode;
 	}
-	
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Declaration other = (Declaration) obj;
+		if (colNumber != other.colNumber)
+			return false;
+		if (declarationValues == null) {
+			if (other.declarationValues != null)
+				return false;
+		} else if (!declarationValues.equals(other.declarationValues))
+			return false;
+		if (isCommaSeparatedListOfValues != other.isCommaSeparatedListOfValues)
+			return false;
+		if (isImportant != other.isImportant)
+			return false;
+		if (lineNumber != other.lineNumber)
+			return false;
+		if (numberOfMissingValues != other.numberOfMissingValues)
+			return false;
+		if (parentSelector == null) {
+			if (other.parentSelector != null)
+				return false;
+		} else if (!parentSelector.equals(other.parentSelector))
+			return false;
+		if (property == null) {
+			if (other.property != null)
+				return false;
+		} else if (!property.equals(other.property))
+			return false;
+		return true;
+	}
+
 	/**
 	 * Provides a deep copy of current {@link Declaration}.
 	 * Values are also deeply copied.
@@ -1394,7 +1405,7 @@ public class Declaration implements Cloneable {
 		for (DeclarationValue v : declarationValues) {
 			values.add(v.clone());
 		}
-		return new Declaration(property, values, belongsToSelector, lineNumber, colNumber, isImportant, false);
+		return new Declaration(property, values, parentSelector, lineNumber, colNumber, isImportant, false);
 	}
 
 }

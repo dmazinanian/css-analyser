@@ -1,13 +1,10 @@
 package analyser.duplication;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
-import CSSModel.declaration.Declaration;
 import CSSModel.selectors.Selector;
 
 /**
@@ -20,32 +17,23 @@ import CSSModel.selectors.Selector;
  * @author Davood Mazinanian
  *
  */
-public class ItemSet implements Iterable<Declaration>, Cloneable {
+public class ItemSet implements Set<Item>, Cloneable {
 	
-	private final Set<Declaration> itemsetField;
-	private final List<Selector> supports;
+	private final Set<Item> itemset;
+	private final Set<Selector> support;
 	
-	public ItemSet(Set<Declaration> declarations, List<Selector> selectorsList) {
-		itemsetField = declarations;
-		supports = selectorsList;
+	public ItemSet() {
+		itemset = new HashSet<>();
+		support = new HashSet<>();
+	} 
+	
+	public ItemSet(Set<Item> declarations, Set<Selector> support) {
+		itemset = declarations;
+		this.support = support;
 	}
 	
-	public int getSupport() {
-		return supports.size();
-	}
-	
-	
-	public Collection<Declaration> getItemSet() {
-		return itemsetField;
-	}
-	
-	public Collection<Selector> getSelectors() {
-		return supports;
-	}
-
-	@Override
-	public Iterator<Declaration> iterator() {
-		return itemsetField.iterator();
+	public Set<Selector> getSupport() {
+		return support;
 	}
 	
 	@Override
@@ -60,20 +48,138 @@ public class ItemSet implements Iterable<Declaration>, Cloneable {
 			return false;
 
 		ItemSet otherObj = (ItemSet)obj; 
-		return itemsetField.equals(otherObj.itemsetField);
-	}
-	
-	@Override
-	public int hashCode() {
-		return itemsetField.hashCode();
+		return itemset.equals(otherObj.itemset);
 	}
 
-	public boolean itemsEqual(Collection<Declaration> set) {
-		return itemsetField.size() == set.size() && itemsetField.containsAll(set);
+	@Override
+	public int hashCode() {
+		return itemset.hashCode();
 	}
 	
 	@Override
 	protected ItemSet clone() {
-		return new ItemSet(new HashSet<Declaration>(itemsetField), new ArrayList<Selector>(supports));
+		return new ItemSet(new HashSet<Item>(itemset), new HashSet<Selector>(support));
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder s = new StringBuilder("(");
+		for (Item d : itemset)
+			s.append(d.toString() + " - ");
+		if (s.length() > 3)
+			s.delete(s.length() - 3, s.length());
+		s.append(") : {") ;
+		if (support != null) {
+			for (Selector sel : support)
+				s.append(sel + ", ");
+			s.delete(s.length() - 2, s.length());
+		}
+		s.append("}");
+		return s.toString();
+	}
+
+	@Override
+	public boolean add(Item e) {
+		boolean changed = itemset.add(e);
+		if (changed) {
+			if (itemset.size() == 1) {
+				support.addAll(e.getSupport());
+			}
+			else
+				support.retainAll(e.getSupport());
+		}
+		return changed;
+		
+	}
+
+	@Override
+	public boolean addAll(Collection<? extends Item> c) {
+		boolean changed = false;
+		for (Item i : c) {
+			if (add(i))
+				changed = true;
+		}
+		return changed;
+	}
+
+	@Override
+	public void clear() {
+		itemset.clear();
+		support.clear();
+	}
+
+	@Override
+	public boolean contains(Object o) {
+		return itemset.contains(o);
+	}
+
+	@Override
+	public boolean containsAll(Collection<?> c) {
+		return itemset.containsAll(c);
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return itemset.isEmpty();
+	}
+
+	@Override
+	public Iterator<Item> iterator() {
+		return itemset.iterator();
+	}
+
+	@Override
+	public boolean remove(Object o) {
+		boolean changed = itemset.remove(o);
+		if (changed) {
+			rebuildSupport();
+		}
+		return changed;
+	}
+
+	private void rebuildSupport() {
+		support.clear();
+		boolean mustUnion = true;
+		for (Item i : itemset) {
+			if (mustUnion) {
+				support.addAll(i.getSupport());
+				mustUnion = false;
+			} else {
+				support.retainAll(i.getSupport());
+			}
+		}
+	}
+
+	@Override
+	public boolean removeAll(Collection<?> c) {
+		boolean changed = itemset.removeAll(c);
+		if (changed) {
+			rebuildSupport();
+		}
+		return changed;
+	}
+
+	@Override
+	public boolean retainAll(Collection<?> c) {
+		boolean changed = itemset.retainAll(c);
+		if (changed) {
+			rebuildSupport();
+		}
+		return changed;
+	}
+
+	@Override
+	public int size() {
+		return itemset.size();
+	}
+
+	@Override
+	public Object[] toArray() {
+		return itemset.toArray();
+	}
+
+	@Override
+	public <T> T[] toArray(T[] a) {
+		return itemset.toArray(a);
 	}
 }

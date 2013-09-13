@@ -17,11 +17,14 @@ public class StyleSheet {
 
 	private final List<Selector> listOfSelectors;
 	private List<Declaration> listOfDeclarations;
-	private final String cssFilePath;
+	private String cssFilePath;
 
-	public StyleSheet(String path) {
+	public StyleSheet() {
 		listOfSelectors = new ArrayList<>();
-		cssFilePath = path; 
+	}
+	
+	public void setPath(String path) {
+		cssFilePath = path;
 	}
 
 	/**
