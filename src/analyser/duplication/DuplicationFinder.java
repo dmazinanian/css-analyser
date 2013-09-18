@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -90,7 +91,7 @@ public class DuplicationFinder {
 		C1 = new ItemSetList();
 		
 		// Lets get all the declarations
-		List<Declaration> allDeclarations = stylesheet.getAllDeclarations();
+		List<Declaration> allDeclarations = new ArrayList<>(stylesheet.getAllDeclarations());
 		
 		// We don't want to repeat, being identical is a symmetric relation
 		Set<Integer> visitedIdenticalDeclarations = new HashSet<>();
@@ -134,10 +135,14 @@ public class DuplicationFinder {
 			currentTypeIIDuplicatedDeclarations.add(currentDeclaration);
 			boolean mustAddCurrentTypeTwoDuplication = false;
 			
+			// for apriori
 			Item newItem = declarationItemMap.get(currentDeclaration);
 			if (newItem == null) {
 				newItem = new Item(currentDeclaration);
 				declarationItemMap.put(currentDeclaration, newItem);
+				ItemSet itemSet = new ItemSet();
+				itemSet.add(newItem);
+				C1.add(itemSet);
 			}
 			
 			while (++checkingDecIndex < allDeclarations.size()) {
@@ -149,10 +154,8 @@ public class DuplicationFinder {
 				if (equals && !visitedIdenticalDeclarations.contains(currentDeclarationIndex) && 
 						!visitedIdenticalDeclarations.contains(checkingDecIndex) ) {
 					
-					/*
-					 * We have found type I duplication
-					 */
-					//We add the checkingDeclaration, it will add the Selector itself.
+					// We have found type I duplication
+					// We add the checkingDeclaration, it will add the Selector itself.
 					currentTypeIDuplicatedDeclarations.add(checkingDeclaration);
 					visitedIdenticalDeclarations.add(checkingDecIndex);
 					mustAddCurrentTypeIDuplication = true;
@@ -175,8 +178,6 @@ public class DuplicationFinder {
 				}
 				
 			}
-
-			//if (!visitedIdenticalDeclarations.contains(currentDeclarationIndex) && !visitedEquivalentDeclarations.contains(currentDeclarationIndex))
 			
 			// Only if we have at least one declaration in the list (at list one duplication)
 			if (mustAddCurrentTypeIDuplication) {
@@ -198,31 +199,47 @@ public class DuplicationFinder {
 					typeTwoDuplications.addDuplication(typeTwoDuplication);
 				}
 			}
-		
-			// for apriori
-			ItemSet itemSet = new ItemSet();
-			itemSet.add(newItem);
-			C1.add(itemSet);
 			
 		}
 
 	}
 	
-	
-
+	/**
+	 * Finds typeIII duplications 
+	 */
 	public void findTypeThreeDuplication() {
 		
 		typeThreeDuplications = new DuplicationsList();
 		
-		List<Selector> selectors = stylesheet.getAllSelectors();
+		Set<Selector> selectors = stylesheet.getAllSelectors();
 		
 		for (Selector selector : selectors) {
 			
+			/*
+			 * For each selector, we loop over the declarations to see
+			 * whether a declaration could become the individual property for 
+			 * one shorthand property (like margin-left which is an
+			 * individual declaration of margin). We keep all individual 
+			 * properties of a same type (like margin-top, -left, -right and -bottom)
+			 * which are in the same selector in a set (namely currentIndividuals)
+			 * and add this set to a map (named shorthandedDeclarations) which maps the name of corresponding
+			 * shorthand property (margin, in our example) to the mentioned set.  
+			 */
 			Map<String, Set<Declaration>> shorthandedDeclarations = new HashMap<>();
 			
 			for (Declaration declaration : selector.getDeclarations()) {
 				String property = declaration.getProperty();
+				/*
+				 * If a property is the individual property for one or more shorthand
+				 * properties, ShorthandDeclaration#getShorthandPropertyNames() method
+				 * returns a set containing the name of those shorthand properties 
+				 * (for example, providing margin-left would result to margin)
+				 */
 				Set<String> shorthands = ShorthandDeclaration.getShorthandPropertyNames(property);
+				/*
+				 * We add the entry (or update the existing entry) in the HashMap, which
+				 * maps the mentioned shorthand properties to the individual properties 
+				 */
 				for (String shorthand : shorthands) {
 					Set<Declaration> currentIndividuals = shorthandedDeclarations.get(shorthand);
 					if (currentIndividuals == null)
@@ -232,22 +249,31 @@ public class DuplicationFinder {
 				}
 			}
 			
+			/*
+			 * Then we search all the Declarations of current stylesheet
+			 * to see whether one shorthand property has the equal (or equivalent)
+			 */
 			for (Entry<String, Set<Declaration>> entry : shorthandedDeclarations.entrySet()) {
+				
 				// Create a shorthand and compare it with a real shorthand
-				ShorthandDeclaration shorthand = new ShorthandDeclaration(entry.getKey(), new ArrayList<DeclarationValue>(), selector, -1, -1, false);
+				ShorthandDeclaration virtualShorthand = new ShorthandDeclaration(entry.getKey(), new ArrayList<DeclarationValue>(), selector, -1, -1, false);
 				for (Declaration dec : entry.getValue()) {
-					shorthand.addIndividualDeclaration(dec);
+					virtualShorthand.addIndividualDeclaration(dec);
 				}
 				
+				// For each real shorthand:
 				for (Declaration checkingDeclaration : stylesheet.getAllDeclarations()) {
-					if (checkingDeclaration instanceof ShorthandDeclaration &&
-							shorthand.individualDeclarationsEquivalent((ShorthandDeclaration)checkingDeclaration)) {
+					if (checkingDeclaration instanceof ShorthandDeclaration && 
+						virtualShorthand.individualDeclarationsEquivalent((ShorthandDeclaration)checkingDeclaration)) {
+						
 						TypeIIIDuplication duplication = new TypeIIIDuplication((ShorthandDeclaration)checkingDeclaration, entry.getValue());
 						typeThreeDuplications.addDuplication(duplication);
 						
 						// For apriori
+						Item item = declarationItemMap.get(checkingDeclaration);
 						
-						//addSupport(checkingDeclaration, selector);
+						item.add(virtualShorthand, true);
+						
 					}
 				}
 			}
@@ -279,79 +305,39 @@ public class DuplicationFinder {
 	
 	public List<ItemSetList> apriori(final int minSupport, String path) throws IOException {
 					
-		//List<ItemSetList> c = new ArrayList<>(); // Keeping C(k), the candidate list of itemsets of size k
 		List<ItemSetList> l = new ArrayList<>(); // Keeping L(k), the frequent itemsets of size k
 		
-		l.add(getLfromC(C1, minSupport)); // Generating L(1) by pruning C(1)
-		
-		ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean(); 
-		long nowTime, startTime, overallEndTime, overallStartTime = threadMXBean.getCurrentThreadCpuTime();
-		
-		BufferedWriter fw = IOHelper.openFile(path, true);
-
+		l.add(getLfromC(C1, minSupport)); // Generating L(1) by cutting C(1)
+				
 		int k = 1;
-		startTime = overallStartTime;
 		while (true) {
-
+			// Generating L(k) by using L(k-1)
 			l.add(generateCandidates(l.get(k - 1), minSupport));
 			
-			//ItemSetList Lk = getLfromC(c.get(k), minSupport);
-			
-			nowTime = threadMXBean.getCurrentThreadCpuTime();
-			
-			if (l.get(k).size() == 0) // If L(k) is empty break
-				break;
-			else {
-				String s = String.format("Number of rows: %7s\tTime for completion: %5s", l.get(k).size(), (nowTime - startTime) / 1000000);
-				System.out.println(k + "-itemsets. " + s);
-				System.out.println("Writing to file...");
-				IOHelper.writeFile(fw, l.get(k).toString());
-				IOHelper.writeFile(fw, s);
-				System.out.println("Finieshed writing to file.");
+			// Removing previous step's redundant 
+			List<ItemSet> toRemove = new ArrayList<>(l.get(k - 1).size());
+			for (ItemSet itemset : l.get(k - 1)) {
+				if (l.get(k).containsSubset(itemset))
+					toRemove.add(itemset);
 			}
+			l.get(k - 1).removeAll(toRemove);
 			
-			//l.add(Lk); // Add L(k)
+			if (l.get(k).size() == 0) { // If L(k) is empty break
+				l.remove(k);
+				break;
+			}
+
 			k++;
-			startTime = nowTime;
-		}
-		overallEndTime = threadMXBean.getCurrentThreadCpuTime(); 
-		String s = String.format("Overall time for completing apriori: %5s", l.get(k).size(), (nowTime - overallStartTime) / 1000000);
-		System.out.println(s);
-		IOHelper.writeFile(fw, s);
-		fw.close();
+		} 
 		
 		return l;
 	}
 
-	
-	/*private ItemSetList getC1() { // Gets C(1), the individual declarations with their frequencies
-		
-		//List<Declaration> allDeclarations = 
-		
-		ItemSetList C1 = new ItemSetList(); // List of itemsets and their supports
-
-		// Only look for distinct declarations
-		Set<Declaration> allDistinctDeclarations = declarationSelector.keySet();
-		
-		for (Declaration currentDeclaration : allDistinctDeclarations) {
-					
-			//if (visited.contains(currentDeclaration)) 
-			//	continue;
-			
-			Set<Declaration> declarations = new HashSet<>(); // The 1-itemset
-			declarations.add(currentDeclaration);			
-			C1.addItemSet(declarations, declarationSelector.get(currentDeclaration));
-			//visited.add(currentDeclaration);
-			//System.out.println(currentDeclaration + ":" + declarationSelector.get(currentDeclaration));
-		}
-
-		return C1;
-	}*/
 
 	private ItemSetList generateCandidates(ItemSetList itemSetList, int minSupport) {
 		
 		/* itemSetList is L(k-1), which is a table of ItemSets
-		 * toReturn is C(k)
+		 * toReturn is L(k)
 		 */
 		ItemSetList toReturn = new ItemSetList();
 		
@@ -379,48 +365,15 @@ public class DuplicationFinder {
 				 */
 				ItemSet newItemSet = itemset.clone();
 				if (!newItemSet.contains(item)) {
+					
 					newItemSet.add(item);
+					
 					/*
-					 * Also, C(k) should not contain this new itemset.
+					 * Also, L(k) should not contain this new itemset.
 					 */
-					if (newItemSet.getSupport().size() >= minSupport && !toReturn.contains(newItemSet)) {
-
-						/* Lets apply apriori attribute: (pruning)
-						 * We need to see whether all subsets of size k-1
-						 * of newItemSet are in L(k-1). If not, this itemset
-						 * must not be added.
-						 * To do this, we remove one member of newItemSet at a 
-						 * time and check if this new set is in L(k-1).
-						 * /
-						
-						/* First we copy newItemSet because we cannot modify it while we are
-						 * iterating over its values
-						 * /
-						Set<Item> newSetTemp = newItemSet.clone();
-
-						// Flag too see whether we need to add this itemset or not
-						boolean dontAddCurrentSet = false;
-
-						for (Item itemToBeRemoved : newItemSet) {
-							// Remove declaration, one at a time to get k-1 members
-							newSetTemp.remove(itemToBeRemoved);
-							
-							// Lets see if this subset of size k-1 is in L(k-1) or not
-							if (!itemSetList.contains(newSetTemp)) { 
-								dontAddCurrentSet = true;
-								System.out.println("yes");
-								break;
-							}
-							newSetTemp.add(itemToBeRemoved);
-						}
-						
-						if (!dontAddCurrentSet) {*/
-							//Set<Selector> supp = newItemSet.getSupport();
-							// Copy
+					if (newItemSet.getSupport().size() >= minSupport && !toReturn.contains(newItemSet)) {		
 							toReturn.add(newItemSet.clone()); 
-						//} 
 					} 
-					//newItemSet.remove(item); // remove the newly added declaration
 				}
 			}
 		}
@@ -437,22 +390,11 @@ public class DuplicationFinder {
 		}
 		return Lk;	
 	}
-
-	/*private Set<Selector> getSupport(Set<Declaration> declarations) {
-		
-		Set<Selector> selectors = null; // Put first declaration's selector set into the selectors list 
-
-		//int size = declarations.size();
-		boolean mustAdd = true;
-		for (Declaration d : declarations)
-			if (mustAdd) {
-				selectors = new HashSet<>(declarationSelector.get(d));
-				mustAdd = false;
-			}
-			else
-				selectors.retainAll(declarationSelector.get(d));
 	
-		return selectors;
-	} */
+	
+	
+	
+	
+	
 
 }

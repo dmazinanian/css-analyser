@@ -1,7 +1,9 @@
 package CSSModel;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import CSSModel.declaration.Declaration;
 import CSSModel.selectors.AtomicSelector;
@@ -15,12 +17,12 @@ import CSSModel.selectors.Selector;
  */
 public class StyleSheet {
 
-	private final List<Selector> listOfSelectors;
-	private List<Declaration> listOfDeclarations;
+	private final Set<Selector> listOfSelectors;
+	private Set<Declaration> listOfDeclarations;
 	private String cssFilePath;
 
 	public StyleSheet() {
-		listOfSelectors = new ArrayList<>();
+		listOfSelectors = new HashSet<>();
 	}
 	
 	public void setPath(String path) {
@@ -42,7 +44,7 @@ public class StyleSheet {
 	 * 
 	 * @return List<Selector>
 	 */
-	public List<Selector> getAllSelectors() {
+	public Set<Selector> getAllSelectors() {
 		return listOfSelectors;
 	}
 
@@ -53,8 +55,8 @@ public class StyleSheet {
 	 * 
 	 * @return List<AtomicSelector>
 	 */
-	public List<AtomicSelector> getAllAtomicSelectors() {
-		List<AtomicSelector> allAtomicSelectors = new ArrayList<>();
+	public Set<AtomicSelector> getAllAtomicSelectors() {
+		Set<AtomicSelector> allAtomicSelectors = new HashSet<>();
 
 		for (Selector selector : listOfSelectors) { // Look inside all selectors
 			if (selector instanceof AtomicSelector) {
@@ -76,9 +78,9 @@ public class StyleSheet {
 	 * 
 	 * @return List<Declaration>
 	 */
-	public List<Declaration> getAllDeclarations() {
+	public Set<Declaration> getAllDeclarations() {
 		if (listOfDeclarations == null) {
-			listOfDeclarations = new ArrayList<>();
+			listOfDeclarations = new HashSet<>();
 			for (Selector selector : listOfSelectors)
 				for (Declaration declaration : selector.getDeclarations())
 					listOfDeclarations.add(declaration);

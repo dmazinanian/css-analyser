@@ -28,13 +28,16 @@ public class ItemSetList implements Set<ItemSet> {
 	public boolean add(ItemSet itemSet) {
 		if (itemSet.getSupport().size() > maximumSupport)
 			maximumSupport = itemSet.getSupport().size();
+		itemSet.setParentItemSetList(this);
 		return itemsets.add(itemSet);
 	}
 
-	public boolean add(Set<Item> itemSet, Set<Selector> supportSelectors) {
+	public boolean add(Set<Item> itemsSet, Set<Selector> supportSelectors) {
 		if (supportSelectors.size() > maximumSupport)
 			maximumSupport = supportSelectors.size();
-		return itemsets.add(new ItemSet(itemSet, supportSelectors));
+		ItemSet newItemSet = new ItemSet(itemsSet, supportSelectors);
+		newItemSet.setParentItemSetList(this);
+		return itemsets.add(newItemSet);
 	}
 
 	@Override
@@ -88,6 +91,8 @@ public class ItemSetList implements Set<ItemSet> {
 
 	@Override
 	public boolean addAll(Collection<? extends ItemSet> c) {
+		for (ItemSet i : c)
+			i.setParentItemSetList(this);
 		boolean changed = itemsets.addAll(c);
 		if (changed)
 			calculateMaxSupport();
@@ -139,7 +144,10 @@ public class ItemSetList implements Set<ItemSet> {
 		return changed;
 	}
 
-	private void calculateMaxSupport() {
+	/**
+	 * Calculates the maximum support count of current itemset list
+	 */
+	void calculateMaxSupport() {
 		for (ItemSet itemset : itemsets) 
 			if (maximumSupport < itemset.getSupport().size())
 				maximumSupport = itemset.getSupport().size();
@@ -167,6 +175,13 @@ public class ItemSetList implements Set<ItemSet> {
 	@Override
 	public int hashCode() {
 			return itemsets.hashCode();
+	}
+
+	public boolean containsSubset(ItemSet newItemSet) {
+		for (ItemSet itemSet : itemsets)
+			if (itemSet.containsAll(newItemSet))
+				return true;
+		return false;
 	}
 	
 

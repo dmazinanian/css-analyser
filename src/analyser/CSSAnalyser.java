@@ -4,10 +4,8 @@ import io.IOHelper;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -151,27 +149,28 @@ public class CSSAnalyser {
 			IOHelper.closeFile(fw);
 			
 			
-			//LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT);
+			LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT);
 			
-			//ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean(); 
-			//long start = threadMXBean.getCurrentThreadCpuTime();
-			/*List<ItemSetList> l = */duplicationFinder.apriori(MIN_SUPPORT, folderName + "/apriori.txt");
-			//long end = threadMXBean.getCurrentThreadCpuTime();
-			//long time = (end - start) / 1000000L;
-			//fw = IOHelper.openFile(folderName + "/apriori.txt");
-			//for (ItemSetList itemsetList : l) {
-				//IOHelper.writeFile(fw, itemsetList.toString());
-			//}
-			//String s = String.format("CPU time (miliseconds) for apriori algorithm: %s\n", time) ;
+			long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+			List<ItemSetList> l = duplicationFinder.apriori(MIN_SUPPORT, folderName + "/apriori.txt");
+			long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+			long time = (end - start) / 1000000L;
+			fw = IOHelper.openFile(folderName + "/apriori.txt");
+			for (ItemSetList itemsetList : l) {
+				IOHelper.writeFile(fw, itemsetList.toString());
+			}
+			String s = String.format("CPU time (miliseconds) for apriori algorithm: %s\n", time) ;
 
-			//IOHelper.writeFile(fw, s);
-			//IOHelper.closeFile(fw);
+			IOHelper.writeFile(fw, s);
+			IOHelper.closeFile(fw);
 			
 			//LOGGER.info(s);
 
 			
 			
 			LOGGER.info("Done");
+			
+			
 		}
 
 		IOHelper.writeFile(summaryFileWriter, String.format("\n\r\n\r%45s\t%15.3f\t%15.3f\t%15.3f", 

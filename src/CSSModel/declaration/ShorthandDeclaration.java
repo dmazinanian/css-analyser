@@ -166,11 +166,20 @@ public class ShorthandDeclaration extends Declaration {
 		return toReturn;
 	}
 	
+	/**
+	 * Adds an individual declaration to the list of individual declarations
+	 * for current declaration. 
+	 * @param propertyName The name of the property as String
+	 * @param values Values of the individual declaration.
+	 */
 	public void addIndividualDeclaration(String propertyName, DeclarationValue... values) {
-		if (individualDeclarations == null)
+		
+		if (individualDeclarations == null) {
 			individualDeclarations =  new HashMap<>();
+		}
 		
 		List<DeclarationValue> valuesList = new ArrayList<>(Arrays.asList(values));
+		// Because DeclarationFactory.getDeclaration() method only accepts a list of DeclarationValues
 		
 		Declaration individual = individualDeclarations.get(propertyName);
 		
@@ -186,6 +195,15 @@ public class ShorthandDeclaration extends Declaration {
 		addIndividualDeclaration(individual);
 	}
 	
+	/**
+	 * Adds an individual declaration to this shorthand declaration. 
+	 * This method first clones the given declaration then 
+	 * calls {@link DeclarationValue#setIsAMissingValue(boolean)} 
+	 * method with <code>false</code> argument for each value of 
+	 * cloned declaration. Then it adds it to the list of individual
+	 * declarations of current shorthand declration.
+	 * @param declaration
+	 */
 	public void addIndividualDeclaration(Declaration declaration) {
 		
 		if (individualDeclarations == null)
@@ -207,16 +225,46 @@ public class ShorthandDeclaration extends Declaration {
 		
 	}
 	
+	/**
+	 * Returns all individual declarations that constitute this shorthand.
+	 * For example, for shorthand declaration <code>margin: 2px 4px;</code>
+	 * this method returns:
+	 * <ul>
+	 * 	<li><code>margin-top: 2px;</code></li>
+	 * 	<li><code>margin-right: 4px;</code></li>
+	 * 	<li><code>margin-bottom: 2px;</code></li>
+	 * 	<li><code>margin-left: 4px;</code></li>
+	 * </ul>
+	 * @return A collection of individual {@link Declaration}s
+	 */
 	public Collection<Declaration> getIndividualDeclarations() {
 		return individualDeclarations.values();
 	}
 	
+	/**
+	 * Compares two shorthand declarations to see whether they
+	 * are the same shorthand property and they have 
+	 * the equal or equivalent set of individual properties. This 
+	 * method is mainly used in finding type III duplications. 
+	 * @param otherDeclaration
+	 * @return True if the mentioned criteria are true;
+	 */
 	public boolean individualDeclarationsEquivalent(ShorthandDeclaration otherDeclaration) {
+		
 		if (individualDeclarations.size() != otherDeclaration.individualDeclarations.size())
 			return false;
+		
+		if (!property.equals(otherDeclaration.property))
+			return false;
+		
 		for (Entry<String, Declaration> entry : individualDeclarations.entrySet()) {
 			Declaration otherIndividualDeclaration = otherDeclaration.individualDeclarations.get(entry.getKey());
-			if (otherIndividualDeclaration != null && entry.getValue().declarationIsEquivalent(otherIndividualDeclaration)) {
+			Declaration checkingIndividualDeclaration = entry.getValue();
+			if (otherIndividualDeclaration != null && 
+					(checkingIndividualDeclaration.declarationIsEquivalent(otherIndividualDeclaration) || 
+					 checkingIndividualDeclaration.declarationEquals(otherIndividualDeclaration)
+					)
+				) {
 				;
 			} else {
 				return false;

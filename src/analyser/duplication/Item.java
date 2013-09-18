@@ -16,7 +16,9 @@ import CSSModel.selectors.Selector;
 public class Item implements Set<Declaration>, Cloneable {
 
 	private final Set<Declaration> declarations;
+	private final Set<Declaration> virtualDeclarations = new HashSet<>();
 	private final Set<Selector> support;
+	private ItemSet paretnItemSet;
 	
 	/**
 	 * Creates an empty Item
@@ -25,6 +27,7 @@ public class Item implements Set<Declaration>, Cloneable {
 		declarations = new HashSet<>();
 		support = new HashSet<>();
 	}
+	
 	
 	/**
 	 * Creates new Item using the given {@link Declaration} object.
@@ -50,8 +53,16 @@ public class Item implements Set<Declaration>, Cloneable {
 	
 	@Override
 	public boolean add(Declaration e) {
-		support.add(e.getSelector());
-		return declarations.add(e);
+		return add(e, false);
+	}
+	
+	public boolean add(Declaration e, boolean isVirtual) {
+		virtualDeclarations.add(e);
+		boolean supportsChanged = support.add(e.getSelector());
+		boolean declarationsChanged = declarations.add(e);
+		if (paretnItemSet != null && supportsChanged)
+			paretnItemSet.rebuildSupport();
+		return declarationsChanged;
 	}
 
 	@Override
@@ -169,10 +180,40 @@ public class Item implements Set<Declaration>, Cloneable {
 		return support;
 	}
 
+	/**
+	 * Returns the first declaration in the set
+	 * which is used as the representative of the set
+	 * @return
+	 */
 	public Declaration getFirstDeclaration() {
-		if (size() > 0)
-			return iterator().next();
+		if (size() > 0) {
+			Declaration nonVirtualDeclaration = null;
+			for (Declaration d : declarations) {
+				nonVirtualDeclaration = d; 
+				if (virtualDeclarations.contains(nonVirtualDeclaration))
+					nonVirtualDeclaration = null;
+				else
+					break;
+			}
+			return nonVirtualDeclaration;  
+		}
 		else
 			return null;
+	}
+
+	/**
+	 * Sets the parent itemset which contains this item
+	 * @param itemSet
+	 */
+	public void setParentItemSet(ItemSet itemSet) {
+		paretnItemSet = itemSet;
+	}
+	
+	/**
+	 * Returns current imte's container itemset
+	 * @return
+	 */
+	public ItemSet getParentItemSet() {
+		return paretnItemSet;
 	}
 }

@@ -21,6 +21,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 	
 	private final Set<Item> itemset;
 	private final Set<Selector> support;
+	private ItemSetList parentItemSetList;
 	
 	public ItemSet() {
 		itemset = new HashSet<>();
@@ -80,15 +81,19 @@ public class ItemSet implements Set<Item>, Cloneable {
 
 	@Override
 	public boolean add(Item e) {
-		boolean changed = itemset.add(e);
-		if (changed) {
+		boolean itemsChanged = itemset.add(e);
+		boolean supportChanged = false;
+		if (itemsChanged) {
 			if (itemset.size() == 1) {
-				support.addAll(e.getSupport());
+				supportChanged = support.addAll(e.getSupport());
 			}
 			else
-				support.retainAll(e.getSupport());
+				supportChanged = support.retainAll(e.getSupport());
 		}
-		return changed;
+		e.setParentItemSet(this);
+		if (parentItemSetList != null && supportChanged)
+			parentItemSetList.calculateMaxSupport();
+		return itemsChanged;
 		
 	}
 
@@ -137,7 +142,11 @@ public class ItemSet implements Set<Item>, Cloneable {
 		return changed;
 	}
 
-	private void rebuildSupport() {
+	/**
+	 * Finds the intersection between the supports of
+	 * all containing items.
+	 */
+	public void rebuildSupport() {
 		support.clear();
 		boolean mustUnion = true;
 		for (Item i : itemset) {
@@ -181,5 +190,21 @@ public class ItemSet implements Set<Item>, Cloneable {
 	@Override
 	public <T> T[] toArray(T[] a) {
 		return itemset.toArray(a);
+	}
+
+	/**
+	 * Gets the ItemSetList which contains this ItemSet
+	 * @return
+	 */
+	public ItemSetList getParentItemSetList() {
+		return parentItemSetList;
+	}
+
+	/**
+	 * Gets the ItemSetList which contains this ItemSet
+	 * @param parentItemSetList
+	 */
+	public void setParentItemSetList(ItemSetList parentItemSetList) {
+		this.parentItemSetList = parentItemSetList;
 	}
 }

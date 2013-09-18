@@ -18,14 +18,14 @@ public class DeclarationsTest {
 				" }";
 		CSSParser parser = new CSSParser();
 		StyleSheet styleSheet = parser.parseCSSString(css);
-		Declaration d1 = styleSheet.getAllDeclarations().get(0);
-		Declaration d2 = styleSheet.getAllDeclarations().get(1);
+		Declaration d1 = styleSheet.getAllDeclarations().iterator().next();
+		Declaration d2 = styleSheet.getAllDeclarations().iterator().next();
 		assertEquals(true, d1.equals(d2));
 		assertEquals(true, d1.hashCode() == d2.hashCode());
 		
 		
-		Declaration d3 = styleSheet.getAllDeclarations().get(2);
-		Declaration d4 = styleSheet.getAllDeclarations().get(3);
+		Declaration d3 = styleSheet.getAllDeclarations().iterator().next();
+		Declaration d4 = styleSheet.getAllDeclarations().iterator().next();
 		assertEquals(true, d3.equals(d4));
 		assertEquals(true, d4.hashCode() == d4.hashCode());
 	}
