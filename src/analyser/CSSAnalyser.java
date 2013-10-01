@@ -18,8 +18,8 @@ import org.w3c.dom.Document;
 
 import analyser.duplication.Duplication;
 import analyser.duplication.DuplicationFinder;
-import analyser.duplication.ItemSetList;
 import analyser.duplication.TypeIDuplication;
+import analyser.duplication.apriori.ItemSetList;
 
 import parser.CSSParser;
 import CSSModel.StyleSheet;
@@ -41,6 +41,10 @@ public class CSSAnalyser {
 	private final Model model;
 	
 	private final String analaysedWebSitename;
+	
+	private final boolean APRIORI = false;
+	
+	private final boolean FP_GROWTH = true;
 	
 	/**
 	 * Through this constructor, one should pass the
@@ -148,27 +152,45 @@ public class CSSAnalyser {
 				IOHelper.writeFile(fw, duplication.toString());
 			IOHelper.closeFile(fw);
 			
+			if (APRIORI) {
 			
-			LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT);
+				LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT);
+
+				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+				List<ItemSetList> l = duplicationFinder.apriori(MIN_SUPPORT);
+				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+				long time = (end - start) / 1000000L;
+				fw = IOHelper.openFile(folderName + "/apriori.txt");
+				for (ItemSetList itemsetList : l) {
+					IOHelper.writeFile(fw, itemsetList.toString());
+				}
+				String s = String.format("CPU time (miliseconds) for apriori algorithm: %s\n", time) ;
+
+				IOHelper.writeFile(fw, s);
+				IOHelper.closeFile(fw);
+
+				LOGGER.info(s);
 			
-			long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-			List<ItemSetList> l = duplicationFinder.apriori(MIN_SUPPORT, folderName + "/apriori.txt");
-			long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-			long time = (end - start) / 1000000L;
-			fw = IOHelper.openFile(folderName + "/apriori.txt");
-			for (ItemSetList itemsetList : l) {
-				IOHelper.writeFile(fw, itemsetList.toString());
 			}
-			String s = String.format("CPU time (miliseconds) for apriori algorithm: %s\n", time) ;
+			
+			if (FP_GROWTH) {
 
-			IOHelper.writeFile(fw, s);
-			IOHelper.closeFile(fw);
-			
-			//LOGGER.info(s);
+				LOGGER.info("Applying fpgrowth algorithm with minimum support count of " + MIN_SUPPORT);
 
-			
-			
-			LOGGER.info("Done");
+				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+				List<ItemSetList> isl = duplicationFinder.fpGrowth(MIN_SUPPORT);
+				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+				long time = (end - start) / 1000000L;
+				fw = IOHelper.openFile(folderName + "/fpgrowth.txt");
+				for (ItemSetList itemsetList : isl) {
+					IOHelper.writeFile(fw, itemsetList.toString());
+				}
+				IOHelper.writeFile(fw, "Time for completion of FP-Growth: " + time);
+				IOHelper.closeFile(fw);
+
+				LOGGER.info("Done");
+
+			}
 			
 			
 		}

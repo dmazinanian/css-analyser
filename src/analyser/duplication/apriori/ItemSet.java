@@ -1,4 +1,4 @@
-package analyser.duplication;
+package analyser.duplication.apriori;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -58,7 +58,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 	}
 	
 	@Override
-	protected ItemSet clone() {
+	public ItemSet clone() {
 		return new ItemSet(new HashSet<Item>(itemset), new HashSet<Selector>(support));
 	}
 	

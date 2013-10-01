@@ -1,4 +1,4 @@
-package analyser.duplication;
+package analyser.duplication.apriori;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -14,7 +14,7 @@ import CSSModel.selectors.Selector;
  * @author Davood Mazinanian
  * 
  */
-public class ItemSetList implements Set<ItemSet> {
+public class ItemSetList implements Set<ItemSet>, Comparable<ItemSetList> {
 
 	private final Set<ItemSet> itemsets;
 	private int maximumSupport = 0;
@@ -148,6 +148,7 @@ public class ItemSetList implements Set<ItemSet> {
 	 * Calculates the maximum support count of current itemset list
 	 */
 	void calculateMaxSupport() {
+		maximumSupport = 0;
 		for (ItemSet itemset : itemsets) 
 			if (maximumSupport < itemset.getSupport().size())
 				maximumSupport = itemset.getSupport().size();
@@ -177,11 +178,25 @@ public class ItemSetList implements Set<ItemSet> {
 			return itemsets.hashCode();
 	}
 
-	public boolean containsSubset(ItemSet newItemSet) {
+	/**
+	 * Check whether there is an ItemSet which contains all
+	 * the items of the given ItemSet (through parameter). 
+	 * Note that their support set must be the same as well.
+	 * @param newItemSet
+	 * @return
+	 */
+	public boolean containsItemsSubset(ItemSet newItemSet) {
 		for (ItemSet itemSet : itemsets)
-			if (itemSet.containsAll(newItemSet))
+			if (itemSet.containsAll(newItemSet) && 
+					itemSet.getSupport().equals(newItemSet.getSupport()))
 				return true;
 		return false;
+	}
+
+	@Override
+	public int compareTo(ItemSetList o) {
+		//if (itemsets.size() != o.itemsets.size())
+		return 0;
 	}
 	
 

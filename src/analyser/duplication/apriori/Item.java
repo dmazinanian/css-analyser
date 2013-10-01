@@ -1,4 +1,4 @@
-package analyser.duplication;
+package analyser.duplication.apriori;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -13,9 +13,15 @@ import CSSModel.selectors.Selector;
  * @author Davood Mazinanian
  *
  */
-public class Item implements Set<Declaration>, Cloneable {
+public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 
 	private final Set<Declaration> declarations;
+	/*
+	 * When finding type III clones, we always create a new shorthand declaration
+	 * from some individual declarations inside a selector. Those declarations are
+	 * not exists in the real stylesheet, but they are used in the duplication 
+	 * finding analysis. So we have to distinguish them with real declarations.
+	 */
 	private final Set<Declaration> virtualDeclarations = new HashSet<>();
 	private final Set<Selector> support;
 	private ItemSet paretnItemSet;
@@ -216,4 +222,37 @@ public class Item implements Set<Declaration>, Cloneable {
 	public ItemSet getParentItemSet() {
 		return paretnItemSet;
 	}
+	
+	/**
+	 * Compares two {@link Item}s support counts. If they have different
+	 * support counts, this method returns the result of 
+	 * {@link Integer#compare()} method (current Item's support count
+	 * as the first parameter and given item's support count as the
+	 * second parameter). If two {@link Item}s 
+	 * have the same support count but they are different (i.e. {@link #equals(Object)}
+	 * method returns false for them), it returns the result of {@link String#compareTo()}
+	 * method applied on the {@link Item#getFirstDeclaration()} methods of
+	 * two Items.
+	 * @param item1
+	 * @param item2
+	 * @return
+	 */
+	@Override
+	public int compareTo(Item otherItem) {
+		if (this.getSupport().size() != otherItem.getSupport().size()) {
+			return Integer.compare(this.getSupport().size(), otherItem.getSupport().size());
+		} else {
+			/* 
+			 * If two Items have the same support count,
+			 * if they are really the same, return 0. Otherwise return 1
+			 * so we can have two different Items with the same support count 
+			 */
+			if (this.equals(otherItem))
+				return 0;
+			else
+				return getFirstDeclaration().toString().compareTo(otherItem.getFirstDeclaration().toString());
+		}
+	}
+	
+	
 }

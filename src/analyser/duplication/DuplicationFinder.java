@@ -1,13 +1,5 @@
 package analyser.duplication;
 
-import io.IOHelper;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,12 +9,16 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import CSSModel.StyleSheet;
-
 import CSSModel.declaration.Declaration;
 import CSSModel.declaration.ShorthandDeclaration;
 import CSSModel.declaration.value.DeclarationValue;
-
 import CSSModel.selectors.Selector;
+import analyser.duplication.apriori.Apriori;
+import analyser.duplication.apriori.Item;
+import analyser.duplication.apriori.ItemSet;
+import analyser.duplication.apriori.ItemSetList;
+import analyser.duplication.fpgrowth.DataSet;
+import analyser.duplication.fpgrowth.FPGrowth;
 
 /**
  * This class is responsible for finding various types of duplications in a
@@ -303,98 +299,23 @@ public class DuplicationFinder {
 		}*/
 	}
 	
-	public List<ItemSetList> apriori(final int minSupport, String path) throws IOException {
-					
-		List<ItemSetList> l = new ArrayList<>(); // Keeping L(k), the frequent itemsets of size k
-		
-		l.add(getLfromC(C1, minSupport)); // Generating L(1) by cutting C(1)
-				
-		int k = 1;
-		while (true) {
-			// Generating L(k) by using L(k-1)
-			l.add(generateCandidates(l.get(k - 1), minSupport));
-			
-			// Removing previous step's redundant 
-			List<ItemSet> toRemove = new ArrayList<>(l.get(k - 1).size());
-			for (ItemSet itemset : l.get(k - 1)) {
-				if (l.get(k).containsSubset(itemset))
-					toRemove.add(itemset);
-			}
-			l.get(k - 1).removeAll(toRemove);
-			
-			if (l.get(k).size() == 0) { // If L(k) is empty break
-				l.remove(k);
-				break;
-			}
+	
 
-			k++;
-		} 
-		
-		return l;
+
+	public List<ItemSetList> apriori(int minsup) {
+		Apriori apriori = new Apriori(C1);
+		return apriori.apriori(minsup);
 	}
 
+	public List<ItemSetList> fpGrowth(int minSupport) {
+		DataSet dataSet = new DataSet();
 
-	private ItemSetList generateCandidates(ItemSetList itemSetList, int minSupport) {
-		
-		/* itemSetList is L(k-1), which is a table of ItemSets
-		 * toReturn is L(k)
-		 */
-		ItemSetList toReturn = new ItemSetList();
-		
-		Set<Item> unionAll = new HashSet<>(); 
-		/*
-		 * First find the union of all L(k-1) declarations
-		 * This set will be used later in order to create itemsets with k declarations.		
-		 */
-		for (ItemSet itemset : itemSetList) {
-			unionAll.addAll(itemset);
+		for (Declaration declaration : stylesheet.getAllDeclarations()) {
+			if (declarationItemMap.get(declaration).getSupport().size() > minSupport)
+				dataSet.addItem(declaration.getSelector(), declarationItemMap.get(declaration));
 		}
-
-		for (ItemSet itemset : itemSetList) {
-			/* First we create a new set, which will be our new item set. Initially,
-			 * this set contains first member of L(k-1). One at a time, we
-			 * add one new member to this set,  to create an itemset with k members.
-			 */
-			
-			for (Item item : unionAll) {
-				/* 
-				 * Each time we add one item from unionAll ( union of all the declarations in L(k-1) )
-				 * to create itemset with k members.
-				 * newItemSet must not contain new declaration, otherwise, after 
-				 * adding this new declaration, newItemSet would not have k members
-				 */
-				ItemSet newItemSet = itemset.clone();
-				if (!newItemSet.contains(item)) {
-					
-					newItemSet.add(item);
-					
-					/*
-					 * Also, L(k) should not contain this new itemset.
-					 */
-					if (newItemSet.getSupport().size() >= minSupport && !toReturn.contains(newItemSet)) {		
-							toReturn.add(newItemSet.clone()); 
-					} 
-				}
-			}
-		}
-		return toReturn;
-	}
-
-	private ItemSetList getLfromC(ItemSetList itemSetList, final int minSupportCount) {
-		
-		ItemSetList Lk = new ItemSetList();
-		for (ItemSet itemset : itemSetList) {
-			if (itemset.getSupport().size() >= minSupportCount) {
-				Lk.add(itemset);
-			}
-		}
-		return Lk;	
-	}
-	
-	
-	
-	
-	
-	
+		FPGrowth fpGrowth = new FPGrowth(dataSet, minSupport);
+		return fpGrowth.mine();	
+	}	
 
 }

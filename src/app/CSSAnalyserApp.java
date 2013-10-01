@@ -40,9 +40,7 @@ public class CSSAnalyserApp {
 		//System.out.println(System.getProperty("user.dir"));
 		
 		// Get all dom states in outputFolder/crawljax/doms		
-		List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "/crawljax/doms", "html");
-		
-		
+		List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "/crawljax/doms", "html");	
 		
 		for (File domStateHtml : allStatesFiles) {
 			
