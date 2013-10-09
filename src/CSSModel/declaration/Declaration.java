@@ -1185,6 +1185,10 @@ public class Declaration implements Cloneable {
 	 */
 	// TODO: This method has not well implemented ??
 	private boolean valuesEquivalent(Declaration otherDeclaration, boolean onlyCheckEquality) {
+//		if (toString().contains("background-position: top right") &&
+//				otherDeclaration.toString().contains("background-position: 0 100.0%"))
+//			System.out.println();
+		
 		if (declarationValues.size() != otherDeclaration.declarationValues.size()) 
 			return false;
 		/* 

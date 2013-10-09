@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,22 +18,24 @@ public class FPGrowth {
 	
 	
 	private final DataSet initialDataSet;
-	private final int minSupport;
-	private final Map<Integer, ItemSetList> resultItemSetList;
+	private final Map<Integer, ItemSetList> resultItemSetLists;
 	
-	public FPGrowth(DataSet initialDataSet, final int minSupport) {
+	public FPGrowth(DataSet initialDataSet) {
 		this.initialDataSet = initialDataSet;
-		this.minSupport = minSupport;
-		resultItemSetList = new HashMap<>();
+		resultItemSetLists = new HashMap<>();
 	}
 	
-	public List<ItemSetList> mine() {
+	public List<ItemSetList> mine(int minSupport) {
 		
 		FPTree tree = generateFPTree(initialDataSet.getTransactions().values());
 
 		fpGrowth(tree, new ItemSet(), minSupport);
 
-		return new ArrayList<>(resultItemSetList.values());
+		List<ItemSetList> results = new ArrayList<>();
+		for (int i = 1; i <= resultItemSetLists.size(); i++)
+			results.add(resultItemSetLists.get(i));
+		
+		return results;
 	}
 
 	private FPTree generateFPTree(Collection<TreeSet<Item>> itemSet) {
@@ -54,11 +55,11 @@ public class FPGrowth {
 	private void insert_tree(List<Item> items, Node root, FPTree tree) {
 		Item item = items.get(0);
 		items.remove(0);
-		Node node = root.getChild(item);
+		Node node = root.getFirstChildForItem(item);
 		if (node != null) {
 			node.incrementNumberOfTransactions();
 		} else {
-			node = new Node(item, root, 1);
+			node = new Node(item, tree, 1);
 			tree.addNodeLinkItem(node);
 			root.addChild(node);
 		}
@@ -66,55 +67,61 @@ public class FPGrowth {
 			insert_tree(items, node, tree);
 	}
 
-	private ItemSetList getAllSubsets(Set<Item> s) {
-		Set<Item> set = new LinkedHashSet<>(s);
-		ItemSetList subsets = new ItemSetList();
+	private Set<Set<Item>> getAllSubsets(Set<Item> s) {
+		// Copy
+//		Set<Item> set = new LinkedHashSet<>(s);
+		List<Item> items = new ArrayList<>(s);
+		Set<Set<Item>> toReturn = new HashSet<>();
+//
+//		for (Item item : s) {
+//			set.remove(item);
+//			Set<Set<Item>> currentSubsets = getAllSubsets(set);
+//			for (Set<Item> subset : currentSubsets)
+//				subset.add(item);
+//			Set<Item> sss = new HashSet<Item>();
+//			sss.add(item);
+//			currentSubsets.add(sss);
+//			toReturn.addAll(currentSubsets);
+//			set.add(item);
+//		}
 
-		for (Item item : s) {
-			set.remove(item);
-			ItemSetList currentSubset = getAllSubsets(set);
-			for (ItemSet subset : currentSubset)
-				subset.add(item);
-			ItemSet sss = new ItemSet();
-			sss.add(item);
-			currentSubset.add(sss);
-			subsets.addAll(currentSubset);
-			set.add(item);
+		for (int i = 1; i < Math.pow(2, s.size()); i++) {
+			Set<Item> newSubSet = new HashSet<>();
+			String bits = Integer.toBinaryString(i);
+			for (int j = 0; j < bits.length(); j++) {
+				if (bits.charAt(j) == '1')
+					newSubSet.add(items.get(bits.length() - j - 1));
+			}
+			toReturn.add(newSubSet);
 		}
 
-		return subsets;
+		return toReturn;
 	}
 
 
 	private void fpGrowth(FPTree tree, ItemSet itemSet, int minSupport) {
-		if (tree.isEmpty()) {
-			return;	
-		}
-		else if (tree.hasASinglePath()) {
+		if (tree.hasASinglePath()) {
 			// All combinations required
 			Set<Item> items = new HashSet<>();
 			Node node = tree.getRoot();
-			while (node != null) {
-				if (node.getChildern().iterator().hasNext())
-					node = node.getChildern().iterator().next();
-				else
-					break;
+			while (node.getChildern().iterator().hasNext()) {
+				node = node.getChildern().iterator().next();
 				items.add(node.getItem());
 			}
-			for (ItemSet is : getAllSubsets(items)) {
+			//System.out.println(items.size());
+			
+			for (Set<Item> is : getAllSubsets(items)) {
 				is.addAll(itemSet);
-				addItemSet(is);
+				ItemSet newItemSet = new ItemSet();
+				newItemSet.addAll(is);
+				addItemSet(newItemSet);
 			}
+			addItemSet(itemSet);
 		} else {
 			// Start from the end of the header table of tree.
 			for (Item item : tree.getHeaderTable()) {
 				// First see if the current prefix is frequent.
-				Node n = tree.getItemNodeMap().get(item);
-				int support = 0;
-				while (n != null) {
-					support += n.getNumberOfTransactions();
-					n = n.getLinkNode();
-				}
+				int support = tree.getTotalSupport(item);
 				if (support < minSupport)
 					continue;
 				// Construct the conditional pattern base for every item
@@ -131,19 +138,17 @@ public class FPGrowth {
 					Node currentNode = node.getParent();
 					while (currentNode != null && currentNode.getItem() != null) {
 						currentPath.add(currentNode);
-						//if (currentNode.getNumberOfTransactions() < pathSupport)
-						//	pathSupport = currentNode.getNumberOfTransactions();
 						currentNode = currentNode.getParent();
 					}
+					// Add current path to the conditional fp-tree
 					Node parentNodeConditional = conditionalFP.getRoot();
 					while (!currentPath.empty()) {
 						Node currentOriginalNode = currentPath.pop();
-						Node newNodeConditional = parentNodeConditional.getChild(currentOriginalNode.getItem());
+						Node newNodeConditional = parentNodeConditional.getFirstChildForItem(currentOriginalNode.getItem());
 						if (newNodeConditional != null) {
 							newNodeConditional.setNumberOfTransactions(newNodeConditional.getNumberOfTransactions() + pathSupport);
 						} else {
-							newNodeConditional = new Node(currentOriginalNode.getItem(), parentNodeConditional, pathSupport);
-							parentNodeConditional.addChild(newNodeConditional);
+							newNodeConditional = new Node(currentOriginalNode.getItem(), conditionalFP, pathSupport);
 							conditionalFP.addNodeLinkItem(newNodeConditional);
 							parentNodeConditional.addChild(newNodeConditional);
 						}
@@ -154,33 +159,20 @@ public class FPGrowth {
 					node = node.getLinkNode();
 				}
 
-				// Remove unnecessary nodes (those which don't have the minsup)
-				for (Item i : conditionalFP.getHeaderTable()) {
-					Set<Node> itemNodes = new HashSet<>();
-					n = conditionalFP.getFirstNode(i);
-					int itemsSup = 0;
-					do {
-						itemsSup += n.getNumberOfTransactions();
-						itemNodes.add(n);
-						n = n.getLinkNode();
-					} while (n != null);
-
-					if (itemsSup < minSupport) {
-						for (Node nodeToDelete : itemNodes)
-							conditionalFP.removeNode(nodeToDelete);
-					}
-				}
+				conditionalFP.prune(minSupport);
+				
 				ItemSet newItemSet = itemSet.clone();
 				newItemSet.add(item);
 				addItemSet(newItemSet);
-				fpGrowth(conditionalFP, newItemSet, minSupport);
+				if (!conditionalFP.isEmpty())
+					fpGrowth(conditionalFP, newItemSet, minSupport);
 			}
 		}
 	}
 
 	private void addItemSet(ItemSet is) {
-		if (resultItemSetList.get(is.size()) == null)
-			resultItemSetList.put(is.size(), new ItemSetList());
-		resultItemSetList.get(is.size()).add(is);
+		if (resultItemSetLists.get(is.size()) == null)
+			resultItemSetLists.put(is.size(), new ItemSetList());
+		resultItemSetLists.get(is.size()).add(is);
 	}
 }

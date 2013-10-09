@@ -311,11 +311,11 @@ public class DuplicationFinder {
 		DataSet dataSet = new DataSet();
 
 		for (Declaration declaration : stylesheet.getAllDeclarations()) {
-			if (declarationItemMap.get(declaration).getSupport().size() > minSupport)
+			if (declarationItemMap.get(declaration).getSupport().size() >= minSupport)
 				dataSet.addItem(declaration.getSelector(), declarationItemMap.get(declaration));
 		}
-		FPGrowth fpGrowth = new FPGrowth(dataSet, minSupport);
-		return fpGrowth.mine();	
+		FPGrowth fpGrowth = new FPGrowth(dataSet);
+		return fpGrowth.mine(minSupport);	
 	}	
 
 }

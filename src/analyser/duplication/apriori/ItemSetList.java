@@ -123,7 +123,7 @@ public class ItemSetList implements Set<ItemSet>, Comparable<ItemSetList> {
 	@Override
 	public boolean remove(Object o) {
 		boolean changed = itemsets.remove(o);
-		if (changed)
+		if (changed && ((ItemSet)o).getSupport().size() == maximumSupport)
 			calculateMaxSupport();
 		return changed;
 	}

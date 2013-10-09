@@ -25,12 +25,12 @@ public class Apriori {
 			l.add(generateCandidates(l.get(k - 1), minSupport));
 			
 			// Removing previous step's redundant itemsets
-			List<ItemSet> toRemove = new ArrayList<>(l.get(k - 1).size());
-			for (ItemSet itemset : l.get(k - 1)) {
-				if (l.get(k).containsItemsSubset(itemset))
-					toRemove.add(itemset);
-			}
-			l.get(k - 1).removeAll(toRemove);
+//			List<ItemSet> toRemove = new ArrayList<>(l.get(k - 1).size());
+//			for (ItemSet itemset : l.get(k - 1)) {
+//				if (l.get(k).containsItemsSubset(itemset))
+//					toRemove.add(itemset);
+//			}
+//			l.get(k - 1).removeAll(toRemove);
 			
 			if (l.get(k).size() == 0) { // If L(k) is empty break
 				l.remove(k);

@@ -19,6 +19,8 @@ import org.w3c.dom.Document;
 import analyser.duplication.Duplication;
 import analyser.duplication.DuplicationFinder;
 import analyser.duplication.TypeIDuplication;
+import analyser.duplication.apriori.Item;
+import analyser.duplication.apriori.ItemSet;
 import analyser.duplication.apriori.ItemSetList;
 
 import parser.CSSParser;
@@ -42,7 +44,7 @@ public class CSSAnalyser {
 	
 	private final String analaysedWebSitename;
 	
-	private final boolean APRIORI = false;
+	private final boolean APRIORI = true;
 	
 	private final boolean FP_GROWTH = true;
 	
@@ -152,16 +154,18 @@ public class CSSAnalyser {
 				IOHelper.writeFile(fw, duplication.toString());
 			IOHelper.closeFile(fw);
 			
+			List<ItemSetList> aprioriResults, fpgrowthResults;
+			
 			if (APRIORI) {
 			
 				LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT);
 
 				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-				List<ItemSetList> l = duplicationFinder.apriori(MIN_SUPPORT);
+				aprioriResults = duplicationFinder.apriori(MIN_SUPPORT);
 				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				long time = (end - start) / 1000000L;
 				fw = IOHelper.openFile(folderName + "/apriori.txt");
-				for (ItemSetList itemsetList : l) {
+				for (ItemSetList itemsetList : aprioriResults) {
 					IOHelper.writeFile(fw, itemsetList.toString());
 				}
 				String s = String.format("CPU time (miliseconds) for apriori algorithm: %s\n", time) ;
@@ -178,11 +182,11 @@ public class CSSAnalyser {
 				LOGGER.info("Applying fpgrowth algorithm with minimum support count of " + MIN_SUPPORT);
 
 				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-				List<ItemSetList> isl = duplicationFinder.fpGrowth(MIN_SUPPORT);
+				fpgrowthResults = duplicationFinder.fpGrowth(MIN_SUPPORT);
 				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				long time = (end - start) / 1000000L;
 				fw = IOHelper.openFile(folderName + "/fpgrowth.txt");
-				for (ItemSetList itemsetList : isl) {
+				for (ItemSetList itemsetList : fpgrowthResults) {
 					IOHelper.writeFile(fw, itemsetList.toString());
 				}
 				IOHelper.writeFile(fw, "Time for completion of FP-Growth: " + time);
@@ -190,6 +194,31 @@ public class CSSAnalyser {
 
 				LOGGER.info("Done");
 
+			}
+			
+			// Compare APRIORI and FP-GROWTH
+			if (APRIORI && FP_GROWTH && aprioriResults.size() == fpgrowthResults.size())
+			{
+				for (int i = 0; i < aprioriResults.size(); i++) {
+					System.out.println(i);
+					System.out.println("Items below are in APRIORI but not in FPGROWTH");
+					for (ItemSet is : aprioriResults.get(i)) {
+						if (!fpgrowthResults.get(i).contains(is)) {
+							for (Item k : is)
+								System.out.print("(" + k.getFirstDeclaration() + "), ");
+							System.out.println();
+						}
+					}
+					System.out.println("Items below are in FPGROWTH but not in APRIORI");
+					for (ItemSet is : fpgrowthResults.get(i)) {
+						if (!aprioriResults.get(i).contains(is)) {
+							for (Item k : is)
+								System.out.print("(" + k.getFirstDeclaration() + "), ");
+							System.out.println();
+						}
+					}
+					System.out.println("----------");
+				}	
 			}
 			
 			
