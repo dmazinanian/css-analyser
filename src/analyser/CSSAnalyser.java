@@ -44,7 +44,7 @@ public class CSSAnalyser {
 	
 	private final String analaysedWebSitename;
 	
-	private final boolean APRIORI = true;
+	private final boolean APRIORI = false;
 	
 	private final boolean FP_GROWTH = true;
 	
@@ -200,25 +200,40 @@ public class CSSAnalyser {
 			if (APRIORI && FP_GROWTH && aprioriResults.size() == fpgrowthResults.size())
 			{
 				for (int i = 0; i < aprioriResults.size(); i++) {
-					System.out.println(i);
-					System.out.println("Items below are in APRIORI but not in FPGROWTH");
-					for (ItemSet is : aprioriResults.get(i)) {
-						if (!fpgrowthResults.get(i).contains(is)) {
-							for (Item k : is)
-								System.out.print("(" + k.getFirstDeclaration() + "), ");
-							System.out.println();
+					//if (aprioriResults.get(i).size() > fpgrowthResults.get(i).size()) {
+						System.out.println("Items below are in APRIORI but not in FPGROWTH (" + i + ")");
+						for (ItemSet is : aprioriResults.get(i)) {
+							boolean found = false;
+							for (ItemSet fpis : fpgrowthResults.get(i))
+								if (fpis.equals(is)) {
+									found = true;
+									break;
+								}
+							if (!found) {
+								for (Item k : is)
+									System.out.print("(" + k.getFirstDeclaration() + "), ");
+								System.out.println();
+							}
 						}
-					}
-					System.out.println("Items below are in FPGROWTH but not in APRIORI");
-					for (ItemSet is : fpgrowthResults.get(i)) {
-						if (!aprioriResults.get(i).contains(is)) {
-							for (Item k : is)
-								System.out.print("(" + k.getFirstDeclaration() + "), ");
-							System.out.println();
+					//}
+					//if (aprioriResults.get(i).size() < fpgrowthResults.get(i).size()) {
+						System.out.println("Items below are in FPGROWTH but not in APRIORI (" + i + ")");
+						for (ItemSet is : fpgrowthResults.get(i)) {
+							boolean found = false;
+							for (ItemSet apis : aprioriResults.get(i))
+								if (is.equals(apis)) {
+									found = true;
+									break;
+								}
+							if (!found) {
+								for (Item k : is)
+									System.out.print("(" + k.getFirstDeclaration() + "), ");
+								System.out.println();
+							}
 						}
-					}
-					System.out.println("----------");
-				}	
+						System.out.println("----------");
+					//}
+				}
 			}
 			
 			

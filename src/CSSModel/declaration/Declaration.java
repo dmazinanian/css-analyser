@@ -850,10 +850,7 @@ public class Declaration implements Cloneable {
 				
 				
 			}
-			/*for (DeclarationValue v : declarationValues) {
-				System.out.print(v + " ");
-			}
-			System.out.println();*/
+
 			break;
 			
 		case "background":
@@ -1185,9 +1182,6 @@ public class Declaration implements Cloneable {
 	 */
 	// TODO: This method has not well implemented ??
 	private boolean valuesEquivalent(Declaration otherDeclaration, boolean onlyCheckEquality) {
-//		if (toString().contains("background-position: top right") &&
-//				otherDeclaration.toString().contains("background-position: 0 100.0%"))
-//			System.out.println();
 		
 		if (declarationValues.size() != otherDeclaration.declarationValues.size()) 
 			return false;
@@ -1341,6 +1335,7 @@ public class Declaration implements Cloneable {
 	int hashCode = -1;
 	@Override
 	public int hashCode() {
+		// Only calculate the hashCode once
 		if (hashCode == -1) {
 			final int prime = 31;
 			int result = 1;
@@ -1373,28 +1368,28 @@ public class Declaration implements Cloneable {
 		Declaration other = (Declaration) obj;
 		if (colNumber != other.colNumber)
 			return false;
-		if (declarationValues == null) {
-			if (other.declarationValues != null)
-				return false;
-		} else if (!declarationValues.equals(other.declarationValues))
+		if (lineNumber != other.lineNumber)
 			return false;
 		if (isCommaSeparatedListOfValues != other.isCommaSeparatedListOfValues)
 			return false;
 		if (isImportant != other.isImportant)
 			return false;
-		if (lineNumber != other.lineNumber)
-			return false;
 		if (numberOfMissingValues != other.numberOfMissingValues)
+			return false;
+		if (property == null) {
+			if (other.property != null)
+				return false;
+		} else if (!property.equals(other.property))
 			return false;
 		if (parentSelector == null) {
 			if (other.parentSelector != null)
 				return false;
 		} else if (!parentSelector.equals(other.parentSelector))
 			return false;
-		if (property == null) {
-			if (other.property != null)
+		if (declarationValues == null) {
+			if (other.declarationValues != null)
 				return false;
-		} else if (!property.equals(other.property))
+		} else if (!declarationValues.equals(other.declarationValues))
 			return false;
 		return true;
 	}

@@ -15,32 +15,27 @@ public class Apriori {
 	
 	public List<ItemSetList> apriori(final int minSupport) {
 		
-		List<ItemSetList> l = new ArrayList<>(); // Keeping L(k), the frequent itemsets of size k
+		List<ItemSetList> toReturn = new ArrayList<>(); // Keeping L(k), the frequent itemsets of size k
 		
-		l.add(getLfromC(C1, minSupport)); // Generating L(1) by cutting C(1)
+		toReturn.add(getLfromC(C1, minSupport)); // Generating L(1) by cutting C(1)
 
 		int k = 1;
 		while (true) {
 			// Generating L(k) by using L(k-1)
-			l.add(generateCandidates(l.get(k - 1), minSupport));
+			toReturn.add(generateCandidates(toReturn.get(k - 1), minSupport));
 			
 			// Removing previous step's redundant itemsets
-//			List<ItemSet> toRemove = new ArrayList<>(l.get(k - 1).size());
-//			for (ItemSet itemset : l.get(k - 1)) {
-//				if (l.get(k).containsItemsSubset(itemset))
-//					toRemove.add(itemset);
-//			}
-//			l.get(k - 1).removeAll(toRemove);
+			toReturn.get(k - 1).removeSubsets(toReturn.get(k));
 			
-			if (l.get(k).size() == 0) { // If L(k) is empty break
-				l.remove(k);
+			if (toReturn.get(k).size() == 0) { // If L(k) is empty break
+				toReturn.remove(k);
 				break;
 			}
 
 			k++;
 		} 
-		
-		return l;
+	
+		return toReturn;
 	}
 
 

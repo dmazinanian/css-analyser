@@ -14,7 +14,7 @@ import CSSModel.selectors.Selector;
  * @author Davood Mazinanian
  * 
  */
-public class ItemSetList implements Set<ItemSet>, Comparable<ItemSetList> {
+public class ItemSetList implements Set<ItemSet> {
 
 	private final Set<ItemSet> itemsets;
 	private int maximumSupport = 0;
@@ -75,9 +75,10 @@ public class ItemSetList implements Set<ItemSet>, Comparable<ItemSetList> {
 		}
 
 		if (itemsets.iterator().hasNext()) {
-			String heading = String.format("%s-Itemsets of declarations (Itemset, Support count, Support)\nMaximum support is %s\n",
+			String heading = String.format("%s-Itemsets of declarations (Itemset, Support count, Support)\nMaximum support is %s\tNumber of cases is %s\n",
 					itemsets.iterator().next().size(),
-					maximumSupport);
+					maximumSupport,
+					size());
 			
 			sets.insert(0, heading);
 		}
@@ -179,25 +180,23 @@ public class ItemSetList implements Set<ItemSet>, Comparable<ItemSetList> {
 	}
 
 	/**
-	 * Check whether there is an ItemSet which contains all
-	 * the items of the given ItemSet (through parameter). 
-	 * Note that their support set must be the same as well.
-	 * @param newItemSet
-	 * @return
+	 * Removes any ItemSet <code>is1</code> in current ItemSetList, 
+	 * when there is a corresponding ItemSet in the given itemSetList
+	 * (parameter of the method) <code>is2</code> that:
+	 * <ol>
+	 * 	<li>is1 has the same support of the is2, and</li>
+	 * 	<li>is1 Items are the subset of is1 Items.
+	 * </ol>
+	 * @param itemSetList
 	 */
-	public boolean containsItemsSubset(ItemSet newItemSet) {
-		for (ItemSet itemSet : itemsets)
-			if (itemSet.containsAll(newItemSet) && 
-					itemSet.getSupport().equals(newItemSet.getSupport()))
-				return true;
-		return false;
+	public void removeSubsets(ItemSetList itemSetList) {
+		Set<ItemSet> toRemove = new HashSet<>();
+			for (ItemSet itemSet : itemsets)
+				for (ItemSet itemSetToCheckIn : itemSetList) {
+				if (itemSetToCheckIn.containsAll(itemSet) && itemSet.getSupport().equals(itemSetToCheckIn.getSupport()) 
+					 )
+						toRemove.add(itemSet);
+		}
+		itemsets.removeAll(toRemove);
 	}
-
-	@Override
-	public int compareTo(ItemSetList o) {
-		//if (itemsets.size() != o.itemsets.size())
-		return 0;
-	}
-	
-
 }

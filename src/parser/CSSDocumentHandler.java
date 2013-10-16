@@ -188,8 +188,6 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 		if (currentSelector != null)
 			styleSheet.addSelector(currentSelector);
-
-		// System.out.println(currentSelector);
 	}
 
 	@Override

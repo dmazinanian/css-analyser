@@ -14,7 +14,7 @@ public class FPTree {
 	private final Node root;
 	private final Map<Item, Node> itemNodeMap;
 	private final TreeSet<Item> headerTable;
-	private long nodeID = -1;
+	private long nodeAutoID = -1;
 	
 	public FPTree() {
 		root = new Node();
@@ -27,7 +27,7 @@ public class FPTree {
 	}
 	
 	public long getNodeAutoID() {
-		return ++nodeID;
+		return ++nodeAutoID;
 	}
 	
 	public void addNodeLinkItem(Node node) {
@@ -148,7 +148,7 @@ public class FPTree {
 	}
 	
 	private String format(String s) {
-		return "btex " + s.replace("#", "\\#").replace("%", "\\%") + " etex";
+		return "btex " + s.replace("#", "\\#").replace("%", "\\%").replace("_", "\\_") + " etex";
 	}
 
 	void prune(int minSupport) {
