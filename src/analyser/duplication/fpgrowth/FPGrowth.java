@@ -32,14 +32,14 @@ public class FPGrowth {
 		fpGrowth(tree, new HashSet<Item>(), minSupport);
 
 		List<ItemSetList> results = new ArrayList<>();
+		
 		for (int i = 1; i <= resultItemSetLists.size(); i++) {
 			if (resultItemSetLists.get(i) != null) {
 				results.add(resultItemSetLists.get(i));
 				// Remove redundant subsets
-				if (i > 1 && results.get(i - 2) != null) {
-					System.out.println("Removing " + i);
-					results.get(i - 2).removeSubsets(results.get(i - 1));
-				}
+//				if (i > 1 && results.get(i - 2) != null) {
+//					results.get(i - 2).removeSubsets(results.get(i - 1));
+//				}
 			}
 		}
 
@@ -107,10 +107,6 @@ public class FPGrowth {
 
 
 	private void fpGrowth(FPTree tree, Set<Item> currentItems, int minSupport) {
-		for (Item i : tree.getHeaderTable()) {
-			if (i.getFirstDeclaration().toString().contains("list-style: disc inside"))
-				System.out.print("");
-		}
 		if (tree.hasASinglePath()) {
 			// All combinations required
 			Set<Item> items = new HashSet<>();
@@ -128,8 +124,7 @@ public class FPGrowth {
 		} else {
 			// Start from the end of the header table of tree.
 			for (Item item : tree.getHeaderTable()) {
-				if (item.getFirstDeclaration().toString().contains("list-style: disc inside"))
-					System.out.print("");
+				
 				// First see if the current prefix is frequent.
 				int support = tree.getTotalSupport(item);
 				if (support < minSupport)

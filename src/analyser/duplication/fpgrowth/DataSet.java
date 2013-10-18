@@ -14,11 +14,7 @@ public class DataSet {
 	public DataSet() {
 		this.items = new HashMap<>();
 	}
-	
-	public void addRow(Selector selector, TreeSet<Item> items) {
-		this.items.put(selector, items);
-	}
-	
+		
 	public void addItem(Selector selector, Item item) {
 		TreeSet<Item> itemSet = items.get(selector);
 		if (itemSet == null) {

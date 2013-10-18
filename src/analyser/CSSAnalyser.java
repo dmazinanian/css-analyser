@@ -6,6 +6,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -180,11 +181,12 @@ public class CSSAnalyser {
 			if (FP_GROWTH) {
 
 				LOGGER.info("Applying fpgrowth algorithm with minimum support count of " + MIN_SUPPORT);
-
+				LOGGER.warn("Start " + (new Date()).toString());
 				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				fpgrowthResults = duplicationFinder.fpGrowth(MIN_SUPPORT);
 				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				long time = (end - start) / 1000000L;
+				LOGGER.warn("Done in " + time + ". Writing to the file. " + (new Date()).toString());
 				fw = IOHelper.openFile(folderName + "/fpgrowth.txt");
 				for (ItemSetList itemsetList : fpgrowthResults) {
 					IOHelper.writeFile(fw, itemsetList.toString());

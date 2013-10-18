@@ -309,13 +309,17 @@ public class DuplicationFinder {
 
 	public List<ItemSetList> fpGrowth(int minSupport) {
 		DataSet dataSet = new DataSet();
-
-		for (Item item : declarationItemMap.values()) {
+		
+		for (Item item : new HashSet<>(declarationItemMap.values())) {
 			if (item.getSupport().size() >= minSupport) {
-				for (Declaration declaration : item)
-					dataSet.addItem(declaration.getSelector(), item);	
+				for (Selector selector : item.getSupport())
+					dataSet.addItem(selector, item);	
 			}
 		}
+//		for (Declaration declaration : stylesheet.getAllDeclarations()) {
+//			if (declarationItemMap.get(declaration).getSupport().size() >= minSupport)
+//				dataSet.addItem(declaration.getSelector(), declarationItemMap.get(declaration));
+//		}
 		FPGrowth fpGrowth = new FPGrowth(dataSet);
 		return fpGrowth.mine(minSupport);	
 	}	

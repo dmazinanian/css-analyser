@@ -1,8 +1,11 @@
 package analyser.duplication.apriori;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import CSSModel.selectors.Selector;
@@ -18,12 +21,11 @@ public class ItemSetList implements Set<ItemSet> {
 
 	private final Set<ItemSet> itemsets;
 	private int maximumSupport = 0;
-
+	
 	public ItemSetList() {
-
 		itemsets = new HashSet<>();
 	}
-
+	
 	@Override
 	public boolean add(ItemSet itemSet) {
 		if (itemSet.getSupport().size() > maximumSupport)
@@ -185,17 +187,25 @@ public class ItemSetList implements Set<ItemSet> {
 	 * (parameter of the method) <code>is2</code> that:
 	 * <ol>
 	 * 	<li>is1 has the same support of the is2, and</li>
-	 * 	<li>is1 Items are the subset of is1 Items.
+	 * 	<li>is1 Items are the subset of is2 Items.
 	 * </ol>
 	 * @param itemSetList
 	 */
 	public void removeSubsets(ItemSetList itemSetList) {
-		Set<ItemSet> toRemove = new HashSet<>();
-			for (ItemSet itemSet : itemsets)
-				for (ItemSet itemSetToCheckIn : itemSetList) {
-				if (itemSetToCheckIn.containsAll(itemSet) && itemSet.getSupport().equals(itemSetToCheckIn.getSupport()) 
-					 )
-						toRemove.add(itemSet);
+//		for (ItemSet itemSet : itemSetList) {
+//			Set<Item> itemSetToCheckIn = new HashSet<>(itemSet);
+//			for (Item i : new HashSet<>(itemSetToCheckIn)) {
+//				itemSetToCheckIn.remove(i);
+//				itemsets.remove(itemSetToCheckIn);
+//				itemSetToCheckIn.add(i);
+//			}						
+//		}
+		ArrayList<ItemSet> toRemove = new ArrayList<>();
+		for (ItemSet itemSet : itemSetList) {
+			for (ItemSet itemSet2 : itemsets) {
+				if (itemSet.containsAll(itemSet2) && itemSet.getSupport().equals(itemSet2.getSupport()))
+					toRemove.add(itemSet2);
+			}
 		}
 		itemsets.removeAll(toRemove);
 	}
