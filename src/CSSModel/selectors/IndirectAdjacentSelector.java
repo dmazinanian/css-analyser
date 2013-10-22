@@ -69,5 +69,10 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 		result = 31 * result + (mainSelector == null ? 0 : mainSelector.hashCode());
 		return result;
 	}
+	
+	@Override
+	public Selector clone() {
+		return new IndirectAdjacentSelector(beforeMainSelector, mainSelector);
+	}
 
 }

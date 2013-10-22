@@ -17,9 +17,9 @@ public class AtomicElementSelector extends AtomicSelector {
 	private String selectedElementName = "";
 	private List<String> selectedClasses;
 	private String selectedID = "";
-	private final List<SelectorCondition> conditions;
-	private final List<PseudoClass> pseudoClasses;
-	private final List<PseudoElement> pseudoElements;
+	private List<SelectorCondition> conditions;
+	private List<PseudoClass> pseudoClasses;
+	private List<PseudoElement> pseudoElements;
 
 	public AtomicElementSelector() {
 		this(null);
@@ -191,7 +191,17 @@ public class AtomicElementSelector extends AtomicSelector {
 
 	@Override
 	public String toString() {
-		StringBuilder result = new StringBuilder(selectedElementName != null ? selectedElementName : "");
+		StringBuilder result = new StringBuilder();
+		if (selectedElementName != null) {
+			if (!selectedElementName.equals("*") || (
+					"".equals(selectedID) && 
+					selectedClasses.size() == 0 &&
+					conditions.size() == 0 &&
+					pseudoClasses.size() == 0 &&
+					pseudoElements.size() == 0)
+					)
+				result.append(selectedElementName);
+		}
 		if (selectedID != "")
 			result.append("#" + selectedID);
 		if (selectedClasses.size() > 0)
@@ -206,4 +216,17 @@ public class AtomicElementSelector extends AtomicSelector {
 		return result.toString();
 	}
 
+	@Override
+	public Selector clone() {
+		AtomicElementSelector newOne = new AtomicElementSelector(getParentGroupSelector(), getLineNumber(), getColumnNumber());
+		newOne.setMedia(parentMedia);
+		newOne.selectedElementName = selectedElementName;
+		newOne.selectedClasses = new ArrayList<>(selectedClasses);
+		newOne.selectedID = selectedID;
+		newOne.conditions = new ArrayList<>(conditions);
+		newOne.pseudoClasses = new ArrayList<>(pseudoClasses);
+		newOne.pseudoElements = new ArrayList<>(pseudoElements);
+		newOne.declarations = new ArrayList<>(declarations);
+		return newOne;
+	}
 }

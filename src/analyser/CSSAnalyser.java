@@ -25,6 +25,7 @@ import analyser.duplication.apriori.ItemSet;
 import analyser.duplication.apriori.ItemSetList;
 
 import parser.CSSParser;
+import refactoring.RefactorerDuplications;
 import CSSModel.StyleSheet;
 import CSSModel.selectors.Selector;
 import dom.DOMHelper;
@@ -238,8 +239,23 @@ public class CSSAnalyser {
 				}
 			}
 			
+			LOGGER.warn("Start compressing");
+			long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+			RefactorerDuplications refactor = new RefactorerDuplications();
+			StyleSheet newStyleSheet = refactor.refactor(styleSheet, fpgrowthResults);
+			long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+			long time = (end - start) / 1000000L;
+			LOGGER.warn("Done in " + time + ". Writing to the file. ");
+			fw = IOHelper.openFile(folderName + "/refactored.css");
+			IOHelper.writeFile(fw, newStyleSheet.toString());
+			IOHelper.writeFile(fw, "/* Time for completion of refactoring: " + time + "*/");
+			IOHelper.closeFile(fw);
+
+			LOGGER.info("Done");
 			
 		}
+		
+				
 
 		IOHelper.writeFile(summaryFileWriter, String.format("\n\r\n\r%45s\t%15.3f\t%15.3f\t%15.3f", 
 															"Average", 

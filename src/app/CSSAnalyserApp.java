@@ -14,7 +14,12 @@ public class CSSAnalyserApp {
 
 
 	public static void main(String[] args) throws IOException {
-
+		
+//		for (String s : args)
+//			System.out.println("arg " + s);
+		
+		
+		
 		final String PAGE_URI = "http://test.com";
 		
 		final int MIN_APRIORI_SUPPORT = 2;
@@ -52,8 +57,7 @@ public class CSSAnalyserApp {
 			cssAnalyser.analyse(MIN_APRIORI_SUPPORT);
 			
 		}
-		
-		
+			
 		
 	}
 

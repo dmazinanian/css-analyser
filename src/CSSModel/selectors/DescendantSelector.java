@@ -78,4 +78,9 @@ public class DescendantSelector extends AtomicSelector {
 		return result;
 	}
 	
+	@Override
+	public Selector clone() {
+		return new DescendantSelector(this.parentSelector, this.childSelector);
+	}
+	
 }

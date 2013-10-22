@@ -128,10 +128,14 @@ public class FPTree {
 			stringBuilder.append(String.format("tree.fpgrowth(%s)", format("null")));
 		} else if (node.getChildern().size() == 0) {
 			stringBuilder.append(String.format("leaf(%s)", 
-					format(node.getItem().getFirstDeclaration().getProperty() + "$^{" + node.getNumberOfTransactions() + "}$" )));
+					format(node.getItem().getFirstDeclaration().getProperty() + 
+							"$^{" + node.getNumberOfTransactions() + "}$" +
+							node.getItem().getSupport())));
 		} else {
 			stringBuilder.append(String.format("tree(%s)", 
-					format(node.getItem().getFirstDeclaration().getProperty()+ "$^{" + node.getNumberOfTransactions() + "}$" )));
+					format(node.getItem().getFirstDeclaration().getProperty() + 
+							"$^{" + node.getNumberOfTransactions() + "}$" +
+							node.getItem().getSupport())));
 		}
 		if (node.getChildern().size() != 0) {
 			stringBuilder.append("(\n");

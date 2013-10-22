@@ -15,4 +15,9 @@ public class DirectDescendantSelector extends DescendantSelector {
 		return parentSelector + " > " + childSelector;
 	}
 
+	@Override
+	public Selector clone() {
+		return new DirectDescendantSelector(getParentSelector(), getChildSelector());
+	}
+	
 }

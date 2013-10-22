@@ -21,15 +21,18 @@ public class ItemSetList implements Set<ItemSet> {
 
 	private final Set<ItemSet> itemsets;
 	private int maximumSupport = 0;
-	
+	// Keep track of all itemsets with similar support
+	private Map<Set<Selector>, Set<ItemSet>> supportItemSetMap = new HashMap<>();
+
 	public ItemSetList() {
 		itemsets = new HashSet<>();
 	}
-	
+
 	@Override
 	public boolean add(ItemSet itemSet) {
 		if (itemSet.getSupport().size() > maximumSupport)
 			maximumSupport = itemSet.getSupport().size();
+		addtoSupportItemSetsMap(itemSet);
 		itemSet.setParentItemSetList(this);
 		return itemsets.add(itemSet);
 	}
@@ -38,6 +41,7 @@ public class ItemSetList implements Set<ItemSet> {
 		if (supportSelectors.size() > maximumSupport)
 			maximumSupport = supportSelectors.size();
 		ItemSet newItemSet = new ItemSet(itemsSet, supportSelectors);
+		addtoSupportItemSetsMap(newItemSet);
 		newItemSet.setParentItemSetList(this);
 		return itemsets.add(newItemSet);
 	}
@@ -45,10 +49,6 @@ public class ItemSetList implements Set<ItemSet> {
 	@Override
 	public int size() {
 		return itemsets.size();
-	}
-
-	public Set<ItemSet> getItemsets() {
-		return itemsets;
 	}
 
 	@Override
@@ -68,20 +68,19 @@ public class ItemSetList implements Set<ItemSet> {
 
 			sets.append(set);
 			sets.append(", " + itemSetAndSupport.getSupport().size() + " : ");
-			
 
-			//for (Selector s : itemSetAndSupport.getSupport())
-			//	sets.append(s + ", ");
+			// for (Selector s : itemSetAndSupport.getSupport())
+			// sets.append(s + ", ");
 			sets.append(itemSetAndSupport.getSupport());
 			sets.append("\n");
 		}
 
 		if (itemsets.iterator().hasNext()) {
-			String heading = String.format("%s-Itemsets of declarations (Itemset, Support count, Support)\nMaximum support is %s\tNumber of cases is %s\n",
-					itemsets.iterator().next().size(),
-					maximumSupport,
-					size());
-			
+			String heading = String
+					.format("%s-Itemsets of declarations (Itemset, Support count, Support)\nMaximum support is %s\tNumber of cases is %s\n",
+							itemsets.iterator().next().size(), maximumSupport,
+							size());
+
 			sets.insert(0, heading);
 		}
 		return sets.toString();
@@ -97,15 +96,34 @@ public class ItemSetList implements Set<ItemSet> {
 		for (ItemSet i : c)
 			i.setParentItemSetList(this);
 		boolean changed = itemsets.addAll(c);
-		if (changed)
-			calculateMaxSupport();
+		if (changed) {
+			for (ItemSet newItemSet : c) {
+				if (maximumSupport < newItemSet.getSupport().size())
+					maximumSupport = newItemSet.getSupport().size();
+				addtoSupportItemSetsMap(newItemSet);
+			}
+		}
 		return changed;
+	}
+
+	private void addtoSupportItemSetsMap(ItemSet newItemSet) {
+		Set<ItemSet> toPut = supportItemSetMap.get(newItemSet.getSupport());
+		if (toPut == null) {
+			toPut = new HashSet<>();
+			supportItemSetMap.put(newItemSet.getSupport(), toPut);
+		}
+		toPut.add(newItemSet);
+	}
+
+	private void removeFromSupportItemSetsMap(ItemSet newItemSet) {
+		supportItemSetMap.get(newItemSet.getSupport()).remove(newItemSet);
 	}
 
 	@Override
 	public void clear() {
 		itemsets.clear();
 		maximumSupport = 0;
+		supportItemSetMap.clear();
 	}
 
 	@Override
@@ -126,24 +144,35 @@ public class ItemSetList implements Set<ItemSet> {
 	@Override
 	public boolean remove(Object o) {
 		boolean changed = itemsets.remove(o);
-		if (changed && ((ItemSet)o).getSupport().size() == maximumSupport)
-			calculateMaxSupport();
+		if (changed) {
+			removeFromSupportItemSetsMap((ItemSet) o);
+			if (((ItemSet) o).getSupport().size() == maximumSupport)
+				calculateMaxSupport();
+		}
 		return changed;
 	}
 
 	@Override
 	public boolean removeAll(Collection<?> c) {
 		boolean changed = itemsets.removeAll(c);
-		if (changed)
+		if (changed) {
+			for (Object o : c) {
+				removeFromSupportItemSetsMap((ItemSet) o);
+			}
 			calculateMaxSupport();
+		}
 		return changed;
 	}
 
 	@Override
 	public boolean retainAll(Collection<?> c) {
 		boolean changed = itemsets.retainAll(c);
-		if (changed)
+		if (changed) {
+			supportItemSetMap.clear();
+			for (ItemSet i : itemsets)
+				addtoSupportItemSetsMap(i);
 			calculateMaxSupport();
+		}
 		return changed;
 	}
 
@@ -152,7 +181,7 @@ public class ItemSetList implements Set<ItemSet> {
 	 */
 	void calculateMaxSupport() {
 		maximumSupport = 0;
-		for (ItemSet itemset : itemsets) 
+		for (ItemSet itemset : itemsets)
 			if (maximumSupport < itemset.getSupport().size())
 				maximumSupport = itemset.getSupport().size();
 	}
@@ -170,43 +199,63 @@ public class ItemSetList implements Set<ItemSet> {
 	public int getMaximumSupport() {
 		return maximumSupport;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		return itemsets.equals(obj);
 	}
-	
+
 	@Override
 	public int hashCode() {
-			return itemsets.hashCode();
+		return itemsets.hashCode();
 	}
 
 	/**
-	 * Removes any ItemSet <code>is1</code> in current ItemSetList, 
-	 * when there is a corresponding ItemSet in the given itemSetList
-	 * (parameter of the method) <code>is2</code> that:
+	 * Removes any ItemSet <code>is1</code> in current ItemSetList, when there
+	 * is a corresponding ItemSet in the given itemSetList (parameter of the
+	 * method) <code>is2</code> that:
 	 * <ol>
-	 * 	<li>is1 has the same support of the is2, and</li>
-	 * 	<li>is1 Items are the subset of is2 Items.
+	 * <li>is1 has the same support of the is2, and</li>
+	 * <li>is1 Items are the subset of is2 Items.
 	 * </ol>
+	 * 
 	 * @param itemSetList
 	 */
 	public void removeSubsets(ItemSetList itemSetList) {
-//		for (ItemSet itemSet : itemSetList) {
-//			Set<Item> itemSetToCheckIn = new HashSet<>(itemSet);
-//			for (Item i : new HashSet<>(itemSetToCheckIn)) {
-//				itemSetToCheckIn.remove(i);
-//				itemsets.remove(itemSetToCheckIn);
-//				itemSetToCheckIn.add(i);
-//			}						
-//		}
 		ArrayList<ItemSet> toRemove = new ArrayList<>();
 		for (ItemSet itemSet : itemSetList) {
 			for (ItemSet itemSet2 : itemsets) {
-				if (itemSet.containsAll(itemSet2) && itemSet.getSupport().equals(itemSet2.getSupport()))
+				if (itemSet.containsAll(itemSet2)
+						&& itemSet.getSupport().equals(itemSet2.getSupport()))
 					toRemove.add(itemSet2);
 			}
 		}
 		itemsets.removeAll(toRemove);
 	}
+
+	public boolean containsSuperSet(ItemSet itemSetToCheck) {
+		Set<ItemSet> allItemSetsWithSameSupport = supportItemSetMap
+				.get(itemSetToCheck.getSupport());
+		if (allItemSetsWithSameSupport != null) {
+			for (ItemSet itemSet : supportItemSetMap.get(itemSetToCheck
+					.getSupport()))
+				if (itemSet.containsAll(itemSetToCheck))
+					return true;
+		}
+		return false;
+	}
+
+	public void removeSubset(ItemSet superSet) {
+		ArrayList<ItemSet> toRemove = new ArrayList<>();
+		Set<ItemSet> allItemSetsWithSameSupport = supportItemSetMap
+				.get(superSet.getSupport());
+		if (allItemSetsWithSameSupport == null)
+			return;
+		for (ItemSet itemSet : allItemSetsWithSameSupport) {
+			if (superSet.containsAll(itemSet))
+				toRemove.add(itemSet);
+		}
+		itemsets.removeAll(toRemove);
+	}
+
 }

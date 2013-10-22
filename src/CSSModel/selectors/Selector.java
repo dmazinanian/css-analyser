@@ -83,4 +83,6 @@ public abstract class Selector {
 	 * @return
 	 */
 	public abstract boolean selectorEquals(Selector otherSelector);
+	
+	public abstract Selector clone();
 }

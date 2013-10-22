@@ -36,6 +36,7 @@ public class FPGrowth {
 		for (int i = 1; i <= resultItemSetLists.size(); i++) {
 			if (resultItemSetLists.get(i) != null) {
 				results.add(resultItemSetLists.get(i));
+				//System.out.println(i + " " + results.get(results.size() - 1).size());
 				// Remove redundant subsets
 //				if (i > 1 && results.get(i - 2) != null) {
 //					results.get(i - 2).removeSubsets(results.get(i - 1));
@@ -75,7 +76,7 @@ public class FPGrowth {
 			insert_tree(items, node, tree);
 	}
 
-	private Set<Set<Item>> getAllSubsets(Set<Item> s) {
+	private Set<Set<Item>> getAllSubsets(Collection<Item> s) {
 		// Copy
 		List<Item> items = new ArrayList<>(s);
 		Set<Set<Item>> toReturn = new HashSet<>();
@@ -104,27 +105,34 @@ public class FPGrowth {
 
 		return toReturn;
 	}
-
-
+	
 	private void fpGrowth(FPTree tree, Set<Item> currentItems, int minSupport) {
+		fpGrowth(tree, currentItems, minSupport, true);
+	}
+	
+	private void fpGrowth(FPTree tree, Set<Item> currentItems, int minSupport, boolean topLevel) {
 		if (tree.hasASinglePath()) {
 			// All combinations required
-			Set<Item> items = new HashSet<>();
+			Set<Item> itemsAlongThePath = new HashSet<>();
 			Node node = tree.getRoot();
+			// Get items along the single path
 			while (node.getChildern().iterator().hasNext()) {
 				node = node.getChildern().iterator().next();
-				items.add(node.getItem());
+				itemsAlongThePath.add(node.getItem());
+
 			}
-			
-			for (Set<Item> is : getAllSubsets(items)) {
-				is.addAll(currentItems);
-				addItemSet(is);
+			for (Set<Item> itemSet : getAllSubsets(itemsAlongThePath)) {
+				itemSet.addAll(currentItems);
+				addItemSet(itemSet);
 			}
-			addItemSet(currentItems);
+			//addItemSet(currentItems);
 		} else {
+			int x = 0;
 			// Start from the end of the header table of tree.
 			for (Item item : tree.getHeaderTable()) {
-				
+				if (topLevel) {
+					System.out.println("Item " + ++x + " of " + tree.getHeaderTable().size());
+				}
 				// First see if the current prefix is frequent.
 				int support = tree.getTotalSupport(item);
 				if (support < minSupport)
@@ -166,11 +174,12 @@ public class FPGrowth {
 
 				conditionalFP.prune(minSupport);
 				
-				Set<Item> newItemSet = new HashSet<>(currentItems);
+				ItemSet newItemSet = new ItemSet();
+				newItemSet.addAll(currentItems);
 				newItemSet.add(item);
 				addItemSet(newItemSet);
 				if (!conditionalFP.isEmpty())
-					fpGrowth(conditionalFP, newItemSet, minSupport);
+					fpGrowth(conditionalFP, newItemSet, minSupport, false);
 			}
 		}
 	}
@@ -178,11 +187,22 @@ public class FPGrowth {
 	private void addItemSet(Set<Item> is) {
 		ItemSet newItemSet = new ItemSet();
 		newItemSet.addAll(is);
-		ItemSetList correspondingItemSetList = resultItemSetLists.get(is.size());
+		for (int i = newItemSet.size() + 1; i <= resultItemSetLists.keySet().size(); i++) {
+			ItemSetList isl = resultItemSetLists.get(i);
+			if (isl != null && isl.containsSuperSet(newItemSet)) {
+				return;
+			}
+		}
+		ItemSetList correspondingItemSetList = resultItemSetLists.get(newItemSet.size());
 		if (correspondingItemSetList == null) {
 			correspondingItemSetList = new ItemSetList();
-			resultItemSetLists.put(is.size(), correspondingItemSetList);
+			resultItemSetLists.put(newItemSet.size(), correspondingItemSetList);
 		}
 		correspondingItemSetList.add(newItemSet);
+		for (int i = 1; i < newItemSet.size(); i++) {
+			ItemSetList isl = resultItemSetLists.get(i);
+			if (isl != null)
+				isl.removeSubset(newItemSet);
+		}
 	}
 }

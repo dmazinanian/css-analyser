@@ -2,6 +2,7 @@ package CSSModel.selectors;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -11,7 +12,7 @@ import CSSModel.declaration.Declaration;
 
 public class GroupedSelectors extends Selector implements Collection<AtomicSelector> {
 
-	private final Set<AtomicSelector> listOfSelectors;
+	private Set<AtomicSelector> listOfAtomicSelectors;
 	
 	public GroupedSelectors() {
 		this(-1, -1);
@@ -21,29 +22,29 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 		super(line, col);
 		// To preserve the order of selectors as in the CSS file, we
 		// use LinkedHashSet
-		listOfSelectors = new LinkedHashSet<>();
+		listOfAtomicSelectors = new LinkedHashSet<>();
 	}
 
 	public Set<AtomicSelector> getAtomicSelectors() {
-		return listOfSelectors;
+		return listOfAtomicSelectors;
 	}
 
 	@Override
 	public void addCSSRule(Declaration rule) {
 		super.addCSSRule(rule);
-		for (AtomicSelector atomicSelector : listOfSelectors)
+		for (AtomicSelector atomicSelector : listOfAtomicSelectors)
 			atomicSelector.addCSSRule(rule);
 	}
 	
 	@Override
 	public Iterator<AtomicSelector> iterator() {
-		return listOfSelectors.iterator();
+		return listOfAtomicSelectors.iterator();
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder result = new StringBuilder("");
-		for (AtomicSelector atomicSelector : listOfSelectors)
+		for (AtomicSelector atomicSelector : listOfAtomicSelectors)
 			result.append(atomicSelector + ", ");
 		// Remove last , and space
 		result.delete(result.length() - 2, result.length()); 
@@ -62,11 +63,11 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 		if (!generalEquals(otherSelector))
 			return false;
 		GroupedSelectors otherObj = (GroupedSelectors)otherSelector;
-		if (listOfSelectors.size() != otherObj.listOfSelectors.size())
+		if (listOfAtomicSelectors.size() != otherObj.listOfAtomicSelectors.size())
 			return false;
 		//return listOfSelectors.containsAll(otherObj.listOfSelectors);
-		List<AtomicSelector> tempList = new ArrayList<>(otherObj.listOfSelectors);
-		for (Selector selector : listOfSelectors) {
+		List<AtomicSelector> tempList = new ArrayList<>(otherObj.listOfAtomicSelectors);
+		for (Selector selector : listOfAtomicSelectors) {
 			boolean valueFound = false;
 			for (int i = 0; i < tempList.size(); i++) {
 				if (tempList.get(i) != null && tempList.get(i).selectorEquals(selector)) {
@@ -105,7 +106,7 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 
 		return lineNumber == otherObj.lineNumber &&
 				columnNumber == otherObj.columnNumber &&
-				otherObj.listOfSelectors.equals(listOfSelectors);
+				otherObj.listOfAtomicSelectors.equals(listOfAtomicSelectors);
 	}
 	
 	@Override
@@ -113,67 +114,76 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 		int result = 17;
 		result = result * 31 + lineNumber;
 		result = result * 31 + columnNumber;
-		result = result * 31 + listOfSelectors.hashCode();
+		result = result * 31 + listOfAtomicSelectors.hashCode();
 		return result;
 	}
 
 	@Override
 	public boolean add(AtomicSelector atomicSelector) {
-		return listOfSelectors.add(atomicSelector);
+		return listOfAtomicSelectors.add(atomicSelector);
 	}
 
 	@Override
-	public boolean addAll(Collection<? extends AtomicSelector> listOfAtomicSelectors) {
-		return listOfSelectors.addAll(listOfAtomicSelectors);
+	public boolean addAll(Collection<? extends AtomicSelector> atomicSelectors) {
+		return listOfAtomicSelectors.addAll(atomicSelectors);
 	}
 
 	@Override
 	public void clear() {
-		listOfSelectors.clear();
+		listOfAtomicSelectors.clear();
 	}
 
 	@Override
 	public boolean contains(Object selector) {
-		return listOfSelectors.contains(selector);
+		return listOfAtomicSelectors.contains(selector);
 	}
 
 	@Override
 	public boolean containsAll(Collection<?> lisstOfAtomicSelectors) {
-		return listOfSelectors.containsAll(lisstOfAtomicSelectors);
+		return listOfAtomicSelectors.containsAll(lisstOfAtomicSelectors);
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return listOfSelectors.isEmpty();
+		return listOfAtomicSelectors.isEmpty();
 	}
 
 	@Override
 	public boolean remove(Object atomicSelector) {
-		return listOfSelectors.remove(atomicSelector);
+		return listOfAtomicSelectors.remove(atomicSelector);
 	}
 
 	@Override
 	public boolean removeAll(Collection<?> listOfAtomicSelectors) {
-		return listOfSelectors.removeAll(listOfAtomicSelectors);
+		return listOfAtomicSelectors.removeAll(listOfAtomicSelectors);
 	}
 
 	@Override
 	public boolean retainAll(Collection<?> arg0) {
-		return listOfSelectors.retainAll(arg0);
+		return listOfAtomicSelectors.retainAll(arg0);
 	}
 
 	@Override
 	public int size() {
-		return listOfSelectors.size();
+		return listOfAtomicSelectors.size();
 	}
 
 	@Override
 	public Object[] toArray() {
-		return listOfSelectors.toArray();
+		return listOfAtomicSelectors.toArray();
 	}
 
 	@Override
 	public <T> T[] toArray(T[] arg0) {
-		return listOfSelectors.toArray(arg0);
+		return listOfAtomicSelectors.toArray(arg0);
 	}	
+	
+	@Override
+	public Selector clone() {
+		GroupedSelectors newOne = new GroupedSelectors(lineNumber, columnNumber);
+		newOne.listOfAtomicSelectors = new HashSet<>(listOfAtomicSelectors);
+		newOne.parentMedia = parentMedia;
+		newOne.declarations = new ArrayList<>(declarations);
+		return newOne;
+	}
 }

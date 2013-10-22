@@ -15,4 +15,9 @@ public class ImmediatelyAdjacentSelector extends IndirectAdjacentSelector {
 	public String toString() {
 		return beforeMainSelector + " + " + mainSelector;
 	}
+	
+	@Override
+	public Selector clone() {
+		return new ImmediatelyAdjacentSelector(getFirstSelector(), getSecondSelector());
+	}
 }
