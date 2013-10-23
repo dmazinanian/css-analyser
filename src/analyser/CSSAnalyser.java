@@ -133,7 +133,7 @@ public class CSSAnalyser {
 	 */
 	public void analyse(final int MIN_SUPPORT) throws IOException {
 		
-		String headerLine = "file_name|size|sloc|#selectors|#atomic_sel|#decs|avg_dec_sel|grouping|typeI|typeII|typeIII|total|#dup_sel|dup_sel_weight|#dup_dec|dup_dec_weight|longest_dup|max_sup_longest_dup";
+		String headerLine = "file_name|size|sloc|num_selectors|num_atomic_sel|num_decs|avg_dec_sel|grouping|typeI|typeII|typeIII|total|num_dup_sel|dup_sel_weight|num_dup_dec|dup_dec_weight|longest_dup|max_sup_longest_dup";
 		analytics.add(headerLine);
 
 		
