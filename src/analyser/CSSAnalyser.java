@@ -295,7 +295,7 @@ public class CSSAnalyser {
 		line.append(numberOfDuplicatedDeclarations+ "|");
 		line.append(duplicatedDeclarationsWeight+ "|");
 		line.append(longestDupLength + "|");
-		line.append(maxSupForLongestDup + "|");
+		line.append(maxSupForLongestDup );
 		analytics.add(line.toString());
 	}
 
