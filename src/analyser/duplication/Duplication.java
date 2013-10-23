@@ -1,5 +1,9 @@
 package analyser.duplication;
 
+import java.util.Set;
+
+import CSSModel.selectors.Selector;
+
 
 /**
  * This interface represents duplications. Every duplication is simply a list
@@ -15,5 +19,7 @@ public interface Duplication {
 	 * @return
 	 */
 	public DuplicationType getType();
+	
+	public Set<Selector> getSelectors();
 
 }

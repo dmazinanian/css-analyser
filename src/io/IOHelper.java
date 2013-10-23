@@ -102,16 +102,20 @@ public final class IOHelper {
 		org.apache.commons.io.FileUtils.deleteDirectory(folder);
 	}
 
+	public static void writeLinesToFile(Iterable<?> lines, String path) {
+		writeLinesToFile(lines, path, false);
+	}
 	/**
 	 * Writes the lines in the object of Iterable<> to the path
 	 * @param lines
 	 * @param path
+	 * @param append
 	 */
-	public static void writeLinesToFile(Iterable<?> lines, String path) {
+	public static void writeLinesToFile(Iterable<?> lines, String path, boolean append) {
 		
 		try {
 			
-			BufferedWriter fw = openFile(path);
+			BufferedWriter fw = openFile(path, append);
 	
 			for (Object row : lines) {
 				writeFile(fw, row.toString());

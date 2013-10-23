@@ -33,10 +33,9 @@ public class CSSAnalyserApp {
 			url = args[0];
 		} else {
 			for (String s : args) {
-				s = s.toLowerCase();
 				if (s.startsWith("--")) {
 					// Parameters
-					String parameter = s.substring(2, s.indexOf(":"));
+					String parameter = s.substring(2, s.indexOf(":")).toLowerCase();
 					String value = s.substring(s.indexOf(":") + 1);
 					switch(parameter) {
 					case "url":

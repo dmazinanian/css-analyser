@@ -19,6 +19,9 @@ public class TypeIDuplication implements Duplication {
 
 	/* We keep a list of declarations which are the same 
 	 * across different selectors
+	 * Because we are going to keep the duplicated declarations
+	 * which happen for the <same selectors> in one object,
+	 * we have used List<List<Declaration>>
 	 */
 	protected final List<List<Declaration>> forDeclarations;
 	

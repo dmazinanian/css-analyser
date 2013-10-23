@@ -3,10 +3,12 @@
  */
 package analyser.duplication;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import CSSModel.declaration.Declaration;
 import CSSModel.declaration.ShorthandDeclaration;
+import CSSModel.selectors.Selector;
 
 /**
  * By definition, a type III duplication in a CSS files is: <br />
@@ -34,6 +36,13 @@ public class TypeIIIDuplication implements Duplication {
 		return DuplicationType.TYPE_III;
 	}
 
+	public Set<Selector> getSelectors() {
+		Set<Selector> toReturn = new HashSet<>();
+		toReturn.add(shorthandDeclaration.getSelector());
+		toReturn.add(individualDeclarations.iterator().next().getSelector());
+		return toReturn;
+	}
+	
 	@Override
 	public String toString() {
 

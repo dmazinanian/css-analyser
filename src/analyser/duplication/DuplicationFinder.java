@@ -40,25 +40,25 @@ public class DuplicationFinder {
 		this.stylesheet = stylesheet;
 	}
 
-	private DuplicationsList typeOneDuplications;
-	private DuplicationsList typeTwoDuplications;
-	private DuplicationsList typeThreeDuplications;
-	private DuplicationsList typeFourDuplications;
+	private DuplicationsList typeOneDuplicationsList;
+	private DuplicationsList typeTwoDuplicationsList;
+	private DuplicationsList typeThreeDuplicationsList;
+	private DuplicationsList typeFourDuplicationsList;
 	
 	public DuplicationsList getTypeIDuplications() {
-		return typeOneDuplications;
+		return typeOneDuplicationsList;
 	}
 	
 	public DuplicationsList getTypeIIDuplications() {
-		return typeTwoDuplications;
+		return typeTwoDuplicationsList;
 	}
 	
 	public DuplicationsList getTypeIIIDuplications() {
-		return typeThreeDuplications;
+		return typeThreeDuplicationsList;
 	}
 	
 	public DuplicationsList getTypeIVDuplications() {
-		return typeFourDuplications;
+		return typeFourDuplicationsList;
 	}
 	
 	// For apriori
@@ -81,8 +81,8 @@ public class DuplicationFinder {
 	 */
 	private void findTypeOneAndTwoDuplications() {
 		
-		typeOneDuplications = new DuplicationsList();
-		typeTwoDuplications = new DuplicationsList();
+		typeOneDuplicationsList = new DuplicationsList();
+		typeTwoDuplicationsList = new DuplicationsList();
 		
 		C1 = new ItemSetList();
 		
@@ -156,7 +156,7 @@ public class DuplicationFinder {
 					visitedIdenticalDeclarations.add(checkingDecIndex);
 					mustAddCurrentTypeIDuplication = true;
 					
-					// This only used in apriori
+					// This only used in apriori and fpgrowth
 					newItem.add(checkingDeclaration);
 					declarationItemMap.put(checkingDeclaration, newItem);
 				}
@@ -182,7 +182,7 @@ public class DuplicationFinder {
 				} else {
 					typeOneDuplication = new TypeIDuplication();
 					typeOneDuplication.addAllDeclarations(currentTypeIDuplicatedDeclarations);
-					typeOneDuplications.addDuplication(typeOneDuplication);
+					typeOneDuplicationsList.addDuplication(typeOneDuplication);
 				}
 			}
 			
@@ -192,7 +192,7 @@ public class DuplicationFinder {
 				} else {
 					typeTwoDuplication = new TypeIIDuplication();
 					typeTwoDuplication.addAllDeclarations(currentTypeIIDuplicatedDeclarations);
-					typeTwoDuplications.addDuplication(typeTwoDuplication);
+					typeTwoDuplicationsList.addDuplication(typeTwoDuplication);
 				}
 			}
 			
@@ -205,7 +205,7 @@ public class DuplicationFinder {
 	 */
 	public void findTypeThreeDuplication() {
 		
-		typeThreeDuplications = new DuplicationsList();
+		typeThreeDuplicationsList = new DuplicationsList();
 		
 		Set<Selector> selectors = stylesheet.getAllSelectors();
 		
@@ -263,7 +263,7 @@ public class DuplicationFinder {
 						virtualShorthand.individualDeclarationsEquivalent((ShorthandDeclaration)checkingDeclaration)) {
 						
 						TypeIIIDuplication duplication = new TypeIIIDuplication((ShorthandDeclaration)checkingDeclaration, entry.getValue());
-						typeThreeDuplications.addDuplication(duplication);
+						typeThreeDuplicationsList.addDuplication(duplication);
 						
 						// For apriori
 						Item item = declarationItemMap.get(checkingDeclaration);

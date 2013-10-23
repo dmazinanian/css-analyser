@@ -23,6 +23,8 @@ import analyser.duplication.Duplication;
 import analyser.duplication.DuplicationFinder;
 import analyser.duplication.DuplicationsList;
 import analyser.duplication.TypeIDuplication;
+import analyser.duplication.TypeIIDuplication;
+import analyser.duplication.TypeIIIDuplication;
 import analyser.duplication.apriori.Item;
 import analyser.duplication.apriori.ItemSet;
 import analyser.duplication.apriori.ItemSetList;
@@ -30,6 +32,7 @@ import analyser.duplication.apriori.ItemSetList;
 import parser.CSSParser;
 import refactoring.RefactorerDuplications;
 import CSSModel.StyleSheet;
+import CSSModel.declaration.Declaration;
 import CSSModel.selectors.GroupedSelectors;
 import CSSModel.selectors.Selector;
 import dom.DOMHelper;
@@ -130,7 +133,7 @@ public class CSSAnalyser {
 	 */
 	public void analyse(final int MIN_SUPPORT) throws IOException {
 		
-		String headerLine = "file_name|size|sloc|#selectors|#atomic_sel|#decs|avg_dec_sel|grouping|typeI|typeII|typeIII|total|dup_weight|longest_dup|max_sup_longest_dup";
+		String headerLine = "file_name|size|sloc|#selectors|#atomic_sel|#decs|avg_dec_sel|grouping|typeI|typeII|typeIII|total|#dup_sel|dup_sel_weight|#dup_dec|dup_dec_weight|longest_dup|max_sup_longest_dup";
 		analytics.add(headerLine);
 
 		
@@ -198,7 +201,7 @@ public class CSSAnalyser {
 			writeAnalytics(styleSheet, duplicationFinder, fpgrowthResults); 
 		}
 		
-		IOHelper.writeLinesToFile(analytics, folderPath + "/analytics.txt");
+		IOHelper.writeLinesToFile(analytics, folderPath + "/analytics.txt", false);
 					
 	}
 	
@@ -241,7 +244,30 @@ public class CSSAnalyser {
 		//int numberOfTypeVDuplications = finder.getTypeIDuplications().getSize();
 		int totalDuplications = numberOfTypeIDuplications + numberOfTypeIIDuplications + numberOfTypeIIIDuplications;
 
-		float duplicationWeight = (float)totalDuplications / 100 * sloc;
+		Set<Selector> selectorsInDuplications = new HashSet<>();
+		for (Duplication d : finder.getTypeIIDuplications())
+			selectorsInDuplications.addAll(d.getSelectors());
+		
+		for (Duplication d : finder.getTypeIIDuplications())
+			selectorsInDuplications.addAll(d.getSelectors());
+		
+		for (Duplication d : finder.getTypeIIIDuplications())
+			selectorsInDuplications.addAll(d.getSelectors());
+		
+		int numberOfSelectorsWithDuplications = selectorsInDuplications.size();
+			
+		float selectorsWithDuplicationsWeight = (float)numberOfSelectorsWithDuplications / numberOfSelectors;
+
+		Set<Declaration> duplicatedDeclarations = new HashSet<>();
+		for (ItemSetList isl : dupResults)
+			for (ItemSet is : isl)
+				for (Item i : is)
+					for (Declaration d : i)
+						duplicatedDeclarations.add(d);
+		
+		int numberOfDuplicatedDeclarations = duplicatedDeclarations.size();
+		
+		float duplicatedDeclarationsWeight = (float)numberOfDuplicatedDeclarations / numberOfDeclarations;
 		
 		int longestDupLength = dupResults.size();
 		int maxSupForLongestDup = 0; 
@@ -264,7 +290,10 @@ public class CSSAnalyser {
 		line.append(numberOfTypeIIDuplications + "|");
 		line.append(numberOfTypeIIIDuplications + "|");
 		line.append(totalDuplications + "|");
-		line.append(duplicationWeight + "|");
+		line.append(numberOfSelectorsWithDuplications + "|");
+		line.append(selectorsWithDuplicationsWeight + "|");
+		line.append(numberOfDuplicatedDeclarations+ "|");
+		line.append(duplicatedDeclarationsWeight+ "|");
 		line.append(longestDupLength + "|");
 		line.append(maxSupForLongestDup + "|");
 		analytics.add(line.toString());
