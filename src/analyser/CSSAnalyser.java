@@ -19,6 +19,7 @@ import org.w3c.dom.Document;
 
 import analyser.duplication.Duplication;
 import analyser.duplication.DuplicationFinder;
+import analyser.duplication.DuplicationsList;
 import analyser.duplication.TypeIDuplication;
 import analyser.duplication.apriori.Item;
 import analyser.duplication.apriori.ItemSet;
@@ -39,16 +40,12 @@ import dom.Model;
 public class CSSAnalyser {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSSAnalyser.class);
-		
 	private final String folderPath;
-	
 	private final Model model;
-	
-	private final String analaysedWebSitename;
-	
-	private final boolean APRIORI = false;
-	
-	private final boolean FP_GROWTH = true;
+	private boolean doApriori = false;
+	private boolean doFPGrowth = true;
+	private boolean dontUseDOM = false;
+	private boolean compareAprioriAndFPGrowth = false;
 	
 	/**
 	 * Through this constructor, one should pass the
@@ -57,14 +54,47 @@ public class CSSAnalyser {
 	 * analysis for these files 
 	 * @param cssContainingFolder
 	 */
-	public CSSAnalyser(String domStateHTMLPath, String cssContainingFolder, String websiteName) {
+	public CSSAnalyser(String domStateHTMLPath, String cssContainingFolder) {
 		
 		folderPath = cssContainingFolder;
 		Document document = DOMHelper.getDocument(domStateHTMLPath);
 		model = new Model(document);
-		analaysedWebSitename = websiteName;
 		parseStyleSheets();
 		
+	}
+	
+	public CSSAnalyser(String cssContainingFolder) {
+		dontUseDOM = true;
+		model = new Model(null);
+		folderPath = cssContainingFolder;
+		parseStyleSheets();
+		
+	}
+	
+	/**
+	 * Identifies whether analyzer should do Apriori to find
+	 * frequent declarations
+	 * @param value
+	 */
+	public void setApriori(boolean value) {
+		doApriori = value;
+	}
+	
+	/**
+	 * Identifies whether analyzer should do FP-Growth to find
+	 * frequent declarations
+	 * @param value
+	 */
+	public void setFPGrowth(boolean value) {
+		doFPGrowth = value;
+	}
+	
+	/**
+	 * Identifies whether we have to compare apriori results with fpgrowth results
+	 * @param value
+	 */
+	public void compareAproiriAndFPGrowth(boolean value) {
+		compareAprioriAndFPGrowth = value;
 	}
 	
 	private void parseStyleSheets() {
@@ -72,18 +102,17 @@ public class CSSAnalyser {
 		// Lets search for all CSS files
 		List<File> files = IOHelper.searchForFiles(folderPath, "css");
 
+		if (files.size() == 0) {
+			LOGGER.warn("No CSS file found in " + folderPath);
+			return;
+		}
+		
 		for (File file : files) {
-			
 			String filePath = file.getAbsolutePath();
-			
 			LOGGER.info("Now parsing " + filePath);
-			
 			CSSParser parser = new CSSParser();
-
-			StyleSheet styleSheet = parser.parseExternalCSS(filePath);
-			
+			StyleSheet styleSheet = parser.parseExternalCSS(filePath);	
 			model.addStyleSheet(styleSheet);
-			
 		}
 		
 	}
@@ -97,68 +126,38 @@ public class CSSAnalyser {
 	 * @throws IOException
 	 */
 	public void analyse(final int MIN_SUPPORT) throws IOException {
-		float sumOfAverages = 0,
-			  totalSelectors = 0,
-			  totalTypeISelectors = 0;
-		BufferedWriter summaryFileWriter = IOHelper.openFile(folderPath + "/summary.txt");
-		IOHelper.writeFile(summaryFileWriter, String.format("\r\n\r%45s\t'%s'\n\r\n\r", "STATISTICS FOR", analaysedWebSitename));
-		IOHelper.writeFile(summaryFileWriter, String.format("%45s\t%15s\t%15s\t%15s\n\r\n\r", "FILE NAME", "#SELECTORS", "#TYPE I", "%"));
-		
-		for (StyleSheet styleSheet: model.getStyleSheets()) {
-		
-			totalSelectors+=styleSheet.getAllSelectors().size();
-		
-		}
-		
+				
 		// Do the analysis for each CSS file
 		for (StyleSheet styleSheet: model.getStyleSheets()) {
 						
-			String filePath = styleSheet.getFilePath(); 
+			String filePath = styleSheet.getFilePath();
+			String folderName = filePath + ".analyse";
 			
 			LOGGER.info("Finding different kinds of duplication in " + filePath);
 			
 			DuplicationFinder duplicationFinder = new DuplicationFinder(styleSheet);
 			duplicationFinder.findDuplications();
 
-			String folderName = filePath + ".analyse";
 			
 			IOHelper.createFolder(folderName, true);
 			
-			BufferedWriter fw = IOHelper.openFile(folderName + "/typeI.txt");
+			DuplicationsList typeIDuplications = duplicationFinder.getTypeIDuplications();
+			writeToFile(typeIDuplications, folderName + "/typeI.txt");
+		
+			DuplicationsList typeIIDuplications = duplicationFinder.getTypeIIDuplications();
+			writeToFile(typeIIDuplications, folderName + "/typeII.txt");
 			
-			Set<Selector> selectors = new HashSet<>();
+			DuplicationsList typeIIIDuplications = duplicationFinder.getTypeIIIDuplications();
+			writeToFile(typeIIIDuplications, folderName + "/typeIII.txt");
 			
-			for (Duplication duplication : duplicationFinder.getTypeIDuplications()) {
-				selectors.addAll(((TypeIDuplication)duplication).getSelectors());
-				IOHelper.writeFile(fw, duplication.toString());
+			if (!dontUseDOM) {
+				// TODO: TYPE IV
 			}
-			IOHelper.closeFile(fw);
 			
-			float currentAverage = 100 * selectors.size() / (float)styleSheet.getAllSelectors().size();
 			
-			sumOfAverages += currentAverage * (styleSheet.getAllSelectors().size() / (float)totalSelectors);
-			//totalSelectors += styleSheet.getAllSelectors().size();
-			totalTypeISelectors += selectors.size(); 
+			List<ItemSetList> aprioriResults = null, fpgrowthResults = null;
 			
-			IOHelper.writeFile(summaryFileWriter, String.format("%45s\t%15d\t%15d\t%15.3f\n", 
-													filePath.substring(filePath.lastIndexOf('\\') + 1), 
-													styleSheet.getAllSelectors().size(), 
-													selectors.size(), 
-													currentAverage));
-			
-			fw = IOHelper.openFile(folderName + "/typeII.txt");
-			for (Duplication duplication : duplicationFinder.getTypeIIDuplications())
-				IOHelper.writeFile(fw, duplication.toString());
-			IOHelper.closeFile(fw);
-			
-			fw = IOHelper.openFile(folderName + "/typeIII.txt");
-			for (Duplication duplication : duplicationFinder.getTypeIIIDuplications())
-				IOHelper.writeFile(fw, duplication.toString());
-			IOHelper.closeFile(fw);
-			
-			List<ItemSetList> aprioriResults, fpgrowthResults;
-			
-			if (APRIORI) {
+			if (doApriori) {
 			
 				LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT);
 
@@ -166,104 +165,89 @@ public class CSSAnalyser {
 				aprioriResults = duplicationFinder.apriori(MIN_SUPPORT);
 				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				long time = (end - start) / 1000000L;
-				fw = IOHelper.openFile(folderName + "/apriori.txt");
-				for (ItemSetList itemsetList : aprioriResults) {
-					IOHelper.writeFile(fw, itemsetList.toString());
-				}
-				String s = String.format("CPU time (miliseconds) for apriori algorithm: %s\n", time) ;
-
-				IOHelper.writeFile(fw, s);
-				IOHelper.closeFile(fw);
-
-				LOGGER.info(s);
+				writeToFile(aprioriResults, folderName + "/apriori.txt");
+				
+				LOGGER.info("Done Apriori in " + time);
 			
 			}
 			
-			if (FP_GROWTH) {
+			if (doFPGrowth) {
 
 				LOGGER.info("Applying fpgrowth algorithm with minimum support count of " + MIN_SUPPORT);
-				LOGGER.warn("Start " + (new Date()).toString());
+				
 				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				fpgrowthResults = duplicationFinder.fpGrowth(MIN_SUPPORT);
 				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				long time = (end - start) / 1000000L;
-				LOGGER.warn("Done in " + time + ". Writing to the file. " + (new Date()).toString());
-				fw = IOHelper.openFile(folderName + "/fpgrowth.txt");
-				for (ItemSetList itemsetList : fpgrowthResults) {
-					IOHelper.writeFile(fw, itemsetList.toString());
-				}
-				IOHelper.writeFile(fw, "Time for completion of FP-Growth: " + time);
-				IOHelper.closeFile(fw);
-
-				LOGGER.info("Done");
-
+				writeToFile(fpgrowthResults, folderName + "/fpgrowth.txt");
+				
+				LOGGER.info("Done FP-Growth in" + time);
 			}
 			
-			// Compare APRIORI and FP-GROWTH
-			if (APRIORI && FP_GROWTH && aprioriResults.size() == fpgrowthResults.size())
-			{
-				for (int i = 0; i < aprioriResults.size(); i++) {
-					//if (aprioriResults.get(i).size() > fpgrowthResults.get(i).size()) {
-						System.out.println("Items below are in APRIORI but not in FPGROWTH (" + i + ")");
-						for (ItemSet is : aprioriResults.get(i)) {
-							boolean found = false;
-							for (ItemSet fpis : fpgrowthResults.get(i))
-								if (fpis.equals(is)) {
-									found = true;
-									break;
-								}
-							if (!found) {
-								for (Item k : is)
-									System.out.print("(" + k.getFirstDeclaration() + "), ");
-								System.out.println();
-							}
-						}
-					//}
-					//if (aprioriResults.get(i).size() < fpgrowthResults.get(i).size()) {
-						System.out.println("Items below are in FPGROWTH but not in APRIORI (" + i + ")");
-						for (ItemSet is : fpgrowthResults.get(i)) {
-							boolean found = false;
-							for (ItemSet apis : aprioriResults.get(i))
-								if (is.equals(apis)) {
-									found = true;
-									break;
-								}
-							if (!found) {
-								for (Item k : is)
-									System.out.print("(" + k.getFirstDeclaration() + "), ");
-								System.out.println();
-							}
-						}
-						System.out.println("----------");
-					//}
-				}
-			}
-			
-			LOGGER.warn("Start compressing");
-			long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-			RefactorerDuplications refactor = new RefactorerDuplications();
-			StyleSheet newStyleSheet = refactor.refactor(styleSheet, fpgrowthResults);
-			long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-			long time = (end - start) / 1000000L;
-			LOGGER.warn("Done in " + time + ". Writing to the file. ");
-			fw = IOHelper.openFile(folderName + "/refactored.css");
-			IOHelper.writeFile(fw, newStyleSheet.toString());
-			IOHelper.writeFile(fw, "/* Time for completion of refactoring: " + time + "*/");
-			IOHelper.closeFile(fw);
-
-			LOGGER.info("Done");
-			
+			if (compareAprioriAndFPGrowth)
+				compareAprioriAndFPGrowth(aprioriResults, fpgrowthResults);
 		}
 		
+		
+		
 				
+	}
 
-		IOHelper.writeFile(summaryFileWriter, String.format("\n\r\n\r%45s\t%15.3f\t%15.3f\t%15.3f", 
-															"Average", 
-															totalSelectors / (float)model.getStyleSheets().size(), 
-															totalTypeISelectors / (float)model.getStyleSheets().size(), 
-															sumOfAverages )
-							);
-		IOHelper.closeFile(summaryFileWriter);
+	private void compareAprioriAndFPGrowth(List<ItemSetList> aprioriResults,
+			List<ItemSetList> fpgrowthResults) {
+		// Compare APRIORI and FP-GROWTH
+		if (doApriori && doFPGrowth && aprioriResults.size() == fpgrowthResults.size())
+		{
+			StringBuilder outText = new StringBuilder();
+			for (int i = 0; i < aprioriResults.size(); i++) {
+					outText.append("\nItems below are in APRIORI but not in FPGROWTH (" + i + ")\n");
+					for (ItemSet is : aprioriResults.get(i)) {
+						boolean found = false;
+						for (ItemSet fpis : fpgrowthResults.get(i))
+							if (fpis.equals(is)) {
+								found = true;
+								break;
+							}
+						if (!found) {
+							for (Item k : is)
+								outText.append("(" + k.getFirstDeclaration() + "), ");
+							outText.append("\n");
+						}
+					}
+					outText.append("\nItems below are in FPGROWTH but not in APRIORI (" + i + ")\n\n");
+					for (ItemSet is : fpgrowthResults.get(i)) {
+						boolean found = false;
+						for (ItemSet apis : aprioriResults.get(i))
+							if (is.equals(apis)) {
+								found = true;
+								break;
+							}
+						if (!found) {
+							for (Item k : is)
+								outText.append("(" + k.getFirstDeclaration() + "), ");
+							outText.append("\n");
+						}
+					}
+			}
+			LOGGER.warn(outText.toString());
+		}
+	}
+
+	private void writeToFile(Iterable<?> duplicationsList, String path) {
+		
+		try {
+			
+			BufferedWriter fw = IOHelper.openFile(path);
+
+			for (Object row : duplicationsList) {
+				IOHelper.writeFile(fw, row.toString());
+			}
+			
+			IOHelper.closeFile(fw);
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	

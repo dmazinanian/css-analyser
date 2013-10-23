@@ -10,12 +10,16 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import analyser.duplication.apriori.Item;
 import analyser.duplication.apriori.ItemSet;
 import analyser.duplication.apriori.ItemSetList;
 
 public class FPGrowth {
 	
+	private static Logger LOGGER = LoggerFactory.getLogger(FPGrowth.class);
 	
 	private final DataSet initialDataSet;
 	private final Map<Integer, ItemSetList> resultItemSetLists;
@@ -31,16 +35,11 @@ public class FPGrowth {
 
 		fpGrowth(tree, new HashSet<Item>(), minSupport);
 
+		// Deliver results in order. Could we use TreeMap?!
 		List<ItemSetList> results = new ArrayList<>();
-		
 		for (int i = 1; i <= resultItemSetLists.size(); i++) {
 			if (resultItemSetLists.get(i) != null) {
 				results.add(resultItemSetLists.get(i));
-				//System.out.println(i + " " + results.get(results.size() - 1).size());
-				// Remove redundant subsets
-//				if (i > 1 && results.get(i - 2) != null) {
-//					results.get(i - 2).removeSubsets(results.get(i - 1));
-//				}
 			}
 		}
 
@@ -49,7 +48,6 @@ public class FPGrowth {
 
 	private FPTree generateFPTree(Collection<TreeSet<Item>> itemSet) {
 		// First pass over the Stylesheet (dataset)
-
 		FPTree tree = new FPTree();
 
 		for (TreeSet<Item> orderedImtes : itemSet) {
@@ -81,18 +79,7 @@ public class FPGrowth {
 		List<Item> items = new ArrayList<>(s);
 		Set<Set<Item>> toReturn = new HashSet<>();
 
-		/*for (Item item : s) { // Old style subset finder
-			set.remove(item);
-			Set<Set<Item>> currentSubsets = getAllSubsets(set);
-			for (Set<Item> subset : currentSubsets)
-				subset.add(item);
-			Set<Item> sss = new HashSet<Item>();
-			sss.add(item);
-			currentSubsets.add(sss);
-			toReturn.addAll(currentSubsets);
-			set.add(item);
-		}*/
-
+		// Find subsets using binary representation. Fast :)
 		for (int i = 1; i < Math.pow(2, s.size()); i++) {
 			Set<Item> newSubSet = new HashSet<>();
 			String bits = Integer.toBinaryString(i);
@@ -131,7 +118,7 @@ public class FPGrowth {
 			// Start from the end of the header table of tree.
 			for (Item item : tree.getHeaderTable()) {
 				if (topLevel) {
-					System.out.println("Item " + ++x + " of " + tree.getHeaderTable().size());
+					LOGGER.info("Item " + ++x + " of " + tree.getHeaderTable().size());
 				}
 				// First see if the current prefix is frequent.
 				int support = tree.getTotalSupport(item);
@@ -184,6 +171,11 @@ public class FPGrowth {
 		}
 	}
 	
+	/*
+	 * Add itemset to the result.
+	 * Check if the new itemset has a better suprtset, or
+	 * delete all subsets
+	 */
 	private void addItemSet(Set<Item> is) {
 		ItemSet newItemSet = new ItemSet();
 		newItemSet.addAll(is);

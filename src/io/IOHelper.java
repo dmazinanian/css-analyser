@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -30,8 +31,11 @@ public final class IOHelper {
 				return name.endsWith(ext);
 			}
 		});
-
-		return Arrays.asList(files);
+		
+		if (files == null || files.length == 0)
+			return new ArrayList<File>();
+		else
+			return Arrays.asList(files);
 	}
 
 	/**
