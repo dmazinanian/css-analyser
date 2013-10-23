@@ -101,4 +101,26 @@ public final class IOHelper {
 	public static void deleteDirectory(File folder) throws IOException {
 		org.apache.commons.io.FileUtils.deleteDirectory(folder);
 	}
+
+	/**
+	 * Writes the lines in the object of Iterable<> to the path
+	 * @param lines
+	 * @param path
+	 */
+	public static void writeLinesToFile(Iterable<?> lines, String path) {
+		
+		try {
+			
+			BufferedWriter fw = openFile(path);
+	
+			for (Object row : lines) {
+				writeFile(fw, row.toString());
+			}
+			
+			closeFile(fw);
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
 }

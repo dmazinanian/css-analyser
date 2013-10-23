@@ -6,6 +6,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -28,6 +30,7 @@ import analyser.duplication.apriori.ItemSetList;
 import parser.CSSParser;
 import refactoring.RefactorerDuplications;
 import CSSModel.StyleSheet;
+import CSSModel.selectors.GroupedSelectors;
 import CSSModel.selectors.Selector;
 import dom.DOMHelper;
 import dom.Model;
@@ -126,6 +129,11 @@ public class CSSAnalyser {
 	 * @throws IOException
 	 */
 	public void analyse(final int MIN_SUPPORT) throws IOException {
+		
+		String headerLine = "file_name|size|sloc|#selectors|#atomic_sel|#decs|avg_dec_sel|grouping|typeI|typeII|typeIII|total|dup_weight|longest_dup|max_sup_longest_dup";
+		analytics.add(headerLine);
+
+		
 				
 		// Do the analysis for each CSS file
 		for (StyleSheet styleSheet: model.getStyleSheets()) {
@@ -142,13 +150,13 @@ public class CSSAnalyser {
 			IOHelper.createFolder(folderName, true);
 			
 			DuplicationsList typeIDuplications = duplicationFinder.getTypeIDuplications();
-			writeToFile(typeIDuplications, folderName + "/typeI.txt");
+			IOHelper.writeLinesToFile(typeIDuplications, folderName + "/typeI.txt");
 		
 			DuplicationsList typeIIDuplications = duplicationFinder.getTypeIIDuplications();
-			writeToFile(typeIIDuplications, folderName + "/typeII.txt");
+			IOHelper.writeLinesToFile(typeIIDuplications, folderName + "/typeII.txt");
 			
 			DuplicationsList typeIIIDuplications = duplicationFinder.getTypeIIIDuplications();
-			writeToFile(typeIIIDuplications, folderName + "/typeIII.txt");
+			IOHelper.writeLinesToFile(typeIIIDuplications, folderName + "/typeIII.txt");
 			
 			if (!dontUseDOM) {
 				// TODO: TYPE IV
@@ -165,7 +173,7 @@ public class CSSAnalyser {
 				aprioriResults = duplicationFinder.apriori(MIN_SUPPORT);
 				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				long time = (end - start) / 1000000L;
-				writeToFile(aprioriResults, folderName + "/apriori.txt");
+				IOHelper.writeLinesToFile(aprioriResults, folderName + "/apriori.txt");
 				
 				LOGGER.info("Done Apriori in " + time);
 			
@@ -179,18 +187,87 @@ public class CSSAnalyser {
 				fpgrowthResults = duplicationFinder.fpGrowth(MIN_SUPPORT);
 				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				long time = (end - start) / 1000000L;
-				writeToFile(fpgrowthResults, folderName + "/fpgrowth.txt");
+				IOHelper.writeLinesToFile(fpgrowthResults, folderName + "/fpgrowth.txt");
 				
 				LOGGER.info("Done FP-Growth in" + time);
 			}
 			
 			if (compareAprioriAndFPGrowth)
 				compareAprioriAndFPGrowth(aprioriResults, fpgrowthResults);
+			
+			writeAnalytics(styleSheet, duplicationFinder, fpgrowthResults); 
 		}
 		
+		IOHelper.writeLinesToFile(analytics, folderPath + "/analytics.txt");
+					
+	}
+	
+	private List<String> analytics = new ArrayList<>();
+	private void writeAnalytics(StyleSheet styleSheet, DuplicationFinder finder, List<ItemSetList> dupResults) {
 		
+		File file = new File(styleSheet.getFilePath());
 		
-				
+		String fileName = file.getName();
+		
+		long size = (file.length() / 1024) + (file.length() % 1024 != 0 ? 1 : 0);
+		int sloc = 0;
+		String[] lines = styleSheet.toString().split("\r\n|\r|\n");
+		for (String l : lines)
+			if (!"".equals(l.trim()))
+				sloc++;
+		
+//		try {
+//			BufferedWriter fw = IOHelper.openFile("e:/davood/test.css");
+//			IOHelper.writeFile(fw, styleSheet.toString());
+//			IOHelper.closeFile(fw);
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		
+		int numberOfSelectors = styleSheet.getAllSelectors().size();
+		int numberOfAtomicSelectors = styleSheet.getAllAtomicSelectors().size();
+		int numberOfDeclarations = styleSheet.getAllDeclarations().size();
+		float averageDeclarationsPerSelector = numberOfDeclarations / (float)numberOfSelectors;
+		int numberOfGroupedSelectors = 0;
+		for (Selector selector : styleSheet.getAllSelectors())
+			if (selector instanceof GroupedSelectors)
+				numberOfGroupedSelectors++;
+		float grouppingIndex = (float)numberOfGroupedSelectors / numberOfSelectors;
+		
+		int numberOfTypeIDuplications = finder.getTypeIDuplications().getSize();
+		int numberOfTypeIIDuplications = finder.getTypeIIDuplications().getSize();
+		int numberOfTypeIIIDuplications = finder.getTypeIIIDuplications().getSize();
+		//int numberOfTypeVDuplications = finder.getTypeIDuplications().getSize();
+		int totalDuplications = numberOfTypeIDuplications + numberOfTypeIIDuplications + numberOfTypeIIIDuplications;
+
+		float duplicationWeight = (float)totalDuplications / 100 * sloc;
+		
+		int longestDupLength = dupResults.size();
+		int maxSupForLongestDup = 0; 
+		try {
+			maxSupForLongestDup = dupResults.get(dupResults.size() - 1).getMaximumSupport();
+		} catch (Exception ex) {
+			// Swallow
+		}
+		
+		StringBuilder line = new StringBuilder();
+		line.append(fileName + "|");
+		line.append(size + "|");
+		line.append(sloc + "|");
+		line.append(numberOfSelectors + "|");
+		line.append(numberOfAtomicSelectors + "|");
+		line.append(numberOfDeclarations + "|");
+		line.append(averageDeclarationsPerSelector + "|");
+		line.append(grouppingIndex + "|");
+		line.append(numberOfTypeIDuplications + "|");
+		line.append(numberOfTypeIIDuplications + "|");
+		line.append(numberOfTypeIIIDuplications + "|");
+		line.append(totalDuplications + "|");
+		line.append(duplicationWeight + "|");
+		line.append(longestDupLength + "|");
+		line.append(maxSupForLongestDup + "|");
+		analytics.add(line.toString());
 	}
 
 	private void compareAprioriAndFPGrowth(List<ItemSetList> aprioriResults,
@@ -230,23 +307,6 @@ public class CSSAnalyser {
 					}
 			}
 			LOGGER.warn(outText.toString());
-		}
-	}
-
-	private void writeToFile(Iterable<?> duplicationsList, String path) {
-		
-		try {
-			
-			BufferedWriter fw = IOHelper.openFile(path);
-
-			for (Object row : duplicationsList) {
-				IOHelper.writeFile(fw, row.toString());
-			}
-			
-			IOHelper.closeFile(fw);
-			
-		} catch (Exception ex) {
-			ex.printStackTrace();
 		}
 	}
 
