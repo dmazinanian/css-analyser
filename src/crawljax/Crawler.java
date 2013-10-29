@@ -78,8 +78,6 @@ public class Crawler {
 		
 		InputSpecification inputSpecification = new InputSpecification();
 		Form loginForm = new Form();
-		loginForm.field("email").setValue("dmazinanian");
-		loginForm.field("pass").setValue("fGenius@#98");
 		inputSpecification.setValuesInForm(loginForm).beforeClickElement("input").withAttribute("type", "submit").withAttribute("value", "Log In");
 		builder.crawlRules().setInputSpec(inputSpecification);
 		
