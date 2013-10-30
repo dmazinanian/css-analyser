@@ -52,6 +52,8 @@ public class Crawler {
 		//System.getProperties().setProperty("webdriver.chrome.driver", "chromedriver.exe");
 		//builder.setBrowserConfig(new BrowserConfiguration(BrowserType.CHROME, 2));
 		builder.setBrowserConfig(new BrowserConfiguration(BrowserType.FIREFOX, 2));
+		builder.crawlRules().insertRandomDataInInputForms(false);
+		builder.crawlRules().dontClick("*");
 		builder.setOutputDirectory(new File(outputFolder + "/crawljax"));
 				
 		configureCrawljax(builder);

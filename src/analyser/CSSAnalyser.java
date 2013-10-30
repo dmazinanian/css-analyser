@@ -133,8 +133,8 @@ public class CSSAnalyser {
 	 */
 	public void analyse(final int MIN_SUPPORT) throws IOException {
 		
-		String headerLine = "file_name|size|sloc|num_selectors|num_atomic_sel|num_decs|avg_dec_sel|grouping|typeI|typeII|typeIII|total|num_dup_sel|dup_sel_weight|num_dup_dec|dup_dec_weight|longest_dup|max_sup_longest_dup";
-		analytics.add(headerLine);
+		//String headerLine = "file_name|size|sloc|num_selectors|num_atomic_sel|num_decs|avg_dec_sel|grouping|typeI|typeII|typeIII|total|num_dup_sel|dup_sel_weight|num_dup_dec|dup_dec_weight|longest_dup|max_sup_longest_dup";
+		//analytics.add(headerLine);
 
 		
 				
@@ -201,7 +201,7 @@ public class CSSAnalyser {
 			writeAnalytics(styleSheet, duplicationFinder, fpgrowthResults); 
 		}
 		
-		IOHelper.writeLinesToFile(analytics, folderPath + "/analytics.txt", false);
+		IOHelper.writeLinesToFile(analytics, "e:/davood/expriment/analytics.txt", true);
 					
 	}
 	

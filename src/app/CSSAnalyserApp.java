@@ -5,6 +5,7 @@ import io.IOHelper;
 import java.io.File;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import crawljax.Crawler;
@@ -25,12 +26,11 @@ public class CSSAnalyserApp {
 		String outputFolder = ".";
 		String inputFolder = "";
 		Mode mode = Mode.CRAWL;
+		String urlFile = "";
 		
 		if (args.length == 0) {
 			System.out.println("No input file or URL provided.");
 			return;
-		} else if (args.length == 1) {
-			url = args[0];
 		} else {
 			for (String s : args) {
 				if (s.startsWith("--")) {
@@ -43,8 +43,8 @@ public class CSSAnalyserApp {
 						break;
 					case "outfolder":
 						outputFolder = value;
-						if (!outputFolder.endsWith("\\"))
-							outputFolder = outputFolder + "\\";
+						if (!outputFolder.endsWith("/"))
+							outputFolder = outputFolder + "/";
 						break;
 					case "minsup":
 						minsup = Integer.valueOf(value);
@@ -55,6 +55,9 @@ public class CSSAnalyserApp {
 					case "infolder":
 						inputFolder = value;
 						break;
+					case "urlfile":
+						urlFile = value;
+						break;
 					}
 				}
 			}
@@ -64,24 +67,50 @@ public class CSSAnalyserApp {
 		case CRAWL:
 			if ("".equals(outputFolder)) {
 				System.out.println("Please provide an output folder with --outfolder:out/folder.");
+				return;
+			} else if ("".equals(url) && "".equals(urlFile)) {
+				System.out.println("Please provide a url using --url or the file containing urls using --urlfile");
+				return;
 			}
-			String outputFolderPath = outputFolder + url.replace("http://", "").replace("/", "_");
-			// Make sure to configure crawljax in Crawler class
-			Crawler crawler = new Crawler(url, outputFolderPath);
-			crawler.start();
-
-			//System.out.println(System.getProperty("user.dir"));
 			
-			// Get all dom states in outputFolder/crawljax/doms		
-			List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "/crawljax/doms", "html");	
-			for (File domStateHtml : allStatesFiles) {
-				
-				String stateName = domStateHtml.getName();
-				// Remove .html
-				String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
-				
-				CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), outputFolderPath + "/css/" + correspondingCSSFolderName);
-				cssAnalyser.analyse(minsup);
+			List<String> urls = new ArrayList<>();
+			
+			if (!"".equals(urlFile)) {
+				String file = IOHelper.readFileToString(urlFile);
+				String[] lines = file.split("\n|\r|\r\n");
+				for (String line : lines) {
+					if (!"".equals(line.trim()) && !line.startsWith("--")) {
+						if (!line.startsWith("http://")) {
+							line = "http://" + line;
+						}
+						urls.add(line);
+					}
+				}
+			} else {
+				urls.add(url);
+			}
+			
+			for (String currentUrl : urls) {
+			
+				String outputFolderPath = outputFolder + currentUrl.replace("http://", "").replace("/", "_");
+				// Make sure to configure crawljax in Crawler class
+				Crawler crawler = new Crawler(currentUrl, outputFolderPath);
+				crawler.start();
+
+				//System.out.println(System.getProperty("user.dir"));
+
+				// Get all dom states in outputFolder/crawljax/doms		
+				List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "/crawljax/doms", "html");	
+				for (File domStateHtml : allStatesFiles) {
+
+					String stateName = domStateHtml.getName();
+					// Remove .html
+					String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
+
+					CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), outputFolderPath + "/css/" + correspondingCSSFolderName);
+					cssAnalyser.analyse(minsup);
+
+				}
 				
 			}
 			
@@ -92,7 +121,7 @@ public class CSSAnalyserApp {
 				return;
 			}
 			
-			allStatesFiles = IOHelper.searchForFiles(inputFolder, "html");	
+			List<File> allStatesFiles = IOHelper.searchForFiles(inputFolder, "html");	
 			for (File domStateHtml : allStatesFiles) {
 				
 				String stateName = domStateHtml.getName();
