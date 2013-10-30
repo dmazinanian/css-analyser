@@ -3,6 +3,7 @@ package crawljax.plugin;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -73,6 +74,10 @@ public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 	 */
 	private void fetchAndWriteFile(String href, String stateName, String forWebSite) {
 		
+		File rootFile = new File(getOutputFolder());
+		if (!rootFile.exists() || !rootFile.isDirectory())
+			rootFile.mkdir();
+		
 		String folderPath =  getOutputFolder() + "/" + stateName;
 		
 		// Create the desired folder. One folder for each state
@@ -84,11 +89,18 @@ public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 		int lastSlashPosition = href.lastIndexOf('/');
 		
 		// Get the name of file and append it to the desired folder
-		String cssFilePath = folderPath + "/" + href.substring(lastSlashPosition);
+		String cssFileName = href.substring(lastSlashPosition).replaceAll("[<>\\/?*:\"|]", "_");
+		if (cssFileName.length() > 128)
+			cssFileName = cssFileName.substring(0, 128);
 		
 		// If file name does not end with .css, add it
-		if (!cssFilePath.endsWith("css"))
-			cssFilePath = cssFilePath + ".css";
+		if (!cssFileName.endsWith("css"))
+			cssFileName = cssFileName + ".css";
+		
+		String cssFilePath = folderPath + "/" + cssFileName;
+		
+		while ((new File(cssFilePath)).exists())
+			cssFilePath += "_.css";
 		
 		FileOutputStream fos = null;
 		
@@ -96,8 +108,7 @@ public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 			
 			fos = new FileOutputStream(cssFilePath);
 			
-			// Lets add some information to the end of this css file
-			
+			// Lets add some information to the head of this css file
 			String headerText = String.format("/* \n" +
 										  " * Created by CSSCatcher plugin for Crawljax\n" +
 										  " * CSS file is for Crawljax DOM state %s\n" +
@@ -110,7 +121,11 @@ public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 			fos.write(headerBytes);
 			
 			URL remoteCSSFile = new URL(href);
-			ReadableByteChannel rbc = Channels.newChannel(remoteCSSFile.openStream());
+			HttpURLConnection urlConnection = (HttpURLConnection) remoteCSSFile.openConnection();
+		    urlConnection.setUseCaches(false);
+		    urlConnection.setDoOutput(false);
+		    urlConnection.setReadTimeout(10000);
+			ReadableByteChannel rbc = Channels.newChannel(urlConnection.getInputStream());
 			fos.getChannel().transferFrom(rbc, headerBytes.length, Long.MAX_VALUE);
 					
 		} catch (MalformedURLException e) {
@@ -120,6 +135,7 @@ public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 		} catch (IOException e) {
 			
 			LOGGER.warn("IOException for file:" + href);
+			e.printStackTrace();
 			
 		} finally {
 			

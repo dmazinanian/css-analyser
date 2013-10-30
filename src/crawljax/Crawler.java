@@ -54,6 +54,7 @@ public class Crawler {
 		builder.setBrowserConfig(new BrowserConfiguration(BrowserType.FIREFOX, 2));
 		builder.crawlRules().insertRandomDataInInputForms(false);
 		builder.crawlRules().dontClick("*");
+		
 		builder.setOutputDirectory(new File(outputFolder + "/crawljax"));
 				
 		configureCrawljax(builder);
