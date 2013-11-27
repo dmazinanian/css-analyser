@@ -29,7 +29,7 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (!generalEquality(obj))
+		if (!generalEquals(obj))
 			return false;
 		IndirectAdjacentSelector otherObj = (IndirectAdjacentSelector)obj;
 		if (lineNumber == otherObj.lineNumber &&
@@ -40,19 +40,26 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 		return false;
 	}
 	
-	private boolean generalEquality(Object obj) {
+	private boolean generalEquals(Object obj) {
 		if (obj == null)
 			return false;
 		if (obj == this)
 			return true;
 		if (!(obj instanceof IndirectAdjacentSelector))
 			return false;
+		if (parentMedia != null) {
+			IndirectAdjacentSelector otherIndirectAdjacentSelector = (IndirectAdjacentSelector)obj;
+			if (otherIndirectAdjacentSelector.parentMedia == null)
+				return false;
+			if (!parentMedia.equals(otherIndirectAdjacentSelector.parentMedia))
+				return false;
+		}
 		return true;
 	}
 	
 	@Override
 	public boolean selectorEquals(Selector otherSelector) {
-		if (!generalEquality(otherSelector))
+		if (!generalEquals(otherSelector))
 			return false;
 		IndirectAdjacentSelector otherIndirectAdjacentSelector = (IndirectAdjacentSelector)otherSelector;
 		return mainSelector.selectorEquals(otherIndirectAdjacentSelector.mainSelector) &&

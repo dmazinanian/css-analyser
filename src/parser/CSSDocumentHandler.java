@@ -119,7 +119,12 @@ public class CSSDocumentHandler implements DocumentHandler {
 		File file = new File(styleSheet.getFilePath());
 		String parentFolder = file.getParent(); 
 		CSSParser parser = new CSSParser();
-		styleSheet.addSelectors(parser.parseExternalCSS(parentFolder + "/" + path));
+		try {
+			StyleSheet importedStyleSheet = parser.parseExternalCSS(parentFolder + "/" + path);
+			styleSheet.addSelectors(importedStyleSheet);
+		} catch (Exception ex) {
+			LOGGER.warn("Couldn't parse or import " + parentFolder + "/" + path);
+		}
 	}
 
 	@Override

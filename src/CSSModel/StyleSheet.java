@@ -15,8 +15,8 @@ import CSSModel.selectors.Selector;
  */
 public class StyleSheet {
 
-	private final Set<Selector> listOfSelectors;
-	private Set<Declaration> listOfDeclarations;
+	private Set<Selector> listOfSelectors;
+	//private Set<Declaration> listOfDeclarations;
 	private String cssFilePath;
 
 	public StyleSheet() {
@@ -77,12 +77,12 @@ public class StyleSheet {
 	 * @return List<Declaration>
 	 */
 	public Set<Declaration> getAllDeclarations() {
-		if (listOfDeclarations == null) {
-			listOfDeclarations = new HashSet<>();
+		//if (listOfDeclarations == null) {
+			Set<Declaration> listOfDeclarations = new HashSet<>();
 			for (Selector selector : listOfSelectors)
 				for (Declaration declaration : selector.getDeclarations())
 					listOfDeclarations.add(declaration);
-		}
+		//}
 		return listOfDeclarations;
 	}
 
@@ -107,5 +107,13 @@ public class StyleSheet {
 	
 	public String getFilePath() {
 		return cssFilePath;
+	}
+	
+	@Override
+	public StyleSheet clone() {
+		StyleSheet styleSheet = new StyleSheet();
+		styleSheet.cssFilePath = cssFilePath;
+		styleSheet.listOfSelectors = new HashSet<>(this.listOfSelectors);
+		return styleSheet;
 	}
 }

@@ -39,11 +39,12 @@ public class DuplicationFinder {
 	public DuplicationFinder(StyleSheet stylesheet) {
 		this.stylesheet = stylesheet;
 	}
-
+	
 	private DuplicationsList typeOneDuplicationsList;
 	private DuplicationsList typeTwoDuplicationsList;
 	private DuplicationsList typeThreeDuplicationsList;
-	private DuplicationsList typeFourDuplicationsList;
+	private DuplicationsList typeFourADuplicationsList;
+	private DuplicationsList typeFourBDuplicationsList;
 	
 	public DuplicationsList getTypeIDuplications() {
 		return typeOneDuplicationsList;
@@ -57,21 +58,25 @@ public class DuplicationFinder {
 		return typeThreeDuplicationsList;
 	}
 	
-	public DuplicationsList getTypeIVDuplications() {
-		return typeFourDuplicationsList;
+	public DuplicationsList getTypeIVADuplications() {
+		return typeFourADuplicationsList;
+	}
+	
+	public DuplicationsList getTypeIVBDuplications() {
+		return typeFourBDuplicationsList;
 	}
 	
 	// For apriori
 	private ItemSetList C1;
 	
 	/**
-	 * Performs typeI through typeIV duplication finding in the
-	 * current stylesheet which has been given through constructor
+	 * Performs typeI through typeIVA duplication finding in the
+	 * current stylesheet which has been given through constructor.
 	 */
 	public void findDuplications() {
 		findTypeOneAndTwoDuplications();
 		findTypeThreeDuplication();
-		findTypeFourDuplication();
+		findTypeFourADuplication();
 	}
 
 	/**
@@ -277,7 +282,41 @@ public class DuplicationFinder {
 		
 	}
 	
-	public void findTypeFourDuplication() {
+	/**
+	 * Finds type IV_A duplications
+	 * @see DuplicationType
+	 */
+	public void findTypeFourADuplication() {
+		
+		typeFourADuplicationsList = new DuplicationsList();
+		int currentSelectorIndex = -1, checkingSelectorIndex = 0;
+		List<Selector> allSelectors = new ArrayList<>(stylesheet.getAllSelectors());
+		Set<Integer> visitedSelectors = new HashSet<>();
+		while (++currentSelectorIndex < allSelectors.size()) {
+			Selector currentSelector = allSelectors.get(currentSelectorIndex);
+			TypeIVDuplication.TypeIVADuplication newTypeIVADup = new TypeIVDuplication.TypeIVADuplication();
+			newTypeIVADup.addSelector(currentSelector);
+			while (++checkingSelectorIndex < allSelectors.size()) {
+				if (visitedSelectors.contains(checkingSelectorIndex))
+					continue;
+				Selector checkingSelector = allSelectors.get(checkingSelectorIndex);
+				if (currentSelector.selectorEquals(checkingSelector)) {
+					visitedSelectors.add(checkingSelectorIndex);
+					newTypeIVADup.addSelector(checkingSelector);
+				}
+			}
+			if (newTypeIVADup.getIdenticalSelectors().size() > 1) {
+				typeFourADuplicationsList.addDuplication(newTypeIVADup);
+			}
+		}
+		
+	}
+	
+	/**
+	 * Finds type IV_B duplications
+	 * @see DuplicationType
+	 */
+	public void findTypeFourBDuplication() {
 		// String filePath = styleSheet.getFilePath();
 
 		//System.out.println(styleSheet);
@@ -299,6 +338,8 @@ public class DuplicationFinder {
 		}*/
 	}
 	
+
+
 	
 
 
@@ -322,6 +363,8 @@ public class DuplicationFinder {
 //		}
 		FPGrowth fpGrowth = new FPGrowth(dataSet);
 		return fpGrowth.mine(minSupport);	
-	}	
+	}
+
+		
 
 }

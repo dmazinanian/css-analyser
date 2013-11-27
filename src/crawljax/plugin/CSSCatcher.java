@@ -8,10 +8,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.security.MessageDigest;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,18 +92,20 @@ public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 		int lastSlashPosition = href.lastIndexOf('/');
 		
 		// Get the name of file and append it to the desired folder
-		String cssFileName = href.substring(lastSlashPosition).replaceAll("[<>\\/?*:\"|]", "_");
-		if (cssFileName.length() > 128)
-			cssFileName = cssFileName.substring(0, 128);
+		String cssFileName = DigestUtils.shaHex(href.substring(lastSlashPosition));//href.substring(lastSlashPosition).replaceAll("[<>\\/?*:\"|]", "_");
+		//if (cssFileName.length() > 128)
+		//	cssFileName = cssFileName.substring(0, 128);
 		
 		// If file name does not end with .css, add it
-		if (!cssFileName.endsWith("css"))
+		//if (!cssFileName.endsWith("css"))
 			cssFileName = cssFileName + ".css";
 		
 		String cssFilePath = folderPath + "/" + cssFileName;
 		
-		while ((new File(cssFilePath)).exists())
-			cssFilePath += "_.css";
+		//while ((new File(cssFilePath)).exists())
+		//	cssFilePath += "_.css";
+		if ((new File(cssFilePath)).exists())
+			return;
 		
 		FileOutputStream fos = null;
 		

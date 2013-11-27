@@ -28,10 +28,20 @@ public enum DuplicationType {
 	TYPE_III("Swappable shorthand and non-shorthand declarations"),
 	
 	/**
+	 * A pair of selectors which are identical. Identical selectors are most 
+	 * of the time lexically the same. There are exceptions, for instance in case of existence of
+	 * attribute condition selectors (using brackets) in which the order of conditionals are not important.
+	 * <br />
+	 * Example: <br />
+	 * selector[attr1|='val1'][attr2~'val2'] would be the same as selector[attr2~'val2'][attr1|='val1']
+	 */
+	TYPE_IV_A("Identical selectors"),
+	
+	/**
 	 * A pair of selectors, which may share or not identical or equivalent declarations,
 	 * but select exactly the same set of DOM elements.
 	 */
-	TYPE_IV("Identical elements in DOM");
+	TYPE_IV_B("Identical elements in DOM");
 
 	String stringRepresentation;
 

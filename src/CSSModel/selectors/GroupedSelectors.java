@@ -89,6 +89,13 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 			return true;
 		if (!(otherSelector instanceof GroupedSelectors))
 			return false;
+		if (this.parentMedia != null) {
+			GroupedSelectors otherGroupedSelector = (GroupedSelectors)otherSelector;
+			if (otherGroupedSelector.parentMedia == null)
+				return false;
+			if (!parentMedia.equals(otherGroupedSelector.parentMedia))
+				return false;
+		}
 		return true;
 	}
 	
@@ -102,11 +109,11 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 	public boolean equals(Object obj) {
 		if (!generalEquals(obj))
 			return false;
-		GroupedSelectors otherObj = (GroupedSelectors)obj;
+		GroupedSelectors otherGroupedSelector = (GroupedSelectors)obj;
 
-		return lineNumber == otherObj.lineNumber &&
-				columnNumber == otherObj.columnNumber &&
-				otherObj.listOfAtomicSelectors.equals(listOfAtomicSelectors);
+		return lineNumber == otherGroupedSelector.lineNumber &&
+				columnNumber == otherGroupedSelector.columnNumber &&
+				otherGroupedSelector.listOfAtomicSelectors.equals(listOfAtomicSelectors);
 	}
 	
 	@Override

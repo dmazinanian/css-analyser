@@ -19,7 +19,7 @@ public class RefactorerDuplications {
 	
 	public StyleSheet refactor(StyleSheet originalStyleSheet, List<ItemSetList> itemSetLists) {
 
-		StyleSheet refactoredStyleSheet = new StyleSheet();
+		StyleSheet refactoredStyleSheet = originalStyleSheet.clone();
 		
 		Set<Declaration> addedDeclarations = new HashSet<>();
 				

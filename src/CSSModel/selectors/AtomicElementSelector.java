@@ -126,18 +126,18 @@ public class AtomicElementSelector extends AtomicSelector {
 	
 	@Override
 	public boolean selectorEquals(Selector otherSelector) {
-		if (!checkGeneralEquality(otherSelector))
+		if (!generalEquals(otherSelector))
 			return false;
 		
 		AtomicElementSelector otherAtomicSelector = (AtomicElementSelector)otherSelector;
 		
-		return selectedElementName.equalsIgnoreCase(otherAtomicSelector.selectedElementName)
-				&& selectedID.equalsIgnoreCase(otherAtomicSelector.selectedID)
-				&& selectedClasses.size() == otherAtomicSelector.selectedClasses.size() && 
-				(selectedClasses.size() != 0 ? selectedClasses.containsAll(otherAtomicSelector.selectedClasses) : true)
-				&& (conditions.size() == otherAtomicSelector.conditions.size()
-				&& conditions.containsAll(otherAtomicSelector.conditions))
-				&& pseudoClasses.equals(otherAtomicSelector.pseudoClasses) &&
+		return selectedElementName.equalsIgnoreCase(otherAtomicSelector.selectedElementName) &&
+				selectedID.equalsIgnoreCase(otherAtomicSelector.selectedID) &&
+				selectedClasses.size() == otherAtomicSelector.selectedClasses.size() && 
+					selectedClasses.containsAll(otherAtomicSelector.selectedClasses) &&
+				conditions.size() == otherAtomicSelector.conditions.size() &&
+					conditions.containsAll(otherAtomicSelector.conditions) &&
+				pseudoClasses.equals(otherAtomicSelector.pseudoClasses) &&
 				pseudoElements.equals(otherAtomicSelector.pseudoElements);
 	}
 	
@@ -148,24 +148,30 @@ public class AtomicElementSelector extends AtomicSelector {
 	@Override
 	public boolean equals(Object obj) {
 
-		if (!checkGeneralEquality(obj))
+		if (!generalEquals(obj))
 		return false;
 		
 		AtomicElementSelector otherAtomicSelector = (AtomicElementSelector) obj;
 
 		return (lineNumber == otherAtomicSelector.lineNumber &&
 				columnNumber == otherAtomicSelector.columnNumber &&
-				/*parentMedia == otherAtomicSelector.parentMedia &&*/
 				selectorEquals(otherAtomicSelector));
 	}
 
-	private boolean checkGeneralEquality(Object obj) {
+	private boolean generalEquals(Object obj) {
 		if (obj == null)
 			return false;
 		if (obj == this)
 			return true;
 		if (obj.getClass() != AtomicElementSelector.class)
 			return false;
+		if (parentMedia != null) {
+			AtomicElementSelector otherAtomicElementSelector = (AtomicElementSelector)obj;
+			if (otherAtomicElementSelector.parentMedia == null)
+				return false;
+			if (!parentMedia.equals(otherAtomicElementSelector.parentMedia))
+				return false;
+		}
 		return true;
 	}
 

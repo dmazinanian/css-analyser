@@ -1,6 +1,7 @@
 package parser;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
@@ -39,16 +40,17 @@ public class CSSParser {
 	}
 	
 
-	public StyleSheet parseExternalCSS(String path) {
+	public StyleSheet parseExternalCSS(String path) throws IOException, Exception {
 		try {
 			URL uri = new URL("file", null, -1, path);
 			StyleSheet styleSheet = parseStreamCSS(uri.openStream());
 			styleSheet.setPath(path);
 			return styleSheet;
 		}
-		catch (Exception e) {
+		catch (IOException e) {
 			LOGGER.warn(e.toString());
-			throw new RuntimeException(e);
+			throw e;
+			//throw new RuntimeException(e);
 		}
 	}
 	

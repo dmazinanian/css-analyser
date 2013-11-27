@@ -117,8 +117,12 @@ public class CSSAnalyser {
 			String filePath = file.getAbsolutePath();
 			LOGGER.info("Now parsing " + filePath);
 			CSSParser parser = new CSSParser();
-			StyleSheet styleSheet = parser.parseExternalCSS(filePath);	
-			model.addStyleSheet(styleSheet);
+			try {
+				StyleSheet styleSheet = parser.parseExternalCSS(filePath);
+				model.addStyleSheet(styleSheet);
+			} catch (Exception ex) {
+				LOGGER.warn("Couldn't parse " + file + ". Skipping to the next file.");
+			}
 		}
 		
 	}
@@ -133,11 +137,10 @@ public class CSSAnalyser {
 	 */
 	public void analyse(final int MIN_SUPPORT) throws IOException {
 		
-		//String headerLine = "file_name|size|sloc|num_selectors|num_atomic_sel|num_decs|avg_dec_sel|grouping|typeI|typeII|typeIII|total|num_dup_sel|dup_sel_weight|num_dup_dec|dup_dec_weight|longest_dup|max_sup_longest_dup";
-		//analytics.add(headerLine);
-
-		
-				
+		String headerLine = "file_name|size|sloc|num_selectors|num_atomic_sel|num_grouped_sel|num_decs|avg_dec_sel|grouping|typeI|typeII|typeIII|typeIV_A|total|num_dup_sel|dup_sel_weight|num_dup_dec|dup_dec_weight|longest_dup|max_sup_longest_dup";
+		List<String> analytics = new ArrayList<>();
+		analytics.add(headerLine);
+	
 		// Do the analysis for each CSS file
 		for (StyleSheet styleSheet: model.getStyleSheets()) {
 						
@@ -161,8 +164,11 @@ public class CSSAnalyser {
 			DuplicationsList typeIIIDuplications = duplicationFinder.getTypeIIIDuplications();
 			IOHelper.writeLinesToFile(typeIIIDuplications, folderName + "/typeIII.txt");
 			
+			DuplicationsList typeIVADuplications = duplicationFinder.getTypeIVADuplications();
+			IOHelper.writeLinesToFile(typeIVADuplications, folderName + "/typeIVA.txt");
+			
 			if (!dontUseDOM) {
-				// TODO: TYPE IV
+				// TODO: TYPE IV B
 			}
 			
 			
@@ -170,7 +176,7 @@ public class CSSAnalyser {
 			
 			if (doApriori) {
 			
-				LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT);
+				LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT + " on " + filePath);
 
 				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				aprioriResults = duplicationFinder.apriori(MIN_SUPPORT);
@@ -184,7 +190,7 @@ public class CSSAnalyser {
 			
 			if (doFPGrowth) {
 
-				LOGGER.info("Applying fpgrowth algorithm with minimum support count of " + MIN_SUPPORT);
+				LOGGER.warn("Applying fpgrowth algorithm with minimum support count of " + MIN_SUPPORT + " on " + filePath);
 				
 				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				fpgrowthResults = duplicationFinder.fpGrowth(MIN_SUPPORT);
@@ -198,15 +204,14 @@ public class CSSAnalyser {
 			if (compareAprioriAndFPGrowth)
 				compareAprioriAndFPGrowth(aprioriResults, fpgrowthResults);
 			
-			writeAnalytics(styleSheet, duplicationFinder, fpgrowthResults); 
+			getAnalytics(styleSheet, duplicationFinder, fpgrowthResults, analytics); 
 		}
 		
-		IOHelper.writeLinesToFile(analytics, "e:/davood/expriment/analytics.txt", true);
+		IOHelper.writeLinesToFile(analytics, "e:/davood/analytics2.csv", true);
 					
 	}
 	
-	private List<String> analytics = new ArrayList<>();
-	private void writeAnalytics(StyleSheet styleSheet, DuplicationFinder finder, List<ItemSetList> dupResults) {
+	private void getAnalytics(StyleSheet styleSheet, DuplicationFinder finder, List<ItemSetList> dupResults, List<String> analytics) {
 		
 		File file = new File(styleSheet.getFilePath());
 		
@@ -218,15 +223,6 @@ public class CSSAnalyser {
 		for (String l : lines)
 			if (!"".equals(l.trim()))
 				sloc++;
-		
-//		try {
-//			BufferedWriter fw = IOHelper.openFile("e:/davood/test.css");
-//			IOHelper.writeFile(fw, styleSheet.toString());
-//			IOHelper.closeFile(fw);
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 		
 		int numberOfSelectors = styleSheet.getAllSelectors().size();
 		int numberOfAtomicSelectors = styleSheet.getAllAtomicSelectors().size();
@@ -241,11 +237,16 @@ public class CSSAnalyser {
 		int numberOfTypeIDuplications = finder.getTypeIDuplications().getSize();
 		int numberOfTypeIIDuplications = finder.getTypeIIDuplications().getSize();
 		int numberOfTypeIIIDuplications = finder.getTypeIIIDuplications().getSize();
-		//int numberOfTypeVDuplications = finder.getTypeIDuplications().getSize();
-		int totalDuplications = numberOfTypeIDuplications + numberOfTypeIIDuplications + numberOfTypeIIIDuplications;
+		int numberOfTypeIVADuplications = finder.getTypeIVADuplications().getSize();
+		//int numberOfTypeIVBDuplications = finder.getTypeIVBDuplications().getSize();
+		int totalDuplications = numberOfTypeIDuplications + 
+								numberOfTypeIIDuplications + 
+								numberOfTypeIIIDuplications + 
+								numberOfTypeIVADuplications;
+								//numberOfTypeIVBDuplications
 
 		Set<Selector> selectorsInDuplications = new HashSet<>();
-		for (Duplication d : finder.getTypeIIDuplications())
+		for (Duplication d : finder.getTypeIDuplications())
 			selectorsInDuplications.addAll(d.getSelectors());
 		
 		for (Duplication d : finder.getTypeIIDuplications())
@@ -283,12 +284,15 @@ public class CSSAnalyser {
 		line.append(sloc + "|");
 		line.append(numberOfSelectors + "|");
 		line.append(numberOfAtomicSelectors + "|");
+		line.append(numberOfGroupedSelectors + "|");
 		line.append(numberOfDeclarations + "|");
 		line.append(averageDeclarationsPerSelector + "|");
 		line.append(grouppingIndex + "|");
 		line.append(numberOfTypeIDuplications + "|");
 		line.append(numberOfTypeIIDuplications + "|");
 		line.append(numberOfTypeIIIDuplications + "|");
+		line.append(numberOfTypeIVADuplications + "|");
+		// line.append(numberOfTypeIVBDuplications + "|");
 		line.append(totalDuplications + "|");
 		line.append(numberOfSelectorsWithDuplications + "|");
 		line.append(selectorsWithDuplicationsWeight + "|");

@@ -20,6 +20,11 @@ public interface Duplication {
 	 */
 	public DuplicationType getType();
 	
+	/**
+	 * The set of selectors for which the duplications happened
+	 * @return
+	 */
+	
 	public Set<Selector> getSelectors();
 
 }

@@ -42,7 +42,7 @@ public class DescendantSelector extends AtomicSelector {
 	
 	@Override
 	public boolean selectorEquals(Selector otherSelector) {
-		if (!checkGeneralEquality(otherSelector))
+		if (!generalEquals(otherSelector))
 			return false;
 		DescendantSelector otherDesendantSelector = (DescendantSelector)otherSelector;
 		return parentSelector.selectorEquals(otherDesendantSelector.parentSelector) &&
@@ -51,20 +51,27 @@ public class DescendantSelector extends AtomicSelector {
 	
 	@Override
 	public boolean equals(Object obj) {
-		checkGeneralEquality(obj);
+		generalEquals(obj);
 		DescendantSelector otherDesendantSelector = (DescendantSelector)obj;
 		return (lineNumber == otherDesendantSelector.lineNumber &&
 				columnNumber == otherDesendantSelector.columnNumber &&
 				selectorEquals(otherDesendantSelector));
 	}
 
-	private boolean checkGeneralEquality(Object obj) {
+	private boolean generalEquals(Object obj) {
 		if (obj == null)
 			return false;
 		if (obj == this)
 			return true;
 		if (!(obj instanceof DescendantSelector))
 			return false;
+		if (parentMedia != null) {
+			DescendantSelector otherDescendantSelector = (DescendantSelector)obj;
+			if (otherDescendantSelector.parentMedia == null)
+				return false;
+			if (!parentMedia.equals(otherDescendantSelector.parentMedia))
+				return false;
+		}
 		return true;
 	}
 	

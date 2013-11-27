@@ -54,6 +54,8 @@ public class CSSAnalyserApp {
 						break;
 					case "infolder":
 						inputFolder = value;
+						if (!inputFolder.endsWith("/"))
+							inputFolder = inputFolder + "/";
 						break;
 					case "urlfile":
 						urlFile = value;
