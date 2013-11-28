@@ -1,4 +1,4 @@
-package jUnitTests;
+package ca.concordia.cssanalyser.tests;
 
 import static org.junit.Assert.*;
 
