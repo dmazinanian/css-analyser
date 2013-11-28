@@ -9,14 +9,14 @@ package CSSModel.selectors;
  */
 public class PseudoNegativeClass extends PseudoClass {
 
-	private final AtomicElementSelector insideSelector;
+	private final AtomicSelector insideSelector;
 	
-	public PseudoNegativeClass(AtomicElementSelector selector) {
+	public PseudoNegativeClass(AtomicSelector selector) {
 		super("not", selector.toString());
 		insideSelector = selector;
 	}
 
-	public AtomicElementSelector getSelector() {
+	public AtomicSelector getSelector() {
 		return insideSelector;
 	}
 	

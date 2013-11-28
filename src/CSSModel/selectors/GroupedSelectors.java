@@ -193,4 +193,14 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 		newOne.declarations = new ArrayList<>(declarations);
 		return newOne;
 	}
+
+	@Override
+	public String getXPath() {
+		StringBuilder xPath = new StringBuilder();
+		for (AtomicSelector atomicSelector : listOfAtomicSelectors) 
+			xPath.append(atomicSelector.getXPath() + " | ");
+		if (xPath.length() > 3)
+			xPath.delete(xPath.length() - 3, xPath.length());
+		return xPath.toString();
+	}
 }

@@ -1,5 +1,8 @@
 package CSSModel.selectors;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represents the selectors which are not grouped
  * (not combined using any combinator)
@@ -34,6 +37,62 @@ public abstract class AtomicSelector extends Selector {
 
 	public GroupedSelectors getParentGroupSelector() {
 		return parentGroupSelector;
+	}
+	
+	protected abstract String getXPathConditionsString(List<String> xpathConditions);
+
+	/**
+	 * Convert our <code>CSSModel.AtomicSelector</code> objects to <code>XPath</code> strings
+	 * @param selector Different <code>CSSModel.AtomicSelector</code> objects
+			(AtomicElementSelector, DescendantSelector, etc)
+	 * @return String of XPath for current <code>AtomicSelector</code>
+	 */
+	@Override
+	public String getXPath() {
+		
+		String xpath = "";
+		
+		// List of the conditions coming between []
+		List<String> xpathConditions = new ArrayList<>();
+		// Using template design pattern
+		String prefix = getXPathConditionsString(xpathConditions);			
+		if (prefix == null) // There was a problem with CSS selector
+			return null; // to select nothing
+		
+		xpath = generateXpath(prefix, xpathConditions);
+		
+		xpath = "//" + xpath;
+		
+		return xpath;
+		
+	}
+
+	/**
+	 * Gets a prefix and a list of conditions and creates a complete xpath
+	 * in this form: prefix[condition1 and condition2 and ... and condition n]
+	 * @param prefix
+	 * @param xpathConditions
+	 * @return
+	 */
+	protected String generateXpath(String prefix, List<String> xpathConditions) {
+		
+		StringBuilder xpath = new StringBuilder(prefix);
+		
+		// Add the conditions inside brackets and put "and" between conditions
+		if (xpathConditions.size() > 0) {
+		
+			xpath.append("[");
+		
+			for (int i = 0; i < xpathConditions.size(); i++) {
+				xpath.append("(" + xpathConditions.get(i) + ")");
+				if (i != xpathConditions.size() - 1)
+					xpath.append(" and ");
+			}
+			
+			xpath.append("]");
+		}
+		
+		return xpath.toString();
 	}
 	
 	/*

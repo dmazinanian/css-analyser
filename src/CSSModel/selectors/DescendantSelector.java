@@ -1,5 +1,8 @@
 package CSSModel.selectors;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represents CSS "selector1 selector2" selectors
  * selector1 and selector2 are of type {@link AtomicSelector}
@@ -88,6 +91,25 @@ public class DescendantSelector extends AtomicSelector {
 	@Override
 	public Selector clone() {
 		return new DescendantSelector(this.parentSelector, this.childSelector);
+	}
+
+	@Override
+	protected String getXPathConditionsString(List<String> xpathConditions) {
+		 
+		// if selector combinator is " " or ">"
+		AtomicSelector parent = this.getParentSelector();
+		AtomicSelector child = this.getChildSelector();
+		String modifier = "descendant::"; // if selector is "s1 > s2"
+		if (this instanceof DirectDescendantSelector) // if selector is "s1 s2"
+			modifier = "";
+		List<String> parentConditions = new ArrayList<>();
+		String parentXPath = generateXpath(parent.getXPathConditionsString(parentConditions), parentConditions);
+		List<String> childConditions = new ArrayList<>();
+		String childXPath = generateXpath(child.getXPathConditionsString(childConditions), childConditions);
+		
+		return String.format("%s/%s%s", parentXPath, modifier, childXPath);
+		
+	
 	}
 	
 }

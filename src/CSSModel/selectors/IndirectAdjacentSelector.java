@@ -1,5 +1,8 @@
 package CSSModel.selectors;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * selector1 ~ selector2
  * @author Davood Mazinanian
@@ -80,6 +83,32 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 	@Override
 	public Selector clone() {
 		return new IndirectAdjacentSelector(beforeMainSelector, mainSelector);
+	}
+
+	@Override
+	protected String getXPathConditionsString(List<String> xpathConditions) {
+
+		// if selector combinator is "~" or "+"
+
+		AtomicSelector left = this.getFirstSelector();
+		AtomicSelector right = this.getSecondSelector();
+		
+		List<String> rightXPathConditions = new ArrayList<>();
+		String rightXPathPrefix = right.getXPathConditionsString(xpathConditions);
+		// If this is a "+" selector:
+		if (this instanceof ImmediatelyAdjacentSelector) {
+			// In this case we need one another condition, which is position() = 1
+			xpathConditions.add("position() = 1");
+		}
+		String rightXPath = generateXpath(rightXPathPrefix, rightXPathConditions);
+		
+		List<String> leftXPathConditions = new ArrayList<>();
+		String leftXPathPrefix = left.getXPathConditionsString(leftXPathConditions);
+		
+		String leftXPath = generateXpath(leftXPathPrefix, leftXPathConditions);
+		
+		return String.format("%s/following-sibling::%s", leftXPath, rightXPath);
+	
 	}
 
 }

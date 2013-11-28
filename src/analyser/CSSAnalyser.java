@@ -171,6 +171,13 @@ public class CSSAnalyser {
 				// TODO: TYPE IV B
 			}
 			
+			List<String> xPaths = new ArrayList<>();
+			for (Selector selector : styleSheet.getAllSelectors()) {
+				xPaths.add(selector + "\n" + selector.getXPath() + "\n\n");
+			}
+			IOHelper.writeLinesToFile(xPaths, folderName + "/xPaths.txt");
+
+			
 			
 			List<ItemSetList> aprioriResults = null, fpgrowthResults = null;
 			
@@ -207,7 +214,7 @@ public class CSSAnalyser {
 			getAnalytics(styleSheet, duplicationFinder, fpgrowthResults, analytics); 
 		}
 		
-		IOHelper.writeLinesToFile(analytics, "e:/davood/analytics2.csv", true);
+		//IOHelper.writeLinesToFile(analytics, "e:/davood/analytics2.csv", true);
 					
 	}
 	

@@ -465,7 +465,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			Selector s = getSelector(l, loc);
 			// Selector "s" shoule be a simple selector, based on W3C http://www.w3.org/TR/css3-selectors/
 			if ((s instanceof AtomicElementSelector)) {
-				atomicElementSelector.addPseudoClass(new PseudoNegativeClass((AtomicElementSelector)s));
+				atomicElementSelector.addPseudoClass(new PseudoNegativeClass((AtomicSelector)s));
 			} else {
 				LOGGER.warn("The parameter of not() pseudo-element should be a simple CSS selector. ");
 			}

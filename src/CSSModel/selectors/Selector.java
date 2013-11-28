@@ -15,6 +15,7 @@ public abstract class Selector {
 	protected List<Declaration> declarations;
 	protected int specificityOfSelector;
 	
+	
 	public int getSpecificity() {
 		return specificityOfSelector;
 	}
@@ -85,4 +86,7 @@ public abstract class Selector {
 	public abstract boolean selectorEquals(Selector otherSelector);
 	
 	public abstract Selector clone();
+	
+	public abstract String getXPath();
+		
 }
