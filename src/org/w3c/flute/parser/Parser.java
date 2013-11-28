@@ -24,11 +24,12 @@ import org.w3c.flute.parser.selectors.ConditionFactoryImpl;
 
 import org.w3c.flute.util.Encoding;
 
+import ca.concordia.cssanalyser.parser.CSSDocumentHandler;
+
 // :)
-import parser.CSSDocumentHandler;
 
 /**
- * A CSS2 parser
+ * A CSS2 ca.concordia.cssanalyser.parser
  * 
  * @author Philippe Le Hégaret
  * @version $Revision: 1.15 $
@@ -38,11 +39,11 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
 	// replaces all \t, \n, etc with this StringBuffer.
 	static final StringBuilder SPACE = new StringBuilder(" ");
 
-	// the document handler for the parser
+	// the document handler for the ca.concordia.cssanalyser.parser
 	protected DocumentHandler documentHandler;
-	// the error handler for the parser
+	// the error handler for the ca.concordia.cssanalyser.parser
 	protected ErrorHandler errorHandler;
-	// the input source for the parser
+	// the input source for the ca.concordia.cssanalyser.parser
 	protected InputSource source;
 
 	protected ConditionFactory conditionFactory;
@@ -68,7 +69,7 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
 	}
 
 	/**
-	 * Set the document handler for this parser
+	 * Set the document handler for this ca.concordia.cssanalyser.parser
 	 */
 	public void setDocumentHandler(DocumentHandler handler) {
 		this.documentHandler = handler;
@@ -83,7 +84,7 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
 	}
 
 	/**
-	 * Set the error handler for this parser
+	 * Set the error handler for this ca.concordia.cssanalyser.parser
 	 */
 	public void setErrorHandler(ErrorHandler error) {
 		this.errorHandler = error;
@@ -248,7 +249,7 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
 	}
 
 	/**
-	 * Convert the source into a Reader. Used only by DOM Level 2 parser
+	 * Convert the source into a Reader. Used only by DOM Level 2 ca.concordia.cssanalyser.parser
 	 * methods.
 	 */
 	private Reader getReader(InputSource source) throws IOException {
@@ -433,7 +434,7 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
 	 */
 
 	/**
-	 * The main entry for the parser.
+	 * The main entry for the ca.concordia.cssanalyser.parser.
 	 * 
 	 * @exception ParseException
 	 *                exception during the parse
@@ -2788,7 +2789,7 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
 
 				/*
 				 * / Auto correction code used in the CSS Validator but must not
-				 * be used by a conformant CSS2 parser. Common error : H1 {
+				 * be used by a conformant CSS2 ca.concordia.cssanalyser.parser. Common error : H1 {
 				 * color : black background : white }
 				 * 
 				 * Token t = getToken(1); Token semicolon = new Token();
@@ -3567,7 +3568,7 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
 
 	/**
 	 * The following functions are useful for a DOM CSS implementation only and
-	 * are not part of the general CSS2 parser.
+	 * are not part of the general CSS2 ca.concordia.cssanalyser.parser.
 	 */
 	final public void _parseRule() throws ParseException {
 		String ret = null;

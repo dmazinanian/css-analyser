@@ -19,8 +19,9 @@ import org.w3c.css.sac.LexicalUnit;
 import org.w3c.flute.parser.selectors.SelectorFactoryImpl;
 import org.w3c.flute.parser.selectors.ConditionFactoryImpl;
 import org.w3c.flute.util.Encoding;
+
+import ca.concordia.cssanalyser.parser.CSSDocumentHandler;
 // :)
-import parser.CSSDocumentHandler;
 
 /** Token Manager. */
 public class ParserTokenManager implements ParserConstants
@@ -3442,7 +3443,7 @@ public ParserTokenManager(CharStream stream, int lexState){
    SwitchTo(lexState);
 }
 
-/** Reinitialise parser. */
+/** Reinitialise ca.concordia.cssanalyser.parser. */
 public void ReInit(CharStream stream)
 {
    jjmatchedPos = jjnewStateCnt = 0;
@@ -3458,7 +3459,7 @@ private void ReInitRounds()
       jjrounds[i] = 0x80000000;
 }
 
-/** Reinitialise parser. */
+/** Reinitialise ca.concordia.cssanalyser.parser. */
 public void ReInit(CharStream stream, int lexState)
 {
    ReInit(stream);

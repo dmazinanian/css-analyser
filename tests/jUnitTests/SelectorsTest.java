@@ -5,11 +5,12 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import parser.CSSParser;
+import ca.concordia.cssanalyser.cssmodel.StyleSheet;
+import ca.concordia.cssanalyser.cssmodel.selectors.AtomicSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.GroupedSelectors;
+import ca.concordia.cssanalyser.parser.CSSParser;
 
-import CSSModel.StyleSheet;
-import CSSModel.selectors.AtomicSelector;
-import CSSModel.selectors.GroupedSelectors;
+
 
 
 /**

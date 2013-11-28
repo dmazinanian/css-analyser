@@ -4,9 +4,10 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import parser.CSSParser;
-import CSSModel.StyleSheet;
-import CSSModel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.StyleSheet;
+import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.parser.CSSParser;
+
 
 public class DeclarationsTest {
 
