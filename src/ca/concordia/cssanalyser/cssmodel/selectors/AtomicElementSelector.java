@@ -250,8 +250,9 @@ public class AtomicElementSelector extends AtomicSelector {
 	 * @param function
 	 * @param value
 	 * @return
+	 * @throws UnsupportedSelectorToXPathException 
 	 */
-	protected String getPositionCondition(String function, String value) {
+	protected String getPositionCondition(String function, String value) throws UnsupportedSelectorToXPathException {
 		// Treat even and odd as the general an+b pattern
 		if ("even".equals(value))
 			value = "2n";
@@ -269,7 +270,7 @@ public class AtomicElementSelector extends AtomicSelector {
 		//if (!Pattern.matches(patternString, value))
 		//	return null; 
 		if (!matcher.matches())
-			return null; // To select nothing, if the pattern is not correct
+			throw new UnsupportedSelectorToXPathException(this); // To select nothing, if the pattern is not correct
 		
 		try {
 		
@@ -317,12 +318,12 @@ public class AtomicElementSelector extends AtomicSelector {
 		
 		} catch (Exception ex) {
 			LOGGER.warn("Error in an+b pattern: " + value);
-			return null;
+			throw new UnsupportedSelectorToXPathException(this);
 		}
 		
 	}
 	
-	protected String getXPathConditionsString(List<String> xpathConditions) {
+	protected String getXPathConditionsString(List<String> xpathConditions) throws UnsupportedSelectorToXPathException {
 		
 		/* 
 		 * We will postpone adding the element name to the XPath.
@@ -361,7 +362,7 @@ public class AtomicElementSelector extends AtomicSelector {
 				 * empty string so the analyzer would skip this selector 
 				 */
 				if (Arrays.asList(unsupportedPseudoClasses).indexOf(pseudoClass.getName()) >= 0)
-					return null; // To select nothing
+					throw new UnsupportedSelectorToXPathException(this);
 
 				switch (pseudoClass.getName()) {
 				case "lang":

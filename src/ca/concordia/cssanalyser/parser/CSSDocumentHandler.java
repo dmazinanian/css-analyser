@@ -494,7 +494,6 @@ public class CSSDocumentHandler implements DocumentHandler {
 	 * Note that in SAC, LexicalUnit is a linked list of values for a CSS property
 	 * @param value
 	 */
-	// TODO Add equivalent values here, like left: 0 or whatever.
 	private List<DeclarationValue> getAllValues(String propertyName, LexicalUnit value) throws Exception {
 
 		List<DeclarationValue> accumulator = new ArrayList<>();

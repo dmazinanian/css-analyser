@@ -14,7 +14,6 @@ import javax.xml.xpath.XPathFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import ca.concordia.cssanalyser.io.IOHelper;
@@ -72,8 +71,9 @@ public final class DOMHelper {
 	 * @param doc Document to be queried
 	 * @param XPath XPath of the query
 	 * @return A list of elements (org.w3c.dom.Element)
+	 * @throws BadXPathException 
 	 */
-	public static NodeList queryDocument(Document doc, String XPath) {
+	public static NodeList queryDocument(Document doc, String XPath) throws BadXPathException {
 
 		try {
 
@@ -92,9 +92,16 @@ public final class DOMHelper {
 			return nodes;
 
 		} catch (XPathExpressionException e) {
-			LOGGER.warn(String.format("Error in XPath expression %s", XPath));
+			throw new BadXPathException(e);
 		}
-		return null;
+		
+	}
+	
+	@SuppressWarnings("serial")
+	public static class BadXPathException extends Exception {
+		public BadXPathException(XPathExpressionException xpathExpressionException) {
+			
+		}
 	}
 	
 }

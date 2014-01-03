@@ -1,18 +1,13 @@
 package ca.concordia.cssanalyser.analyser;
 
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
- 
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +16,6 @@ import org.w3c.dom.Document;
 import ca.concordia.cssanalyser.analyser.duplication.Duplication;
 import ca.concordia.cssanalyser.analyser.duplication.DuplicationFinder;
 import ca.concordia.cssanalyser.analyser.duplication.DuplicationsList;
-import ca.concordia.cssanalyser.analyser.duplication.TypeIDuplication;
-import ca.concordia.cssanalyser.analyser.duplication.TypeIIDuplication;
-import ca.concordia.cssanalyser.analyser.duplication.TypeIIIDuplication;
 import ca.concordia.cssanalyser.analyser.duplication.apriori.Item;
 import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSetList;
@@ -31,11 +23,11 @@ import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupedSelectors;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
+import ca.concordia.cssanalyser.cssmodel.selectors.Selector.UnsupportedSelectorToXPathException;
 import ca.concordia.cssanalyser.dom.DOMHelper;
 import ca.concordia.cssanalyser.dom.Model;
 import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.parser.CSSParser;
-import ca.concordia.cssanalyser.refactoring.RefactorerDuplications;
 
 
 
@@ -138,9 +130,24 @@ public class CSSAnalyser {
 	 */
 	public void analyse(final int MIN_SUPPORT) throws IOException {
 		
-		String headerLine = "file_name|size|sloc|num_selectors|num_atomic_sel|num_grouped_sel|num_decs|avg_dec_sel|grouping|typeI|typeII|typeIII|typeIV_A|total|num_dup_sel|dup_sel_weight|num_dup_dec|dup_dec_weight|longest_dup|max_sup_longest_dup";
+		String headerLine = "file_name|" +
+				"size|" +
+				"sloc|" +
+				"num_selectors|" +
+				"num_atomic_sel|" +
+				"num_grouped_sel|" +
+				"num_decs|" +
+				"typeI|" +
+				"typeII|" +
+				"typeIII|" +
+				"typeIV_A|" +
+				"typeIV_B|" +
+				"number_of_duplicated_declarations|" +
+				"selectors_with_duplicated_declaration|" +
+				"longest_dup|" +
+				"max_sup_longest_dup";
 		List<String> analytics = new ArrayList<>();
-		analytics.add(headerLine);
+		//analytics.add(headerLine);
 	
 		// Do the analysis for each CSS file
 		for (StyleSheet styleSheet: model.getStyleSheets()) {
@@ -169,12 +176,20 @@ public class CSSAnalyser {
 			IOHelper.writeLinesToFile(typeIVADuplications, folderName + "/typeIVA.txt");
 			
 			if (!dontUseDOM) {
-				// TODO: TYPE IV B
+				duplicationFinder.findTypeFourBDuplication(model.getDocument());
+				DuplicationsList typeIVBDuplications = duplicationFinder.getTypeIVBDuplications();
+				IOHelper.writeLinesToFile(typeIVBDuplications, folderName + "/typeIVB.txt");
 			}
 			
 			List<String> xPaths = new ArrayList<>();
 			for (Selector selector : styleSheet.getAllSelectors()) {
-				xPaths.add(selector + "\n" + selector.getXPath() + "\n\n");
+				try {
+					xPaths.add(selector + "\n" + selector.getXPath() + "\n\n");
+				} catch (UnsupportedSelectorToXPathException e) {
+					// TODO Auto-generated catch block
+					//e.printStackTrace();
+					LOGGER.warn(String.format("No XPath for selector %s", selector));
+				}
 			}
 			IOHelper.writeLinesToFile(xPaths, folderName + "/xPaths.txt");
 
@@ -215,7 +230,7 @@ public class CSSAnalyser {
 			getAnalytics(styleSheet, duplicationFinder, fpgrowthResults, analytics); 
 		}
 		
-		//IOHelper.writeLinesToFile(analytics, "e:/davood/analytics2.csv", true);
+		IOHelper.writeLinesToFile(analytics, "E:/Davood/joomla-cms-css-typeIV/analytics.txt", true);
 					
 	}
 	
@@ -235,38 +250,31 @@ public class CSSAnalyser {
 		int numberOfSelectors = styleSheet.getAllSelectors().size();
 		int numberOfAtomicSelectors = styleSheet.getAllAtomicSelectors().size();
 		int numberOfDeclarations = styleSheet.getAllDeclarations().size();
-		float averageDeclarationsPerSelector = numberOfDeclarations / (float)numberOfSelectors;
 		int numberOfGroupedSelectors = 0;
 		for (Selector selector : styleSheet.getAllSelectors())
 			if (selector instanceof GroupedSelectors)
 				numberOfGroupedSelectors++;
-		float grouppingIndex = (float)numberOfGroupedSelectors / numberOfSelectors;
 		
 		int numberOfTypeIDuplications = finder.getTypeIDuplications().getSize();
 		int numberOfTypeIIDuplications = finder.getTypeIIDuplications().getSize();
 		int numberOfTypeIIIDuplications = finder.getTypeIIIDuplications().getSize();
 		int numberOfTypeIVADuplications = finder.getTypeIVADuplications().getSize();
-		//int numberOfTypeIVBDuplications = finder.getTypeIVBDuplications().getSize();
-		int totalDuplications = numberOfTypeIDuplications + 
-								numberOfTypeIIDuplications + 
-								numberOfTypeIIIDuplications + 
-								numberOfTypeIVADuplications;
-								//numberOfTypeIVBDuplications
+		int numberOfTypeIVBDuplications = 0;
+		if (finder.getTypeIVBDuplications() != null) 
+			finder.getTypeIVBDuplications().getSize();
 
-		Set<Selector> selectorsInDuplications = new HashSet<>();
+		Set<Selector> selectorsInDuplicatedDeclarations = new HashSet<>();
 		for (Duplication d : finder.getTypeIDuplications())
-			selectorsInDuplications.addAll(d.getSelectors());
+			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
 		
 		for (Duplication d : finder.getTypeIIDuplications())
-			selectorsInDuplications.addAll(d.getSelectors());
+			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
 		
 		for (Duplication d : finder.getTypeIIIDuplications())
-			selectorsInDuplications.addAll(d.getSelectors());
+			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
 		
-		int numberOfSelectorsWithDuplications = selectorsInDuplications.size();
+		int numberOfSelectorsWithDuplications = selectorsInDuplicatedDeclarations.size();
 			
-		float selectorsWithDuplicationsWeight = (float)numberOfSelectorsWithDuplications / numberOfSelectors;
-
 		Set<Declaration> duplicatedDeclarations = new HashSet<>();
 		for (ItemSetList isl : dupResults)
 			for (ItemSet is : isl)
@@ -274,10 +282,8 @@ public class CSSAnalyser {
 					for (Declaration d : i)
 						duplicatedDeclarations.add(d);
 		
-		int numberOfDuplicatedDeclarations = duplicatedDeclarations.size();
-		
-		float duplicatedDeclarationsWeight = (float)numberOfDuplicatedDeclarations / numberOfDeclarations;
-		
+		int numberOfDuplicatedDeclarations = duplicatedDeclarations.size(); 
+				
 		int longestDupLength = dupResults.size();
 		int maxSupForLongestDup = 0; 
 		try {
@@ -285,7 +291,7 @@ public class CSSAnalyser {
 		} catch (Exception ex) {
 			// Swallow
 		}
-		
+				
 		StringBuilder line = new StringBuilder();
 		line.append(fileName + "|");
 		line.append(size + "|");
@@ -294,18 +300,13 @@ public class CSSAnalyser {
 		line.append(numberOfAtomicSelectors + "|");
 		line.append(numberOfGroupedSelectors + "|");
 		line.append(numberOfDeclarations + "|");
-		line.append(averageDeclarationsPerSelector + "|");
-		line.append(grouppingIndex + "|");
 		line.append(numberOfTypeIDuplications + "|");
 		line.append(numberOfTypeIIDuplications + "|");
 		line.append(numberOfTypeIIIDuplications + "|");
 		line.append(numberOfTypeIVADuplications + "|");
-		// line.append(numberOfTypeIVBDuplications + "|");
-		line.append(totalDuplications + "|");
+		line.append(numberOfTypeIVBDuplications + "|");
+		line.append(numberOfDuplicatedDeclarations + "|");
 		line.append(numberOfSelectorsWithDuplications + "|");
-		line.append(selectorsWithDuplicationsWeight + "|");
-		line.append(numberOfDuplicatedDeclarations+ "|");
-		line.append(duplicatedDeclarationsWeight+ "|");
 		line.append(longestDupLength + "|");
 		line.append(maxSupForLongestDup );
 		analytics.add(line.toString());

@@ -33,8 +33,7 @@ public abstract class TypeIVDuplication implements Duplication {
 	
 	@Override
 	public Set<Selector> getSelectors() {
-		// TODO Auto-generated method stub
-		return null;
+		return identicalSelectors;
 	}
 	
 	public static class TypeIVADuplication extends TypeIVDuplication {
@@ -50,9 +49,6 @@ public abstract class TypeIVDuplication implements Duplication {
 			return toReturn + super.toString();
 		}
 		
-		public Set<Selector> getIdenticalSelectors() {
-			return identicalSelectors;
-		}
 		
 	}
 	
@@ -69,9 +65,6 @@ public abstract class TypeIVDuplication implements Duplication {
 			return toReturn + super.toString();
 		}
 		
-		public Set<Selector> getEquivalentSelectors() {
-			return identicalSelectors;
-		}
 		
 	}
 

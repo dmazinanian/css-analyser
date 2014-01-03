@@ -88,6 +88,17 @@ public abstract class Selector {
 	
 	public abstract Selector clone();
 	
-	public abstract String getXPath();
+	public abstract String getXPath() throws UnsupportedSelectorToXPathException;
+	
+	@SuppressWarnings("serial")
+	public static class UnsupportedSelectorToXPathException extends Exception {
+		private Selector selector;
+		public UnsupportedSelectorToXPathException(Selector selector) {
+			this.selector = selector;
+		}
+		public Selector getSelector() {
+			return selector;
+		}
+	}
 		
 }

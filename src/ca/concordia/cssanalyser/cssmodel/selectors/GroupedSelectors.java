@@ -196,7 +196,7 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 	}
 
 	@Override
-	public String getXPath() {
+	public String getXPath() throws UnsupportedSelectorToXPathException {
 		StringBuilder xPath = new StringBuilder();
 		for (AtomicSelector atomicSelector : listOfAtomicSelectors) 
 			xPath.append(atomicSelector.getXPath() + " | ");

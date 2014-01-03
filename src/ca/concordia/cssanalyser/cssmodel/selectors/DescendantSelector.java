@@ -94,7 +94,7 @@ public class DescendantSelector extends AtomicSelector {
 	}
 
 	@Override
-	protected String getXPathConditionsString(List<String> xpathConditions) {
+	protected String getXPathConditionsString(List<String> xpathConditions) throws UnsupportedSelectorToXPathException {
 		 
 		// if selector combinator is " " or ">"
 		AtomicSelector parent = this.getParentSelector();
@@ -103,9 +103,11 @@ public class DescendantSelector extends AtomicSelector {
 		if (this instanceof DirectDescendantSelector) // if selector is "s1 s2"
 			modifier = "";
 		List<String> parentConditions = new ArrayList<>();
-		String parentXPath = generateXpath(parent.getXPathConditionsString(parentConditions), parentConditions);
+		String parentPrefix = parent.getXPathConditionsString(parentConditions);
+		String parentXPath = generateXpath(parentPrefix, parentConditions);
 		List<String> childConditions = new ArrayList<>();
-		String childXPath = generateXpath(child.getXPathConditionsString(childConditions), childConditions);
+		String childPrefix = child.getXPathConditionsString(childConditions);
+		String childXPath = generateXpath(childPrefix, childConditions);
 		
 		return String.format("%s/%s%s", parentXPath, modifier, childXPath);
 		

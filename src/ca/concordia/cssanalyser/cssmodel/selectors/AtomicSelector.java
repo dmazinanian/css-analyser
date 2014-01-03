@@ -39,16 +39,17 @@ public abstract class AtomicSelector extends Selector {
 		return parentGroupSelector;
 	}
 	
-	protected abstract String getXPathConditionsString(List<String> xpathConditions);
+	protected abstract String getXPathConditionsString(List<String> xpathConditions) throws UnsupportedSelectorToXPathException;
 
 	/**
 	 * Convert our <code>ca.concordia.cssanalyser.cssmodel.AtomicSelector</code> objects to <code>XPath</code> strings
 	 * @param selector Different <code>ca.concordia.cssanalyser.cssmodel.AtomicSelector</code> objects
 			(AtomicElementSelector, DescendantSelector, etc)
 	 * @return String of XPath for current <code>AtomicSelector</code>
+	 * @throws UnsupportedSelectorToXPathException 
 	 */
 	@Override
-	public String getXPath() {
+	public String getXPath() throws UnsupportedSelectorToXPathException {
 		
 		String xpath = "";
 		
@@ -56,8 +57,6 @@ public abstract class AtomicSelector extends Selector {
 		List<String> xpathConditions = new ArrayList<>();
 		// Using template design pattern
 		String prefix = getXPathConditionsString(xpathConditions);			
-		if (prefix == null) // There was a problem with CSS selector
-			return null; // to select nothing
 		
 		xpath = generateXpath(prefix, xpathConditions);
 		

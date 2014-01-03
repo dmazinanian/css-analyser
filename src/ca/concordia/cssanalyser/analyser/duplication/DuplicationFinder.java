@@ -8,6 +8,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+
+import ca.concordia.cssanalyser.analyser.duplication.TypeIVDuplication.TypeIVBDuplication;
 import ca.concordia.cssanalyser.analyser.duplication.apriori.Apriori;
 import ca.concordia.cssanalyser.analyser.duplication.apriori.Item;
 import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSet;
@@ -18,9 +22,11 @@ import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
+import ca.concordia.cssanalyser.cssmodel.selectors.AtomicSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
-import ca.concordia.cssanalyser.dom.Model;
-
+import ca.concordia.cssanalyser.cssmodel.selectors.Selector.UnsupportedSelectorToXPathException;
+import ca.concordia.cssanalyser.dom.DOMHelper;
+import ca.concordia.cssanalyser.dom.DOMHelper.BadXPathException;
 
 
 /**
@@ -32,7 +38,6 @@ import ca.concordia.cssanalyser.dom.Model;
 public class DuplicationFinder {
 
 	private StyleSheet stylesheet;
-	private Model model;
 	
 	/*
 	 *  This map contains all selectors for a given declaration
@@ -42,10 +47,6 @@ public class DuplicationFinder {
 	
 	public DuplicationFinder(StyleSheet stylesheet) {
 		this.stylesheet = stylesheet;
-	}
-	
-	public DuplicationFinder(Model model) {
-		this.model = model;
 	}
 	
 	private DuplicationsList typeOneDuplicationsList;
@@ -85,8 +86,6 @@ public class DuplicationFinder {
 		findTypeOneAndTwoDuplications();
 		findTypeThreeDuplication();
 		findTypeFourADuplication();
-		if (model != null)
-			findTypeFourBDuplication();
 	}
 
 	/**
@@ -299,13 +298,16 @@ public class DuplicationFinder {
 	public void findTypeFourADuplication() {
 		
 		typeFourADuplicationsList = new DuplicationsList();
-		int currentSelectorIndex = -1, checkingSelectorIndex = 0;
+		int currentSelectorIndex = -1;
 		List<Selector> allSelectors = new ArrayList<>(stylesheet.getAllSelectors());
 		Set<Integer> visitedSelectors = new HashSet<>();
 		while (++currentSelectorIndex < allSelectors.size()) {
+			if (visitedSelectors.contains(currentSelectorIndex))
+				continue;
 			Selector currentSelector = allSelectors.get(currentSelectorIndex);
 			TypeIVDuplication.TypeIVADuplication newTypeIVADup = new TypeIVDuplication.TypeIVADuplication();
 			newTypeIVADup.addSelector(currentSelector);
+			int checkingSelectorIndex = currentSelectorIndex;
 			while (++checkingSelectorIndex < allSelectors.size()) {
 				if (visitedSelectors.contains(checkingSelectorIndex))
 					continue;
@@ -315,7 +317,7 @@ public class DuplicationFinder {
 					newTypeIVADup.addSelector(checkingSelector);
 				}
 			}
-			if (newTypeIVADup.getIdenticalSelectors().size() > 1) {
+			if (newTypeIVADup.getSelectors().size() > 1) {
 				typeFourADuplicationsList.addDuplication(newTypeIVADup);
 			}
 		}
@@ -323,10 +325,83 @@ public class DuplicationFinder {
 	}
 	
 	/**
-	 * Finds type IV_B duplications
+	 * Finds type IV_B duplications.
+	 * For finding type IV_V duplication, we need a given DOM.
+	 * @param dom
 	 * @see DuplicationType
 	 */
-	public void findTypeFourBDuplication() {
+	public void findTypeFourBDuplication(Document dom) {
+		
+		typeFourBDuplicationsList = new DuplicationsList();
+		
+		List<AtomicSelector> allSelectors = new ArrayList<>(stylesheet.getAllAtomicSelectors());
+		Map<Selector, NodeList> selectorNodeListMap = new HashMap<>();
+		for (Selector selector : allSelectors) {
+			NodeList nodes;
+			try {
+				nodes = DOMHelper.queryDocument(dom, selector.getXPath());
+				selectorNodeListMap.put(selector, nodes);
+			} catch (BadXPathException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (UnsupportedSelectorToXPathException ex) {
+				
+			}
+		}
+		
+		int currentSelectorIndex = -1;
+		
+		Set<Integer> visitedSelectors = new HashSet<>(); 
+		
+ 		while (++currentSelectorIndex < allSelectors.size()) {
+			
+ 			if (visitedSelectors.contains(currentSelectorIndex))
+				continue;
+			
+			Selector currentSelector = allSelectors.get(currentSelectorIndex);
+
+ 			NodeList currentNodeList = selectorNodeListMap.get(currentSelector);
+			if (currentNodeList == null)
+				continue;
+			TypeIVBDuplication typeIVBDuplication = new TypeIVBDuplication();
+			typeIVBDuplication.addSelector(currentSelector);
+			int checkingSelectorIndex = 0;
+			while (++ checkingSelectorIndex < allSelectors.size()) {
+				
+				if (visitedSelectors.contains(checkingSelectorIndex))
+					continue;
+				
+				Selector checkingSelector = allSelectors.get(checkingSelectorIndex);
+				
+				if (currentSelector.selectorEquals(checkingSelector))
+					continue;
+				
+				NodeList checkingNodeList = selectorNodeListMap.get(checkingSelector);
+				if (checkingNodeList == null)
+					continue;
+
+				if (currentNodeList.getLength() != 0 &&
+						currentNodeList.getLength() == checkingNodeList.getLength()) {
+					boolean equal = true;
+					for (int i = 0; i < currentNodeList.getLength(); i++) {
+						if (!currentNodeList.item(i).equals(checkingNodeList.item(i))) {
+							equal = false;
+							break;
+						}
+						
+					}
+					if (equal) {
+						visitedSelectors.add(checkingSelectorIndex);
+						typeIVBDuplication.addSelector(checkingSelector);
+					}
+				}
+			}
+			if (typeIVBDuplication.getSelectors().size() > 1) {
+				typeFourBDuplicationsList.addDuplication(typeIVBDuplication);
+				System.out.println("how");
+			}
+		}
+		
 		// String filePath = styleSheet.getFilePath();
 
 		//System.out.println(styleSheet);

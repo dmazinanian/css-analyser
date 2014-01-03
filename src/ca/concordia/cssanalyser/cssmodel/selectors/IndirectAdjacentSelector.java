@@ -86,7 +86,7 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 	}
 
 	@Override
-	protected String getXPathConditionsString(List<String> xpathConditions) {
+	protected String getXPathConditionsString(List<String> xpathConditions) throws UnsupportedSelectorToXPathException {
 
 		// if selector combinator is "~" or "+"
 

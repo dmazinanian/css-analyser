@@ -1,7 +1,6 @@
 package ca.concordia.cssanalyser.parser;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
@@ -41,17 +40,16 @@ public class CSSParser {
 	}
 	
 
-	public StyleSheet parseExternalCSS(String path) throws IOException, Exception {
+	public StyleSheet parseExternalCSS(String path) throws Exception {
 		try {
 			URL uri = new URL("file", null, -1, path);
 			StyleSheet styleSheet = parseStreamCSS(uri.openStream());
 			styleSheet.setPath(path);
 			return styleSheet;
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			LOGGER.warn(e.toString());
 			throw e;
-			//throw new RuntimeException(e);
 		}
 	}
 	

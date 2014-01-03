@@ -56,7 +56,7 @@ public class Crawler {
 		builder.crawlRules().insertRandomDataInInputForms(false);
 		builder.crawlRules().dontClick("*");
 		
-		builder.setOutputDirectory(new File(outputFolder + "/ca.concordia.cssanalyser.crawler"));
+		builder.setOutputDirectory(new File(outputFolder + "/crawler"));
 				
 		configureCrawljax(builder);
 		
