@@ -9,7 +9,11 @@ import java.util.List;
 
 import ca.concordia.cssanalyser.analyser.CSSAnalyser;
 import ca.concordia.cssanalyser.crawler.Crawler;
+import ca.concordia.cssanalyser.cssdiff.Diff;
+import ca.concordia.cssanalyser.cssdiff.differences.DifferenceList;
+import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.io.IOHelper;
+import ca.concordia.cssanalyser.parser.CSSParser;
 
 
 
@@ -17,7 +21,7 @@ import ca.concordia.cssanalyser.io.IOHelper;
 public class CSSAnalyserApp {
 
 	private enum Mode {
-		FOLDER, CRAWL, NODOM
+		FOLDER, CRAWL, NODOM, DIFF
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -28,6 +32,7 @@ public class CSSAnalyserApp {
 		String inputFolder = "";
 		Mode mode = Mode.CRAWL;
 		String urlFile = "";
+		String css1Path = "", css2Path= "";
 		
 		if (args.length == 0) {
 			System.out.println("No input file or URL provided.");
@@ -60,6 +65,12 @@ public class CSSAnalyserApp {
 						break;
 					case "urlfile":
 						urlFile = value;
+						break;
+					case "css1":
+						css1Path = value;
+						break;
+					case "css2":
+						css2Path = value;
 						break;
 					}
 				}
@@ -147,9 +158,18 @@ public class CSSAnalyserApp {
 			cssAnalyser.analyse(minsup);
 
 			break;
-		}
-		
-			
+		case DIFF:
+			CSSParser parser = new CSSParser();
+			try {
+				StyleSheet css1 =  parser.parseExternalCSS(css1Path);
+				StyleSheet css2 =  parser.parseExternalCSS(css2Path);
+				DifferenceList dl = Diff.diff(css1, css2);
+				System.out.println(dl);
+			} catch (Exception ex) {
+				System.out.println(ex);
+			}
+			break;
+		}			
 		
 	}
 	

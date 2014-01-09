@@ -1,5 +1,6 @@
-package ca.concordia.cssanalyser.cssdiff;
+package ca.concordia.cssanalyser.cssdiff.differences;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -15,6 +16,7 @@ public class DifferenceList implements List<Difference> {
 	public DifferenceList(StyleSheet styleSheet1, StyleSheet styleSheet2) {
 		this.styleSheet1 = styleSheet1;
 		this.styleSheet2 = styleSheet2;
+		differences = new ArrayList<>();
 	}
 	
 	public StyleSheet getStyleSheet1() {
@@ -138,6 +140,19 @@ public class DifferenceList implements List<Difference> {
 	@Override
 	public List<Difference> subList(int fromIndex, int toIndex) {
 		return differences.subList(fromIndex, toIndex);
+	}
+	
+	@Override
+	public String toString() {
+		
+		StringBuilder toReturn = new StringBuilder();
+		
+		for (Difference difference : differences) {
+			toReturn.append(difference.toString() + "\r\n");
+		}
+		
+		return toReturn.toString();
+		
 	}
 	
 	
