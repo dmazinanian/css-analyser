@@ -5,17 +5,17 @@ import java.util.List;
 
 /**
  * Represents CSS "selector1 selector2" selectors
- * selector1 and selector2 are of type {@link AtomicSelector}
+ * selector1 and selector2 are of type {@link SingleSelector}
  * so for example, for selector1 selector2 selector 3, we have two selectors
  * one of which is again a {@link DescendantSelector} and anoter is an {@link DescendantSelector}
  * @author Davood Mazinanian
  */
-public class DescendantSelector extends AtomicSelector {
+public class DescendantSelector extends SingleSelector {
 	
-	protected final AtomicSelector parentSelector;
-	protected final AtomicSelector childSelector; 
+	protected final SingleSelector parentSelector;
+	protected final SingleSelector childSelector; 
 	
-	public DescendantSelector(AtomicSelector parent, AtomicSelector child) {
+	public DescendantSelector(SingleSelector parent, SingleSelector child) {
 		parentSelector = parent;
 		childSelector = child;
 	}
@@ -25,7 +25,7 @@ public class DescendantSelector extends AtomicSelector {
 	 * of a descendant selector)
 	 * @return
 	 */
-	public AtomicSelector getParentSelector() {
+	public SingleSelector getParentSelector() {
 		return parentSelector;
 	}
 	
@@ -34,7 +34,7 @@ public class DescendantSelector extends AtomicSelector {
 	 * of a descendant selector)
 	 * @return
 	 */
-	public AtomicSelector getChildSelector() {
+	public SingleSelector getChildSelector() {
 		return childSelector;
 	}
 	
@@ -97,10 +97,10 @@ public class DescendantSelector extends AtomicSelector {
 	protected String getXPathConditionsString(List<String> xpathConditions) throws UnsupportedSelectorToXPathException {
 		 
 		// if selector combinator is " " or ">"
-		AtomicSelector parent = this.getParentSelector();
-		AtomicSelector child = this.getChildSelector();
+		SingleSelector parent = this.getParentSelector();
+		SingleSelector child = this.getChildSelector();
 		String modifier = "descendant::"; // if selector is "s1 > s2"
-		if (this instanceof DirectDescendantSelector) // if selector is "s1 s2"
+		if (this instanceof ChildSelector) // if selector is "s1 s2"
 			modifier = "";
 		List<String> parentConditions = new ArrayList<>();
 		String parentPrefix = parent.getXPathConditionsString(parentConditions);

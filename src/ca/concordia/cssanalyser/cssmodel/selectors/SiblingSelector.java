@@ -7,21 +7,21 @@ import java.util.List;
  * selector1 ~ selector2
  * @author Davood Mazinanian
  */
-public class IndirectAdjacentSelector extends AtomicSelector {
+public class SiblingSelector extends SingleSelector {
 	
-	protected final AtomicSelector beforeMainSelector;
-	protected final AtomicSelector mainSelector;
+	protected final SingleSelector beforeMainSelector;
+	protected final SingleSelector mainSelector;
 	
-	public IndirectAdjacentSelector(AtomicSelector firstSelector, AtomicSelector secondSelector) {
+	public SiblingSelector(SingleSelector firstSelector, SingleSelector secondSelector) {
 		beforeMainSelector = firstSelector;
 		mainSelector = secondSelector;
 	}
 	
-	public AtomicSelector getFirstSelector() {
+	public SingleSelector getFirstSelector() {
 		return beforeMainSelector;
 	}
 	
-	public AtomicSelector getSecondSelector() {
+	public SingleSelector getSecondSelector() {
 		return mainSelector;
 	}
 	
@@ -34,7 +34,7 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 	public boolean equals(Object obj) {
 		if (!generalEquals(obj))
 			return false;
-		IndirectAdjacentSelector otherObj = (IndirectAdjacentSelector)obj;
+		SiblingSelector otherObj = (SiblingSelector)obj;
 		if (lineNumber == otherObj.lineNumber &&
 				columnNumber == otherObj.columnNumber &&
 				beforeMainSelector.equals(otherObj.beforeMainSelector) &&
@@ -48,10 +48,10 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 			return false;
 		if (obj == this)
 			return true;
-		if (!(obj instanceof IndirectAdjacentSelector))
+		if (!(obj instanceof SiblingSelector))
 			return false;
 		if (parentMedia != null) {
-			IndirectAdjacentSelector otherIndirectAdjacentSelector = (IndirectAdjacentSelector)obj;
+			SiblingSelector otherIndirectAdjacentSelector = (SiblingSelector)obj;
 			if (otherIndirectAdjacentSelector.parentMedia == null)
 				return false;
 			if (!parentMedia.equals(otherIndirectAdjacentSelector.parentMedia))
@@ -64,7 +64,7 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 	public boolean selectorEquals(Selector otherSelector) {
 		if (!generalEquals(otherSelector))
 			return false;
-		IndirectAdjacentSelector otherIndirectAdjacentSelector = (IndirectAdjacentSelector)otherSelector;
+		SiblingSelector otherIndirectAdjacentSelector = (SiblingSelector)otherSelector;
 		return mainSelector.selectorEquals(otherIndirectAdjacentSelector.mainSelector) &&
 				beforeMainSelector.selectorEquals(otherIndirectAdjacentSelector.beforeMainSelector);
 				
@@ -82,7 +82,7 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 	
 	@Override
 	public Selector clone() {
-		return new IndirectAdjacentSelector(beforeMainSelector, mainSelector);
+		return new SiblingSelector(beforeMainSelector, mainSelector);
 	}
 
 	@Override
@@ -90,13 +90,13 @@ public class IndirectAdjacentSelector extends AtomicSelector {
 
 		// if selector combinator is "~" or "+"
 
-		AtomicSelector left = this.getFirstSelector();
-		AtomicSelector right = this.getSecondSelector();
+		SingleSelector left = this.getFirstSelector();
+		SingleSelector right = this.getSecondSelector();
 		
 		List<String> rightXPathConditions = new ArrayList<>();
 		String rightXPathPrefix = right.getXPathConditionsString(xpathConditions);
 		// If this is a "+" selector:
-		if (this instanceof ImmediatelyAdjacentSelector) {
+		if (this instanceof AdjacentSiblingSelector) {
 			// In this case we need one another condition, which is position() = 1
 			xpathConditions.add("position() = 1");
 		}

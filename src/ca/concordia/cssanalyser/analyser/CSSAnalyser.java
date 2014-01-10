@@ -248,7 +248,7 @@ public class CSSAnalyser {
 				sloc++;
 		
 		int numberOfSelectors = styleSheet.getAllSelectors().size();
-		int numberOfAtomicSelectors = styleSheet.getAllAtomicSelectors().size();
+		int numberOfAtomicSelectors = styleSheet.getAllSingleSelectors().size();
 		int numberOfDeclarations = styleSheet.getAllDeclarations().size();
 		int numberOfGroupedSelectors = 0;
 		for (Selector selector : styleSheet.getAllSelectors())

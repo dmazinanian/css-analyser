@@ -10,23 +10,23 @@ import java.util.List;
  * @author Davood Mazinanian
  * 
  */
-public abstract class AtomicSelector extends Selector {
+public abstract class SingleSelector extends Selector {
 
 	private GroupedSelectors parentGroupSelector;
 
-	public AtomicSelector() {
+	public SingleSelector() {
 		this(null, -1, -1);
 	}
 
-	public AtomicSelector(GroupedSelectors parent) {
+	public SingleSelector(GroupedSelectors parent) {
 		this(parent, -1, -1);
 	}
 
-	public AtomicSelector(int line, int coloumn) {
+	public SingleSelector(int line, int coloumn) {
 		this(null, line, coloumn);
 	}
 
-	public AtomicSelector(GroupedSelectors parent, int line, int coloumn) {
+	public SingleSelector(GroupedSelectors parent, int line, int coloumn) {
 		super(line, coloumn);
 		parentGroupSelector = parent;
 	}
@@ -44,8 +44,8 @@ public abstract class AtomicSelector extends Selector {
 	/**
 	 * Convert our <code>ca.concordia.cssanalyser.cssmodel.AtomicSelector</code> objects to <code>XPath</code> strings
 	 * @param selector Different <code>ca.concordia.cssanalyser.cssmodel.AtomicSelector</code> objects
-			(AtomicElementSelector, DescendantSelector, etc)
-	 * @return String of XPath for current <code>AtomicSelector</code>
+			(SimpleElementSelector, DescendantSelector, etc)
+	 * @return String of XPath for current <code>SingleSelector</code>
 	 * @throws UnsupportedSelectorToXPathException 
 	 */
 	@Override

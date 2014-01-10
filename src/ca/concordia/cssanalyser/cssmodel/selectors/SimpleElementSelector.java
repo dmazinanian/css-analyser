@@ -19,7 +19,7 @@ import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
  * @author Davood Mazinanian
  *
  */
-public class AtomicElementSelector extends AtomicSelector {
+public class SimpleElementSelector extends SingleSelector {
 	
 	private String selectedElementName = "";
 	private List<String> selectedClasses;
@@ -28,17 +28,17 @@ public class AtomicElementSelector extends AtomicSelector {
 	private List<PseudoClass> pseudoClasses;
 	private List<PseudoElement> pseudoElements;
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(AtomicElementSelector.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleElementSelector.class);
 
-	public AtomicElementSelector() {
+	public SimpleElementSelector() {
 		this(null);
 	}
 
-	public AtomicElementSelector(GroupedSelectors parent) {
+	public SimpleElementSelector(GroupedSelectors parent) {
 		this(parent, -1, -1);
 	}
 
-	public AtomicElementSelector(int fileLineNumber, int fileColNumber) {
+	public SimpleElementSelector(int fileLineNumber, int fileColNumber) {
 		this(null, fileColNumber, fileLineNumber);
 	}
 
@@ -53,7 +53,7 @@ public class AtomicElementSelector extends AtomicSelector {
 	 * 			Column number of the source of container stylesheet.
 	 * 
 	 */
-	public AtomicElementSelector(GroupedSelectors parent, int fileLineNumber,
+	public SimpleElementSelector(GroupedSelectors parent, int fileLineNumber,
 			int fileColumnNumber) {
 		super(parent, fileLineNumber, fileColumnNumber);
 		conditions = new ArrayList<>();
@@ -138,7 +138,7 @@ public class AtomicElementSelector extends AtomicSelector {
 		if (!generalEquals(otherSelector))
 			return false;
 		
-		AtomicElementSelector otherAtomicSelector = (AtomicElementSelector)otherSelector;
+		SimpleElementSelector otherAtomicSelector = (SimpleElementSelector)otherSelector;
 		
 		return selectedElementName.equalsIgnoreCase(otherAtomicSelector.selectedElementName) &&
 				selectedID.equalsIgnoreCase(otherAtomicSelector.selectedID) &&
@@ -160,7 +160,7 @@ public class AtomicElementSelector extends AtomicSelector {
 		if (!generalEquals(obj))
 		return false;
 		
-		AtomicSelector otherAtomicSelector = (AtomicSelector) obj;
+		SingleSelector otherAtomicSelector = (SingleSelector) obj;
 
 		return (lineNumber == otherAtomicSelector.lineNumber &&
 				columnNumber == otherAtomicSelector.columnNumber &&
@@ -172,10 +172,10 @@ public class AtomicElementSelector extends AtomicSelector {
 			return false;
 		if (obj == this)
 			return true;
-		if (obj.getClass() != AtomicElementSelector.class)
+		if (obj.getClass() != SimpleElementSelector.class)
 			return false;
 		if (parentMedia != null) {
-			AtomicSelector otherAtomicElementSelector = (AtomicSelector)obj;
+			SingleSelector otherAtomicElementSelector = (SingleSelector)obj;
 			if (otherAtomicElementSelector.parentMedia == null)
 				return false;
 			if (!parentMedia.equals(otherAtomicElementSelector.parentMedia))
@@ -233,7 +233,7 @@ public class AtomicElementSelector extends AtomicSelector {
 
 	@Override
 	public Selector clone() {
-		AtomicElementSelector newOne = new AtomicElementSelector(getParentGroupSelector(), getLineNumber(), getColumnNumber());
+		SimpleElementSelector newOne = new SimpleElementSelector(getParentGroupSelector(), getLineNumber(), getColumnNumber());
 		newOne.setMedia(parentMedia);
 		newOne.selectedElementName = selectedElementName;
 		newOne.selectedClasses = new ArrayList<>(selectedClasses);
@@ -471,8 +471,8 @@ public class AtomicElementSelector extends AtomicSelector {
 					xpathConditions.add(String.format("contains(., '%s')", pseudoClass.getValue()));
 					break;
 				case "not":
-					PseudoNegativeClass negPseudoClass = (PseudoNegativeClass)pseudoClass;
-					AtomicSelector negSelector = negPseudoClass.getSelector();
+					NegationPseudoClass negPseudoClass = (NegationPseudoClass)pseudoClass;
+					SingleSelector negSelector = negPseudoClass.getSelector();
 					List<String> negativeConditions = new ArrayList<>();
 					/*String pref =*/ negSelector.getXPathConditionsString(negativeConditions);
 					String finalCondition = "not(%s)";

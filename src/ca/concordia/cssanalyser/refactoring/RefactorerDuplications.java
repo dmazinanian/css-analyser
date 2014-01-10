@@ -10,7 +10,7 @@ import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSetList;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.selectors.AtomicSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupedSelectors;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
@@ -34,10 +34,10 @@ public class RefactorerDuplications {
 					// Create a grouped selector for every duplication
 					GroupedSelectors newGroupedSelector = new GroupedSelectors();
 					for (Selector selector : currentItemSet.getSupport()) {
-						if (selector instanceof AtomicSelector)
-							newGroupedSelector.add((AtomicSelector)selector);
+						if (selector instanceof SingleSelector)
+							newGroupedSelector.add((SingleSelector)selector);
 						else {
-							for (AtomicSelector atomicSelector : (GroupedSelectors)selector)
+							for (SingleSelector atomicSelector : (GroupedSelectors)selector)
 								newGroupedSelector.add(atomicSelector);
 						}
 							

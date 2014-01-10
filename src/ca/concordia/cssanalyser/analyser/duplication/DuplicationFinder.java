@@ -22,7 +22,7 @@ import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
-import ca.concordia.cssanalyser.cssmodel.selectors.AtomicSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector.UnsupportedSelectorToXPathException;
 import ca.concordia.cssanalyser.dom.DOMHelper;
@@ -334,7 +334,7 @@ public class DuplicationFinder {
 		
 		typeFourBDuplicationsList = new DuplicationsList();
 		
-		List<AtomicSelector> allSelectors = new ArrayList<>(stylesheet.getAllAtomicSelectors());
+		List<SingleSelector> allSelectors = new ArrayList<>(stylesheet.getAllSingleSelectors());
 		Map<Selector, NodeList> selectorNodeListMap = new HashMap<>();
 		for (Selector selector : allSelectors) {
 			NodeList nodes;
@@ -407,8 +407,8 @@ public class DuplicationFinder {
 		//System.out.println(styleSheet);
 		
 		/*for (Selector selector : styleSheet.getAllSelectors()) {
-			if (selector instanceof AtomicSelector) {
-				AtomicSelector atomicSelector = (AtomicSelector)selector;
+			if (selector instanceof SingleSelector) {
+				SingleSelector atomicSelector = (SingleSelector)selector;
 				String XPath = xpath.XPathHelper.AtomicSelectorToXPath(atomicSelector);
 				System.out.println(atomicSelector + "->" + XPath);
 				if (XPath == null) continue;

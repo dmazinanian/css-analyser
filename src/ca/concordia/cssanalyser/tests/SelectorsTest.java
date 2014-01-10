@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
-import ca.concordia.cssanalyser.cssmodel.selectors.AtomicSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupedSelectors;
 import ca.concordia.cssanalyser.parser.CSSParser;
 
@@ -33,12 +33,12 @@ public class SelectorsTest {
 		String css = "p{} p{} a[href*='https'][title]{} a[title][href*='https']{} p,div{} div,p{}";
 		CSSParser parser = new CSSParser();
 		StyleSheet styleSheet = parser.parseCSSString(css);
-		AtomicSelector selector1 = (AtomicSelector)styleSheet.getAllSelectors().iterator().next();
-		AtomicSelector selector2 = (AtomicSelector)styleSheet.getAllSelectors().iterator().next();
+		SingleSelector selector1 = (SingleSelector)styleSheet.getAllSelectors().iterator().next();
+		SingleSelector selector2 = (SingleSelector)styleSheet.getAllSelectors().iterator().next();
 		assertEquals(false, selector1.equals(selector2));
 		assertEquals(true, selector1.selectorEquals(selector2));
-		AtomicSelector selector3 = (AtomicSelector)styleSheet.getAllSelectors().iterator().next();
-		AtomicSelector selector4 = (AtomicSelector)styleSheet.getAllSelectors().iterator().next();	
+		SingleSelector selector3 = (SingleSelector)styleSheet.getAllSelectors().iterator().next();
+		SingleSelector selector4 = (SingleSelector)styleSheet.getAllSelectors().iterator().next();	
 		assertEquals(true, selector3.selectorEquals(selector4));
 		GroupedSelectors gr1 = (GroupedSelectors)styleSheet.getAllSelectors().iterator().next();
 		GroupedSelectors gr2 = (GroupedSelectors)styleSheet.getAllSelectors().iterator().next();

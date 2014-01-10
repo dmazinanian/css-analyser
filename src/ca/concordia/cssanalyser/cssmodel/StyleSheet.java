@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.selectors.AtomicSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupedSelectors;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
@@ -29,7 +29,7 @@ public class StyleSheet {
 	}
 
 	/**
-	 * Adds a new selector (whether atomic or grouped) to the selectors list of
+	 * Adds a new selector (whether single or grouped) to the selectors list of
 	 * this style sheet.
 	 * 
 	 * @param selector
@@ -39,7 +39,7 @@ public class StyleSheet {
 	}
 	
 	/**
-	 * Returns all the selectors, whether atomic or grouped in the style sheet.
+	 * Returns all the selectors, whether single or grouped in the style sheet.
 	 * 
 	 * @return List<Selector>
 	 */
@@ -48,27 +48,27 @@ public class StyleSheet {
 	}
 
 	/**
-	 * This method returns all the atomic selectors in the style sheet, in
-	 * addition to the all atomic selectors inside the grouped selectors. It
-	 * preserves the order of atomic selectors.
+	 * This method returns all the single selectors in the style sheet, in
+	 * addition to the all single selectors inside the grouped selectors. It
+	 * preserves the order of single selectors.
 	 * 
-	 * @return List<AtomicSelector>
+	 * @return List<SingleSelector>
 	 */
-	public Set<AtomicSelector> getAllAtomicSelectors() {
-		Set<AtomicSelector> allAtomicSelectors = new HashSet<>();
+	public Set<SingleSelector> getAllSingleSelectors() {
+		Set<SingleSelector> allSingleSelectors = new HashSet<>();
 
 		for (Selector selector : listOfSelectors) { // Look inside all selectors
-			if (selector instanceof AtomicSelector) {
+			if (selector instanceof SingleSelector) {
 				// Just add
-				allAtomicSelectors.add((AtomicSelector) selector);
+				allSingleSelectors.add((SingleSelector) selector);
 			} else if (selector instanceof GroupedSelectors) {
 				// Loop through all grouped selectors
-				for (AtomicSelector atomicSelector : (GroupedSelectors) selector) {
-					allAtomicSelectors.add(atomicSelector);
+				for (SingleSelector singleSelector : (GroupedSelectors) selector) {
+					allSingleSelectors.add(singleSelector);
 				}
 			}
 		}
-		return allAtomicSelectors;
+		return allSingleSelectors;
 	}
 
 	/**

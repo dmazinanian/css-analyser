@@ -7,16 +7,16 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
  * @author Davood Mazinanian
  *
  */
-public class PseudoNegativeClass extends PseudoClass {
+public class NegationPseudoClass extends PseudoClass {
 
-	private final AtomicSelector insideSelector;
+	private final SingleSelector insideSelector;
 	
-	public PseudoNegativeClass(AtomicSelector selector) {
+	public NegationPseudoClass(SingleSelector selector) {
 		super("not", selector.toString());
 		insideSelector = selector;
 	}
 
-	public AtomicSelector getSelector() {
+	public SingleSelector getSelector() {
 		return insideSelector;
 	}
 	
@@ -36,7 +36,7 @@ public class PseudoNegativeClass extends PseudoClass {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		PseudoNegativeClass other = (PseudoNegativeClass) obj;
+		NegationPseudoClass other = (NegationPseudoClass) obj;
 		if (insideSelector == null) {
 			if (other.insideSelector != null)
 				return false;

@@ -48,19 +48,19 @@ import ca.concordia.cssanalyser.cssmodel.declaration.DeclarationFactory;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationEquivalentValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
-import ca.concordia.cssanalyser.cssmodel.media.AtomicMedia;
+import ca.concordia.cssanalyser.cssmodel.media.SingleMedia;
 import ca.concordia.cssanalyser.cssmodel.media.GroupedMedia;
 import ca.concordia.cssanalyser.cssmodel.media.Media;
-import ca.concordia.cssanalyser.cssmodel.selectors.AtomicElementSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.AtomicSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SimpleElementSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.DescendantSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.DirectDescendantSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.ChildSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupedSelectors;
-import ca.concordia.cssanalyser.cssmodel.selectors.ImmediatelyAdjacentSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.IndirectAdjacentSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.AdjacentSiblingSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SiblingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.PseudoClass;
 import ca.concordia.cssanalyser.cssmodel.selectors.PseudoElement;
-import ca.concordia.cssanalyser.cssmodel.selectors.PseudoNegativeClass;
+import ca.concordia.cssanalyser.cssmodel.selectors.NegationPseudoClass;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorConditionType;
@@ -138,15 +138,15 @@ public class CSSDocumentHandler implements DocumentHandler {
 			currentMedia = getMedia(mediaList);
 		} else {
 			GroupedMedia groupedMedia;
-			if (currentMedia instanceof AtomicMedia) {
+			if (currentMedia instanceof SingleMedia) {
 				groupedMedia = new GroupedMedia();
-				groupedMedia.addMedia((AtomicMedia) currentMedia);
+				groupedMedia.addMedia((SingleMedia) currentMedia);
 			} else {
 				groupedMedia = (GroupedMedia)currentMedia;
 			}
 			Media tempMedia = getMedia(mediaList);
-			if (tempMedia instanceof AtomicMedia)
-				groupedMedia.addMedia((AtomicMedia)tempMedia);
+			if (tempMedia instanceof SingleMedia)
+				groupedMedia.addMedia((SingleMedia)tempMedia);
 			else 
 				groupedMedia.addAllMedia((GroupedMedia)tempMedia);
 			currentMedia = groupedMedia;
@@ -156,11 +156,11 @@ public class CSSDocumentHandler implements DocumentHandler {
 	private Media getMedia(SACMediaList sacMedia) {
 		Media media;
 		if (sacMedia.getLength() == 1) {
-			media = new AtomicMedia(sacMedia.item(0));
+			media = new SingleMedia(sacMedia.item(0));
 		} else {
 			GroupedMedia groupedMedia = new GroupedMedia();
 			for (int i = 0; i < sacMedia.getLength(); i++)
-				groupedMedia.addMedia(new AtomicMedia(sacMedia.item(i)));
+				groupedMedia.addMedia(new SingleMedia(sacMedia.item(i)));
 			media = groupedMedia;
 		}
 		return media;
@@ -168,7 +168,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 	@Override
 	public void endMedia(SACMediaList mediaList) throws CSSException {
-		if (currentMedia instanceof AtomicMedia) {
+		if (currentMedia instanceof SingleMedia) {
 			currentMedia = null;
 		} else {
 			GroupedMedia groupedMedia = (GroupedMedia)currentMedia;
@@ -176,7 +176,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 				groupedMedia.removeMedia(mediaList.item(i));
 			}
 			if (groupedMedia.size() == 1)
-				currentMedia = new AtomicMedia(groupedMedia.getAtomicMedia(0).getMediaName());
+				currentMedia = new SingleMedia(groupedMedia.getAtomicMedia(0).getMediaName());
 			else if (groupedMedia.size() == 0)
 				currentMedia = null;
 		}
@@ -239,7 +239,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			GroupedSelectors groupedSelectors = new GroupedSelectors(locator.getLineNumber(), locator.getColumnNumber());
 			for (int i = 0; i < list.getLength(); i++) {
 				try {
-					AtomicSelector newAtomicSelector = SACSelectorToAtomicSelector(list.item(i));
+					SingleSelector newAtomicSelector = SACSelectorToAtomicSelector(list.item(i));
 					newAtomicSelector.setLineNumber(locator.getLineNumber());
 					newAtomicSelector.setColumnNumber(locator.getColumnNumber());
 					if (currentMedia != null)
@@ -266,20 +266,20 @@ public class CSSDocumentHandler implements DocumentHandler {
 	}
 
 	/**
-	 * Returns an {@link AtomicSelector} from a given SAC selector
+	 * Returns an {@link SingleSelector} from a given SAC selector
 	 * Adapted from GWT http://google-web-toolkit.googlecode.com/svn-history/r7441/trunk/user/src/com/google/gwt/resources/css/GenerateCssAst.java
 	 * @param selector
 	 * @return
 	 * @throws Exception
 	 */
-	private AtomicSelector SACSelectorToAtomicSelector(org.w3c.css.sac.Selector selector) throws Exception {
+	private SingleSelector SACSelectorToAtomicSelector(org.w3c.css.sac.Selector selector) throws Exception {
 		// if (selector instanceof CharacterDataSelector) {
 		// Unimplemented in flute?
 		// }
 		if (selector instanceof ElementSelectorImpl) {
 
 			ElementSelectorImpl sacElementSelector = (ElementSelectorImpl) selector;
-			AtomicElementSelector atomicElementSelector = new AtomicElementSelector();
+			SimpleElementSelector atomicElementSelector = new SimpleElementSelector();
 			String elementName;
 			
 			if (sacElementSelector.getLocalName() == null) {
@@ -295,8 +295,8 @@ public class CSSDocumentHandler implements DocumentHandler {
 		} else if (selector instanceof DescendantSelectorImpl) {
 
 			DescendantSelectorImpl sacDescendantSelector = (DescendantSelectorImpl) selector;
-			AtomicSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getAncestorSelector());
-			AtomicSelector childAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getSimpleSelector());
+			SingleSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getAncestorSelector());
+			SingleSelector childAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getSimpleSelector());
 			DescendantSelector s = new DescendantSelector(parentAtomicSelector, childAtomicSelector);
 
 			return s;
@@ -309,19 +309,19 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 			ChildSelectorImpl sacChildSelectorImpl = (ChildSelectorImpl) selector;
 
-			AtomicSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getAncestorSelector());
-			AtomicSelector childAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getSimpleSelector());
+			SingleSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getAncestorSelector());
+			SingleSelector childAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getSimpleSelector());
 
-			AtomicSelector selectorToReturn;
+			SingleSelector selectorToReturn;
 
 			if (sacChildSelectorImpl.getSimpleSelector() instanceof PseudoElementSelectorImpl) {
 				selectorToReturn = parentAtomicSelector;
 				PseudoElementSelectorImpl pseudoClass = (PseudoElementSelectorImpl) sacChildSelectorImpl.getSimpleSelector();
 
-				((AtomicElementSelector) selectorToReturn).addPseudoClass(new PseudoClass(pseudoClass.getLocalName()));
+				((SimpleElementSelector) selectorToReturn).addPseudoClass(new PseudoClass(pseudoClass.getLocalName()));
 
 			} else {
-				selectorToReturn = new DirectDescendantSelector(
+				selectorToReturn = new ChildSelector(
 						parentAtomicSelector, childAtomicSelector);
 			}
 
@@ -330,28 +330,28 @@ public class CSSDocumentHandler implements DocumentHandler {
 		} else if (selector instanceof PseudoElementSelectorImpl) {
 			
 			PseudoElementSelectorImpl pseudoElementSelector = (PseudoElementSelectorImpl) selector;
-			AtomicElementSelector atomicElementSelector = new AtomicElementSelector();
+			SimpleElementSelector atomicElementSelector = new SimpleElementSelector();
 			atomicElementSelector.addPseudoClass(new PseudoClass(pseudoElementSelector.getLocalName()));
 			return atomicElementSelector;
 			
 		} else if (selector instanceof DirectAdjacentSelectorImpl) {
 
 			DirectAdjacentSelectorImpl sacDirectAdjacentSelector = (DirectAdjacentSelectorImpl) selector;
-			AtomicSelector parentSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSelector());
-			AtomicSelector childSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSiblingSelector());
-			return new ImmediatelyAdjacentSelector(parentSelector, childSelector);
+			SingleSelector parentSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSelector());
+			SingleSelector childSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSiblingSelector());
+			return new AdjacentSiblingSelector(parentSelector, childSelector);
 			
 		} else if (selector instanceof AdjacentSelector) {
 			
 			AdjacentSelector sacAdjacentSelector = (AdjacentSelector) selector;
-			AtomicSelector parentSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSelector());
-			AtomicSelector childSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSiblingSelector());
-			return new IndirectAdjacentSelector(parentSelector, childSelector);
+			SingleSelector parentSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSelector());
+			SingleSelector childSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSiblingSelector());
+			return new SiblingSelector(parentSelector, childSelector);
 			
 		} else if (selector instanceof ConditionalSelectorImpl) {
 
 			ConditionalSelector sacConditionalSelector = (ConditionalSelectorImpl) selector;
-			AtomicElementSelector atomicElementSelector = (AtomicElementSelector) SACSelectorToAtomicSelector(sacConditionalSelector.getSimpleSelector());
+			SimpleElementSelector atomicElementSelector = (SimpleElementSelector) SACSelectorToAtomicSelector(sacConditionalSelector.getSimpleSelector());
 			getConditions(sacConditionalSelector.getCondition(), atomicElementSelector);
 			return atomicElementSelector;
 			
@@ -367,7 +367,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 	 * @param atomicElementSelector
 	 * @throws Exception
 	 */
-	private void getConditions(Condition sacCondition, AtomicElementSelector atomicElementSelector) throws Exception {
+	private void getConditions(Condition sacCondition, SimpleElementSelector atomicElementSelector) throws Exception {
 		if (sacCondition == null)
 			return;
 		if (sacCondition instanceof AndConditionImpl) {
@@ -465,8 +465,8 @@ public class CSSDocumentHandler implements DocumentHandler {
 			Locator loc = condition.getLocator();
 			Selector s = getSelector(l, loc);
 			// Selector "s" shoule be a simple selector, based on W3C http://www.w3.org/TR/css3-selectors/
-			if ((s instanceof AtomicElementSelector)) {
-				atomicElementSelector.addPseudoClass(new PseudoNegativeClass((AtomicSelector)s));
+			if ((s instanceof SimpleElementSelector)) {
+				atomicElementSelector.addPseudoClass(new NegationPseudoClass((SingleSelector)s));
 			} else {
 				LOGGER.warn("The parameter of not() pseudo-element should be a simple CSS selector. ");
 			}

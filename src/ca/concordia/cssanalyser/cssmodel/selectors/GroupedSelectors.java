@@ -11,9 +11,9 @@ import java.util.Set;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 
 
-public class GroupedSelectors extends Selector implements Collection<AtomicSelector> {
+public class GroupedSelectors extends Selector implements Collection<SingleSelector> {
 
-	private Set<AtomicSelector> listOfAtomicSelectors;
+	private Set<SingleSelector> listOfAtomicSelectors;
 	
 	public GroupedSelectors() {
 		this(-1, -1);
@@ -26,26 +26,26 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 		listOfAtomicSelectors = new LinkedHashSet<>();
 	}
 
-	public Set<AtomicSelector> getAtomicSelectors() {
+	public Set<SingleSelector> getAtomicSelectors() {
 		return listOfAtomicSelectors;
 	}
 
 	@Override
 	public void addCSSRule(Declaration rule) {
 		super.addCSSRule(rule);
-		for (AtomicSelector atomicSelector : listOfAtomicSelectors)
+		for (SingleSelector atomicSelector : listOfAtomicSelectors)
 			atomicSelector.addCSSRule(rule);
 	}
 	
 	@Override
-	public Iterator<AtomicSelector> iterator() {
+	public Iterator<SingleSelector> iterator() {
 		return listOfAtomicSelectors.iterator();
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder result = new StringBuilder("");
-		for (AtomicSelector atomicSelector : listOfAtomicSelectors)
+		for (SingleSelector atomicSelector : listOfAtomicSelectors)
 			result.append(atomicSelector + ", ");
 		// Remove last , and space
 		result.delete(result.length() - 2, result.length()); 
@@ -67,7 +67,7 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 		if (listOfAtomicSelectors.size() != otherObj.listOfAtomicSelectors.size())
 			return false;
 		//return listOfSelectors.containsAll(otherObj.listOfSelectors);
-		List<AtomicSelector> tempList = new ArrayList<>(otherObj.listOfAtomicSelectors);
+		List<SingleSelector> tempList = new ArrayList<>(otherObj.listOfAtomicSelectors);
 		for (Selector selector : listOfAtomicSelectors) {
 			boolean valueFound = false;
 			for (int i = 0; i < tempList.size(); i++) {
@@ -127,12 +127,12 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 	}
 
 	@Override
-	public boolean add(AtomicSelector atomicSelector) {
+	public boolean add(SingleSelector atomicSelector) {
 		return listOfAtomicSelectors.add(atomicSelector);
 	}
 
 	@Override
-	public boolean addAll(Collection<? extends AtomicSelector> atomicSelectors) {
+	public boolean addAll(Collection<? extends SingleSelector> atomicSelectors) {
 		return listOfAtomicSelectors.addAll(atomicSelectors);
 	}
 
@@ -198,7 +198,7 @@ public class GroupedSelectors extends Selector implements Collection<AtomicSelec
 	@Override
 	public String getXPath() throws UnsupportedSelectorToXPathException {
 		StringBuilder xPath = new StringBuilder();
-		for (AtomicSelector atomicSelector : listOfAtomicSelectors) 
+		for (SingleSelector atomicSelector : listOfAtomicSelectors) 
 			xPath.append(atomicSelector.getXPath() + " | ");
 		if (xPath.length() > 3)
 			xPath.delete(xPath.length() - 3, xPath.length());

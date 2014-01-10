@@ -4,9 +4,9 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
  * Selector1 > Selector2
  * @author Davood Mazinanian
  */
-public class DirectDescendantSelector extends DescendantSelector {
+public class ChildSelector extends DescendantSelector {
 
-	public DirectDescendantSelector(AtomicSelector parent, AtomicSelector child) {
+	public ChildSelector(SingleSelector parent, SingleSelector child) {
 		super(parent, child);
 	}
 	
@@ -17,7 +17,7 @@ public class DirectDescendantSelector extends DescendantSelector {
 
 	@Override
 	public Selector clone() {
-		return new DirectDescendantSelector(getParentSelector(), getChildSelector());
+		return new ChildSelector(getParentSelector(), getChildSelector());
 	}
 	
 }

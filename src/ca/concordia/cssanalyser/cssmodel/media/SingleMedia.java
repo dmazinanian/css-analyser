@@ -1,14 +1,14 @@
 package ca.concordia.cssanalyser.cssmodel.media;
 
-public class AtomicMedia extends Media {
+public class SingleMedia extends Media {
 
 	private String name;
 
-	public AtomicMedia(String mediaName) {
+	public SingleMedia(String mediaName) {
 		this(mediaName, -1, -1);
 	}
 
-	public AtomicMedia(String mediaName, int line, int col) {
+	public SingleMedia(String mediaName, int line, int col) {
 		super(line, col);
 		name = mediaName;
 	}
@@ -19,9 +19,9 @@ public class AtomicMedia extends Media {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof AtomicMedia))
+		if (!(obj instanceof SingleMedia))
 			return false;
-		AtomicMedia otherMedia = (AtomicMedia) obj;
+		SingleMedia otherMedia = (SingleMedia) obj;
 		return name.equals(otherMedia.name);
 	}
 

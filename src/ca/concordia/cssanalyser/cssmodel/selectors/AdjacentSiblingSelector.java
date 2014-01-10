@@ -5,9 +5,9 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
  * @author Davood Mazinanian
  *
  */
-public class ImmediatelyAdjacentSelector extends IndirectAdjacentSelector {
+public class AdjacentSiblingSelector extends SiblingSelector {
 
-	public ImmediatelyAdjacentSelector(AtomicSelector firstSelector, AtomicSelector secondSelector) {
+	public AdjacentSiblingSelector(SingleSelector firstSelector, SingleSelector secondSelector) {
 		super(firstSelector, secondSelector);
 	}
 
@@ -18,6 +18,6 @@ public class ImmediatelyAdjacentSelector extends IndirectAdjacentSelector {
 	
 	@Override
 	public Selector clone() {
-		return new ImmediatelyAdjacentSelector(getFirstSelector(), getSecondSelector());
+		return new AdjacentSiblingSelector(getFirstSelector(), getSecondSelector());
 	}
 }

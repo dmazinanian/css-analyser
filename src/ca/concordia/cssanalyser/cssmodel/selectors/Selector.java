@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.media.AtomicMedia;
+import ca.concordia.cssanalyser.cssmodel.media.SingleMedia;
 import ca.concordia.cssanalyser.cssmodel.media.Media;
 
 
@@ -15,7 +15,6 @@ public abstract class Selector {
 	protected Media parentMedia;
 	protected List<Declaration> declarations;
 	protected int specificityOfSelector;
-	
 	
 	public int getSpecificity() {
 		return specificityOfSelector;
@@ -72,7 +71,7 @@ public abstract class Selector {
 	}
 
 	public void setMedia(String name) {
-		setMedia(new AtomicMedia(name));
+		setMedia(new SingleMedia(name));
 	}
 	
 	/**

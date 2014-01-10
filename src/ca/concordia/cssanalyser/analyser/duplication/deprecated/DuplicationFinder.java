@@ -18,7 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import ca.concordia.cssanalyser.cssmodel.selectors.AtomicSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
 
 
 public class DuplicationFinder {
@@ -42,13 +42,13 @@ public class DuplicationFinder {
 		 * /
 		Set<Integer> visited = new HashSet<>();
 
-		List<AtomicSelector> allAtomicSelectors = stylesheet.getAllAtomicSelectors();
+		List<SingleSelector> allAtomicSelectors = stylesheet.getAllAtomicSelectors();
 
 		// So start from the first selector
 		int currentSelectorIndex = -1;
 		while (++currentSelectorIndex < allAtomicSelectors.size()) {
 
-			AtomicSelector currentSelector = allAtomicSelectors.get(currentSelectorIndex);
+			SingleSelector currentSelector = allAtomicSelectors.get(currentSelectorIndex);
 
 			if (visited.contains(currentSelectorIndex))
 				continue;
@@ -64,7 +64,7 @@ public class DuplicationFinder {
 			
 			while (++checkingSelectorIndex < allAtomicSelectors.size()) {
 				
-				AtomicSelector checkingSelector = allAtomicSelectors.get(checkingSelectorIndex);
+				SingleSelector checkingSelector = allAtomicSelectors.get(checkingSelectorIndex);
 
 				if (currentSelector.equals(checkingSelector)) {
 					// So it seems that we have found a duplication in selectors

@@ -38,6 +38,6 @@ public class ChangedDeclarationValueDifference extends Difference {
 		for (DeclarationValue v : declaration2.getRealValues()) 
 			value2 += v.getValue() + " ";
 		
-		return "Value of " + declaration1.getSelector() + " is changed from " +  value1 + " to " + value2;
+		return "Value of " + declaration1 + " in selector " + declaration1.getSelector() + " is changed from " +  value1.trim() + " to " + value2.trim();
 	}
 }
