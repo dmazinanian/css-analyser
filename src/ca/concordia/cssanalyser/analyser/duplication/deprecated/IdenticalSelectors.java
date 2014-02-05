@@ -3,12 +3,12 @@ package ca.concordia.cssanalyser.analyser.duplication.deprecated;
 import java.util.ArrayList;
 import java.util.List;
 
-import duplication.Duplication;
-import duplication.DuplicationType;
+import duplication.DuplicationInstance;
+import duplication.DuplicationInstanceType;
 
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
-public class IdenticalSelectors extends Duplication {
+public class IdenticalSelectors extends DuplicationInstance {
 
 	/*
 	 * This field is used to keep all the repeating selectors
@@ -17,7 +17,7 @@ public class IdenticalSelectors extends Duplication {
 	private final List<Selector> forWhichSelector;
 	
 	public IdenticalSelectors(Selector selector) {
-		super(DuplicationType.IDENTICAL_SELECTOR);	
+		super(DuplicationInstanceType.IDENTICAL_SELECTOR);	
 		forWhichSelector = new ArrayList<>();
 		forWhichSelector.add(selector);
 	}
@@ -65,7 +65,7 @@ public class IdenticalSelectors extends Duplication {
 	
 	@Override
 	public String toString() {
-		String string = "Duplication for selector " + forWhichSelector.get(0) + " in the following places: \n";
+		String string = "DuplicationInstance for selector " + forWhichSelector.get(0) + " in the following places: \n";
 		for (Selector selector : forWhichSelector)
 			string += "\t" + selector.getLineNumber() + " : " + selector.getColumnNumber() + "\n";
 		return string;

@@ -5,69 +5,83 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import ca.concordia.cssanalyser.analyser.duplication.apriori.Item;
-import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSet;
-import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSetList;
+import ca.concordia.cssanalyser.analyser.duplication.items.Item;
+import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.GroupedSelectors;
+import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
 
 public class RefactorerDuplications {
 	
-	public StyleSheet refactor(StyleSheet originalStyleSheet, List<ItemSetList> itemSetLists) {
+	public static StyleSheet groupingRefactoring(StyleSheet originalStyleSheet, ItemSet itemset) {
+		
+		// First create a new grouped selector for refactoring
+		GroupingSelector newGroupingSelector = new GroupingSelector();
+		for (Selector selector : itemset.getSupport()) {
+			if (selector instanceof GroupingSelector) {
+				GroupingSelector grouping = (GroupingSelector)selector;
+				for (BaseSelector baseSelector : grouping.getBaseSelectors()) {
+					newGroupingSelector.add((BaseSelector)baseSelector.copyEmptySelector());
+				}
+			} else {
+				newGroupingSelector.add((BaseSelector)selector.copyEmptySelector());
+			}
+		}
+		
 
-		StyleSheet refactoredStyleSheet = originalStyleSheet.clone();
+		Set<Declaration> declarationsToBeRemoved = new HashSet<>();
+		for (Item currentItem : itemset) {
+			
+			// Add declarations to this new grouping selector
+			newGroupingSelector.addDeclaration(currentItem.getDeclarationWithMinimumChars().cloneToSelector(newGroupingSelector));
+			
+			//Mark declarations to be deleted from returning stylesheet
+			for (Declaration currentDeclaration : currentItem) {
+				if (itemset.getSupport().contains(currentDeclaration.getSelector())) {
+					if (currentDeclaration instanceof ShorthandDeclaration && ((ShorthandDeclaration)currentDeclaration).isVirtual()) {
+						for (Declaration individual : ((ShorthandDeclaration)currentDeclaration).getIndividualDeclarations())
+							declarationsToBeRemoved.add(individual);
+					} else {
+						declarationsToBeRemoved.add(currentDeclaration);
+					}
+				}
+			}
+		}
 		
-		Set<Declaration> addedDeclarations = new HashSet<>();
+		// Create a new empty stylesheet (refactored one)
+		StyleSheet refactoredStyleSheet = new StyleSheet();
+		
+		// Adding selectors to the refactored declarations
+		for (Selector selectorToBeAdded : originalStyleSheet.getAllSelectors()) {
+			Selector newSelector = selectorToBeAdded.copyEmptySelector();
+			// Only add declaration which are not marked to the refactored stylesheet
+			for (Declaration d : selectorToBeAdded.getDeclarations()) {
+				if (!declarationsToBeRemoved.contains(d)) {
+					newSelector.addDeclaration(d.cloneToSelector(newSelector)); 
+				}
 				
-		for (int i = itemSetLists.size() - 1; i >= 0; i--) {
-			
-			ItemSetList currentItemSetList = itemSetLists.get(i);
-			
-			for (ItemSet currentItemSet : currentItemSetList) {
-				if (i == itemSetLists.size() - 1 || 
-						(i < itemSetLists.size() - 2 && !itemSetLists.get(i + 1).containsSuperSet(currentItemSet))) {
-					// Create a grouped selector for every duplication
-					GroupedSelectors newGroupedSelector = new GroupedSelectors();
-					for (Selector selector : currentItemSet.getSupport()) {
-						if (selector instanceof SingleSelector)
-							newGroupedSelector.add((SingleSelector)selector);
-						else {
-							for (SingleSelector atomicSelector : (GroupedSelectors)selector)
-								newGroupedSelector.add(atomicSelector);
-						}
-							
-					}
-					for (Item item : currentItemSet) {
-						 newGroupedSelector.addCSSRule(item.getFirstDeclaration());
-						 addedDeclarations.addAll(item);
-					}
-					refactoredStyleSheet.addSelector(newGroupedSelector);
-				}
 			}
+			refactoredStyleSheet.addSelector(newSelector);
 		}
 		
-		// Add all declarations which are only in one selector.
-		for (Selector selector : originalStyleSheet.getAllSelectors()) {
-			Selector toAdd = selector.clone();
-			List<Declaration> declarationsToRemove = new ArrayList<>();
-			for (Declaration declaration : toAdd.getDeclarations()) {
-				if (addedDeclarations.contains(declaration)) {
-					// Law of LoD :|
-					declarationsToRemove.add(declaration);
-				}
-			}
-			toAdd.getDeclarations().removeAll(declarationsToRemove);
-			if (toAdd.getDeclarations().size() > 0) {
-				refactoredStyleSheet.addSelector(toAdd);
-			}
+		// Add the new grouping selector at the end of the refactored stylesheet
+		refactoredStyleSheet.addSelector(newGroupingSelector);
+		
+		// Remove empty selectors from refactored stylesheet
+		List<Selector> selectorsToBeRemoved = new ArrayList<>(); 
+		for (Selector selector : refactoredStyleSheet.getAllSelectors()) {
+			if (selector.getDeclarations().size() == 0)
+				selectorsToBeRemoved.add(selector);
 		}
+		refactoredStyleSheet.getAllSelectors().removeAll(selectorsToBeRemoved);
 		
 		return refactoredStyleSheet;
+
 	}
-	
+
 }

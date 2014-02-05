@@ -4,15 +4,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class DuplicationsList implements Iterable<Duplication> {
+public class DuplicationIncstanceList implements Iterable<DuplicationInstance> {
 
-	private final List<Duplication> duplications;
+	private final List<DuplicationInstance> duplications;
 	
-	public DuplicationsList() {
+	public DuplicationIncstanceList() {
 		duplications = new ArrayList<>();
 	}
 	
-	public void addDuplication (Duplication duplication) {
+	public void addDuplication (DuplicationInstance duplication) {
 		duplications.add(duplication);
 	}
 	
@@ -21,7 +21,7 @@ public class DuplicationsList implements Iterable<Duplication> {
 	}
 
 	@Override
-	public Iterator<Duplication> iterator() {
+	public Iterator<DuplicationInstance> iterator() {
 		return duplications.iterator();
 	}
 	

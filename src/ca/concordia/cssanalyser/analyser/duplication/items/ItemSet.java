@@ -1,10 +1,12 @@
-package ca.concordia.cssanalyser.analyser.duplication.apriori;
+package ca.concordia.cssanalyser.analyser.duplication.items;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
@@ -13,7 +15,11 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
  * In our definition, every itemset is a set of declarations and
  * support means the number of selectors that have all these declarations.
  * In fact, instead of keeping the support as a pure percentage or number of supports,
- * we keep the selectors for further uses. 
+ * we keep the selectors for further uses.
+ * 
+ * Every ItemSet is in fact a clone set.
+ * Every <i>frequent</i> itemset (output of the FP-Growth or Apriori algorithms) 
+ * will be one grouping refactoring opportunities.
  * 
  * @author Davood Mazinanian
  *
@@ -229,5 +235,54 @@ public class ItemSet implements Set<Item>, Cloneable {
 	 */
 	public void setParentItemSetList(ItemSetList parentItemSetList) {
 		this.parentItemSetList = parentItemSetList;
+	}
+	
+	/**
+	 * This method returns the value that could be used to rank the 
+	 * grouping refactoring opportunities.
+	 * This value is the number of characters we save by doing this 
+	 * grouping.
+	 * @return
+	 */
+	public int getRefactoringImpact() {
+		int result = 0;
+		
+		int newSelectorCharsLength = 0;
+		// Adding length of involving selectors
+		// TODO Make sure that the replacing of " " will not have an effect?
+		for (Selector s : this.support)
+			newSelectorCharsLength += s.toString().length();
+		newSelectorCharsLength += 2 * (this.support.size() - 1); // adding grouping commas and spaces 
+		newSelectorCharsLength += 3; // curly brackets
+		
+		int groupedDeclarationsLength = 0;
+		for (Item item : this.itemset) {
+			// Get the declaration with minimum chars in every item
+			groupedDeclarationsLength += item.getDeclarationWithMinimumChars().toString().length() + 1; // +1 is for semicolon 
+		}
+		
+		int realDeclarationsLength = 0;
+		for (Item item : this.itemset) {
+			for (Declaration declaration : item){
+				// The declaration must be in the involving selectors in this refactorin opportunity
+				if (this.getSupport().contains(declaration.getSelector()))
+				{		
+					if (declaration instanceof ShorthandDeclaration) {
+						ShorthandDeclaration shorthand = (ShorthandDeclaration)declaration;
+						if (shorthand.isVirtual()) {
+							for (Declaration individual : shorthand.getIndividualDeclarations())
+								realDeclarationsLength += individual.toString().length() + 1; // +1 is for semicolon 
+						} else {
+							realDeclarationsLength += declaration.toString().length() + 1;
+						}
+					} else {
+						realDeclarationsLength += declaration.toString().length() + 1;
+					}
+				}
+			}
+		}
+		
+		result = realDeclarationsLength - groupedDeclarationsLength - newSelectorCharsLength;
+		return result;
 	}
 }

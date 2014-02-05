@@ -26,6 +26,8 @@ public class ShorthandDeclaration extends Declaration {
 	
 	private static final Map<String, Set<String>> shorthandProperties = new HashMap<>();
 	
+	private boolean isVirtual = false;
+	
 	static {
 		initializeShorthandsMap();
 	}
@@ -34,6 +36,29 @@ public class ShorthandDeclaration extends Declaration {
 		super(propertyName, values, belongsTo, fileLineNumber, fileColNumber, important);
 		if (individualDeclarations == null)
 			individualDeclarations =  new HashMap<>();
+	}
+	
+	/**
+	 * Sets the value indicating whether this shorthand declaration 
+	 * is virtual
+	 * (i.e. it has been added as an equivalent for a set of 
+	 * individual declarations when finding type III duplication
+	 * instances)
+	 * @return
+	 */
+	public void isVirtual(boolean virtual) {
+		this.isVirtual = virtual;
+	}
+	
+	/**
+	 * Shows whether this shorthand declaration is virtual
+	 * (i.e. it has been added as an equivalent for a set of 
+	 * individual declarations when finding type III duplication
+	 * instances)
+	 * @return
+	 */
+	public boolean isVirtual() {
+		return this.isVirtual;
 	}
 	
 	private static void initializeShorthandsMap() {
@@ -145,6 +170,17 @@ public class ShorthandDeclaration extends Declaration {
 		return shorthandProperties.containsKey(property);
 	}
 	
+	public static Set<String> getIndividualPropertiesForAShorthand(String shorthandProperty) {
+		Set<String> result = new HashSet<>();
+		Set<String> currentLevel = shorthandProperties.get(shorthandProperty);
+		if (currentLevel != null) {
+			result.addAll(currentLevel);
+			for (String property : currentLevel)
+				result.addAll(getIndividualPropertiesForAShorthand(property));
+		}
+		return result;
+	}
+	
 	/**
 	 * If a property could become a part of a shorthand property, this method returns
 	 * those shorthand properties. For example, border-left-color could be a part of 
@@ -160,10 +196,15 @@ public class ShorthandDeclaration extends Declaration {
 		if (!property.equals(nonVendorproperty))
 			prefix = property.substring(0, property.indexOf(nonVendorproperty));
 		Set<String> toReturn = new HashSet<>();
-		for (Entry<String, Set<String>> entry : shorthandProperties.entrySet())
+		for (Entry<String, Set<String>> entry : shorthandProperties.entrySet()) {
 			if (entry.getValue().contains(nonVendorproperty)) {
 				toReturn.add(prefix + entry.getKey());
+				// This method has to act recursively, to return border for border-left-width
+				Set<String> recursiveProperties = getShorthandPropertyNames(entry.getKey());
+				for (String s : recursiveProperties)
+					toReturn.add(prefix + s);
 			}
+		}
 		return toReturn;
 	}
 	
@@ -210,16 +251,16 @@ public class ShorthandDeclaration extends Declaration {
 		if (individualDeclarations == null)
 			individualDeclarations =  new HashMap<>();
 
-		
+		if (!isVirtual) {
 		/*
 		 * Copy, so if we are adding a real declaration, we don't want to
 		 * modify it. 
 		 * 
 		 */
-		declaration = declaration.clone();
-		
-		for (DeclarationValue v : declaration.declarationValues) {
-			v.setIsAMissingValue(false);
+			declaration = declaration.clone();
+			for (DeclarationValue v : declaration.declarationValues) {
+				v.setIsAMissingValue(false);
+			}
 		}
 		
 		individualDeclarations.put(declaration.getProperty(), declaration);

@@ -1,4 +1,4 @@
-package ca.concordia.cssanalyser.analyser.duplication.apriori;
+package ca.concordia.cssanalyser.analyser.duplication.items;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
@@ -253,6 +254,29 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 			else
 				return getFirstDeclaration().toString().compareTo(otherItem.getFirstDeclaration().toString());
 		}
+	}
+
+
+	/**
+	 * This method returns the declaration with minimum characters
+	 * @return
+	 */
+	public Declaration getDeclarationWithMinimumChars() {
+		if (declarations.size() > 0) {
+			Declaration min = null; 
+			for (Declaration d : declarations) {
+				if (d instanceof ShorthandDeclaration && ((ShorthandDeclaration)d).isVirtual())
+					continue;
+				if (min == null)
+					min = d;
+				else {
+					if (min.toString().length() > d.toString().length())
+						min = d;
+				}
+			}
+			return min;
+		}
+		return null;
 	}
 	
 	

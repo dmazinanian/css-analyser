@@ -6,7 +6,7 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
  */
 public class ChildSelector extends DescendantSelector {
 
-	public ChildSelector(SingleSelector parent, SingleSelector child) {
+	public ChildSelector(BaseSelector parent, BaseSelector child) {
 		super(parent, child);
 	}
 	
@@ -16,8 +16,8 @@ public class ChildSelector extends DescendantSelector {
 	}
 
 	@Override
-	public Selector clone() {
-		return new ChildSelector(getParentSelector(), getChildSelector());
+	public ChildSelector clone() {
+		return new ChildSelector(getParentSelector().clone(), getChildSelector().clone());
 	}
 	
 }

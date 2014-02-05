@@ -127,4 +127,23 @@ public final class IOHelper {
 			ex.printStackTrace();
 		}
 	}
+	
+	public static void writeStringToFile(String string, String path) {
+		writeStringToFile(string, path, false);
+	}
+	
+	public static void writeStringToFile(String string, String path, boolean append) {
+		File f = new File(path);
+		try {
+			BufferedWriter fw = new BufferedWriter(new FileWriter(f, append));
+			fw.append(string);
+			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	
+	
 }

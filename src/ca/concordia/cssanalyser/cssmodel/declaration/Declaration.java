@@ -24,7 +24,7 @@ public class Declaration implements Cloneable {
 
 	protected final String property;
 	protected final List<DeclarationValue> declarationValues;
-	protected final Selector parentSelector;
+	protected Selector parentSelector;
 	protected final int lineNumber;
 	protected final int colNumber;
 	protected final boolean isImportant;
@@ -1119,6 +1119,14 @@ public class Declaration implements Cloneable {
 	public Selector getSelector() {
 		return parentSelector;
 	}
+	
+	/**
+	 * Returns the selector to which this declaration belongs
+	 * @return
+	 */
+	public void setSelector(Selector selector) {
+		this.parentSelector = selector;
+	}
 
 	/**
 	 * Returns the name of the property of this declaration
@@ -1395,17 +1403,28 @@ public class Declaration implements Cloneable {
 		return true;
 	}
 
-	/**
-	 * Provides a deep copy of current {@link Declaration}.
-	 * Values are also deeply copied.
-	 */
+
 	@Override
-	protected Declaration clone() {
+	public Declaration clone() {
 		List<DeclarationValue> values = new ArrayList<>();
 		for (DeclarationValue v : declarationValues) {
 			values.add(v.clone());
 		}
-		return new Declaration(property, values, parentSelector, lineNumber, colNumber, isImportant, false);
+		//return DeclarationFactory.getDeclaration(property, values, parentSelector.clone(), lineNumber, colNumber, isImportant)
+		return new Declaration(property, values, parentSelector.clone(), lineNumber, colNumber, isImportant, false);
 	}
 
+	/**
+	 * Copies current declaration to a new selector. Values are cloned.
+	 *  
+	 * @param newParent
+	 * @return
+	 */
+	public Declaration cloneToSelector(Selector newParent) {
+		List<DeclarationValue> values = new ArrayList<>();
+		for (DeclarationValue v : declarationValues) {
+			values.add(v.clone());
+		}
+		return DeclarationFactory.getDeclaration(property, values, newParent, lineNumber, colNumber, isImportant);
+	}
 }

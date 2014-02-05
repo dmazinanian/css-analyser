@@ -142,7 +142,7 @@ public class CSSAnalyserApp {
 				// Remove .html
 				String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
 				
-				CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), inputFolder + "/css/" + correspondingCSSFolderName);
+				CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), inputFolder + "css/" + correspondingCSSFolderName);
 				cssAnalyser.analyse(minsup);
 				
 			}

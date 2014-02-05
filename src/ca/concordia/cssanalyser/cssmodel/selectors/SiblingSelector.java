@@ -7,21 +7,21 @@ import java.util.List;
  * selector1 ~ selector2
  * @author Davood Mazinanian
  */
-public class SiblingSelector extends SingleSelector {
+public class SiblingSelector extends BaseSelector {
 	
-	protected final SingleSelector beforeMainSelector;
-	protected final SingleSelector mainSelector;
+	protected final BaseSelector beforeMainSelector;
+	protected final BaseSelector mainSelector;
 	
-	public SiblingSelector(SingleSelector firstSelector, SingleSelector secondSelector) {
+	public SiblingSelector(BaseSelector firstSelector, BaseSelector secondSelector) {
 		beforeMainSelector = firstSelector;
 		mainSelector = secondSelector;
 	}
 	
-	public SingleSelector getFirstSelector() {
+	public BaseSelector getFirstSelector() {
 		return beforeMainSelector;
 	}
 	
-	public SingleSelector getSecondSelector() {
+	public BaseSelector getSecondSelector() {
 		return mainSelector;
 	}
 	
@@ -81,8 +81,8 @@ public class SiblingSelector extends SingleSelector {
 	}
 	
 	@Override
-	public Selector clone() {
-		return new SiblingSelector(beforeMainSelector, mainSelector);
+	public SiblingSelector clone() {
+		return new SiblingSelector(beforeMainSelector.clone(), mainSelector.clone());
 	}
 
 	@Override
@@ -90,8 +90,8 @@ public class SiblingSelector extends SingleSelector {
 
 		// if selector combinator is "~" or "+"
 
-		SingleSelector left = this.getFirstSelector();
-		SingleSelector right = this.getSecondSelector();
+		BaseSelector left = this.getFirstSelector();
+		BaseSelector right = this.getSecondSelector();
 		
 		List<String> rightXPathConditions = new ArrayList<>();
 		String rightXPathPrefix = right.getXPathConditionsString(xpathConditions);

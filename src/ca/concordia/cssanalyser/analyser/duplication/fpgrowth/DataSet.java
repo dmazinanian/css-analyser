@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeSet;
 
-import ca.concordia.cssanalyser.analyser.duplication.apriori.Item;
+import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 

@@ -3,8 +3,8 @@ package ca.concordia.cssanalyser.analyser.duplication.deprecated;
 import java.util.ArrayList;
 import java.util.List;
 
-import duplication.Duplication;
-import duplication.DuplicationType;
+import duplication.DuplicationInstance;
+import duplication.DuplicationInstanceType;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
@@ -16,14 +16,14 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
  * 
  * @author Davood Mazinanian
  * /
-public class IdenticalEffects extends Duplication {
+public class IdenticalEffects extends DuplicationInstance {
 
 	// The first selector of this list would be representative
 	private final Selector mainSelector;
 	private final List<List<Declaration>> forDeclarations;
 
 	public IdenticalEffects(Selector selector) {
-		super(DuplicationType.IDENTICAL_EFFECT);
+		super(DuplicationInstanceType.IDENTICAL_EFFECT);
 		mainSelector = selector;
 		forDeclarations = new ArrayList<>();
 	}

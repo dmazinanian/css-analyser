@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import ca.concordia.cssanalyser.analyser.duplication.apriori.Item;
+import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 
 
 public class FPTree {

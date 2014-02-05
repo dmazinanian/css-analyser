@@ -56,10 +56,12 @@ public class DeclarationEquivalentValue extends DeclarationValue {
 	@Override
 	public boolean equivalent(DeclarationValue otherValue) {
 		
+		String valueToCheck;
 		if (otherValue.getClass() == DeclarationValue.class)
-			return super.equivalent(otherValue);
+			valueToCheck = otherValue.getValue();
+		else
+			valueToCheck = ((DeclarationEquivalentValue)otherValue).equivalentValue;
 		
-		String valueToCheck = ((DeclarationEquivalentValue)otherValue).equivalentValue;
 		if (equivalentValue == null) {
 			if (valueToCheck == null)
 				return true;

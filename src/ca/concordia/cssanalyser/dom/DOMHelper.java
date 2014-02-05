@@ -4,7 +4,10 @@ package ca.concordia.cssanalyser.dom;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -14,8 +17,12 @@ import javax.xml.xpath.XPathFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import ca.concordia.cssanalyser.cssmodel.StyleSheet;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.Selector.UnsupportedSelectorToXPathException;
 import ca.concordia.cssanalyser.io.IOHelper;
 
 public final class DOMHelper {
@@ -102,6 +109,62 @@ public final class DOMHelper {
 		public BadXPathException(XPathExpressionException xpathExpressionException) {
 			
 		}
+	}
+
+	/**
+	 * Maps every base selector to a node list in the stylesheet
+	 * @param dom
+	 * @param styleSheet
+	 * @return
+	 */
+	public static Map<BaseSelector, NodeList> mapStylesheetOnDocument(Document dom, StyleSheet styleSheet) {
+		List<BaseSelector> allSelectors = styleSheet.getAllBaseSelectors();
+		Map<BaseSelector, NodeList> selectorNodeListMap = new LinkedHashMap<>();
+		for (BaseSelector selector : allSelectors) {
+			NodeList nodes;
+			try {
+				nodes = queryDocument(dom, selector.getXPath());
+				selectorNodeListMap.put(selector, nodes);
+			} catch (BadXPathException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (UnsupportedSelectorToXPathException ex) {
+				
+			}
+		}
+		return selectorNodeListMap;
+	}
+
+	/**
+	 * Returns a list of documents' node in addition to the CSS selectors which
+	 * select each node
+	 * @param document
+	 * @param styleSheet
+	 * @return
+	 */
+	public static Map<Node, List<BaseSelector>> getCSSClassesForDOMNodes(Document document, StyleSheet styleSheet) {
+		
+		// Map every node in the DOM tree to a list of selectors in the stylesheet
+		Map<Node, List<BaseSelector>> nodeToSelectorsMapping = new HashMap<>();
+		for (BaseSelector selector : styleSheet.getAllBaseSelectors()) {
+			try {
+				NodeList matchedNodes = queryDocument(document, selector.getXPath());
+				for (int i = 0; i < matchedNodes.getLength(); i++) {
+					Node node = matchedNodes.item(i);
+					List<BaseSelector> correspondingSelectors = nodeToSelectorsMapping.get(node);
+					if (correspondingSelectors == null) {
+						correspondingSelectors = new ArrayList<>();
+					}
+					correspondingSelectors.add(selector);
+					nodeToSelectorsMapping.put(node, correspondingSelectors);
+				}
+			} catch (BadXPathException e) {
+				e.printStackTrace();
+			} catch (UnsupportedSelectorToXPathException e) {
+				e.printStackTrace();
+			}
+		}
+		return nodeToSelectorsMapping;
 	}
 	
 }

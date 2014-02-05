@@ -5,17 +5,17 @@ import java.util.List;
 
 /**
  * Represents CSS "selector1 selector2" selectors
- * selector1 and selector2 are of type {@link SingleSelector}
+ * selector1 and selector2 are of type {@link BaseSelector}
  * so for example, for selector1 selector2 selector 3, we have two selectors
  * one of which is again a {@link DescendantSelector} and anoter is an {@link DescendantSelector}
  * @author Davood Mazinanian
  */
-public class DescendantSelector extends SingleSelector {
+public class DescendantSelector extends BaseSelector {
 	
-	protected final SingleSelector parentSelector;
-	protected final SingleSelector childSelector; 
+	protected final BaseSelector parentSelector;
+	protected final BaseSelector childSelector; 
 	
-	public DescendantSelector(SingleSelector parent, SingleSelector child) {
+	public DescendantSelector(BaseSelector parent, BaseSelector child) {
 		parentSelector = parent;
 		childSelector = child;
 	}
@@ -25,7 +25,7 @@ public class DescendantSelector extends SingleSelector {
 	 * of a descendant selector)
 	 * @return
 	 */
-	public SingleSelector getParentSelector() {
+	public BaseSelector getParentSelector() {
 		return parentSelector;
 	}
 	
@@ -34,7 +34,7 @@ public class DescendantSelector extends SingleSelector {
 	 * of a descendant selector)
 	 * @return
 	 */
-	public SingleSelector getChildSelector() {
+	public BaseSelector getChildSelector() {
 		return childSelector;
 	}
 	
@@ -89,16 +89,16 @@ public class DescendantSelector extends SingleSelector {
 	}
 	
 	@Override
-	public Selector clone() {
-		return new DescendantSelector(this.parentSelector, this.childSelector);
+	public DescendantSelector clone() {
+		return new DescendantSelector(this.parentSelector.clone(), this.childSelector.clone());
 	}
 
 	@Override
 	protected String getXPathConditionsString(List<String> xpathConditions) throws UnsupportedSelectorToXPathException {
 		 
 		// if selector combinator is " " or ">"
-		SingleSelector parent = this.getParentSelector();
-		SingleSelector child = this.getChildSelector();
+		BaseSelector parent = this.getParentSelector();
+		BaseSelector child = this.getChildSelector();
 		String modifier = "descendant::"; // if selector is "s1 > s2"
 		if (this instanceof ChildSelector) // if selector is "s1 s2"
 			modifier = "";

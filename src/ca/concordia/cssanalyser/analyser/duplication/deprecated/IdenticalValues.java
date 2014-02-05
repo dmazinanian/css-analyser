@@ -3,18 +3,18 @@ package ca.concordia.cssanalyser.analyser.duplication.deprecated;
 import java.util.ArrayList;
 import java.util.List;
 
-import duplication.Duplication;
-import duplication.DuplicationType;
+import duplication.DuplicationInstance;
+import duplication.DuplicationInstanceType;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.DeclarationValue;
 
-public class IdenticalValues extends Duplication {
+public class IdenticalValues extends DuplicationInstance {
 
 	private final List<Declaration> declarations;
 
 	public IdenticalValues() {
-		super(DuplicationType.IDENTICAL_VALUE);
+		super(DuplicationInstanceType.IDENTICAL_VALUE);
 		declarations = new ArrayList<>();
 	}
 
@@ -40,7 +40,7 @@ public class IdenticalValues extends Duplication {
 
 	@Override
 	public String toString() {
-		String string = "Duplication for value: \n" + getForWhichValue()
+		String string = "DuplicationInstance for value: \n" + getForWhichValue()
 				+ " in the following lines: \n";
 		for (Declaration declaration : declarations)
 			string += "\t" + declaration.getLineNumber() + " : " + declaration.getColumnNumber() + "\n";

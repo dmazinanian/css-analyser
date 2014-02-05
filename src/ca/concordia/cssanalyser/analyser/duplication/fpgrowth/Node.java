@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import ca.concordia.cssanalyser.analyser.duplication.apriori.Item;
+import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 
 
 

@@ -6,11 +6,11 @@ import java.util.Set;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
-public abstract class TypeIVDuplication implements Duplication {
+public abstract class TypeFourDuplicationInstance implements DuplicationInstance {
 
 	protected Set<Selector> identicalSelectors;
 	
-	public TypeIVDuplication() {
+	public TypeFourDuplicationInstance() {
 		identicalSelectors = new HashSet<>();
 	}
 	
@@ -36,11 +36,11 @@ public abstract class TypeIVDuplication implements Duplication {
 		return identicalSelectors;
 	}
 	
-	public static class TypeIVADuplication extends TypeIVDuplication {
+	public static class TypeIVADuplication extends TypeFourDuplicationInstance {
 
 		@Override
-		public DuplicationType getType() {
-			return DuplicationType.TYPE_IV_A;
+		public DuplicationInstanceType getType() {
+			return DuplicationInstanceType.TYPE_IV_A;
 		}
 		
 		@Override
@@ -52,11 +52,11 @@ public abstract class TypeIVDuplication implements Duplication {
 		
 	}
 	
-	public static class TypeIVBDuplication extends TypeIVDuplication {
+	public static class TypeIVBDuplication extends TypeFourDuplicationInstance {
 
 		@Override
-		public DuplicationType getType() {
-			return DuplicationType.TYPE_IV_B;
+		public DuplicationInstanceType getType() {
+			return DuplicationInstanceType.TYPE_IV_B;
 		}
 		
 		@Override

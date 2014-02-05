@@ -16,7 +16,7 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
  * @author Davood Mazinanian
  *
  */
-public class TypeIDuplication implements Duplication {
+public class TypeOneDuplicationInstance implements DuplicationInstance {
 
 	/* We keep a list of declarations which are the same 
 	 * across different selectors
@@ -33,10 +33,10 @@ public class TypeIDuplication implements Duplication {
 	 */
 	protected final Set<Selector> forSelectors;
 	
-	protected static DuplicationType duplicationType;
+	protected static DuplicationInstanceType duplicationType;
 	
-	public TypeIDuplication() {
-		duplicationType = DuplicationType.TYPE_I;
+	public TypeOneDuplicationInstance() {
+		duplicationType = DuplicationInstanceType.TYPE_I;
 		forDeclarations = new ArrayList<>();
 		forSelectors = new HashSet<>();
 	}
@@ -106,7 +106,7 @@ public class TypeIDuplication implements Duplication {
 		if (!super.equals(obj))
 			return false;
 		
-		TypeIDuplication otherDuplication = (TypeIDuplication)obj;
+		TypeOneDuplicationInstance otherDuplication = (TypeOneDuplicationInstance)obj;
 		
 		if (forSelectors.size() != otherDuplication.forSelectors.size() || 
 				!forSelectors.containsAll(otherDuplication.forSelectors))
@@ -191,7 +191,7 @@ public class TypeIDuplication implements Duplication {
 	}
 
 	@Override
-	public DuplicationType getType() {
+	public DuplicationInstanceType getType() {
 		return duplicationType;
 	}
 

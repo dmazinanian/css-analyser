@@ -21,20 +21,20 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
  * @author Davood Mazinanian
  * 
  */
-public class TypeIIIDuplication implements Duplication {
+public class TypeThreeDuplicationInstance implements DuplicationInstance {
 
 	private final ShorthandDeclaration shorthandDeclaration;
 	private final Set<Declaration> individualDeclarations;
 
-	public TypeIIIDuplication(ShorthandDeclaration shorthand,
+	public TypeThreeDuplicationInstance(ShorthandDeclaration shorthand,
 			Set<Declaration> individual) {
 		shorthandDeclaration = shorthand;
 		individualDeclarations = individual;
 	}
 
 	@Override
-	public DuplicationType getType() {
-		return DuplicationType.TYPE_III;
+	public DuplicationInstanceType getType() {
+		return DuplicationInstanceType.TYPE_III;
 	}
 
 	public Set<Selector> getSelectors() {

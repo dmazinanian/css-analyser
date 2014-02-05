@@ -9,14 +9,14 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
  */
 public class NegationPseudoClass extends PseudoClass {
 
-	private final SingleSelector insideSelector;
+	private final BaseSelector insideSelector;
 	
-	public NegationPseudoClass(SingleSelector selector) {
+	public NegationPseudoClass(BaseSelector selector) {
 		super("not", selector.toString());
 		insideSelector = selector;
 	}
 
-	public SingleSelector getSelector() {
+	public BaseSelector getSelector() {
 		return insideSelector;
 	}
 	

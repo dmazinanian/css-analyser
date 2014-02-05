@@ -5,6 +5,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import ca.concordia.cssanalyser.analyser.duplication.items.Item;
+import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
+import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
+
 public class Apriori {
 	
 	private ItemSetList C1;

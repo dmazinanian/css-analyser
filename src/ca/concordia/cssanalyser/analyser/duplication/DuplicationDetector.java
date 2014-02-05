@@ -11,22 +11,22 @@ import java.util.Set;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
-import ca.concordia.cssanalyser.analyser.duplication.TypeIVDuplication.TypeIVBDuplication;
+import ca.concordia.cssanalyser.analyser.duplication.TypeFourDuplicationInstance.TypeIVBDuplication;
 import ca.concordia.cssanalyser.analyser.duplication.apriori.Apriori;
-import ca.concordia.cssanalyser.analyser.duplication.apriori.Item;
-import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSet;
-import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSetList;
 import ca.concordia.cssanalyser.analyser.duplication.fpgrowth.DataSet;
 import ca.concordia.cssanalyser.analyser.duplication.fpgrowth.FPGrowth;
+import ca.concordia.cssanalyser.analyser.duplication.items.Item;
+import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
+import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
-import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.PseudoClass;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
-import ca.concordia.cssanalyser.cssmodel.selectors.Selector.UnsupportedSelectorToXPathException;
+import ca.concordia.cssanalyser.cssmodel.selectors.SimpleSelector;
 import ca.concordia.cssanalyser.dom.DOMHelper;
-import ca.concordia.cssanalyser.dom.DOMHelper.BadXPathException;
 
 
 /**
@@ -35,7 +35,7 @@ import ca.concordia.cssanalyser.dom.DOMHelper.BadXPathException;
  * 
  * @author Davood Mazinanian
  */
-public class DuplicationFinder {
+public class DuplicationDetector {
 
 	private StyleSheet stylesheet;
 	
@@ -45,33 +45,33 @@ public class DuplicationFinder {
 	 */
 	private Map<Declaration, Item> declarationItemMap = new HashMap<>();
 	
-	public DuplicationFinder(StyleSheet stylesheet) {
+	public DuplicationDetector(StyleSheet stylesheet) {
 		this.stylesheet = stylesheet;
 	}
 	
-	private DuplicationsList typeOneDuplicationsList;
-	private DuplicationsList typeTwoDuplicationsList;
-	private DuplicationsList typeThreeDuplicationsList;
-	private DuplicationsList typeFourADuplicationsList;
-	private DuplicationsList typeFourBDuplicationsList;
+	private DuplicationIncstanceList typeOneDuplicationsList;
+	private DuplicationIncstanceList typeTwoDuplicationsList;
+	private DuplicationIncstanceList typeThreeDuplicationsList;
+	private DuplicationIncstanceList typeFourADuplicationsList;
+	private DuplicationIncstanceList typeFourBDuplicationsList;
 	
-	public DuplicationsList getTypeIDuplications() {
+	public DuplicationIncstanceList getTypeIDuplications() {
 		return typeOneDuplicationsList;
 	}
 	
-	public DuplicationsList getTypeIIDuplications() {
+	public DuplicationIncstanceList getTypeIIDuplications() {
 		return typeTwoDuplicationsList;
 	}
 	
-	public DuplicationsList getTypeIIIDuplications() {
+	public DuplicationIncstanceList getTypeIIIDuplications() {
 		return typeThreeDuplicationsList;
 	}
 	
-	public DuplicationsList getTypeIVADuplications() {
+	public DuplicationIncstanceList getTypeIVADuplications() {
 		return typeFourADuplicationsList;
 	}
 	
-	public DuplicationsList getTypeIVBDuplications() {
+	public DuplicationIncstanceList getTypeIVBDuplications() {
 		return typeFourBDuplicationsList;
 	}
 	
@@ -91,12 +91,12 @@ public class DuplicationFinder {
 	/**
 	 * This method finds the cases in which the property and value
 	 * (i.e. the declarations) are the same across different selectors. (Type I)
-	 * @return An object of {@link DuplicationsList}
+	 * @return An object of {@link DuplicationIncstanceList}
 	 */
 	private void findTypeOneAndTwoDuplications() {
 		
-		typeOneDuplicationsList = new DuplicationsList();
-		typeTwoDuplicationsList = new DuplicationsList();
+		typeOneDuplicationsList = new DuplicationIncstanceList();
+		typeTwoDuplicationsList = new DuplicationIncstanceList();
 		
 		C1 = new ItemSetList();
 		
@@ -107,8 +107,8 @@ public class DuplicationFinder {
 		Set<Integer> visitedIdenticalDeclarations = new HashSet<>();
 		Set<Integer> visitedEquivalentDeclarations = new HashSet<>();
 		
-		TypeIDuplication typeOneDuplication = new TypeIDuplication();
-		TypeIIDuplication typeTwoDuplication = new TypeIIDuplication();
+		TypeOneDuplicationInstance typeOneDuplication = new TypeOneDuplicationInstance();
+		TypeTwoDuplicationInstance typeTwoDuplication = new TypeTwoDuplicationInstance();
 		
 		int currentDeclarationIndex = -1;		
 		while (++currentDeclarationIndex < allDeclarations.size()) {
@@ -194,7 +194,7 @@ public class DuplicationFinder {
 				if (typeOneDuplication.hasAllSelectorsForADuplication(currentTypeIDuplicatedDeclarations)) {
 					typeOneDuplication.addAllDeclarations(currentTypeIDuplicatedDeclarations);
 				} else {
-					typeOneDuplication = new TypeIDuplication();
+					typeOneDuplication = new TypeOneDuplicationInstance();
 					typeOneDuplication.addAllDeclarations(currentTypeIDuplicatedDeclarations);
 					typeOneDuplicationsList.addDuplication(typeOneDuplication);
 				}
@@ -204,7 +204,7 @@ public class DuplicationFinder {
 				if (typeTwoDuplication.hasAllSelectorsForADuplication(currentTypeIIDuplicatedDeclarations)) {
 					typeTwoDuplication.addAllDeclarations(currentTypeIIDuplicatedDeclarations);
 				} else {
-					typeTwoDuplication = new TypeIIDuplication();
+					typeTwoDuplication = new TypeTwoDuplicationInstance();
 					typeTwoDuplication.addAllDeclarations(currentTypeIIDuplicatedDeclarations);
 					typeTwoDuplicationsList.addDuplication(typeTwoDuplication);
 				}
@@ -219,7 +219,7 @@ public class DuplicationFinder {
 	 */
 	public void findTypeThreeDuplication() {
 		
-		typeThreeDuplicationsList = new DuplicationsList();
+		typeThreeDuplicationsList = new DuplicationIncstanceList();
 		
 		Set<Selector> selectors = stylesheet.getAllSelectors();
 		
@@ -267,6 +267,7 @@ public class DuplicationFinder {
 				
 				// Create a shorthand and compare it with a real shorthand
 				ShorthandDeclaration virtualShorthand = new ShorthandDeclaration(entry.getKey(), new ArrayList<DeclarationValue>(), selector, -1, -1, false);
+				virtualShorthand.isVirtual(true);
 				for (Declaration dec : entry.getValue()) {
 					virtualShorthand.addIndividualDeclaration(dec);
 				}
@@ -276,7 +277,7 @@ public class DuplicationFinder {
 					if (checkingDeclaration instanceof ShorthandDeclaration && 
 						virtualShorthand.individualDeclarationsEquivalent((ShorthandDeclaration)checkingDeclaration)) {
 						
-						TypeIIIDuplication duplication = new TypeIIIDuplication((ShorthandDeclaration)checkingDeclaration, entry.getValue());
+						TypeThreeDuplicationInstance duplication = new TypeThreeDuplicationInstance((ShorthandDeclaration)checkingDeclaration, entry.getValue());
 						typeThreeDuplicationsList.addDuplication(duplication);
 						
 						// For apriori
@@ -293,11 +294,11 @@ public class DuplicationFinder {
 	
 	/**
 	 * Finds type IV_A duplications
-	 * @see DuplicationType
+	 * @see DuplicationInstanceType
 	 */
 	public void findTypeFourADuplication() {
 		
-		typeFourADuplicationsList = new DuplicationsList();
+		typeFourADuplicationsList = new DuplicationIncstanceList();
 		int currentSelectorIndex = -1;
 		List<Selector> allSelectors = new ArrayList<>(stylesheet.getAllSelectors());
 		Set<Integer> visitedSelectors = new HashSet<>();
@@ -305,7 +306,7 @@ public class DuplicationFinder {
 			if (visitedSelectors.contains(currentSelectorIndex))
 				continue;
 			Selector currentSelector = allSelectors.get(currentSelectorIndex);
-			TypeIVDuplication.TypeIVADuplication newTypeIVADup = new TypeIVDuplication.TypeIVADuplication();
+			TypeFourDuplicationInstance.TypeIVADuplication newTypeIVADup = new TypeFourDuplicationInstance.TypeIVADuplication();
 			newTypeIVADup.addSelector(currentSelector);
 			int checkingSelectorIndex = currentSelectorIndex;
 			while (++checkingSelectorIndex < allSelectors.size()) {
@@ -328,26 +329,15 @@ public class DuplicationFinder {
 	 * Finds type IV_B duplications.
 	 * For finding type IV_V duplication, we need a given DOM.
 	 * @param dom
-	 * @see DuplicationType
+	 * @see DuplicationInstanceType
 	 */
 	public void findTypeFourBDuplication(Document dom) {
 		
-		typeFourBDuplicationsList = new DuplicationsList();
+		typeFourBDuplicationsList = new DuplicationIncstanceList();
 		
-		List<SingleSelector> allSelectors = new ArrayList<>(stylesheet.getAllSingleSelectors());
-		Map<Selector, NodeList> selectorNodeListMap = new HashMap<>();
-		for (Selector selector : allSelectors) {
-			NodeList nodes;
-			try {
-				nodes = DOMHelper.queryDocument(dom, selector.getXPath());
-				selectorNodeListMap.put(selector, nodes);
-			} catch (BadXPathException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (UnsupportedSelectorToXPathException ex) {
-				
-			}
-		}
+		Map<BaseSelector, NodeList> selectorNodeListMap = DOMHelper.mapStylesheetOnDocument(dom, stylesheet);
+		
+		List<BaseSelector> allSelectors = new ArrayList<>(stylesheet.getAllBaseSelectors());
 		
 		int currentSelectorIndex = -1;
 		
@@ -379,6 +369,24 @@ public class DuplicationFinder {
 				NodeList checkingNodeList = selectorNodeListMap.get(checkingSelector);
 				if (checkingNodeList == null)
 					continue;
+				
+				// In case of :hover, etc:
+				if (checkingSelector instanceof SimpleSelector) {
+					boolean mustBreak = false;
+					List<PseudoClass> pseudoClasses = ((SimpleSelector) checkingSelector).getPseudoClasses();
+					for (PseudoClass ps : pseudoClasses)
+						if (PseudoClass.isPseudoclassWithNoXpathEquivalence(ps.getName())) {
+							if (currentSelector instanceof SimpleSelector) {
+								if (!((SimpleSelector) currentSelector).getPseudoClasses().contains(ps))
+									mustBreak = true;
+							} else {
+								mustBreak = true;
+								break;
+							}
+						}
+					if (mustBreak)
+						continue;
+				}
 
 				if (currentNodeList.getLength() != 0 &&
 						currentNodeList.getLength() == checkingNodeList.getLength()) {
@@ -398,7 +406,6 @@ public class DuplicationFinder {
 			}
 			if (typeIVBDuplication.getSelectors().size() > 1) {
 				typeFourBDuplicationsList.addDuplication(typeIVBDuplication);
-				System.out.println("how");
 			}
 		}
 		
@@ -407,8 +414,8 @@ public class DuplicationFinder {
 		//System.out.println(styleSheet);
 		
 		/*for (Selector selector : styleSheet.getAllSelectors()) {
-			if (selector instanceof SingleSelector) {
-				SingleSelector atomicSelector = (SingleSelector)selector;
+			if (selector instanceof BaseSelector) {
+				BaseSelector atomicSelector = (BaseSelector)selector;
 				String XPath = xpath.XPathHelper.AtomicSelectorToXPath(atomicSelector);
 				System.out.println(atomicSelector + "->" + XPath);
 				if (XPath == null) continue;
@@ -422,11 +429,6 @@ public class DuplicationFinder {
 			}
 		}*/
 	}
-	
-
-
-	
-
 
 	public List<ItemSetList> apriori(int minsup) {
 		Apriori apriori = new Apriori(C1);

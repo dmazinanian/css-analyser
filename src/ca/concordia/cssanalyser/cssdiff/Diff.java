@@ -10,7 +10,6 @@ import ca.concordia.cssanalyser.cssdiff.differences.Difference;
 import ca.concordia.cssanalyser.cssdiff.differences.DifferenceList;
 import ca.concordia.cssanalyser.cssdiff.differences.IndividualDeclarationsMergedDifference;
 import ca.concordia.cssanalyser.cssdiff.differences.RemovedDeclarationDifference;
-import ca.concordia.cssanalyser.cssdiff.differences.SelectorsMergedDifference;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
@@ -18,72 +17,142 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 public class Diff {
 	
+//	private static class SelectorMapping {
+//		private Selector selector;
+//		private boolean isMapped = false;
+//		public boolean couldBeMapped(Selector selector) {
+//			return selector.selectorEquals(this.selector);
+//		}
+//		public boolean isMapped() {
+//			return isMapped;
+//		}
+//		public static SelectorMapping getMapping(Selector s) {
+//			if (s instanceof GroupingSelector)
+//				return new GroupedSelectorMapping();
+//			else
+//				return new SelectorMapping();
+//		}
+//	}
+//	
+//	private class GroupedSelectorMapping extends SelectorMapping {
+//		@Override
+//		public boolean couldBeMapped(Selector selector) {
+//			// TODO Auto-generated method stub
+//			return false;
+//		}
+//		@Override
+//		public boolean isMapped() {
+//			// TODO Auto-generated method stub
+//			return false;
+//		}
+//	}
+	
+	
 	public static DifferenceList diff(StyleSheet styleSheet1, StyleSheet styleSheet2) {
 		
 		DifferenceList differences = new DifferenceList(styleSheet1, styleSheet2);
 		
-		// The first Selector is the selector in the second stylesheet
-		Map<Selector, Selector> selectorMapping = new HashMap<>();
-		
+		Set<Selector> alreadyMapped = new HashSet<>();
 		for (Selector selector1 : styleSheet1.getAllSelectors()) {
 			
 			Selector candidateMapped = null;
-			
 			for (Selector selector2 : styleSheet2.getAllSelectors()) {
 				
-				if (selector2.selectorEquals(selector1)) {
-					
- 					if (candidateMapped == null || distance(selector2, selector1) < distance(candidateMapped, selector1)) {
-						candidateMapped = selector2;
-					}
+				if (alreadyMapped.contains(selector2) && candidateMapped == null || distance(selector2, selector1) < distance(candidateMapped, selector1)) {
+					candidateMapped = selector2;
 				}
 				
 			}
 			
 			if (candidateMapped != null) {
 				
-				// Check to see whether two selectors are merged.
-				// If the mapped selector is already mapped to another selector as well
-				if (selectorMapping.get(candidateMapped) != null) {
-					// There should be a merging
-					
-					// Search for the existing difference 
-					// TODO: use a map? selector -> difference
-					boolean differenceFound = false;
-					for (Difference difference : differences) {
-						if (difference instanceof SelectorsMergedDifference) {
-							SelectorsMergedDifference selectorMergedDifference = (SelectorsMergedDifference)difference;
-							if (selectorMergedDifference.getFinalselector().selectorEquals(candidateMapped)) {
-								selectorMergedDifference.addMergedSelector(selector1);
-								differenceFound = true;
-								break;
-							}
-						}
-					}
-					
-					if (!differenceFound) {
-						SelectorsMergedDifference selectorMergedDifference =
-								new SelectorsMergedDifference(styleSheet1, styleSheet2, candidateMapped);
-						selectorMergedDifference.addMergedSelector(selectorMapping.get(candidateMapped));
-						selectorMergedDifference.addMergedSelector(selector1);
-						differences.add(selectorMergedDifference);
-					}
-					
-				}
-				
-				selectorMapping.put(candidateMapped, selector1);
-				
-				findDifferencesInDeclarations(selector1, candidateMapped, styleSheet1, styleSheet2, differences);
-				
-				
-				
 			} else {
-				// We couldn't map this selector. So maybe it is renamed, but we don't know yet
-				//Difference difference = new RemovedSelectorDifference(styleSheet1, styleSheet2, selector1);
-				//differences.add(difference);
-			} 
+				
+			}
+			
 			
 		}
+		
+		// The first Selector is the selector in the second stylesheet
+//		Map<Selector, Selector> selectorMapping = new HashMap<>();
+//		
+//		for (Selector selector1 : styleSheet1.getAllSelectors()) {
+//			
+//			Selector candidateMapped = null;
+//			
+//			for (Selector selector2 : styleSheet2.getAllSelectors()) {
+//				
+//				if (selector2.selectorEquals(selector1)) {
+//					
+//					// If candidate selector has not been yet found or 
+//					// the new selector has less distance with the candidate
+// 					if (candidateMapped == null || distance(selector2, selector1) < distance(candidateMapped, selector1)) {
+//						candidateMapped = selector2;
+//					}
+//				}
+//				
+//			}
+//			
+//			if (candidateMapped != null) {
+//				
+//				// Check to see whether two selectors are merged.
+//				// If the mapped selector is already mapped to another selector as well
+//				if (selectorMapping.get(candidateMapped) != null) {
+//					// There should be a merging
+//					
+//					// Search for the existing difference 
+//					// TODO: use a map? selector -> difference
+//					boolean differenceFound = false;
+//					for (Difference difference : differences) {
+//						if (difference instanceof SelectorsMergedDifference) {
+//							SelectorsMergedDifference selectorMergedDifference = (SelectorsMergedDifference)difference;
+//							if (selectorMergedDifference.getFinalselector().selectorEquals(candidateMapped)) {
+//								selectorMergedDifference.addMergedSelector(selector1);
+//								differenceFound = true;
+//								break;
+//							}
+//						}
+//					}
+//					
+//					if (!differenceFound) {
+//						SelectorsMergedDifference selectorMergedDifference =
+//								new SelectorsMergedDifference(styleSheet1, styleSheet2, candidateMapped);
+//						selectorMergedDifference.addMergedSelector(selectorMapping.get(candidateMapped));
+//						selectorMergedDifference.addMergedSelector(selector1);
+//						differences.add(selectorMergedDifference);
+//					}
+//					
+//				}
+//				
+//				selectorMapping.put(candidateMapped, selector1);
+//				
+//				findDifferencesInDeclarations(selector1, candidateMapped, styleSheet1, styleSheet2, differences);
+//				
+//				
+//				
+//			} else {
+//				// We couldn't map this selector. So maybe it is renamed, but we don't know yet
+//				Difference difference = new RemovedSelectorDifference(styleSheet1, styleSheet2, selector1);
+//				differences.add(difference);
+//			} 
+//			
+//		}
+		
+//		for (Selector selector2 : styleSheet2.getAllSelectors()) {
+//			// If there is a new selector in the second style sheet
+//			if (selectorMapping.get(selector2) == null) {
+//				if (selector2 instanceof GroupingSelector) {
+//					for (Selector singleSelector : ((GroupingSelector)selector2).getSingleSelectors()) {
+//						for (Selector s : styleSheet1.getAllSelectors()) {
+//							if (singleSelector.selectorEquals(s)) {
+//								// There was a grouping?!
+//								
+//							}
+//						}
+//					}
+// 				}
+//			}
+//		}
 			
 		return differences;
 	}

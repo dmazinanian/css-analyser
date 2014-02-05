@@ -1,11 +1,11 @@
 package ca.concordia.cssanalyser.cssmodel.selectors;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.media.SingleMedia;
 import ca.concordia.cssanalyser.cssmodel.media.Media;
+import ca.concordia.cssanalyser.cssmodel.media.SingleMedia;
 
 
 public abstract class Selector {
@@ -13,7 +13,7 @@ public abstract class Selector {
 	protected int lineNumber;
 	protected int columnNumber;
 	protected Media parentMedia;
-	protected List<Declaration> declarations;
+	protected Set<Declaration> declarations;
 	protected int specificityOfSelector;
 	
 	public int getSpecificity() {
@@ -31,14 +31,15 @@ public abstract class Selector {
 	public Selector(int fileLineNumber, int fileColNumber) {
 		lineNumber = fileLineNumber;
 		columnNumber = fileColNumber;
-		declarations = new ArrayList<>();
+		declarations = new LinkedHashSet<>();
 		
 	}
-	public void addCSSRule(Declaration rule) {
-		declarations.add(rule);
+	public void addDeclaration(Declaration declaration) {
+		declaration.setSelector(this);
+		declarations.add(declaration);
 	}
 
-	public List<Declaration> getDeclarations() {
+	public Set<Declaration> getDeclarations() {
 		return declarations;
 	}
 	
@@ -99,5 +100,23 @@ public abstract class Selector {
 			return selector;
 		}
 	}
-		
+
+	/**
+	 * Removes a declaration from list of declarations
+	 * @param declaration
+	 */
+	public void removeDeclaration(Declaration declaration) {
+		declaration.setSelector(null);
+		this.declarations.remove(declaration);
+	}
+
+	/**
+	 * Copies current BaseSelector without any declaration
+	 * @return
+	 */
+	public Selector copyEmptySelector() {
+		Selector newEmptySelector = this.clone();
+		newEmptySelector.getDeclarations().clear();
+		return newEmptySelector;
+	}	
 }

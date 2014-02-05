@@ -1,6 +1,6 @@
 package ca.concordia.cssanalyser.analyser.duplication;
 
-public enum DuplicationType {
+public enum DuplicationInstanceType {
 	/*IDENTICAL_SELECTOR("Identical Selector"), 
 	IDENTICAL_PROPERTY_AND_VALUE("Identical property and value"),
 	IDENTICAL_VALUE("Identical value"), 
@@ -45,7 +45,7 @@ public enum DuplicationType {
 
 	String stringRepresentation;
 
-	DuplicationType(String value) {
+	DuplicationInstanceType(String value) {
 		stringRepresentation = value;
 	}
 

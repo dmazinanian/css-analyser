@@ -1,5 +1,9 @@
 package ca.concordia.cssanalyser.cssmodel.selectors;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Represents pseudo classes like :hover
  * Note that in CSS2.1, there is no deference between pseudo classes
@@ -14,6 +18,14 @@ public class PseudoClass {
 
 	// Null denotes that this pseudo-class doesn't have an initial value
 	private String value = null;
+
+	static String[] unsupportedPseudoClassesArray = new String[] {
+		"link", "active", "hover", "visited", "focus", 
+		"first-letter", "first-line", "before", "after", "target",
+		"root", "enabled", "disabled"
+	};
+	
+	static Set<String> unsupportedPseudoClasses = new HashSet<>(Arrays.asList(unsupportedPseudoClassesArray));
 
 	public PseudoClass(String name) {
 		this.name = name;
@@ -75,6 +87,15 @@ public class PseudoClass {
 		if (value != null)
 			ret += String.format("(%s)", value);
 		return ret;
+	}
+
+	/**
+	 * There is no XPath equivalence for these pseudo classes:
+	 * (make sure to refer to ca.concordia.cssanalyser.cssmodel.selectors.PseudoElement for 
+	 * a clear explanation about PseudoElements and PseudoClasses) 
+	 */
+	public static boolean isPseudoclassWithNoXpathEquivalence(String name) {
+		return unsupportedPseudoClasses.contains(name);
 	}
 
 }

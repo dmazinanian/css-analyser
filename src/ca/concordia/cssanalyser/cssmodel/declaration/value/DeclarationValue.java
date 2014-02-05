@@ -97,6 +97,10 @@ public class DeclarationValue implements Cloneable {
 		return valueType;
 	}
 	
+	public boolean equivalent(DeclarationEquivalentValue otherValue) {
+		return (((DeclarationEquivalentValue)otherValue).equivalent(this));
+	}
+	
 	public boolean equivalent(DeclarationValue otherValue) {
 		return equals(otherValue);
 	}

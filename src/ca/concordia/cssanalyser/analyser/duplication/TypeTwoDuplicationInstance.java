@@ -6,10 +6,10 @@ import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
-public class TypeIIDuplication extends TypeIDuplication {
+public class TypeTwoDuplicationInstance extends TypeOneDuplicationInstance {
 
-	public TypeIIDuplication() {
-		duplicationType = DuplicationType.TYPE_II;
+	public TypeTwoDuplicationInstance() {
+		duplicationType = DuplicationInstanceType.TYPE_II;
 	}
 		
 	@Override

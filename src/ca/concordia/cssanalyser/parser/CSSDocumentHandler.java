@@ -51,11 +51,11 @@ import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
 import ca.concordia.cssanalyser.cssmodel.media.SingleMedia;
 import ca.concordia.cssanalyser.cssmodel.media.GroupedMedia;
 import ca.concordia.cssanalyser.cssmodel.media.Media;
-import ca.concordia.cssanalyser.cssmodel.selectors.SimpleElementSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SimpleSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.DescendantSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.ChildSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.GroupedSelectors;
+import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.AdjacentSiblingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.SiblingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.PseudoClass;
@@ -219,7 +219,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			newDeclaration = DeclarationFactory.getDeclaration(propertyName, valuesList, currentSelector, locator.getLineNumber(), locator.getColumnNumber(), isImportant);
 		
 			if (currentSelector != null)
-				currentSelector.addCSSRule(newDeclaration);
+				currentSelector.addDeclaration(newDeclaration);
 			
 		} catch (Exception ex) {
 			LOGGER.warn(ex.toString());
@@ -236,10 +236,10 @@ public class CSSDocumentHandler implements DocumentHandler {
 	private Selector getSelector(SelectorList list, Locator locator) {
 		Selector s = null;
 		if (list.getLength() > 1) {
-			GroupedSelectors groupedSelectors = new GroupedSelectors(locator.getLineNumber(), locator.getColumnNumber());
+			GroupingSelector groupedSelectors = new GroupingSelector(locator.getLineNumber(), locator.getColumnNumber());
 			for (int i = 0; i < list.getLength(); i++) {
 				try {
-					SingleSelector newAtomicSelector = SACSelectorToAtomicSelector(list.item(i));
+					BaseSelector newAtomicSelector = SACSelectorToAtomicSelector(list.item(i));
 					newAtomicSelector.setLineNumber(locator.getLineNumber());
 					newAtomicSelector.setColumnNumber(locator.getColumnNumber());
 					if (currentMedia != null)
@@ -266,20 +266,20 @@ public class CSSDocumentHandler implements DocumentHandler {
 	}
 
 	/**
-	 * Returns an {@link SingleSelector} from a given SAC selector
+	 * Returns an {@link BaseSelector} from a given SAC selector
 	 * Adapted from GWT http://google-web-toolkit.googlecode.com/svn-history/r7441/trunk/user/src/com/google/gwt/resources/css/GenerateCssAst.java
 	 * @param selector
 	 * @return
 	 * @throws Exception
 	 */
-	private SingleSelector SACSelectorToAtomicSelector(org.w3c.css.sac.Selector selector) throws Exception {
+	private BaseSelector SACSelectorToAtomicSelector(org.w3c.css.sac.Selector selector) throws Exception {
 		// if (selector instanceof CharacterDataSelector) {
 		// Unimplemented in flute?
 		// }
 		if (selector instanceof ElementSelectorImpl) {
 
 			ElementSelectorImpl sacElementSelector = (ElementSelectorImpl) selector;
-			SimpleElementSelector atomicElementSelector = new SimpleElementSelector();
+			SimpleSelector atomicElementSelector = new SimpleSelector();
 			String elementName;
 			
 			if (sacElementSelector.getLocalName() == null) {
@@ -295,8 +295,8 @@ public class CSSDocumentHandler implements DocumentHandler {
 		} else if (selector instanceof DescendantSelectorImpl) {
 
 			DescendantSelectorImpl sacDescendantSelector = (DescendantSelectorImpl) selector;
-			SingleSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getAncestorSelector());
-			SingleSelector childAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getSimpleSelector());
+			BaseSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getAncestorSelector());
+			BaseSelector childAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getSimpleSelector());
 			DescendantSelector s = new DescendantSelector(parentAtomicSelector, childAtomicSelector);
 
 			return s;
@@ -309,16 +309,16 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 			ChildSelectorImpl sacChildSelectorImpl = (ChildSelectorImpl) selector;
 
-			SingleSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getAncestorSelector());
-			SingleSelector childAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getSimpleSelector());
+			BaseSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getAncestorSelector());
+			BaseSelector childAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getSimpleSelector());
 
-			SingleSelector selectorToReturn;
+			BaseSelector selectorToReturn;
 
 			if (sacChildSelectorImpl.getSimpleSelector() instanceof PseudoElementSelectorImpl) {
 				selectorToReturn = parentAtomicSelector;
 				PseudoElementSelectorImpl pseudoClass = (PseudoElementSelectorImpl) sacChildSelectorImpl.getSimpleSelector();
 
-				((SimpleElementSelector) selectorToReturn).addPseudoClass(new PseudoClass(pseudoClass.getLocalName()));
+				((SimpleSelector) selectorToReturn).addPseudoClass(new PseudoClass(pseudoClass.getLocalName()));
 
 			} else {
 				selectorToReturn = new ChildSelector(
@@ -330,28 +330,28 @@ public class CSSDocumentHandler implements DocumentHandler {
 		} else if (selector instanceof PseudoElementSelectorImpl) {
 			
 			PseudoElementSelectorImpl pseudoElementSelector = (PseudoElementSelectorImpl) selector;
-			SimpleElementSelector atomicElementSelector = new SimpleElementSelector();
+			SimpleSelector atomicElementSelector = new SimpleSelector();
 			atomicElementSelector.addPseudoClass(new PseudoClass(pseudoElementSelector.getLocalName()));
 			return atomicElementSelector;
 			
 		} else if (selector instanceof DirectAdjacentSelectorImpl) {
 
 			DirectAdjacentSelectorImpl sacDirectAdjacentSelector = (DirectAdjacentSelectorImpl) selector;
-			SingleSelector parentSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSelector());
-			SingleSelector childSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSiblingSelector());
+			BaseSelector parentSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSelector());
+			BaseSelector childSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSiblingSelector());
 			return new AdjacentSiblingSelector(parentSelector, childSelector);
 			
 		} else if (selector instanceof AdjacentSelector) {
 			
 			AdjacentSelector sacAdjacentSelector = (AdjacentSelector) selector;
-			SingleSelector parentSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSelector());
-			SingleSelector childSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSiblingSelector());
+			BaseSelector parentSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSelector());
+			BaseSelector childSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSiblingSelector());
 			return new SiblingSelector(parentSelector, childSelector);
 			
 		} else if (selector instanceof ConditionalSelectorImpl) {
 
 			ConditionalSelector sacConditionalSelector = (ConditionalSelectorImpl) selector;
-			SimpleElementSelector atomicElementSelector = (SimpleElementSelector) SACSelectorToAtomicSelector(sacConditionalSelector.getSimpleSelector());
+			SimpleSelector atomicElementSelector = (SimpleSelector) SACSelectorToAtomicSelector(sacConditionalSelector.getSimpleSelector());
 			getConditions(sacConditionalSelector.getCondition(), atomicElementSelector);
 			return atomicElementSelector;
 			
@@ -367,7 +367,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 	 * @param atomicElementSelector
 	 * @throws Exception
 	 */
-	private void getConditions(Condition sacCondition, SimpleElementSelector atomicElementSelector) throws Exception {
+	private void getConditions(Condition sacCondition, SimpleSelector atomicElementSelector) throws Exception {
 		if (sacCondition == null)
 			return;
 		if (sacCondition instanceof AndConditionImpl) {
@@ -465,8 +465,8 @@ public class CSSDocumentHandler implements DocumentHandler {
 			Locator loc = condition.getLocator();
 			Selector s = getSelector(l, loc);
 			// Selector "s" shoule be a simple selector, based on W3C http://www.w3.org/TR/css3-selectors/
-			if ((s instanceof SimpleElementSelector)) {
-				atomicElementSelector.addPseudoClass(new NegationPseudoClass((SingleSelector)s));
+			if ((s instanceof SimpleSelector)) {
+				atomicElementSelector.addPseudoClass(new NegationPseudoClass((BaseSelector)s));
 			} else {
 				LOGGER.warn("The parameter of not() pseudo-element should be a simple CSS selector. ");
 			}
@@ -553,6 +553,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 				case "transform-origin":
 					return new DeclarationEquivalentValue(stringValue, "0.0px", ValueType.LENGTH);
 				}
+				break;
 			case "right":
 			case "bottom":
 				switch (propertyName) {
@@ -562,6 +563,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 				case "transform-origin":
 					return new DeclarationEquivalentValue(stringValue, "100.0%", ValueType.LENGTH);
 				}
+				break;
 			case "center":
 				switch (propertyName) {
 				case "background-position":
@@ -570,6 +572,13 @@ public class CSSDocumentHandler implements DocumentHandler {
 				case "transform-origin":
 					return new DeclarationEquivalentValue(stringValue, "50.0%", ValueType.LENGTH);
 				}
+				break;
+			case "bold":
+				return new DeclarationEquivalentValue(stringValue, "700", ValueType.INTEGER);
+			case "normal":
+				if (propertyName.equals("font-weight"))
+					return new DeclarationEquivalentValue(stringValue, "400", ValueType.INTEGER);
+				// What should we do for font shorthand property?!
 			}
 
 			return new DeclarationValue(stringValue, ValueType.IDENT);

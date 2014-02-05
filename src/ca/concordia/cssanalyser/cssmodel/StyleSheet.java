@@ -1,11 +1,13 @@
 package ca.concordia.cssanalyser.cssmodel;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.GroupedSelectors;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
@@ -21,7 +23,7 @@ public class StyleSheet {
 	private String cssFilePath;
 
 	public StyleSheet() {
-		listOfSelectors = new HashSet<>();
+		listOfSelectors = new LinkedHashSet<>();
 	}
 	
 	public void setPath(String path) {
@@ -52,23 +54,22 @@ public class StyleSheet {
 	 * addition to the all single selectors inside the grouped selectors. It
 	 * preserves the order of single selectors.
 	 * 
-	 * @return List<SingleSelector>
+	 * @return List<BaseSelector>
 	 */
-	public Set<SingleSelector> getAllSingleSelectors() {
-		Set<SingleSelector> allSingleSelectors = new HashSet<>();
+	public List<BaseSelector> getAllBaseSelectors() {
+		List<BaseSelector> allBaseSelectors = new ArrayList<>();
 
 		for (Selector selector : listOfSelectors) { // Look inside all selectors
-			if (selector instanceof SingleSelector) {
-				// Just add
-				allSingleSelectors.add((SingleSelector) selector);
-			} else if (selector instanceof GroupedSelectors) {
-				// Loop through all grouped selectors
-				for (SingleSelector singleSelector : (GroupedSelectors) selector) {
-					allSingleSelectors.add(singleSelector);
+			if (selector instanceof BaseSelector) {
+				allBaseSelectors.add((BaseSelector) selector);
+			} else if (selector instanceof GroupingSelector) {
+				for (BaseSelector bs : ((GroupingSelector)selector).getBaseSelectors()) {
+					allBaseSelectors.add(bs);
 				}
+				
 			}
 		}
-		return allSingleSelectors;
+		return allBaseSelectors;
 	}
 
 	/**
@@ -79,7 +80,7 @@ public class StyleSheet {
 	 */
 	public Set<Declaration> getAllDeclarations() {
 		//if (listOfDeclarations == null) {
-			Set<Declaration> listOfDeclarations = new HashSet<>();
+			Set<Declaration> listOfDeclarations = new LinkedHashSet<>();
 			for (Selector selector : listOfSelectors)
 				for (Declaration declaration : selector.getDeclarations())
 					listOfDeclarations.add(declaration);
@@ -114,7 +115,8 @@ public class StyleSheet {
 	public StyleSheet clone() {
 		StyleSheet styleSheet = new StyleSheet();
 		styleSheet.cssFilePath = cssFilePath;
-		styleSheet.listOfSelectors = new HashSet<>(this.listOfSelectors);
+		for (Selector s : this.listOfSelectors)
+			styleSheet.addSelector(s.clone());
 		return styleSheet;
 	}
 }

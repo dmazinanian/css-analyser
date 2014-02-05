@@ -13,13 +13,13 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
  * @author Davood Mazinanian
  * 
  */
-public interface Duplication {
+public interface DuplicationInstance {
 
 	/**
 	 * Gets the type of duplication
 	 * @return
 	 */
-	public DuplicationType getType();
+	public DuplicationInstanceType getType();
 	
 	/**
 	 * The set of selectors for which the duplications happened

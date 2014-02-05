@@ -13,9 +13,9 @@ import java.util.TreeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.concordia.cssanalyser.analyser.duplication.apriori.Item;
-import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSet;
-import ca.concordia.cssanalyser.analyser.duplication.apriori.ItemSetList;
+import ca.concordia.cssanalyser.analyser.duplication.items.Item;
+import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
+import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 
 
 public class FPGrowth {

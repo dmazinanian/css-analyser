@@ -7,8 +7,8 @@ import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
-import duplication.Duplication;
-import duplication.DuplicationsList;
+import duplication.DuplicationInstance;
+import duplication.DuplicationIncstanceList;
 import duplication.IdenticalEffects;
 import duplication.IdenticalSelectors;
 import duplication.IdenticalValues;
@@ -18,21 +18,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import ca.concordia.cssanalyser.cssmodel.selectors.SingleSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 
 
-public class DuplicationFinder {
+public class DuplicationDetector {
 	/**
 	 * This method finds the selectors which are repetitive in the list of all
 	 * selectors. Although the duplicated selectors are not necessary because we
 	 * have grouping in CSS.
 	 * Similarity function:
 	 * 
-	 * @return An object of {@link DuplicationsList}
+	 * @return An object of {@link DuplicationIncstanceList}
 	 * /
-	public DuplicationsList findIdenticalSelectors() {
+	public DuplicationIncstanceList findIdenticalSelectors() {
 
-		DuplicationsList duplicationList = new DuplicationsList();
+		DuplicationIncstanceList duplicationList = new DuplicationIncstanceList();
 
 		/*
 		 * This is the list of the indices of already visited selectors I have
@@ -42,13 +42,13 @@ public class DuplicationFinder {
 		 * /
 		Set<Integer> visited = new HashSet<>();
 
-		List<SingleSelector> allAtomicSelectors = stylesheet.getAllAtomicSelectors();
+		List<BaseSelector> allAtomicSelectors = stylesheet.getAllAtomicSelectors();
 
 		// So start from the first selector
 		int currentSelectorIndex = -1;
 		while (++currentSelectorIndex < allAtomicSelectors.size()) {
 
-			SingleSelector currentSelector = allAtomicSelectors.get(currentSelectorIndex);
+			BaseSelector currentSelector = allAtomicSelectors.get(currentSelectorIndex);
 
 			if (visited.contains(currentSelectorIndex))
 				continue;
@@ -64,7 +64,7 @@ public class DuplicationFinder {
 			
 			while (++checkingSelectorIndex < allAtomicSelectors.size()) {
 				
-				SingleSelector checkingSelector = allAtomicSelectors.get(checkingSelectorIndex);
+				BaseSelector checkingSelector = allAtomicSelectors.get(checkingSelectorIndex);
 
 				if (currentSelector.equals(checkingSelector)) {
 					// So it seems that we have found a duplication in selectors
@@ -87,12 +87,12 @@ public class DuplicationFinder {
 	/**
 	 * Finds all the duplications, where only values for different 
 	 * properties across different selectors are exactly the same.
-	 * @return An object of {@link DuplicationsList}
+	 * @return An object of {@link DuplicationIncstanceList}
 	 * /
 	// Consider very carefully about different variations in the values.
-	public DuplicationsList findIdenticalValues() {
+	public DuplicationIncstanceList findIdenticalValues() {
 		
-		DuplicationsList duplicationList = new DuplicationsList();
+		DuplicationIncstanceList duplicationList = new DuplicationIncstanceList();
 
 		// Get a list of all declarations
 		List<Declaration> allDeclarations = stylesheet.getAllDeclarations();
@@ -138,7 +138,7 @@ public class DuplicationFinder {
 	 * Finds the overriden values.
 	 * @return
 	 * /
-	public DuplicationsList findOverridenValues(DuplicationsList identicalSelectorsDuplication) {
+	public DuplicationIncstanceList findOverridenValues(DuplicationIncstanceList identicalSelectorsDuplication) {
 		return findIdenticalSelectorAndDeclaration(true, identicalSelectorsDuplication);
 	}
 
@@ -147,7 +147,7 @@ public class DuplicationFinder {
 	 * are all the same.
 	 * @return
 	 * /
-	public DuplicationsList findIdenticalEffects(DuplicationsList identicalSelectorsDuplication) {
+	public DuplicationIncstanceList findIdenticalEffects(DuplicationIncstanceList identicalSelectorsDuplication) {
 		return findIdenticalSelectorAndDeclaration(false, identicalSelectorsDuplication);
 	}
 	
@@ -159,19 +159,19 @@ public class DuplicationFinder {
 	 * @param duplicatedSelectors The result of {@link #findIdenticalSelectors()} method
 	 * @return An object of DuplicationList
 	 * /
-	public DuplicationsList findIdenticalSelectorAndDeclaration(boolean onlyCheckProperties, DuplicationsList duplicatedSelectors) {
+	public DuplicationIncstanceList findIdenticalSelectorAndDeclaration(boolean onlyCheckProperties, DuplicationIncstanceList duplicatedSelectors) {
 		
-		DuplicationsList duplicationList = new DuplicationsList();
+		DuplicationIncstanceList duplicationList = new DuplicationIncstanceList();
 
 		if (duplicatedSelectors == null)
 			duplicatedSelectors = findIdenticalSelectors();
 		
-		for (Duplication selectorDuplication : duplicatedSelectors) {
+		for (DuplicationInstance selectorDuplication : duplicatedSelectors) {
 			
 			// This is a list of identical selectors
 			List<Selector> identicalSelectors = ((IdenticalSelectors)selectorDuplication).getListOfSelectors();
 			
-			Duplication duplication;
+			DuplicationInstance duplication;
 			
 			if (onlyCheckProperties) {
 				duplication = new OverriddenProperties(identicalSelectors.get(0));

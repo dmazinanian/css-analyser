@@ -10,33 +10,33 @@ import java.util.List;
  * @author Davood Mazinanian
  * 
  */
-public abstract class SingleSelector extends Selector {
+public abstract class BaseSelector extends Selector {
 
-	private GroupedSelectors parentGroupSelector;
+	private GroupingSelector parentGroupingSelector;
 
-	public SingleSelector() {
+	public BaseSelector() {
 		this(null, -1, -1);
 	}
 
-	public SingleSelector(GroupedSelectors parent) {
+	public BaseSelector(GroupingSelector parent) {
 		this(parent, -1, -1);
 	}
 
-	public SingleSelector(int line, int coloumn) {
+	public BaseSelector(int line, int coloumn) {
 		this(null, line, coloumn);
 	}
 
-	public SingleSelector(GroupedSelectors parent, int line, int coloumn) {
+	public BaseSelector(GroupingSelector parent, int line, int coloumn) {
 		super(line, coloumn);
-		parentGroupSelector = parent;
+		parentGroupingSelector = parent;
 	}
 
-	public void setParentGroupSelector(GroupedSelectors newGroup) {
-		parentGroupSelector = newGroup;
+	public void setParentGroupSelector(GroupingSelector newGroup) {
+		parentGroupingSelector = newGroup;
 	}
 
-	public GroupedSelectors getParentGroupSelector() {
-		return parentGroupSelector;
+	public GroupingSelector getParentGroupingSelector() {
+		return parentGroupingSelector;
 	}
 	
 	protected abstract String getXPathConditionsString(List<String> xpathConditions) throws UnsupportedSelectorToXPathException;
@@ -44,8 +44,8 @@ public abstract class SingleSelector extends Selector {
 	/**
 	 * Convert our <code>ca.concordia.cssanalyser.cssmodel.AtomicSelector</code> objects to <code>XPath</code> strings
 	 * @param selector Different <code>ca.concordia.cssanalyser.cssmodel.AtomicSelector</code> objects
-			(SimpleElementSelector, DescendantSelector, etc)
-	 * @return String of XPath for current <code>SingleSelector</code>
+			(SimpleSelector, DescendantSelector, etc)
+	 * @return String of XPath for current <code>BaseSelector</code>
 	 * @throws UnsupportedSelectorToXPathException 
 	 */
 	@Override
@@ -93,6 +93,9 @@ public abstract class SingleSelector extends Selector {
 		
 		return xpath.toString();
 	}
+	
+	public abstract BaseSelector clone();
+
 	
 	/*
 	 * http://www.w3.org/TR/CSS21/cascade.html#specificity

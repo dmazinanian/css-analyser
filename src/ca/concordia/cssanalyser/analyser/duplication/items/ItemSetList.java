@@ -1,4 +1,4 @@
-package ca.concordia.cssanalyser.analyser.duplication.apriori;
+package ca.concordia.cssanalyser.analyser.duplication.items;
 
 import java.util.ArrayList;
 import java.util.Collection;

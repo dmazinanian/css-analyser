@@ -1,7 +1,7 @@
 package ca.concordia.cssanalyser.cssmodel.selectors;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
 
 
@@ -19,7 +20,7 @@ import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
  * @author Davood Mazinanian
  *
  */
-public class SimpleElementSelector extends SingleSelector {
+public class SimpleSelector extends BaseSelector {
 	
 	private String selectedElementName = "";
 	private List<String> selectedClasses;
@@ -28,24 +29,24 @@ public class SimpleElementSelector extends SingleSelector {
 	private List<PseudoClass> pseudoClasses;
 	private List<PseudoElement> pseudoElements;
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleElementSelector.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleSelector.class);
 
-	public SimpleElementSelector() {
+	public SimpleSelector() {
 		this(null);
 	}
 
-	public SimpleElementSelector(GroupedSelectors parent) {
+	public SimpleSelector(GroupingSelector parent) {
 		this(parent, -1, -1);
 	}
 
-	public SimpleElementSelector(int fileLineNumber, int fileColNumber) {
+	public SimpleSelector(int fileLineNumber, int fileColNumber) {
 		this(null, fileColNumber, fileLineNumber);
 	}
 
 	/**
 	 * 
-	 * @param 	parent Parent GroupedSelectors object. In a selector 
-	 * 			like "p, div", the "p, div" is a parent GroupedSelectors
+	 * @param 	parent Parent GroupingSelector object. In a selector 
+	 * 			like "p, div", the "p, div" is a parent GroupingSelector
 	 * 			object and "p" and "div" would be the atomic element selectors
 	 * @param fileLineNumber
 	 * 			Line number of the source of container stylesheet.
@@ -53,7 +54,7 @@ public class SimpleElementSelector extends SingleSelector {
 	 * 			Column number of the source of container stylesheet.
 	 * 
 	 */
-	public SimpleElementSelector(GroupedSelectors parent, int fileLineNumber,
+	public SimpleSelector(GroupingSelector parent, int fileLineNumber,
 			int fileColumnNumber) {
 		super(parent, fileLineNumber, fileColumnNumber);
 		conditions = new ArrayList<>();
@@ -138,7 +139,7 @@ public class SimpleElementSelector extends SingleSelector {
 		if (!generalEquals(otherSelector))
 			return false;
 		
-		SimpleElementSelector otherAtomicSelector = (SimpleElementSelector)otherSelector;
+		SimpleSelector otherAtomicSelector = (SimpleSelector)otherSelector;
 		
 		return selectedElementName.equalsIgnoreCase(otherAtomicSelector.selectedElementName) &&
 				selectedID.equalsIgnoreCase(otherAtomicSelector.selectedID) &&
@@ -160,11 +161,21 @@ public class SimpleElementSelector extends SingleSelector {
 		if (!generalEquals(obj))
 		return false;
 		
-		SingleSelector otherAtomicSelector = (SingleSelector) obj;
+		BaseSelector otherBaseSelector = (BaseSelector) obj;
 
-		return (lineNumber == otherAtomicSelector.lineNumber &&
-				columnNumber == otherAtomicSelector.columnNumber &&
-				selectorEquals(otherAtomicSelector));
+		if (lineNumber != otherBaseSelector.lineNumber ||
+				columnNumber == otherBaseSelector.columnNumber)
+			return false;
+		
+		if (getParentGroupingSelector() == null) {
+			if (otherBaseSelector.getParentGroupingSelector() != null)
+				return false;
+		} else {
+			if (!getParentGroupingSelector().equals(otherBaseSelector.getParentGroupingSelector()))
+				return false;
+		}
+				
+		return selectorEquals(otherBaseSelector);
 	}
 
 	private boolean generalEquals(Object obj) {
@@ -172,10 +183,10 @@ public class SimpleElementSelector extends SingleSelector {
 			return false;
 		if (obj == this)
 			return true;
-		if (obj.getClass() != SimpleElementSelector.class)
+		if (obj.getClass() != SimpleSelector.class)
 			return false;
 		if (parentMedia != null) {
-			SingleSelector otherAtomicElementSelector = (SingleSelector)obj;
+			BaseSelector otherAtomicElementSelector = (BaseSelector)obj;
 			if (otherAtomicElementSelector.parentMedia == null)
 				return false;
 			if (!parentMedia.equals(otherAtomicElementSelector.parentMedia))
@@ -232,8 +243,8 @@ public class SimpleElementSelector extends SingleSelector {
 	}
 
 	@Override
-	public Selector clone() {
-		SimpleElementSelector newOne = new SimpleElementSelector(getParentGroupSelector(), getLineNumber(), getColumnNumber());
+	public SimpleSelector clone() {
+		SimpleSelector newOne = new SimpleSelector(getParentGroupingSelector(), getLineNumber(), getColumnNumber());
 		newOne.setMedia(parentMedia);
 		newOne.selectedElementName = selectedElementName;
 		newOne.selectedClasses = new ArrayList<>(selectedClasses);
@@ -241,7 +252,9 @@ public class SimpleElementSelector extends SingleSelector {
 		newOne.conditions = new ArrayList<>(conditions);
 		newOne.pseudoClasses = new ArrayList<>(pseudoClasses);
 		newOne.pseudoElements = new ArrayList<>(pseudoElements);
-		newOne.declarations = new ArrayList<>(declarations);
+		newOne.declarations = new LinkedHashSet<>();
+		for (Declaration d : this.declarations)
+			newOne.addDeclaration(d.cloneToSelector(newOne));
 		return newOne;
 	}
 	
@@ -343,26 +356,15 @@ public class SimpleElementSelector extends SingleSelector {
 			}
 		}
 
-
-		/*
-		 * There is no XPath equivalence for these pseudo classes:
-		 * (make sure to refer to ca.concordia.cssanalyser.cssmodel.selectors.PseudoElement for 
-		 * a clear explanation about PseudoElements and PseudoClasses) 
-		 */
-
-		String[] unsupportedPseudoClasses = new String[] {
-				"link", "active", "hover", "visited", "focus", 
-				"first-letter", "first-line", "before", "after", "target",
-				"root", "enabled", "disabled"
-		};
-
 		if (this.getPseudoClasses().size() > 0) {
+			// TODO: Move this code to the PseudoClass class?? 
 			for (PseudoClass pseudoClass : this.getPseudoClasses()) {
 				/* In case if the pseudo class is unsupported, we need to return an
 				 * empty string so the analyzer would skip this selector 
 				 */
-				if (Arrays.asList(unsupportedPseudoClasses).indexOf(pseudoClass.getName()) >= 0)
-					throw new UnsupportedSelectorToXPathException(this);
+				if (PseudoClass.isPseudoclassWithNoXpathEquivalence(pseudoClass.getName()))
+					//throw new UnsupportedSelectorToXPathException(this);
+					continue;
 
 				switch (pseudoClass.getName()) {
 				case "lang":
@@ -472,7 +474,7 @@ public class SimpleElementSelector extends SingleSelector {
 					break;
 				case "not":
 					NegationPseudoClass negPseudoClass = (NegationPseudoClass)pseudoClass;
-					SingleSelector negSelector = negPseudoClass.getSelector();
+					BaseSelector negSelector = negPseudoClass.getSelector();
 					List<String> negativeConditions = new ArrayList<>();
 					/*String pref =*/ negSelector.getXPathConditionsString(negativeConditions);
 					String finalCondition = "not(%s)";
