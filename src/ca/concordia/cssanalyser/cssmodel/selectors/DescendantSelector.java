@@ -54,7 +54,8 @@ public class DescendantSelector extends BaseSelector {
 	
 	@Override
 	public boolean equals(Object obj) {
-		generalEquals(obj);
+		if (!generalEquals(obj))
+			return false;;
 		DescendantSelector otherDesendantSelector = (DescendantSelector)obj;
 		return (lineNumber == otherDesendantSelector.lineNumber &&
 				columnNumber == otherDesendantSelector.columnNumber &&

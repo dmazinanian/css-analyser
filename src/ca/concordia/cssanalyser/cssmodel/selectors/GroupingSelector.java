@@ -204,7 +204,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		newOne.parentMedia = parentMedia;
 		newOne.declarations = new LinkedHashSet<>();
 		for (Declaration d : this.declarations)
-			newOne.addDeclaration(d.cloneToSelector(newOne));
+			newOne.addDeclaration(d.clone());
 		return newOne;
 	}
 

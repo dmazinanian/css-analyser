@@ -38,7 +38,7 @@ public class RefactorerDuplications {
 		for (Item currentItem : itemset) {
 			
 			// Add declarations to this new grouping selector
-			newGroupingSelector.addDeclaration(currentItem.getDeclarationWithMinimumChars().cloneToSelector(newGroupingSelector));
+			newGroupingSelector.addDeclaration(currentItem.getDeclarationWithMinimumChars().clone());
 			
 			//Mark declarations to be deleted from returning stylesheet
 			for (Declaration currentDeclaration : currentItem) {
@@ -62,7 +62,7 @@ public class RefactorerDuplications {
 			// Only add declaration which are not marked to the refactored stylesheet
 			for (Declaration d : selectorToBeAdded.getDeclarations()) {
 				if (!declarationsToBeRemoved.contains(d)) {
-					newSelector.addDeclaration(d.cloneToSelector(newSelector)); 
+					newSelector.addDeclaration(d.clone()); 
 				}
 				
 			}

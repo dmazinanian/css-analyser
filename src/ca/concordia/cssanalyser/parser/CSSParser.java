@@ -42,9 +42,11 @@ public class CSSParser {
 
 	public StyleSheet parseExternalCSS(String path) throws Exception {
 		try {
+			LOGGER.warn("Parsing " + path);
 			URL uri = new URL("file", null, -1, path);
 			StyleSheet styleSheet = parseStreamCSS(uri.openStream());
 			styleSheet.setPath(path);
+			LOGGER.warn("Parsed " + path);
 			return styleSheet;
 		}
 		catch (Exception e) {
@@ -54,7 +56,7 @@ public class CSSParser {
 	}
 	
 	public StyleSheet parseStreamCSS(InputStream inputStream) throws Exception {
-		
+				
 		StyleSheet styleSheet = new StyleSheet();
 
 		InputSource source = new InputSource();

@@ -254,7 +254,7 @@ public class SimpleSelector extends BaseSelector {
 		newOne.pseudoElements = new ArrayList<>(pseudoElements);
 		newOne.declarations = new LinkedHashSet<>();
 		for (Declaration d : this.declarations)
-			newOne.addDeclaration(d.cloneToSelector(newOne));
+			newOne.addDeclaration(d.clone());
 		return newOne;
 	}
 	

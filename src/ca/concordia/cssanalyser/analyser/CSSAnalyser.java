@@ -156,7 +156,7 @@ public class CSSAnalyser {
 			String filePath = styleSheet.getFilePath();
 			String folderName = filePath + ".analyse";
 					
-			LOGGER.info("Finding different kinds of duplication in " + filePath);
+			LOGGER.warn("Finding different kinds of duplication in " + filePath);
 			
 			DuplicationDetector duplicationFinder = new DuplicationDetector(styleSheet);
 			duplicationFinder.findDuplications();
@@ -202,7 +202,7 @@ public class CSSAnalyser {
 			
 			if (doApriori) {
 			
-				LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT + " on " + filePath);
+				LOGGER.warn("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT + " on " + filePath);
 
 				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				aprioriResults = duplicationFinder.apriori(MIN_SUPPORT);
