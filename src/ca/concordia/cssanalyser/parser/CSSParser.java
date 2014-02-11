@@ -42,11 +42,11 @@ public class CSSParser {
 
 	public StyleSheet parseExternalCSS(String path) throws Exception {
 		try {
-			LOGGER.warn("Parsing " + path);
+			LOGGER.info("Parsing " + path);
 			URL uri = new URL("file", null, -1, path);
 			StyleSheet styleSheet = parseStreamCSS(uri.openStream());
 			styleSheet.setPath(path);
-			LOGGER.warn("Parsed " + path);
+			LOGGER.info("Parsed " + path);
 			return styleSheet;
 		}
 		catch (Exception e) {

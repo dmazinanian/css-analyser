@@ -48,7 +48,7 @@ public class CSSAnalyserApp {
 						url = value;
 						break;
 					case "outfolder":
-						outputFolder = value;
+						outputFolder = value.replace("\\", "/");
 						if (!outputFolder.endsWith("/"))
 							outputFolder = outputFolder + "/";
 						break;
@@ -59,7 +59,7 @@ public class CSSAnalyserApp {
 						mode = Mode.valueOf(value.toUpperCase());
 						break;
 					case "infolder":
-						inputFolder = value;
+						inputFolder = value.replace("\\", "/");;
 						if (!inputFolder.endsWith("/"))
 							inputFolder = inputFolder + "/";
 						break;
@@ -114,14 +114,14 @@ public class CSSAnalyserApp {
 				//System.out.println(System.getProperty("user.dir"));
 
 				// Get all ca.concordia.cssanalyser.dom states in outputFolder/ca.concordia.cssanalyser.crawler/doms		
-				List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "/crawler/doms", "html");	
+				List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "crawler/doms", "html");	
 				for (File domStateHtml : allStatesFiles) {
 
 					String stateName = domStateHtml.getName();
 					// Remove .html
 					String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
 
-					CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), outputFolderPath + "/css/" + correspondingCSSFolderName);
+					CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), outputFolderPath + "css/" + correspondingCSSFolderName);
 					cssAnalyser.analyse(minsup);
 
 				}
@@ -135,7 +135,7 @@ public class CSSAnalyserApp {
 				return;
 			}
 			
-			List<File> allStatesFiles = IOHelper.searchForFiles(inputFolder + "/crawler/doms", "html");	
+			List<File> allStatesFiles = IOHelper.searchForFiles(inputFolder + "crawler/doms", "html");	
 			for (File domStateHtml : allStatesFiles) {
 				
 				String stateName = domStateHtml.getName();

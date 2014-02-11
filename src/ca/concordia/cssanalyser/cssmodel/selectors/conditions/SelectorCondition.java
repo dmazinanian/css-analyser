@@ -147,5 +147,8 @@ public class SelectorCondition {
 		return true;
 	}
 
+	public SelectorCondition clone() {
+		return new SelectorCondition(conditionName, conditionValue, getConditionType());
+	}
 	
 }

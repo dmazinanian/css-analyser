@@ -4,9 +4,7 @@ package ca.concordia.cssanalyser.analyser;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,21 +12,18 @@ import org.w3c.dom.Document;
 
 import ca.concordia.cssanalyser.analyser.duplication.DuplicationDetector;
 import ca.concordia.cssanalyser.analyser.duplication.DuplicationIncstanceList;
-import ca.concordia.cssanalyser.analyser.duplication.DuplicationInstance;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
-import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.dom.DOMHelper;
 import ca.concordia.cssanalyser.dom.Model;
 import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.parser.CSSParser;
-import ca.concordia.cssanalyser.refactoring.RefactorerDuplications;
-import ca.concordia.cssanalyser.refactoring.dependencies.DependencyDetector;
-import ca.concordia.cssanalyser.refactoring.dependencies.ValueOverridingDependencyList;
+import ca.concordia.cssanalyser.refactoring.RefactorDuplications;
+import ca.concordia.cssanalyser.refactoring.RefactorToSatisfyDependencies;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 
 
@@ -180,9 +175,9 @@ public class CSSAnalyser {
 			IOHelper.writeLinesToFile(typeIVADuplications, folderName + "/typeIVA.txt");
 			
 			if (!dontUseDOM) {
-				duplicationFinder.findTypeFourBDuplication(model.getDocument());
-				DuplicationIncstanceList typeIVBDuplications = duplicationFinder.getTypeIVBDuplications();
-				IOHelper.writeLinesToFile(typeIVBDuplications, folderName + "/typeIVB.txt");
+				//duplicationFinder.findTypeFourBDuplication(model.getDocument());
+				//DuplicationIncstanceList typeIVBDuplications = duplicationFinder.getTypeIVBDuplications();
+				//IOHelper.writeLinesToFile(typeIVBDuplications, folderName + "/typeIVB.txt");
 			}
 			
 //			List<String> xPaths = new ArrayList<>();
@@ -225,63 +220,13 @@ public class CSSAnalyser {
 				IOHelper.writeLinesToFile(fpgrowthResults, folderName + "/fpgrowth.txt");
 				
 				LOGGER.warn("Done FP-Growth in " + time);
-				
-				/*Comparator<ItemSet> comparator = new Comparator<ItemSet>() {
-					public int compare(ItemSet o1, ItemSet o2) {
-						return Integer.compare(o1.getRefactoringImpact(), o2.getRefactoringImpact());
-					};
-				};
-				
-				TreeSet<ItemSet> opportunities = new TreeSet<ItemSet>(comparator);
-				for (ItemSetList isl : fpgrowthResults)
-					for (ItemSet is : isl)
-						opportunities.add(is);*/
-				
+								
 				if (!dontUseDOM) {
 					refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, folderName, fpgrowthResults, model.getDocument());
 				} else {
 					refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, folderName, fpgrowthResults);
 				}
 				
-				
-					
-//				
-//				List<String> opp = new ArrayList<>();
-//				
-//				for (ItemSet is : opportunities)
-//					//System.out.println(is + " : " + is.getRefactoringImpact());
-//					opp.add(is.getSupport().size() + "," + is.size() + "," + is.getRefactoringImpact());
-//				
-//				IOHelper.writeLinesToFile(opp, folderName + "/oppnumbers.txt");
-//				
-//				List<String> opp2 = new ArrayList<>();
-//				
-//				for (ItemSet itemSetAndSupport : opportunities) {
-//					//System.out.println(is + " : " + is.getRefactoringImpact());
-//					StringBuilder sets = new StringBuilder();
-//
-//					
-//
-//						StringBuilder set = new StringBuilder("{");
-//
-//						for (Item d : itemSetAndSupport) {
-//							set.append("(" + d.getFirstDeclaration() + "), ");
-//						}
-//
-//						set.delete(set.length() - 2, set.length()).append("}");
-//
-//						sets.append(set);
-//						sets.append(", " + itemSetAndSupport.getSupport().size() + " : ");
-//
-//						// for (Selector s : itemSetAndSupport.getSupport())
-//						// sets.append(s + ", ");
-//						sets.append(itemSetAndSupport.getSupport());
-//
-//					opp2.add(sets.toString() + ", " + itemSetAndSupport.getRefactoringImpact());
-//				}
-//				
-//				IOHelper.writeLinesToFile(opp2, folderName + "/opp.txt");
-					
 			}
 			
 			if (compareAprioriAndFPGrowth)
@@ -294,63 +239,125 @@ public class CSSAnalyser {
 					
 	}
 
+//	private void WriteRefactoringOpportunitiesAndImpacts() {
+	
+	/*Comparator<ItemSet> comparator = new Comparator<ItemSet>() {
+		public int compare(ItemSet o1, ItemSet o2) {
+			return Integer.compare(o1.getRefactoringImpact(), o2.getRefactoringImpact());
+		};
+	};
+
+		TreeSet<ItemSet> opportunities = new TreeSet<ItemSet>(comparator);
+		for (ItemSetList isl : fpgrowthResults)
+			for (ItemSet is : isl)
+				opportunities.add(is);*/
+//		
+//		List<String> opp = new ArrayList<>();
+//		
+//		for (ItemSet is : opportunities)
+//			//System.out.println(is + " : " + is.getRefactoringImpact());
+//			opp.add(is.getSupport().size() + "," + is.size() + "," + is.getRefactoringImpact());
+//		
+//		IOHelper.writeLinesToFile(opp, folderName + "/oppnumbers.txt");
+//		
+//		List<String> opp2 = new ArrayList<>();
+//		
+//		for (ItemSet itemSetAndSupport : opportunities) {
+//			//System.out.println(is + " : " + is.getRefactoringImpact());
+//			StringBuilder sets = new StringBuilder();
+//
+//			
+//
+//				StringBuilder set = new StringBuilder("{");
+//
+//				for (Item d : itemSetAndSupport) {
+//					set.append("(" + d.getFirstDeclaration() + "), ");
+//				}
+//
+//				set.delete(set.length() - 2, set.length()).append("}");
+//
+//				sets.append(set);
+//				sets.append(", " + itemSetAndSupport.getSupport().size() + " : ");
+//
+//				// for (Selector s : itemSetAndSupport.getSupport())
+//				// sets.append(s + ", ");
+//				sets.append(itemSetAndSupport.getSupport());
+//
+//			opp2.add(sets.toString() + ", " + itemSetAndSupport.getRefactoringImpact());
+//		}
+//		
+//		IOHelper.writeLinesToFile(opp2, folderName + "/opp.txt");
+		
+//	}
+
 	private void refactorGroupingOpportunities(int MIN_SUPPORT,
 			StyleSheet styleSheet, String folderName,
 			List<ItemSetList> fpgrowthResults, Document dom) {
+
+		StyleSheet originalStyleSheet = styleSheet;
 		
+		//List<ItemSetList> fpgrowthResultsRefactored = fpgrowthResults;
 		int i = 0;
-		
-		List<ItemSetList> fpgrowthResultsRefactored = fpgrowthResults;
 		while (true) {
 			i++;
 			// Find itemset with max impact
-			ItemSet itemSetWithMaxImpact = null;
-			for (ItemSetList isl : fpgrowthResultsRefactored)
-				for (ItemSet is : isl) {
-					if (itemSetWithMaxImpact == null || itemSetWithMaxImpact.getRefactoringImpact() < is.getRefactoringImpact())
-						itemSetWithMaxImpact = is;
-				}
+			ItemSet itemSetWithMaxImpact = ItemSetList.findItemSetWithMaxImpact(fpgrowthResults);
 			
 			if (itemSetWithMaxImpact == null || itemSetWithMaxImpact.getRefactoringImpact() < 0)
 				break;
 			
-			System.out.println();
-			LOGGER.warn("Applying round " + i + " of refactoring.");
-			System.out.println();
-			StyleSheet refactoredStyleSheet = RefactorerDuplications.groupingRefactoring(styleSheet, itemSetWithMaxImpact);
-			IOHelper.writeStringToFile(styleSheet.toString(), folderName + "/original" + i + ".css");
-			IOHelper.writeStringToFile(refactoredStyleSheet.toString(), folderName + "/refactored" + i + ".css");
-			
-			DependencyDetector dependencyDetector, refactoredDependencyDetector;
-			
-			if (!dontUseDOM) {
-				dependencyDetector = new DependencyDetector(styleSheet, dom);
-				refactoredDependencyDetector = new DependencyDetector(refactoredStyleSheet, dom);
-			} else {
-				dependencyDetector = new DependencyDetector(styleSheet);
-				refactoredDependencyDetector = new DependencyDetector(refactoredStyleSheet);
+			LOGGER.warn("Applying round " + i + " of refactoring on " + originalStyleSheet.getFilePath() + ".");
+			styleSheet = RefactorDuplications.groupingRefactoring(styleSheet, itemSetWithMaxImpact);
+			IOHelper.writeStringToFile(styleSheet.toString(), folderName + "/refactored" + i + ".css");
+													
+			fpgrowthResults  = null;
+			CSSParser parser = new CSSParser();
+			try {
+				styleSheet = parser.parseExternalCSS(folderName + "/refactored" + i + ".css");
+			} catch (Exception ex) {
+				ex.printStackTrace();
 			}
 			
-			ValueOverridingDependencyList dependencies = dependencyDetector.findOverridingDependancies();
-			System.out.println(dependencies);
-			
-			System.out.println();
-			
-			ValueOverridingDependencyList refactoredDependencies = refactoredDependencyDetector.findOverridingDependancies();
-			System.out.println(refactoredDependencies);
-			
-			System.out.println();
-			
-			dependencies.printDifferences(refactoredDependencies);
-			
-			
-					
-			DuplicationDetector duplicationFinderRefacored = new DuplicationDetector(refactoredStyleSheet);
+			DuplicationDetector duplicationFinderRefacored = new DuplicationDetector(styleSheet);
 			duplicationFinderRefacored.findDuplications();
-			fpgrowthResultsRefactored = duplicationFinderRefacored.fpGrowth(MIN_SUPPORT);
-			styleSheet = refactoredStyleSheet;
-
+			fpgrowthResults = duplicationFinderRefacored.fpGrowth(MIN_SUPPORT);
+			duplicationFinderRefacored = null;
+			
 		}
+		
+		CSSDependencyDetector dependencyDetector, refactoredDependencyDetector;
+		if (!dontUseDOM) {                                                                                               
+			dependencyDetector = new CSSDependencyDetector(originalStyleSheet, dom);                                                
+			refactoredDependencyDetector = new CSSDependencyDetector(styleSheet, dom);                            
+		} else {                                                                                                         
+			dependencyDetector = new CSSDependencyDetector(originalStyleSheet);                                                     
+			refactoredDependencyDetector = new CSSDependencyDetector(styleSheet);                                 
+		}
+		
+		CSSValueOverridingDependencyList dependencies = dependencyDetector.findOverridingDependancies();
+		CSSValueOverridingDependencyList refactoredDependencies = refactoredDependencyDetector.findOverridingDependancies();
+		     
+		StringBuilder test = new StringBuilder(); 
+		test.append(dependencies);                                                                                
+		test.append("\n\n");                                                                                            
+		test.append(refactoredDependencies);                                                                                                                                                                                  
+		test.append("\n");                                    
+		test.append(dependencies.getDifferencesWith(refactoredDependencies));
+		
+		System.out.println(test);
+		IOHelper.writeStringToFile(styleSheet.toString(), folderName + "/dependency-differences.css");
+
+		
+		
+//		RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
+//		StyleSheet s = r.refactorToSatisfyOverridingDependencies(styleSheet, dependencies);
+//		dependencyDetector = new CSSDependencyDetector(s, dom);    
+//		
+//		CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(s, dom); 
+//		CSSValueOverridingDependencyList dependencies2 = dependencyDetector2.findOverridingDependancies();                    
+//		System.out.println(dependencies2);       
+//		dependencies.printDifferences(dependencies2);
+		
 		
 	}
 
@@ -362,83 +369,83 @@ public class CSSAnalyser {
 		
 	}
 	
-	private void getAnalytics(StyleSheet styleSheet, DuplicationDetector finder, List<ItemSetList> dupResults, List<String> analytics) {
-		
-		File file = new File(styleSheet.getFilePath());
-		
-		String fileName = file.getName();
-		
-		long size = (file.length() / 1024) + (file.length() % 1024 != 0 ? 1 : 0);
-		int sloc = 0;
-		String[] lines = styleSheet.toString().split("\r\n|\r|\n");
-		for (String l : lines)
-			if (!"".equals(l.trim()))
-				sloc++;
-		
-		int numberOfSelectors = styleSheet.getAllSelectors().size();
-		int numberOfAtomicSelectors = styleSheet.getAllBaseSelectors().size();
-		int numberOfDeclarations = styleSheet.getAllDeclarations().size();
-		int numberOfGroupedSelectors = 0;
-		for (Selector selector : styleSheet.getAllSelectors())
-			if (selector instanceof GroupingSelector)
-				numberOfGroupedSelectors++;
-		
-		int numberOfTypeIDuplications = finder.getTypeIDuplications().getSize();
-		int numberOfTypeIIDuplications = finder.getTypeIIDuplications().getSize();
-		int numberOfTypeIIIDuplications = finder.getTypeIIIDuplications().getSize();
-		int numberOfTypeIVADuplications = finder.getTypeIVADuplications().getSize();
-		int numberOfTypeIVBDuplications = 0;
-		if (finder.getTypeIVBDuplications() != null) 
-			finder.getTypeIVBDuplications().getSize();
-
-		Set<Selector> selectorsInDuplicatedDeclarations = new HashSet<>();
-		for (DuplicationInstance d : finder.getTypeIDuplications())
-			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
-		
-		for (DuplicationInstance d : finder.getTypeIIDuplications())
-			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
-		
-		for (DuplicationInstance d : finder.getTypeIIIDuplications())
-			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
-		
-		int numberOfSelectorsWithDuplications = selectorsInDuplicatedDeclarations.size();
-			
-		Set<Declaration> duplicatedDeclarations = new HashSet<>();
-		for (ItemSetList isl : dupResults)
-			for (ItemSet is : isl)
-				for (Item i : is)
-					for (Declaration d : i)
-						duplicatedDeclarations.add(d);
-		
-		int numberOfDuplicatedDeclarations = duplicatedDeclarations.size(); 
-				
-		int longestDupLength = dupResults.size();
-		int maxSupForLongestDup = 0; 
-		try {
-			maxSupForLongestDup = dupResults.get(dupResults.size() - 1).getMaximumSupport();
-		} catch (Exception ex) {
-			// Swallow
-		}
-				
-		StringBuilder line = new StringBuilder();
-		line.append(fileName + "|");
-		line.append(size + "|");
-		line.append(sloc + "|");
-		line.append(numberOfSelectors + "|");
-		line.append(numberOfAtomicSelectors + "|");
-		line.append(numberOfGroupedSelectors + "|");
-		line.append(numberOfDeclarations + "|");
-		line.append(numberOfTypeIDuplications + "|");
-		line.append(numberOfTypeIIDuplications + "|");
-		line.append(numberOfTypeIIIDuplications + "|");
-		line.append(numberOfTypeIVADuplications + "|");
-		line.append(numberOfTypeIVBDuplications + "|");
-		line.append(numberOfDuplicatedDeclarations + "|");
-		line.append(numberOfSelectorsWithDuplications + "|");
-		line.append(longestDupLength + "|");
-		line.append(maxSupForLongestDup );
-		analytics.add(line.toString());
-	}
+//	private void getAnalytics(StyleSheet styleSheet, DuplicationDetector finder, List<ItemSetList> dupResults, List<String> analytics) {
+//		
+//		File file = new File(styleSheet.getFilePath());
+//		
+//		String fileName = file.getName();
+//		
+//		long size = (file.length() / 1024) + (file.length() % 1024 != 0 ? 1 : 0);
+//		int sloc = 0;
+//		String[] lines = styleSheet.toString().split("\r\n|\r|\n");
+//		for (String l : lines)
+//			if (!"".equals(l.trim()))
+//				sloc++;
+//		
+//		int numberOfSelectors = styleSheet.getAllSelectors().size();
+//		int numberOfAtomicSelectors = styleSheet.getAllBaseSelectors().size();
+//		int numberOfDeclarations = styleSheet.getAllDeclarations().size();
+//		int numberOfGroupedSelectors = 0;
+//		for (Selector selector : styleSheet.getAllSelectors())
+//			if (selector instanceof GroupingSelector)
+//				numberOfGroupedSelectors++;
+//		
+//		int numberOfTypeIDuplications = finder.getTypeIDuplications().getSize();
+//		int numberOfTypeIIDuplications = finder.getTypeIIDuplications().getSize();
+//		int numberOfTypeIIIDuplications = finder.getTypeIIIDuplications().getSize();
+//		int numberOfTypeIVADuplications = finder.getTypeIVADuplications().getSize();
+//		int numberOfTypeIVBDuplications = 0;
+//		if (finder.getTypeIVBDuplications() != null) 
+//			finder.getTypeIVBDuplications().getSize();
+//
+//		Set<Selector> selectorsInDuplicatedDeclarations = new HashSet<>();
+//		for (DuplicationInstance d : finder.getTypeIDuplications())
+//			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
+//		
+//		for (DuplicationInstance d : finder.getTypeIIDuplications())
+//			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
+//		
+//		for (DuplicationInstance d : finder.getTypeIIIDuplications())
+//			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
+//		
+//		int numberOfSelectorsWithDuplications = selectorsInDuplicatedDeclarations.size();
+//			
+//		Set<Declaration> duplicatedDeclarations = new HashSet<>();
+//		for (ItemSetList isl : dupResults)
+//			for (ItemSet is : isl)
+//				for (Item i : is)
+//					for (Declaration d : i)
+//						duplicatedDeclarations.add(d);
+//		
+//		int numberOfDuplicatedDeclarations = duplicatedDeclarations.size(); 
+//				
+//		int longestDupLength = dupResults.size();
+//		int maxSupForLongestDup = 0; 
+//		try {
+//			maxSupForLongestDup = dupResults.get(dupResults.size() - 1).getMaximumSupport();
+//		} catch (Exception ex) {
+//			// Swallow
+//		}
+//				
+//		StringBuilder line = new StringBuilder();
+//		line.append(fileName + "|");
+//		line.append(size + "|");
+//		line.append(sloc + "|");
+//		line.append(numberOfSelectors + "|");
+//		line.append(numberOfAtomicSelectors + "|");
+//		line.append(numberOfGroupedSelectors + "|");
+//		line.append(numberOfDeclarations + "|");
+//		line.append(numberOfTypeIDuplications + "|");
+//		line.append(numberOfTypeIIDuplications + "|");
+//		line.append(numberOfTypeIIIDuplications + "|");
+//		line.append(numberOfTypeIVADuplications + "|");
+//		line.append(numberOfTypeIVBDuplications + "|");
+//		line.append(numberOfDuplicatedDeclarations + "|");
+//		line.append(numberOfSelectorsWithDuplications + "|");
+//		line.append(longestDupLength + "|");
+//		line.append(maxSupForLongestDup );
+//		analytics.add(line.toString());
+//	}
 
 	private void compareAprioriAndFPGrowth(List<ItemSetList> aprioriResults,
 			List<ItemSetList> fpgrowthResults) {

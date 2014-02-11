@@ -25,5 +25,6 @@ public abstract class Media {
 		return definedInColumn;
 	}
 	
+	public abstract Media clone();	
 	
 }

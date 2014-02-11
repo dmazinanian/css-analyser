@@ -67,6 +67,14 @@ public class GroupedMedia extends Media implements Iterable<SingleMedia> {
 			return false;
 		}
 	}
+	
+	public GroupedMedia clone() {
+		GroupedMedia newOne = new GroupedMedia();
+		for (SingleMedia media : listOfAtomicMedia) {
+			newOne.addMedia(media.getMediaName());
+		}
+		return newOne;
+	}
 
 	@Override
 	public int hashCode() {

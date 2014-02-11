@@ -244,17 +244,32 @@ public class SimpleSelector extends BaseSelector {
 
 	@Override
 	public SimpleSelector clone() {
-		SimpleSelector newOne = new SimpleSelector(getParentGroupingSelector(), getLineNumber(), getColumnNumber());
-		newOne.setMedia(parentMedia);
+		SimpleSelector newOne = new SimpleSelector();
+		if (parentMedia != null)
+			newOne.setMedia(parentMedia.clone());
 		newOne.selectedElementName = selectedElementName;
-		newOne.selectedClasses = new ArrayList<>(selectedClasses);
+		newOne.selectedClasses = new ArrayList<>();
+		for (String clazz : selectedClasses)
+			newOne.addClassName(clazz);
+		
 		newOne.selectedID = selectedID;
-		newOne.conditions = new ArrayList<>(conditions);
-		newOne.pseudoClasses = new ArrayList<>(pseudoClasses);
-		newOne.pseudoElements = new ArrayList<>(pseudoElements);
+		
+		newOne.conditions = new ArrayList<>();
+		for (SelectorCondition condition : this.conditions)
+			newOne.addCondition(condition.clone());
+		
+		newOne.pseudoClasses = new ArrayList<>();
+		for (PseudoClass pseudoClass : this.pseudoClasses)
+			newOne.addPseudoClass(pseudoClass.clone());
+		
+		newOne.pseudoElements = new ArrayList<>();
+		for (PseudoElement pseudoElement : this.pseudoElements)
+			newOne.addPseudoElement(pseudoElement.clone());
+		
 		newOne.declarations = new LinkedHashSet<>();
 		for (Declaration d : this.declarations)
 			newOne.addDeclaration(d.clone());
+		
 		return newOne;
 	}
 	

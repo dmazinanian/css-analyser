@@ -16,7 +16,7 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
 
-public class RefactorerDuplications {
+public class RefactorDuplications {
 	
 	public static StyleSheet groupingRefactoring(StyleSheet originalStyleSheet, ItemSet itemset) {
 		

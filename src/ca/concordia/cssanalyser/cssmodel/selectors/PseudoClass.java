@@ -97,5 +97,9 @@ public class PseudoClass {
 	public static boolean isPseudoclassWithNoXpathEquivalence(String name) {
 		return unsupportedPseudoClasses.contains(name);
 	}
+	
+	public PseudoClass clone() {
+		return new PseudoClass(name, value);
+	}
 
 }

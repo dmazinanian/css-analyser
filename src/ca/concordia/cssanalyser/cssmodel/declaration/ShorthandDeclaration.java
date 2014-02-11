@@ -231,7 +231,7 @@ public class ShorthandDeclaration extends Declaration {
 				individual.getRealValues().add(v);
 			}
 		} else {
-			individual = DeclarationFactory.getDeclaration(propertyName, valuesList, parentSelector, lineNumber, colNumber, isImportant);
+			individual = DeclarationFactory.getDeclaration(propertyName, valuesList, parentSelector, lineNumber, colNumber, isImportant, true);
 		}
 			
 		addIndividualDeclaration(individual);

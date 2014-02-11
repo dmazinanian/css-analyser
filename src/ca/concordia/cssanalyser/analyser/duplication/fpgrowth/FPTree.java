@@ -12,9 +12,9 @@ import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 
 public class FPTree {
 	
-	private final Node root;
-	private final Map<Item, Node> itemNodeMap;
-	private final TreeSet<Item> headerTable;
+	private Node root;
+	private Map<Item, Node> itemNodeMap;
+	private TreeSet<Item> headerTable;
 	private long nodeAutoID = -1;
 	
 	public FPTree() {
@@ -97,64 +97,64 @@ public class FPTree {
 		return headerTable; 
 	}
 	
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
+//	@Override
+//	public String toString() {
+//		StringBuilder sb = new StringBuilder();
+////		getTreeString(sb, root);
+////		sb.append("\n-------------\n");
+////		for (Item i : itemNodeMap.keySet())
+////		{
+////			Node node = itemNodeMap.get(i);
+////			sb.append(i + " -> " + node +" -> ");
+////			while (node.getLinkNode() != null) {
+////				sb.append(node.getLinkNode() + " -> ");
+////				node = node.getLinkNode();
+////			}
+////			sb.append("\n");
+////		}
 //		getTreeString(sb, root);
-//		sb.append("\n-------------\n");
-//		for (Item i : itemNodeMap.keySet())
-//		{
-//			Node node = itemNodeMap.get(i);
-//			sb.append(i + " -> " + node +" -> ");
-//			while (node.getLinkNode() != null) {
-//				sb.append(node.getLinkNode() + " -> ");
-//				node = node.getLinkNode();
-//			}
-//			sb.append("\n");
+//		return sb.toString();
+//		
+//	}
+//
+//	private void getTreeString(StringBuilder stringBuilder, Node node) {
+//		/*stringBuilder.append(node.toString() + "(");
+//		for (Node child : node.getChildern())
+//			stringBuilder.append(child + " ");
+//		stringBuilder.append(")\n");
+//		for (Node child : node.getChildern())
+//			getTreeString(stringBuilder, child);
+//		*/
+//		if (node == root) {
+//			stringBuilder.append(String.format("tree.fpgrowth(%s)", format("null")));
+//		} else if (node.getChildern().size() == 0) {
+//			stringBuilder.append(String.format("leaf(%s)", 
+//					format(node.getItem().getFirstDeclaration().getProperty() + 
+//							"$^{" + node.getNumberOfTransactions() + "}$" +
+//							node.getItem().getSupport())));
+//		} else {
+//			stringBuilder.append(String.format("tree(%s)", 
+//					format(node.getItem().getFirstDeclaration().getProperty() + 
+//							"$^{" + node.getNumberOfTransactions() + "}$" +
+//							node.getItem().getSupport())));
 //		}
-		getTreeString(sb, root);
-		return sb.toString();
-		
-	}
-
-	private void getTreeString(StringBuilder stringBuilder, Node node) {
-		/*stringBuilder.append(node.toString() + "(");
-		for (Node child : node.getChildern())
-			stringBuilder.append(child + " ");
-		stringBuilder.append(")\n");
-		for (Node child : node.getChildern())
-			getTreeString(stringBuilder, child);
-		*/
-		if (node == root) {
-			stringBuilder.append(String.format("tree.fpgrowth(%s)", format("null")));
-		} else if (node.getChildern().size() == 0) {
-			stringBuilder.append(String.format("leaf(%s)", 
-					format(node.getItem().getFirstDeclaration().getProperty() + 
-							"$^{" + node.getNumberOfTransactions() + "}$" +
-							node.getItem().getSupport())));
-		} else {
-			stringBuilder.append(String.format("tree(%s)", 
-					format(node.getItem().getFirstDeclaration().getProperty() + 
-							"$^{" + node.getNumberOfTransactions() + "}$" +
-							node.getItem().getSupport())));
-		}
-		if (node.getChildern().size() != 0) {
-			stringBuilder.append("(\n");
-			for (Node child : node.getChildern()) {
-				getTreeString(stringBuilder, child);
-			}
-			stringBuilder.append("\n)");
-		}
-		
-		if (node == root)
-			stringBuilder.append(";\ndrawtrees(fpgrowth);");
-		else
-			stringBuilder.append(", ");
-	}
-	
-	private String format(String s) {
-		return "btex " + s.replace("#", "\\#").replace("%", "\\%").replace("_", "\\_") + " etex";
-	}
+//		if (node.getChildern().size() != 0) {
+//			stringBuilder.append("(\n");
+//			for (Node child : node.getChildern()) {
+//				getTreeString(stringBuilder, child);
+//			}
+//			stringBuilder.append("\n)");
+//		}
+//		
+//		if (node == root)
+//			stringBuilder.append(";\ndrawtrees(fpgrowth);");
+//		else
+//			stringBuilder.append(", ");
+//	}
+//	
+//	private String format(String s) {
+//		return "btex " + s.replace("#", "\\#").replace("%", "\\%").replace("_", "\\_") + " etex";
+//	}
 
 	void prune(int minSupport) {
 		Node n;
@@ -188,6 +188,5 @@ public class FPTree {
 			n = n.getLinkNode();
 		}
 		return support;
-	}
-	
+	}	
 }

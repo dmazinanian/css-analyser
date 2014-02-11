@@ -8,7 +8,7 @@ import ca.concordia.cssanalyser.cssmodel.media.Media;
 import ca.concordia.cssanalyser.cssmodel.media.SingleMedia;
 
 
-public abstract class Selector {
+public abstract class Selector  {
 	
 	protected int lineNumber;
 	protected int columnNumber;

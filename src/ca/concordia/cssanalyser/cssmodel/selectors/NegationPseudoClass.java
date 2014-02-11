@@ -45,4 +45,8 @@ public class NegationPseudoClass extends PseudoClass {
 		return true;
 	}
 	
+	public NegationPseudoClass clone() {
+		return new NegationPseudoClass(insideSelector.clone());
+	}
+	
 }

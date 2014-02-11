@@ -1,6 +1,6 @@
 package ca.concordia.cssanalyser.refactoring.dependencies;
 
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -11,7 +11,7 @@ import java.util.Set;
  * @param <E>
  */
 public abstract class CSSDependency<E> {
-	private Set<E> labels = new LinkedHashSet<>();
+	private Set<E> labels = new HashSet<>();
 	private final CSSDependencyNode fromNode;
 	private final CSSDependencyNode toNode;
 	
@@ -48,5 +48,8 @@ public abstract class CSSDependency<E> {
 		if (builder.length() > 2)
 			builder.delete(builder.length() - 2, builder.length());
 		return builder.toString();
-	}
+	}	
+	
+	public abstract int getSpecialHashCode();
 }
+ 

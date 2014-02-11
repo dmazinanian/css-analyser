@@ -22,20 +22,20 @@ public class FPGrowth {
 	
 	private static Logger LOGGER = LoggerFactory.getLogger(FPGrowth.class);
 	
-	private final DataSet initialDataSet;
 	private final Map<Integer, ItemSetList> resultItemSetLists;
 	
-	public FPGrowth(DataSet initialDataSet) {
-		this.initialDataSet = initialDataSet;
+	public FPGrowth() { 
 		resultItemSetLists = new HashMap<>();
 	}
 	
-	public List<ItemSetList> mine(int minSupport) {
+	public List<ItemSetList> mine(Collection<TreeSet<Item>> dataSet, int minSupport) {
 		
-		FPTree tree = generateFPTree(initialDataSet.getTransactions().values());
+		FPTree tree = generateFPTree(dataSet);
 
 		fpGrowth(tree, new HashSet<Item>(), minSupport);
-
+		
+		tree = null;
+		
 		// Deliver results in order. Could we use TreeMap?!
 		List<ItemSetList> results = new ArrayList<>();
 		for (int i = 1; i <= resultItemSetLists.size(); i++) {

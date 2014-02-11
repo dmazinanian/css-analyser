@@ -45,6 +45,8 @@ public class PseudoElement {
 		return true;
 	}
 	
-	
+	public PseudoElement clone() {
+		return new PseudoElement(name);
+	}
 
 }

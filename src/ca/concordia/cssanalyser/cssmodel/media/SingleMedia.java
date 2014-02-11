@@ -34,5 +34,10 @@ public class SingleMedia extends Media {
 	public String toString() {
 		return name;
 	}
+	
+	@Override
+	public SingleMedia clone() {
+		return new SingleMedia(name);
+	}
 
 }

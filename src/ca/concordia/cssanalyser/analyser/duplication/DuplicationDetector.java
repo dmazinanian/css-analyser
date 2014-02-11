@@ -7,13 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 import ca.concordia.cssanalyser.analyser.duplication.TypeFourDuplicationInstance.TypeIVBDuplication;
 import ca.concordia.cssanalyser.analyser.duplication.apriori.Apriori;
-import ca.concordia.cssanalyser.analyser.duplication.fpgrowth.DataSet;
 import ca.concordia.cssanalyser.analyser.duplication.fpgrowth.FPGrowth;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
@@ -145,7 +145,7 @@ public class DuplicationDetector {
 			currentTypeIIDuplicatedDeclarations.add(currentDeclaration);
 			boolean mustAddCurrentTypeTwoDuplication = false;
 			
-			// for apriori
+			// for Apriori
 			Item newItem = declarationItemMap.get(currentDeclaration);
 			if (newItem == null) {
 				newItem = new Item(currentDeclaration);
@@ -396,7 +396,7 @@ public class DuplicationDetector {
 							equal = false;
 							break;
 						}
-						
+
 					}
 					if (equal) {
 						visitedSelectors.add(checkingSelectorIndex);
@@ -407,27 +407,7 @@ public class DuplicationDetector {
 			if (typeIVBDuplication.getSelectors().size() > 1) {
 				typeFourBDuplicationsList.addDuplication(typeIVBDuplication);
 			}
-		}
-		
-		// String filePath = styleSheet.getFilePath();
-
-		//System.out.println(styleSheet);
-		
-		/*for (Selector selector : styleSheet.getAllSelectors()) {
-			if (selector instanceof BaseSelector) {
-				BaseSelector atomicSelector = (BaseSelector)selector;
-				String XPath = xpath.XPathHelper.AtomicSelectorToXPath(atomicSelector);
-				System.out.println(atomicSelector + "->" + XPath);
-				if (XPath == null) continue;
-				NodeList nodeList = DOMHelper.queryDocument(model.getDocument(), XPath);
-				if (nodeList == null)
-					continue;
-				for (int i = 0; i < nodeList.getLength(); ++i) {
-					Element e = (Element) nodeList.item(i);
-					System.out.println(e.getNodeName() + e.getTextContent());
-				}
-			}
-		}*/
+ 		}
 	}
 
 	public List<ItemSetList> apriori(int minsup) {
@@ -436,20 +416,22 @@ public class DuplicationDetector {
 	}
 
 	public List<ItemSetList> fpGrowth(int minSupport) {
-		DataSet dataSet = new DataSet();
+		List<TreeSet<Item>> itemSets = new ArrayList<>(stylesheet.getAllSelectors().size());
 		
-		for (Item item : new HashSet<>(declarationItemMap.values())) {
-			if (item.getSupport().size() >= minSupport) {
-				for (Selector selector : item.getSupport())
-					dataSet.addItem(selector, item);	
+		for (Selector s : stylesheet.getAllSelectors()) {
+			TreeSet<Item> currentItems = new TreeSet<>();
+			for (Declaration d : s.getDeclarations()) {
+				Item item = declarationItemMap.get(d);
+				if (item.getSupport().size() >= minSupport) {
+						currentItems.add(item);	
+				}		
 			}
+			if (currentItems.size() > 0)
+				itemSets.add(currentItems);
 		}
-//		for (Declaration declaration : stylesheet.getAllDeclarations()) {
-//			if (declarationItemMap.get(declaration).getSupport().size() >= minSupport)
-//				dataSet.addItem(declaration.getSelector(), declarationItemMap.get(declaration));
-//		}
-		FPGrowth fpGrowth = new FPGrowth(dataSet);
-		return fpGrowth.mine(minSupport);	
+		
+		FPGrowth fpGrowth = new FPGrowth();
+		return fpGrowth.mine(itemSets, minSupport);
 	}
 
 		

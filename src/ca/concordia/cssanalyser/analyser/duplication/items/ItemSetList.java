@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -257,6 +258,16 @@ public class ItemSetList implements Set<ItemSet> {
 				toRemove.add(itemSet);
 		}
 		itemsets.removeAll(toRemove);
+	}
+
+	public static ItemSet findItemSetWithMaxImpact(List<ItemSetList> itemSetList) {
+		ItemSet itemSetWithMaxImpact = null;
+		for (ItemSetList isl : itemSetList)
+			for (ItemSet is : isl) {
+				if (itemSetWithMaxImpact == null || itemSetWithMaxImpact.getRefactoringImpact() < is.getRefactoringImpact())
+					itemSetWithMaxImpact = is;
+			}
+		return itemSetWithMaxImpact;
 	}
 
 }
