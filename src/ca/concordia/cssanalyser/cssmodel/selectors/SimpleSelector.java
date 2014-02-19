@@ -173,7 +173,7 @@ public class SimpleSelector extends BaseSelector {
 		BaseSelector otherBaseSelector = (BaseSelector) obj;
 
 		if (lineNumber != otherBaseSelector.lineNumber ||
-				columnNumber == otherBaseSelector.columnNumber)
+				columnNumber != otherBaseSelector.columnNumber)
 			return false;
 		
 		if (getParentGroupingSelector() == null) {

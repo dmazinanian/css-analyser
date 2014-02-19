@@ -336,11 +336,20 @@ public class CSSAnalyser {
 			IOHelper.writeStringToFile(test.toString(), folderName + "/dependency-differences" + i + ".txt");
 			
 			RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
-			StyleSheet s = r.refactorToSatisfyOverridingDependencies(styleSheet, dependencies); 
-			CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(s, dom); 
+			StyleSheet refactoredAndOrdered = r.refactorToSatisfyOverridingDependencies(styleSheet, dependencies); 
+			CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(refactoredAndOrdered, dom); 
+			
+			IOHelper.writeStringToFile(refactoredAndOrdered.toString(), folderName + "/refactored-ordered" + i + ".css");
+			
 			CSSValueOverridingDependencyList dependencies2 = dependencyDetector2.findOverridingDependancies();        
-			System.out.println("\n\nAfter refactoring " + i);  
-			System.out.println(dependencies.getDifferencesWith(dependencies2));	
+			LOGGER.warn("Differences in dependencies after reordering " + i);  
+			LOGGER.warn(dependencies.getDifferencesWith(dependencies2).toString() + "\n");	
+			
+			try {
+				styleSheet = parser.parseExternalCSS(folderName + "/refactored-ordered" + i + ".css");
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
 			
 			DuplicationDetector duplicationFinderRefacored = new DuplicationDetector(styleSheet);
 			duplicationFinderRefacored.findDuplications();
