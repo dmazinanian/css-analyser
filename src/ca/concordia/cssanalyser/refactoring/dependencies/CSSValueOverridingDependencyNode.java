@@ -26,9 +26,9 @@ public class CSSValueOverridingDependencyNode implements CSSDependencyNode {
 		                                                                                                                         
 		CSSValueOverridingDependencyNode otherValueOverridingDependencyNode = (CSSValueOverridingDependencyNode)otherCSSDependencyNode;
 		                                                                                                                         
-		return this.selector.selectorEquals(otherValueOverridingDependencyNode.getSelector()) &&
-				(this.declaration.declarationEquals(otherValueOverridingDependencyNode.declaration) ||
-				this.declaration.declarationIsEquivalent(otherValueOverridingDependencyNode.declaration));                    
+		return this.selector.selectorEquals(otherValueOverridingDependencyNode.getSelector()); // &&
+				//(this.declaration.declarationEquals(otherValueOverridingDependencyNode.declaration) ||
+				//this.declaration.declarationIsEquivalent(otherValueOverridingDependencyNode.declaration));                    
 				                                                                                                                 
 	}
 		

@@ -92,8 +92,8 @@ public class CSSDependencyDetector {
 				for (BaseSelector selector : selectorsForCurrentNode) {
 					for (Declaration declaration : selector.getDeclarations()) {
 						
-						if (declaration instanceof ShorthandDeclaration && ((ShorthandDeclaration)declaration).isVirtual())
-							continue;
+//						if (declaration instanceof ShorthandDeclaration && ((ShorthandDeclaration)declaration).isVirtual())
+//							continue;
 						
 						// We find all possible properties which could be styled using this declaration 
 						Set<String> possiblyStyledPropertiesSet = new HashSet<>();

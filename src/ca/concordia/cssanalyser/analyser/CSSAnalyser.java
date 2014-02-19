@@ -23,6 +23,7 @@ import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.refactoring.RefactorDuplications;
 import ca.concordia.cssanalyser.refactoring.RefactorToSatisfyDependencies;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDifferenceList;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 
@@ -294,7 +295,7 @@ public class CSSAnalyser {
 		} else {                                                                                                         
 			dependencyDetector = new CSSDependencyDetector(originalStyleSheet);                                     
 		}
-		CSSValueOverridingDependencyList dependencies = dependencyDetector.findOverridingDependancies();
+		CSSValueOverridingDependencyList originalDependencies = dependencyDetector.findOverridingDependancies();
 
 		int i = 0;
 		while (true) {
@@ -325,30 +326,34 @@ public class CSSAnalyser {
 			
 			CSSValueOverridingDependencyList refactoredDependencies = refactoredDependencyDetector.findOverridingDependancies();
 			
+			CSSDependencyDifferenceList differences = originalDependencies.getDifferencesWith(refactoredDependencies);
+			
 			StringBuilder test = new StringBuilder(); 
-			test.append(dependencies);                                                                                
+			test.append(originalDependencies);                                                                                
 			test.append(System.lineSeparator());                                                                                            
 			test.append(refactoredDependencies);                                                                                                                                                                                  
 			test.append(System.lineSeparator());                                    
-			test.append(dependencies.getDifferencesWith(refactoredDependencies));
+			test.append(differences);
 			
-			//System.out.println(test);
 			IOHelper.writeStringToFile(test.toString(), folderName + "/dependency-differences" + i + ".txt");
 			
-			RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
-			StyleSheet refactoredAndOrdered = r.refactorToSatisfyOverridingDependencies(styleSheet, dependencies); 
-			CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(refactoredAndOrdered, dom); 
-			
-			IOHelper.writeStringToFile(refactoredAndOrdered.toString(), folderName + "/refactored-ordered" + i + ".css");
-			
-			CSSValueOverridingDependencyList dependencies2 = dependencyDetector2.findOverridingDependancies();        
-			LOGGER.warn("Differences in dependencies after reordering " + i);  
-			LOGGER.warn(dependencies.getDifferencesWith(dependencies2).toString() + "\n");	
-			
-			try {
-				styleSheet = parser.parseExternalCSS(folderName + "/refactored-ordered" + i + ".css");
-			} catch (Exception ex) {
-				ex.printStackTrace();
+			if (differences.size() > 0) {
+				
+				RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
+				StyleSheet refactoredAndOrdered = r.refactorToSatisfyOverridingDependencies(styleSheet, originalDependencies); 
+				CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(refactoredAndOrdered, dom); 
+				
+				IOHelper.writeStringToFile(refactoredAndOrdered.toString(), folderName + "/refactored-ordered" + i + ".css");
+				
+				CSSValueOverridingDependencyList dependencies2 = dependencyDetector2.findOverridingDependancies();        
+				LOGGER.warn("Differences in dependencies after reordering " + i);  
+				LOGGER.warn(originalDependencies.getDifferencesWith(dependencies2).toString() + "\n");	
+				
+				try {
+					styleSheet = parser.parseExternalCSS(folderName + "/refactored-ordered" + i + ".css");
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
 			}
 			
 			DuplicationDetector duplicationFinderRefacored = new DuplicationDetector(styleSheet);

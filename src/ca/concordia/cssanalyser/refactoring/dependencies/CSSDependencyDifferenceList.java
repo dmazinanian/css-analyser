@@ -1,9 +1,10 @@
 package ca.concordia.cssanalyser.refactoring.dependencies;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
-public class CSSDependencyDifferenceList {
+public class CSSDependencyDifferenceList implements Iterable<CSSDependencyDifference<?>> {
 
 	private final List<CSSDependencyDifference<?>> differences;
 	
@@ -23,5 +24,16 @@ public class CSSDependencyDifferenceList {
 		}
 		return builder.toString();
 	}
+	
+	public int size() {
+		return differences.size();
+	}
+
+	@Override
+	public Iterator<CSSDependencyDifference<?>> iterator() {
+		return differences.iterator();
+	}
+	
+
 	
 }

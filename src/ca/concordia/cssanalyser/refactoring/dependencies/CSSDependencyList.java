@@ -188,20 +188,18 @@ public abstract class CSSDependencyList<T extends CSSDependency<?>> implements L
 		Set<Integer> toRemoveFromAdded = new HashSet<>();
 		
 		for (int i = 0; i < missing.size(); i++) {
-			if (toRemoveFromMissing.contains(i))
-				continue;
+			//if (toRemoveFromMissing.contains(i))
+			//	continue;
 			CSSDependency<?> d = missing.get(i);
-//			if (d.getStartingNode().toString().contains("#yucs-top-bar .sp<[@media only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min--moz-device-pixel-ratio: 2), only screen and (-o-min-device-pixel-ratio: 2 / 1), only screen and (min-device-pixel-ratio: 2), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 2dppx)]>$background-image: url('https://s1.yimg.com/kx/yucs/uh3/uh/images/659/uh_sprite_x2.png')"))
-//				System.out.print("");
 			
 			for (int j = 0; j < added.size(); j++) {
-				if (toRemoveFromAdded.contains(j))
-					continue;
+				//if (toRemoveFromAdded.contains(j))
+				//	continue;
 				CSSDependency<?> rd = added.get(j);
 				
 				if (rd.getStartingNode().nodeEquals(d.getEndingNode()) && 
 						d.getStartingNode().nodeEquals(rd.getEndingNode()) &&
-						rd.getDependencyLabels().equals(d.getDependencyLabels())) {
+						(rd.getDependencyLabels().containsAll(d.getDependencyLabels()) || d.getDependencyLabels().containsAll(rd.getDependencyLabels()))) {
 					toRemoveFromMissing.add(i);
 					toRemoveFromAdded.add(j);
 					toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.REVERSED, d));
@@ -216,7 +214,7 @@ public abstract class CSSDependencyList<T extends CSSDependency<?>> implements L
 		
 		for (int i = 0; i < added.size(); i++) {
 			if (!toRemoveFromAdded.contains(i))
-				toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.MISSING, added.get(i)));
+				toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.ADDED, added.get(i)));
 		}
 
 		return toReturn;
