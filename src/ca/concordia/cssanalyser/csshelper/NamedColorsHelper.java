@@ -3,7 +3,7 @@ package ca.concordia.cssanalyser.csshelper;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class NamedColors {
+public final class NamedColorsHelper {
 
 	// TODO Its better to have an external file like an XML
 	@SuppressWarnings("serial")

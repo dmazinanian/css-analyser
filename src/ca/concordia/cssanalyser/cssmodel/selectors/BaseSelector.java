@@ -3,6 +3,10 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.w3c.dom.Document;
+
+import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
+
 /**
  * Represents the selectors which are not grouped
  * (not combined using any combinator)
@@ -38,6 +42,41 @@ public abstract class BaseSelector extends Selector {
 	public GroupingSelector getParentGroupingSelector() {
 		return parentGroupingSelector;
 	}
+	
+	/**
+	 * Returns the specificity value for this base selector. <br />
+	 * <br />
+	 * From http://www.w3.org/TR/selectors/#specificity: <br />
+	 * <br />
+	 * A selector's specificity is calculated as follows: <br />
+	 * - count the number of ID selectors in the selector (= a) <br />
+	 * - count the number of class selectors, attributes selectors, and pseudo-classes in the selector (= b) <br />
+	 * - count the number of type selectors and pseudo-elements in the selector (= c) <br />
+	 * - ignore the universal selector <br />
+	 * Selectors inside the negation pseudo-class are counted like any other, but the negation itself does not count as a pseudo-class. <br />
+	 * Concatenating the three numbers a-b-c (in a number system with a large base) gives the specificity. <br />
+	 * <br />
+	 * Note: Repeated occurrances of the same simple selector are allowed and do increase specificity. <br />
+	 * Note: the specificity of the styles specified in an HTML style attribute is described in CSS 2.1.. <br />
+	 * 
+	 * @return
+	 */
+	public int getSpecificity() {
+		int[] specificityElements = getSpecificityElements();
+		String a = String.valueOf(specificityElements[0]);
+		String b = String.valueOf(specificityElements[1]);
+		String c = String.valueOf(specificityElements[2]);
+		
+		return Integer.valueOf(a + b + c);
+	}
+	
+	/**
+	 * Returns the three parts of the specificity for this base selector,
+	 * where a,b and c are stored in the first to third cells of the returned array respectively
+	 * The calculation of the specificity value is done using {@link #getSpecificity()}
+	 * @return
+	 */
+	protected abstract int[] getSpecificityElements();
 	
 	protected abstract String getXPathConditionsString(List<String> xpathConditions) throws UnsupportedSelectorToXPathException;
 
@@ -95,31 +134,7 @@ public abstract class BaseSelector extends Selector {
 	}
 	
 	public abstract BaseSelector clone();
-
 	
-	/*
-	 * http://www.w3.org/TR/CSS21/cascade.html#specificity
-	 * 
-	 * 6.4.3 Calculating a selector's specificity
-	 * 
-	 * A selector's specificity is calculated as follows:
-	 * 
-	 * 1)	Count 1 if the declaration is from is a 'style' attribute rather than
-	 * 		a rule with a selector, 0 otherwise (= a) (In HTML, values of an
-	 * 		element's "style" attribute are style sheet rules. These rules have
-	 * 		no selectors, so a=1, b=0, c=0, and d=0.)
-	 * 
-	 * 2) 	Count the number of ID attributes in the selector (= b)
-	 * 3) 	Count the number of other attributes and pseudo-classes in the selector (= c)
-	 * 4) 	Count the number of element names and pseudo-elements in the selector (= d)
-	 *	
-	 * The specificity is based only on the form of the selector. In particular, a selector of
-	 * the form "[id=p33]" is counted as an attribute selector (a=0, b=0, c=1, d=0), even if 
-	 * the id attribute is defined as an "ID" in the source document's DTD.
-	 * 
-	 * Concatenating the four numbers a-b-c-d (in a number system with a large base) gives the specificity.
-	 */
-
-	//public abstract int getSpecificity(); 
+	public abstract DOMNodeWrapperList getSelectedNodes(Document document);
 
 }

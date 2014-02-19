@@ -75,13 +75,13 @@ public abstract class CSSValueOverridingDependency extends CSSDependency<String>
 	}
 	
 	/**
-	 * Returns true if current dependency has the given selector 
-	 * participating in this dependency
+	 * TODO
 	 * @param selector
 	 * @return
 	 */
 	public boolean containsSelector(Selector selector) {
-		return getSelector1().selectorEquals(selector) || getSelector2().selectorEquals(selector);
+		//return getSelector1().selectorEquals(selector) || getSelector2().selectorEquals(selector);
+		return getDeclaration1().getSelector().selectorEquals(selector) || getDeclaration2().getSelector().selectorEquals(selector);
 	}
 	
 	@Override
@@ -95,6 +95,6 @@ public abstract class CSSValueOverridingDependency extends CSSDependency<String>
 	
 	@Override
 	public String toString() {
-		return getStartingNode() + "->" + getEndingNode() + "(" + getLabelsString() + ")";
+		return getStartingNode() + " -> " + getEndingNode() + "(" + getLabelsString() + ")";
 	}
 }

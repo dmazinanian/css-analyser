@@ -6,7 +6,7 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
  */
 public class ChildSelector extends DescendantSelector {
 
-	public ChildSelector(BaseSelector parent, BaseSelector child) {
+	public ChildSelector(BaseSelector parent, SimpleSelector child) {
 		super(parent, child);
 	}
 	
@@ -17,7 +17,11 @@ public class ChildSelector extends DescendantSelector {
 
 	@Override
 	public ChildSelector clone() {
-		return new ChildSelector(getParentSelector().clone(), getChildSelector().clone());
+		ChildSelector newOne = new ChildSelector(getParentSelector().clone(), getChildSelector().clone());
+		newOne.setLineNumber(lineNumber);
+		newOne.setColumnNumber(columnNumber);
+		newOne.addMediaQueryLists(mediaQueryLists);
+		return newOne;
 	}
 	
 }

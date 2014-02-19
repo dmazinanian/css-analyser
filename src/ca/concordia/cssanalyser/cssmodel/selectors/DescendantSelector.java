@@ -10,12 +10,12 @@ import java.util.List;
  * one of which is again a {@link DescendantSelector} and anoter is an {@link DescendantSelector}
  * @author Davood Mazinanian
  */
-public class DescendantSelector extends BaseSelector {
+public class DescendantSelector extends Combinator {
 	
 	protected final BaseSelector parentSelector;
-	protected final BaseSelector childSelector; 
+	protected final SimpleSelector childSelector; 
 	
-	public DescendantSelector(BaseSelector parent, BaseSelector child) {
+	public DescendantSelector(BaseSelector parent, SimpleSelector child) {
 		parentSelector = parent;
 		childSelector = child;
 	}
@@ -34,7 +34,7 @@ public class DescendantSelector extends BaseSelector {
 	 * of a descendant selector)
 	 * @return
 	 */
-	public BaseSelector getChildSelector() {
+	public SimpleSelector getChildSelector() {
 		return childSelector;
 	}
 	
@@ -69,11 +69,11 @@ public class DescendantSelector extends BaseSelector {
 			return true;
 		if (!(obj instanceof DescendantSelector))
 			return false;
-		if (parentMedia != null) {
+		if (mediaQueryLists != null) {
 			DescendantSelector otherDescendantSelector = (DescendantSelector)obj;
-			if (otherDescendantSelector.parentMedia == null)
+			if (otherDescendantSelector.mediaQueryLists == null)
 				return false;
-			if (!parentMedia.equals(otherDescendantSelector.parentMedia))
+			if (!mediaQueryLists.equals(otherDescendantSelector.mediaQueryLists))
 				return false;
 		}
 		return true;
@@ -91,7 +91,11 @@ public class DescendantSelector extends BaseSelector {
 	
 	@Override
 	public DescendantSelector clone() {
-		return new DescendantSelector(this.parentSelector.clone(), this.childSelector.clone());
+		DescendantSelector newOne = new DescendantSelector(this.parentSelector.clone(), this.childSelector.clone());
+		newOne.setLineNumber(lineNumber);
+		newOne.setColumnNumber(columnNumber);
+		newOne.addMediaQueryLists(mediaQueryLists);
+		return newOne;
 	}
 
 	@Override
@@ -114,5 +118,27 @@ public class DescendantSelector extends BaseSelector {
 		
 	
 	}
+	
+	@Override
+	protected int[] getSpecificityElements() {
+		int[] toReturn = new int[3];
+		int[] parentainSelectorSpecificity = this.parentSelector.getSpecificityElements();
+		int[] childSelectorSpecificity = this.childSelector.getSpecificityElements();
+		toReturn[0] = parentainSelectorSpecificity[0] + childSelectorSpecificity[0];
+		toReturn[1] = parentainSelectorSpecificity[1] + childSelectorSpecificity[1];
+		toReturn[2] = parentainSelectorSpecificity[2] + childSelectorSpecificity[2];
+		return toReturn;
+	}
+
+	@Override
+	public SimpleSelector getRightHandSideSelector() {
+		return childSelector;
+	}
+
+	@Override
+	public BaseSelector getLeftHandSideSelector() {
+		return parentSelector;
+	}
+
 	
 }

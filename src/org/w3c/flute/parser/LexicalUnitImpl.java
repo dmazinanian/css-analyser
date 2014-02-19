@@ -26,6 +26,7 @@ public class LexicalUnitImpl implements LexicalUnit {
 	//public static final short PARAN = 46;
 	public static final short HEX_COLOR = 46;
 	public static final short TURN = 47;
+	public static final short REM = 48;
 	
 	LexicalUnit prev;
 	LexicalUnit next;
@@ -513,6 +514,10 @@ public class LexicalUnitImpl implements LexicalUnit {
 	static LexicalUnitImpl createSlash(int line, int column,
 			LexicalUnitImpl previous) {
 		return new LexicalUnitImpl(SAC_OPERATOR_SLASH, line, column, previous);
+	}
+
+	public static LexicalUnitImpl createREMS(int line, int column, LexicalUnitImpl previous, float v) {
+		return new LexicalUnitImpl(line, column, previous, REM, null, v);
 	}
 
 	/*public static LexicalUnitImpl createParan(int beginLine, int beginColumn,

@@ -107,65 +107,67 @@ public interface ParserConstants {
   /** RegularExpression Id. */
   int EMS = 51;
   /** RegularExpression Id. */
-  int EXS = 52;
+  int REMS = 52;
   /** RegularExpression Id. */
-  int DEG = 53;
+  int EXS = 53;
   /** RegularExpression Id. */
-  int RAD = 54;
+  int DEG = 54;
   /** RegularExpression Id. */
-  int GRAD = 55;
+  int RAD = 55;
   /** RegularExpression Id. */
-  int TURN = 56;
+  int GRAD = 56;
   /** RegularExpression Id. */
-  int MS = 57;
+  int TURN = 57;
   /** RegularExpression Id. */
-  int SECOND = 58;
+  int MS = 58;
   /** RegularExpression Id. */
-  int HZ = 59;
+  int SECOND = 59;
   /** RegularExpression Id. */
-  int KHZ = 60;
+  int HZ = 60;
   /** RegularExpression Id. */
-  int DIMEN = 61;
+  int KHZ = 61;
   /** RegularExpression Id. */
-  int HASH = 62;
+  int DIMEN = 62;
   /** RegularExpression Id. */
-  int IMPORT_SYM = 63;
+  int HASH = 63;
   /** RegularExpression Id. */
-  int MEDIA_SYM = 64;
+  int IMPORT_SYM = 64;
   /** RegularExpression Id. */
-  int CHARSET_SYM = 65;
+  int MEDIA_SYM = 65;
   /** RegularExpression Id. */
-  int PAGE_SYM = 66;
+  int CHARSET_SYM = 66;
   /** RegularExpression Id. */
-  int FONT_FACE_SYM = 67;
+  int PAGE_SYM = 67;
   /** RegularExpression Id. */
-  int ATKEYWORD = 68;
+  int FONT_FACE_SYM = 68;
   /** RegularExpression Id. */
-  int IMPORTANT_SYM = 69;
+  int ATKEYWORD = 69;
   /** RegularExpression Id. */
-  int RANGE0 = 70;
+  int IMPORTANT_SYM = 70;
   /** RegularExpression Id. */
-  int RANGE1 = 71;
+  int RANGE0 = 71;
   /** RegularExpression Id. */
-  int RANGE2 = 72;
+  int RANGE1 = 72;
   /** RegularExpression Id. */
-  int RANGE3 = 73;
+  int RANGE2 = 73;
   /** RegularExpression Id. */
-  int RANGE4 = 74;
+  int RANGE3 = 74;
   /** RegularExpression Id. */
-  int RANGE5 = 75;
+  int RANGE4 = 75;
   /** RegularExpression Id. */
-  int RANGE6 = 76;
+  int RANGE5 = 76;
   /** RegularExpression Id. */
-  int RANGE = 77;
+  int RANGE6 = 77;
   /** RegularExpression Id. */
-  int UNI = 78;
+  int RANGE = 78;
   /** RegularExpression Id. */
-  int UNICODERANGE = 79;
+  int UNI = 79;
   /** RegularExpression Id. */
-  int FUNCTION = 80;
+  int UNICODERANGE = 80;
   /** RegularExpression Id. */
-  int UNKNOWN = 81;
+  int FUNCTION = 81;
+  /** RegularExpression Id. */
+  int UNKNOWN = 82;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -200,8 +202,8 @@ public interface ParserConstants {
     "\"]\"",
     "\"*\"",
     "\".\"",
-    "\")\"",
     "\"(\"",
+    "\")\"",
     "\":\"",
     "<NONASCII>",
     "<H>",
@@ -226,6 +228,7 @@ public interface ParserConstants {
     "<IN>",
     "<PX>",
     "<EMS>",
+    "<REMS>",
     "<EXS>",
     "<DEG>",
     "<RAD>",

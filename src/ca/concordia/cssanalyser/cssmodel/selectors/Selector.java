@@ -3,35 +3,30 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
+import ca.concordia.cssanalyser.cssmodel.CSSSource;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.media.Media;
-import ca.concordia.cssanalyser.cssmodel.media.SingleMedia;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 
 
 public abstract class Selector  {
 	
 	protected int lineNumber;
 	protected int columnNumber;
-	protected Media parentMedia;
+	protected Set<MediaQueryList> mediaQueryLists;
 	protected Set<Declaration> declarations;
-	protected int specificityOfSelector;
+	protected CSSSource source = CSSSource.EXTERNAL;
+	protected CSSOrigin origin = CSSOrigin.AUTHOR;
 	
-	public int getSpecificity() {
-		return specificityOfSelector;
-	}
-
-	public void setSpecificity(int specificity) {
-		specificityOfSelector = specificity;
-	}
-
 	public Selector() {
 		this(-1, -1);
 	}
-
+	
 	public Selector(int fileLineNumber, int fileColNumber) {
 		lineNumber = fileLineNumber;
 		columnNumber = fileColNumber;
 		declarations = new LinkedHashSet<>();
+		mediaQueryLists = new LinkedHashSet<>();
 		
 	}
 	public void addDeclaration(Declaration declaration) {
@@ -43,9 +38,6 @@ public abstract class Selector  {
 		return declarations;
 	}
 	
-//	public Collection<Declaration> getAllDeclarationsHS() {
-//		return declarationsHashSet;
-//	}
 
 	public int getLineNumber() {
 		return lineNumber;
@@ -63,17 +55,13 @@ public abstract class Selector  {
 		columnNumber = fileColumnNumber;
 	}
 
-	public Media getMedia() {
-		return parentMedia;
+	public Set<MediaQueryList> getMediaQueryLists() {
+		return mediaQueryLists;
 	}
 
-	public void setMedia(Media media) {
-		parentMedia = media;
-	}
-
-	public void setMedia(String name) {
-		setMedia(new SingleMedia(name));
-	}
+//	public void setMediaQueryList(MediaQueryList mediaQueryList) {
+//		this.mediaQueryList = mediaQueryList;
+//	}
 	
 	/**
 	 * The equals() method for different selectors have different meanings
@@ -118,5 +106,23 @@ public abstract class Selector  {
 		Selector newEmptySelector = this.clone();
 		newEmptySelector.getDeclarations().clear();
 		return newEmptySelector;
-	}	
+	}
+	
+	public void addMediaQueryLists(Iterable<MediaQueryList> currentMediaQueryLists) {
+		for (MediaQueryList currentMediaQueryList : currentMediaQueryLists)
+			mediaQueryLists.add(currentMediaQueryList.clone());
+	}
+	
+	public void removeMediaQueryList(MediaQueryList mediaQueryList) {
+		mediaQueryLists.remove(mediaQueryList);
+	}
+	
+	public Iterable<MediaQueryList> mediaQueryLists() {
+		return mediaQueryLists;
+	}
+
+	public void addMediaQueryList(MediaQueryList forMedia) {
+		mediaQueryLists.add(forMedia);		
+	}
+	
 }

@@ -7,7 +7,7 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
  */
 public class AdjacentSiblingSelector extends SiblingSelector {
 
-	public AdjacentSiblingSelector(BaseSelector firstSelector, BaseSelector secondSelector) {
+	public AdjacentSiblingSelector(BaseSelector firstSelector, SimpleSelector secondSelector) {
 		super(firstSelector, secondSelector);
 	}
 
@@ -18,6 +18,10 @@ public class AdjacentSiblingSelector extends SiblingSelector {
 	
 	@Override
 	public AdjacentSiblingSelector clone() {
-		return new AdjacentSiblingSelector(getFirstSelector().clone(), getSecondSelector().clone());
+		AdjacentSiblingSelector newOne = new AdjacentSiblingSelector(getFirstSelector().clone(), getSecondSelector().clone());
+		newOne.setLineNumber(lineNumber);
+		newOne.setColumnNumber(columnNumber);
+		newOne.addMediaQueryLists(mediaQueryLists);
+		return newOne;
 	}
 }

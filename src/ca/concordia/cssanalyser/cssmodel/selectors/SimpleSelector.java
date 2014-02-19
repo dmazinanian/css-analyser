@@ -1,16 +1,24 @@
 package ca.concordia.cssanalyser.cssmodel.selectors;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
+import ca.concordia.cssanalyser.dom.DOMHelper;
+import ca.concordia.cssanalyser.dom.DOMHelper.BadXPathException;
+import ca.concordia.cssanalyser.dom.DOMNodeWrapper;
+import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
 
 
 /**
@@ -139,16 +147,17 @@ public class SimpleSelector extends BaseSelector {
 		if (!generalEquals(otherSelector))
 			return false;
 		
-		SimpleSelector otherAtomicSelector = (SimpleSelector)otherSelector;
+		SimpleSelector otherSimpleSelector = (SimpleSelector)otherSelector;
 		
-		return selectedElementName.equalsIgnoreCase(otherAtomicSelector.selectedElementName) &&
-				selectedID.equalsIgnoreCase(otherAtomicSelector.selectedID) &&
-				selectedClasses.size() == otherAtomicSelector.selectedClasses.size() && 
-					selectedClasses.containsAll(otherAtomicSelector.selectedClasses) &&
-				conditions.size() == otherAtomicSelector.conditions.size() &&
-					conditions.containsAll(otherAtomicSelector.conditions) &&
-				pseudoClasses.equals(otherAtomicSelector.pseudoClasses) &&
-				pseudoElements.equals(otherAtomicSelector.pseudoElements);
+		return selectedElementName.equalsIgnoreCase(otherSimpleSelector.selectedElementName) &&
+				selectedID.equalsIgnoreCase(otherSimpleSelector.selectedID) &&
+				selectedClasses.size() == otherSimpleSelector.selectedClasses.size() && 
+					selectedClasses.containsAll(otherSimpleSelector.selectedClasses) &&
+				conditions.size() == otherSimpleSelector.conditions.size() &&
+					conditions.containsAll(otherSimpleSelector.conditions) &&
+				pseudoClasses.equals(otherSimpleSelector.pseudoClasses) &&
+				pseudoElements.equals(otherSimpleSelector.pseudoElements) &&
+				mediaQueryLists.equals(otherSimpleSelector.mediaQueryLists);
 	}
 	
 	/**
@@ -185,11 +194,11 @@ public class SimpleSelector extends BaseSelector {
 			return true;
 		if (obj.getClass() != SimpleSelector.class)
 			return false;
-		if (parentMedia != null) {
+		if (mediaQueryLists != null) {
 			BaseSelector otherAtomicElementSelector = (BaseSelector)obj;
-			if (otherAtomicElementSelector.parentMedia == null)
+			if (otherAtomicElementSelector.mediaQueryLists == null)
 				return false;
-			if (!parentMedia.equals(otherAtomicElementSelector.parentMedia))
+			if (!mediaQueryLists.equals(otherAtomicElementSelector.mediaQueryLists))
 				return false;
 		}
 		return true;
@@ -244,9 +253,9 @@ public class SimpleSelector extends BaseSelector {
 
 	@Override
 	public SimpleSelector clone() {
-		SimpleSelector newOne = new SimpleSelector();
-		if (parentMedia != null)
-			newOne.setMedia(parentMedia.clone());
+		SimpleSelector newOne = new SimpleSelector(lineNumber, columnNumber);
+		if (mediaQueryLists != null)
+			newOne.addMediaQueryLists(mediaQueryLists);
 		newOne.selectedElementName = selectedElementName;
 		newOne.selectedClasses = new ArrayList<>();
 		for (String clazz : selectedClasses)
@@ -546,5 +555,57 @@ public class SimpleSelector extends BaseSelector {
 		}
 		
 		return prefix;
+	}
+
+	@Override
+	protected int[] getSpecificityElements() {
+		int[] toReturn = new int[3];
+		// count the number of ID selectors in the selector (= a)
+		if (!this.selectedID .equals(""))
+			toReturn[0] = 1;
+		// count the number of class selectors, attributes selectors, and pseudo-classes in the selector (= b)
+		// ignore negation pseudo class, while counting the inner selector as a 
+		toReturn[1] = selectedClasses.size() + conditions.size();
+		for (PseudoClass pseudoClass : pseudoClasses)
+			if (pseudoClass instanceof NegationPseudoClass) {
+				NegationPseudoClass negation = (NegationPseudoClass)pseudoClass;
+				int[] negationSelectorSpecificity = negation.getSelector().getSpecificityElements();
+				toReturn[0] += negationSelectorSpecificity[0];
+				toReturn[1] += negationSelectorSpecificity[1];
+				toReturn[2] += negationSelectorSpecificity[2];
+			}
+			else
+				toReturn[1] += pseudoClasses.size();
+		// count the number of type selectors and pseudo-elements in the selector (= c)
+		// ignore the universal selector
+		toReturn[2] += pseudoElements.size() + (selectedElementName.equals("*") ? 0 : 1);
+		
+		return toReturn;
+	}
+
+	@Override
+	public DOMNodeWrapperList getSelectedNodes(Document document) {
+		DOMNodeWrapperList toReturn = new DOMNodeWrapperList();
+		try {
+			NodeList nodes = DOMHelper.queryDocument(document, getXPath());
+			Set<PseudoClass> unsupportedPseudoClasses = getUnsupportedPseudoClasses();
+			for (int i = 0; i < nodes.getLength(); i++) {
+				toReturn.add(new DOMNodeWrapper(nodes.item(i), unsupportedPseudoClasses));
+			}
+			
+		} catch (BadXPathException | UnsupportedSelectorToXPathException e) {
+			e.printStackTrace();
+		}
+		return toReturn;
+	}
+
+	public Set<PseudoClass> getUnsupportedPseudoClasses() {
+		Set<PseudoClass> unsupportedPseudoClasses = new HashSet<>();
+		for (PseudoClass pseudoClass : getPseudoClasses()) {
+			if (pseudoClass.isPseudoclassWithNoXpathEquivalence()) {
+				unsupportedPseudoClasses.add(pseudoClass);
+			}
+		}
+		return unsupportedPseudoClasses;
 	}
 }

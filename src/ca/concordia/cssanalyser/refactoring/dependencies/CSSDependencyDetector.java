@@ -7,15 +7,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.PseudoClass;
-import ca.concordia.cssanalyser.cssmodel.selectors.SimpleSelector;
-import ca.concordia.cssanalyser.dom.DOMHelper;
+import ca.concordia.cssanalyser.dom.DOMNodeWrapper;
 
 public class CSSDependencyDetector {
 	
@@ -67,7 +64,7 @@ public class CSSDependencyDetector {
 			CSSValueOverridingDependencyList dependencies,
 			Map<Integer, CSSValueOverridingDependency> dependenciesSpecialHashMapper) {
 		// For each node, we find all the classes that select that node.
-		Map<Node, List<BaseSelector>> nodeToSelectorsMapping = DOMHelper.getCSSClassesForDOMNodes(document, styleSheet);
+		Map<DOMNodeWrapper, List<BaseSelector>> nodeToSelectorsMapping = styleSheet.getCSSClassesForDOMNodes(document);
 
 
 		// We have to keep track of the base selector in which the declaration exists
@@ -85,31 +82,20 @@ public class CSSDependencyDetector {
 			}
 		}
 		
-		for (Node node : nodeToSelectorsMapping.keySet()) {
+		for (DOMNodeWrapper node : nodeToSelectorsMapping.keySet()) {
 			List<BaseSelector> selectorsForCurrentNode = nodeToSelectorsMapping.get(node);
-			if (selectorsForCurrentNode.size() > 1) {
-				
+			//if (selectorsForCurrentNode.size() > 1) {
+
 				// Maps every property to a set of declarations in the stylesheet
 				Map<String, Set<Entry>> propertyToEntryMapping = new HashMap<>();
-				
+
 				for (BaseSelector selector : selectorsForCurrentNode) {
-					
-					/*
-					 * Check later for unsupported pseudo classes:
-					 * Save current selector's pseudo classes which don't have
-					 * corresponding XPath like :hover
-					 */
-					Set<PseudoClass> currentSelectorSpecialPseudoClasses = new HashSet<>();
-					if (selector instanceof SimpleSelector) {
-						SimpleSelector simple = (SimpleSelector)selector;
-						for (PseudoClass ps : simple.getPseudoClasses()) {
-							if (PseudoClass.isPseudoclassWithNoXpathEquivalence(ps.getName()))
-								currentSelectorSpecialPseudoClasses.add(ps);
-						}
-					}
-					
 					for (Declaration declaration : selector.getDeclarations()) {
-						 // We find all possible properties which could be styled using this declaration 
+						
+						if (declaration instanceof ShorthandDeclaration && ((ShorthandDeclaration)declaration).isVirtual())
+							continue;
+						
+						// We find all possible properties which could be styled using this declaration 
 						Set<String> possiblyStyledPropertiesSet = new HashSet<>();
 						// The first possible property is the real property of the declaration.
 						possiblyStyledPropertiesSet.add(declaration.getProperty());
@@ -117,86 +103,69 @@ public class CSSDependencyDetector {
 						if (declaration instanceof ShorthandDeclaration) {
 							possiblyStyledPropertiesSet.addAll(ShorthandDeclaration.getIndividualPropertiesForAShorthand(declaration.getProperty()));
 						}
-						
+
 						for (String possiblyStyledProperty : possiblyStyledPropertiesSet) {
 							// See if another declaration is already styling this property (so this new declaration will override the old one)
 							Set<Entry> declarationsStylingThisProperty;
 							if (propertyToEntryMapping.containsKey(possiblyStyledProperty)) {
 								// In this case, we create one dependency from each of those declarations to the current declaration
 								declarationsStylingThisProperty = propertyToEntryMapping.get(possiblyStyledProperty);
-								
+
 								for (Entry oldDeclarationEntry : declarationsStylingThisProperty) {
-									if (!oldDeclarationEntry.declaration.declarationIsEquivalent(declaration)) {
+									if (!oldDeclarationEntry.declaration.declarationIsEquivalent(declaration, true)) {
 										/*!oldDeclarationEntry.baseSelector.selectorEquals(selector) &&*/  
+
+										// Check to see whether such a dependency is there already
 										
-										boolean selectorsSlelectTheSameElement = true;
-																			
-										// Check for unsupported pseudo classes (those which don't have XPath)
-										if (currentSelectorSpecialPseudoClasses.size() > 0) {
-											selectorsSlelectTheSameElement = false;
-										}
-										
-										if (oldDeclarationEntry.baseSelector instanceof SimpleSelector) {
-											SimpleSelector simpleSelector  = (SimpleSelector)oldDeclarationEntry.baseSelector;
-											if (simpleSelector.getPseudoClasses().size() > 0) {
-												Set<PseudoClass> checkingSelectorSpecialPseudoClasses = new HashSet<>();
-												for (PseudoClass ps : simpleSelector.getPseudoClasses()) {
-													boolean isSpecialPseudoClass = PseudoClass.isPseudoclassWithNoXpathEquivalence(ps.getName());
-													if (isSpecialPseudoClass) {
-														checkingSelectorSpecialPseudoClasses.add(ps);
-														selectorsSlelectTheSameElement = false;
-													}
-												}
-												// Special pseudo classes of two selectors must be the same, otherwise, two selectors are not equal
-												if (currentSelectorSpecialPseudoClasses.equals(checkingSelectorSpecialPseudoClasses))
-													selectorsSlelectTheSameElement = true;
-											}
-										}
-
-
-
-										if (selectorsSlelectTheSameElement) {
-											// Check to see whether such a dependency is there already
-											int specialHashCode = CSSValueOverridingDependency.getSpecialHashCode(oldDeclarationEntry.baseSelector, oldDeclarationEntry.declaration,
-																											selector, declaration);
-											CSSValueOverridingDependency newDependency = dependenciesSpecialHashMapper.get(specialHashCode);
-											if (newDependency != null) {
-												newDependency.addDependencyLabel(possiblyStyledProperty);
+										int specialHashCode = CSSValueOverridingDependency.getSpecialHashCode(
+												oldDeclarationEntry.baseSelector, oldDeclarationEntry.declaration,
+												selector, declaration);
+										CSSValueOverridingDependency newDependency = dependenciesSpecialHashMapper.get(specialHashCode);
+										if (newDependency != null) {
+											newDependency.addDependencyLabel(possiblyStyledProperty);
+										} else {
+											if (oldDeclarationEntry.baseSelector == selector) {
+												// Intra-selector dependency
+												newDependency = new CSSIntraSelectorValueOverridingDependency(
+														selector,
+														oldDeclarationEntry.declaration,
+														declaration,
+														possiblyStyledProperty);
 											} else {
-												if (oldDeclarationEntry.baseSelector == selector) {
-													newDependency = new CSSIntraSelectorValueOverridingDependency(
-															selector,
+												// if specificities of selectors are the same, then there is a value overriding dependency
+												if (oldDeclarationEntry.baseSelector.getSpecificity() == selector.getSpecificity()) {
+													newDependency = new CSSInterSelectorValueOverridingDependency(
+															oldDeclarationEntry.baseSelector,
 															oldDeclarationEntry.declaration,
-															declaration,
+															selector, declaration,
 															possiblyStyledProperty);
 												} else {
-													newDependency = new CSSInterSelectorValueOverridingDependency(
-														oldDeclarationEntry.baseSelector,
-														oldDeclarationEntry.declaration,
-														selector, declaration,
-														possiblyStyledProperty);
+													
 												}
-												
+											}
+
+											if (newDependency != null) {
 												dependencies.add(newDependency);
 												dependenciesSpecialHashMapper.put(newDependency.getSpecialHashCode(), newDependency);
 											}
 										}
+
 									}
 								}
-								
+
 							} else { // If there is no such a declaration for current possibly styled property
 								declarationsStylingThisProperty = new HashSet<>();
 							}
-							
+
 							// Add current declaration as a styling declaration for current property
 							declarationsStylingThisProperty.add(new Entry(selector, declaration));
 							propertyToEntryMapping.put(possiblyStyledProperty, declarationsStylingThisProperty);
-												
+
 						}
 					}
 				}
-				
-			}
+
+			//}
 		}
 	}
 

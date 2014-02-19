@@ -7,12 +7,12 @@ import java.util.List;
  * selector1 ~ selector2
  * @author Davood Mazinanian
  */
-public class SiblingSelector extends BaseSelector {
+public class SiblingSelector extends Combinator {
 	
 	protected final BaseSelector beforeMainSelector;
-	protected final BaseSelector mainSelector;
+	protected final SimpleSelector mainSelector;
 	
-	public SiblingSelector(BaseSelector firstSelector, BaseSelector secondSelector) {
+	public SiblingSelector(BaseSelector firstSelector, SimpleSelector secondSelector) {
 		beforeMainSelector = firstSelector;
 		mainSelector = secondSelector;
 	}
@@ -21,7 +21,7 @@ public class SiblingSelector extends BaseSelector {
 		return beforeMainSelector;
 	}
 	
-	public BaseSelector getSecondSelector() {
+	public SimpleSelector getSecondSelector() {
 		return mainSelector;
 	}
 	
@@ -50,11 +50,11 @@ public class SiblingSelector extends BaseSelector {
 			return true;
 		if (!(obj instanceof SiblingSelector))
 			return false;
-		if (parentMedia != null) {
+		if (mediaQueryLists != null) {
 			SiblingSelector otherIndirectAdjacentSelector = (SiblingSelector)obj;
-			if (otherIndirectAdjacentSelector.parentMedia == null)
+			if (otherIndirectAdjacentSelector.mediaQueryLists == null)
 				return false;
-			if (!parentMedia.equals(otherIndirectAdjacentSelector.parentMedia))
+			if (!mediaQueryLists.equals(otherIndirectAdjacentSelector.mediaQueryLists))
 				return false;
 		}
 		return true;
@@ -82,7 +82,11 @@ public class SiblingSelector extends BaseSelector {
 	
 	@Override
 	public SiblingSelector clone() {
-		return new SiblingSelector(beforeMainSelector.clone(), mainSelector.clone());
+		SiblingSelector newOne = new SiblingSelector(beforeMainSelector.clone(), mainSelector.clone());
+		newOne.setLineNumber(lineNumber);
+		newOne.setColumnNumber(columnNumber);
+		newOne.addMediaQueryLists(mediaQueryLists);
+		return newOne;
 	}
 
 	@Override
@@ -109,6 +113,27 @@ public class SiblingSelector extends BaseSelector {
 		
 		return String.format("%s/following-sibling::%s", leftXPath, rightXPath);
 	
+	}
+
+	@Override
+	protected int[] getSpecificityElements() {
+		int[] toReturn = new int[3];
+		int[] beforeMainSelectorSpecificity = this.beforeMainSelector.getSpecificityElements();
+		int[] mainSelectorSpecificity = this.mainSelector.getSpecificityElements();
+		toReturn[0] = beforeMainSelectorSpecificity[0] + mainSelectorSpecificity[0];
+		toReturn[1] = beforeMainSelectorSpecificity[1] + mainSelectorSpecificity[1];
+		toReturn[2] = beforeMainSelectorSpecificity[2] + mainSelectorSpecificity[2];
+		return toReturn;
+	}
+
+	@Override
+	public SimpleSelector getRightHandSideSelector() {
+		return mainSelector;
+	}
+
+	@Override
+	public BaseSelector getLeftHandSideSelector() {
+		return beforeMainSelector;
 	}
 
 }

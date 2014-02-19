@@ -44,7 +44,13 @@ import org.w3c.flute.parser.selectors.ConditionFactoryImpl;
 import org.w3c.flute.util.Encoding;
 
 // :)
-import parser.CSSDocumentHandler;
+import ca.concordia.cssanalyser.parser.CSSDocumentHandler;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQuery;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
+import ca.concordia.cssanalyser.cssmodel.media.MediaFeatureExpression;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQuery.MediaQueryPrefix;
+
+
 
 
 /**
@@ -487,8 +493,8 @@ TOKEN :
   | < RBRACKET  : "]" >
   | < ANY       : "*" >
   | < DOT       : "." >
-  | < LPARAN    : ")" >
-  | < RPARAN    : "(">
+  | < LPARAN    : "(" >
+  | < RPARAN    : ")">
 }
 
 <DEFAULT>
@@ -540,6 +546,7 @@ TOKEN :
  | < IN : <NUMBER> "in" >
  | < PX : <NUMBER> "px" >
  | < EMS : <NUMBER> "em" >
+ | < REMS : <NUMBER> "rem" >
  | < EXS : <NUMBER> "ex" >
  | < DEG : <NUMBER> "deg" >
  | < RAD : <NUMBER> "rad" >
@@ -682,7 +689,8 @@ void ignoreStatement() :
 void importDeclaration() :
 {Token n;
  String uri;
- MediaListImpl ml = new MediaListImpl();
+ //MediaListImpl ml = new MediaListImpl();
+ MediaQueryList ml = new MediaQueryList();
 }
 {
  try {
@@ -701,11 +709,11 @@ void importDeclaration() :
        ( <S> )* ( mediaStatement(ml) )? ";"
        ( <S> )*
 	   {
-	       if (ml.getLength() == 0) {
+	       if (ml.size() == 0) {
 		   // see section 6.3 of the CSS2 recommandation.
-		   ml.addItem("all");
+		   ml.addMediaQuery(new MediaQuery("all", -1, -1));
 	       }
-	       documentHandler.importStyle(uri, ml, null);
+	       ((CSSDocumentHandler)documentHandler).importStyle(uri, ml, null);
 	   }
  } catch (ParseException e) {
      reportError(getLocator(), e);
@@ -721,13 +729,14 @@ void media() :
 { 
     boolean start = false;
     String ret;
-    MediaListImpl ml = new MediaListImpl(); 
+    //MediaListImpl ml = new MediaListImpl(); 
+	MediaQueryList ml = new MediaQueryList();
 }
 {
  try {
   <MEDIA_SYM> ( <S> )*
    mediaStatement(ml)
-   { start = true; documentHandler.startMedia(ml); }
+   { start = true; ((CSSDocumentHandler)documentHandler).startMedia(ml); }
    <LBRACE> ( <S> )* ( styleRule() | media() | skipUnknownRule() )* <RBRACE> ( <S> )*
  } catch (ParseException e) {
      reportError(getLocator(), e);
@@ -735,27 +744,80 @@ void media() :
      // reportWarningSkipText(getLocator(), skipStatement());
  } finally {
      if (start) {
-	 documentHandler.endMedia(ml);
+	  ((CSSDocumentHandler)documentHandler).endMedia(ml);
      }
  }
 }
 
-void mediaStatement(MediaListImpl ml) :
+void mediaStatement(MediaQueryList ml) :
 { 
-    String m;
+    MediaQuery m;
 }
 {
-   m=medium() ( <COMMA> ( <S> )* { ml.addItem(m); } m=medium() )* 
-   { ml.addItem(m); }
+   m=medium() ( <COMMA> ( <S> )* { ml.addMediaQuery(m); } m=medium() )* 
+   { ml.addMediaQuery(m); }
 }
 
 /**
  * @exception ParseException exception during the parse
  */
-String medium() : /* tv, projection, screen, ... */
-{Token n;}
+MediaQuery medium() : /* tv, projection, screen, ... */
 {
-    n=<IDENT> ( <S> )* { return convertIdent(n.image); }
+	Token prefixToken;
+	String mediaType = "";
+	MediaFeatureExpression expression;
+	MediaQuery toReturn;
+	MediaQueryPrefix prefix = null;
+}
+{                                                   
+    (
+		(
+			(LOOKAHEAD({ getToken(1).image.toLowerCase().equals("not" )|| getToken(1).image.toLowerCase().equals("only" ) }) 
+			prefixToken=<IDENT> ( <S> )* {prefix = MediaQueryPrefix.valueOf(convertIdent(prefixToken.image).toUpperCase());} )?
+			
+			(mediaType = media_type() (<S>)* { toReturn = new MediaQuery(prefix, mediaType, -1, -1); })
+			
+			((LOOKAHEAD({ getToken(1).image.toLowerCase().equals("and")})<IDENT>) (<S>)* expression=media_expression() { toReturn.addMediaFeatureExpression(expression); } )*
+		) 
+		|
+		(		
+			expression = media_expression() { toReturn = new MediaQuery(prefix, mediaType, -1, -1); toReturn.addMediaFeatureExpression(expression); } 
+			((LOOKAHEAD({getToken(1).image.toLowerCase().equals("and")})<IDENT>) (<S>)* expression=media_expression() { toReturn.addMediaFeatureExpression(expression); })* 
+		)
+	)
+	
+	{ return toReturn; }
+}
+
+String media_type() : 
+{
+	Token mediaType;
+}
+{
+	mediaType = <IDENT>
+	{
+		return convertIdent(mediaType.image);
+	}
+}
+
+MediaFeatureExpression media_expression() :
+{
+	String feature;
+	LexicalUnit featureExpression = null;
+}
+{
+	<LPARAN> (<S>)* feature=media_feature() (<S>)* ( <COLON> (<S>)* featureExpression=expr() )? <RPARAN> (<S>)*
+	{
+		return new MediaFeatureExpression(feature, "".equals(featureExpression.toString().trim()) ? null : featureExpression.toString());
+	}
+}
+
+String media_feature() : 
+{
+	Token feature;
+}
+{
+	feature=<IDENT> { return convertIdent(feature.image); }
 }
 
 /**
@@ -1437,6 +1499,9 @@ LexicalUnitImpl term(LexicalUnitImpl prev) :
 					    prev, number(op, n, 2)); }
     | n=<EMS>
 	{ result = LexicalUnitImpl.createEMS(n.beginLine, n.beginColumn,
+					     prev, number(op, n, 2)); }
+    | n=<REMS>
+	{ result = LexicalUnitImpl.createREMS(n.beginLine, n.beginColumn,
 					     prev, number(op, n, 2)); }
     | n=<EXS>
 	{ result = LexicalUnitImpl.createEXS(n.beginLine, n.beginColumn,

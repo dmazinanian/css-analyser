@@ -315,5 +315,12 @@ public class ShorthandDeclaration extends Declaration {
 			
 		return true;
 	}
+	
+	@Override
+	public ShorthandDeclaration clone() {
+		ShorthandDeclaration sd = (ShorthandDeclaration)super.clone();
+		sd.isVirtual(isVirtual);
+		return sd;
+	}
 
 }

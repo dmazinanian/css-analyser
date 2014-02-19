@@ -180,19 +180,10 @@ public class CSSAnalyser {
 				//IOHelper.writeLinesToFile(typeIVBDuplications, folderName + "/typeIVB.txt");
 			}
 			
-//			List<String> xPaths = new ArrayList<>();
-//			for (Selector selector : styleSheet.getAllSelectors()) {
-//				try {
-//					xPaths.add(selector + "\n" + selector.getXPath() + "\n\n");
-//				} catch (UnsupportedSelectorToXPathException e) {
-//					//e.printStackTrace();
-//					LOGGER.warn(String.format("No XPath for selector %s", selector));
-//				}
-//			}
-//			IOHelper.writeLinesToFile(xPaths, folderName + "/xPaths.txt");
-
+			//Map<BaseSelector, DOMNodeWrapperList> test = styleSheet.mapStylesheetOnDocument(model.getDocument());
 			
 			
+		
 			List<ItemSetList> aprioriResults = null, fpgrowthResults = null;
 			
 			if (doApriori) {
@@ -296,7 +287,15 @@ public class CSSAnalyser {
 
 		StyleSheet originalStyleSheet = styleSheet;
 		
-		//List<ItemSetList> fpgrowthResultsRefactored = fpgrowthResults;
+		CSSDependencyDetector dependencyDetector, refactoredDependencyDetector;
+		
+		if (!dontUseDOM) {                                                                                               
+			dependencyDetector = new CSSDependencyDetector(originalStyleSheet, dom);
+		} else {                                                                                                         
+			dependencyDetector = new CSSDependencyDetector(originalStyleSheet);                                     
+		}
+		CSSValueOverridingDependencyList dependencies = dependencyDetector.findOverridingDependancies();
+
 		int i = 0;
 		while (true) {
 			i++;
@@ -305,7 +304,7 @@ public class CSSAnalyser {
 			
 			if (itemSetWithMaxImpact == null || itemSetWithMaxImpact.getRefactoringImpact() < 0)
 				break;
-			
+
 			LOGGER.warn("Applying round " + i + " of refactoring on " + originalStyleSheet.getFilePath() + ".");
 			styleSheet = RefactorDuplications.groupingRefactoring(styleSheet, itemSetWithMaxImpact);
 			IOHelper.writeStringToFile(styleSheet.toString(), folderName + "/refactored" + i + ".css");
@@ -318,47 +317,38 @@ public class CSSAnalyser {
 				ex.printStackTrace();
 			}
 			
+			if (!dontUseDOM) {
+				refactoredDependencyDetector = new CSSDependencyDetector(styleSheet, dom);          
+			} else {
+				refactoredDependencyDetector = new CSSDependencyDetector(styleSheet); 
+			}
+			
+			CSSValueOverridingDependencyList refactoredDependencies = refactoredDependencyDetector.findOverridingDependancies();
+			
+			StringBuilder test = new StringBuilder(); 
+			test.append(dependencies);                                                                                
+			test.append(System.lineSeparator());                                                                                            
+			test.append(refactoredDependencies);                                                                                                                                                                                  
+			test.append(System.lineSeparator());                                    
+			test.append(dependencies.getDifferencesWith(refactoredDependencies));
+			
+			//System.out.println(test);
+			IOHelper.writeStringToFile(test.toString(), folderName + "/dependency-differences" + i + ".txt");
+			
+			RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
+			StyleSheet s = r.refactorToSatisfyOverridingDependencies(styleSheet, dependencies); 
+			CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(s, dom); 
+			CSSValueOverridingDependencyList dependencies2 = dependencyDetector2.findOverridingDependancies();        
+			System.out.println("\n\nAfter refactoring " + i);  
+			System.out.println(dependencies.getDifferencesWith(dependencies2));	
+			
 			DuplicationDetector duplicationFinderRefacored = new DuplicationDetector(styleSheet);
 			duplicationFinderRefacored.findDuplications();
 			fpgrowthResults = duplicationFinderRefacored.fpGrowth(MIN_SUPPORT);
 			duplicationFinderRefacored = null;
 			
+			
 		}
-		
-		CSSDependencyDetector dependencyDetector, refactoredDependencyDetector;
-		if (!dontUseDOM) {                                                                                               
-			dependencyDetector = new CSSDependencyDetector(originalStyleSheet, dom);                                                
-			refactoredDependencyDetector = new CSSDependencyDetector(styleSheet, dom);                            
-		} else {                                                                                                         
-			dependencyDetector = new CSSDependencyDetector(originalStyleSheet);                                                     
-			refactoredDependencyDetector = new CSSDependencyDetector(styleSheet);                                 
-		}
-		
-		CSSValueOverridingDependencyList dependencies = dependencyDetector.findOverridingDependancies();
-		CSSValueOverridingDependencyList refactoredDependencies = refactoredDependencyDetector.findOverridingDependancies();
-		     
-		StringBuilder test = new StringBuilder(); 
-		test.append(dependencies);                                                                                
-		test.append("\n\n");                                                                                            
-		test.append(refactoredDependencies);                                                                                                                                                                                  
-		test.append("\n");                                    
-		test.append(dependencies.getDifferencesWith(refactoredDependencies));
-		
-		System.out.println(test);
-		IOHelper.writeStringToFile(styleSheet.toString(), folderName + "/dependency-differences.css");
-
-		
-		
-//		RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
-//		StyleSheet s = r.refactorToSatisfyOverridingDependencies(styleSheet, dependencies);
-//		dependencyDetector = new CSSDependencyDetector(s, dom);    
-//		
-//		CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(s, dom); 
-//		CSSValueOverridingDependencyList dependencies2 = dependencyDetector2.findOverridingDependancies();                    
-//		System.out.println(dependencies2);       
-//		dependencies.printDifferences(dependencies2);
-		
-		
 	}
 
 	private void refactorGroupingOpportunities(final int MIN_SUPPORT,

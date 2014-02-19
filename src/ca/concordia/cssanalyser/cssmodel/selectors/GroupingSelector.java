@@ -97,11 +97,11 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 			return true;
 		if (!(otherSelector instanceof GroupingSelector))
 			return false;
-		if (this.parentMedia != null) {
+		if (this.mediaQueryLists != null) {
 			GroupingSelector otherGroupedSelector = (GroupingSelector)otherSelector;
-			if (otherGroupedSelector.parentMedia == null)
+			if (otherGroupedSelector.mediaQueryLists == null)
 				return false;
-			if (!parentMedia.equals(otherGroupedSelector.parentMedia))
+			if (!mediaQueryLists.equals(otherGroupedSelector.mediaQueryLists))
 				return false;
 		}
 		return true;
@@ -201,8 +201,8 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		newOne.listOfBaseSelectors = new LinkedHashSet<>();
 		for (BaseSelector s : this.listOfBaseSelectors)
 			newOne.add(s.clone());
-		if (this.parentMedia != null)
-			newOne.parentMedia = this.parentMedia.clone();
+		if (this.mediaQueryLists != null)
+			newOne.addMediaQueryLists(this.mediaQueryLists);
 		newOne.declarations = new LinkedHashSet<>();
 		for (Declaration d : this.declarations)
 			newOne.addDeclaration(d.clone());
@@ -218,6 +218,5 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 			xPath.delete(xPath.length() - 3, xPath.length());
 		return xPath.toString();
 	}
-	
 	
 }

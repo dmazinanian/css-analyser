@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 
 import ca.concordia.cssanalyser.analyser.duplication.TypeFourDuplicationInstance.TypeIVBDuplication;
 import ca.concordia.cssanalyser.analyser.duplication.apriori.Apriori;
@@ -23,10 +22,8 @@ import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.PseudoClass;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
-import ca.concordia.cssanalyser.cssmodel.selectors.SimpleSelector;
-import ca.concordia.cssanalyser.dom.DOMHelper;
+import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
 
 
 /**
@@ -280,11 +277,15 @@ public class DuplicationDetector {
 						TypeThreeDuplicationInstance duplication = new TypeThreeDuplicationInstance((ShorthandDeclaration)checkingDeclaration, entry.getValue());
 						typeThreeDuplicationsList.addDuplication(duplication);
 						
+						for (DeclarationValue v : checkingDeclaration.getRealValues())
+							virtualShorthand.getRealValues().add(v.clone());
+						
 						// For apriori
 						Item item = declarationItemMap.get(checkingDeclaration);
 						
-						item.add(virtualShorthand, true);
-						
+						item.add(virtualShorthand , true);
+						selector.addDeclaration(virtualShorthand);
+						declarationItemMap.put(virtualShorthand, item);
 					}
 				}
 			}
@@ -335,7 +336,7 @@ public class DuplicationDetector {
 		
 		typeFourBDuplicationsList = new DuplicationIncstanceList();
 		
-		Map<BaseSelector, NodeList> selectorNodeListMap = DOMHelper.mapStylesheetOnDocument(dom, stylesheet);
+		Map<BaseSelector, DOMNodeWrapperList> selectorNodeListMap = stylesheet.mapStylesheetOnDocument(dom);
 		
 		List<BaseSelector> allSelectors = new ArrayList<>(stylesheet.getAllBaseSelectors());
 		
@@ -350,7 +351,7 @@ public class DuplicationDetector {
 			
 			Selector currentSelector = allSelectors.get(currentSelectorIndex);
 
- 			NodeList currentNodeList = selectorNodeListMap.get(currentSelector);
+			DOMNodeWrapperList currentNodeList = selectorNodeListMap.get(currentSelector);
 			if (currentNodeList == null)
 				continue;
 			TypeIVBDuplication typeIVBDuplication = new TypeIVBDuplication();
@@ -366,42 +367,31 @@ public class DuplicationDetector {
 				if (currentSelector.selectorEquals(checkingSelector))
 					continue;
 				
-				NodeList checkingNodeList = selectorNodeListMap.get(checkingSelector);
+				DOMNodeWrapperList checkingNodeList = selectorNodeListMap.get(checkingSelector);
 				if (checkingNodeList == null)
 					continue;
 				
 				// In case of :hover, etc:
-				if (checkingSelector instanceof SimpleSelector) {
-					boolean mustBreak = false;
-					List<PseudoClass> pseudoClasses = ((SimpleSelector) checkingSelector).getPseudoClasses();
-					for (PseudoClass ps : pseudoClasses)
-						if (PseudoClass.isPseudoclassWithNoXpathEquivalence(ps.getName())) {
-							if (currentSelector instanceof SimpleSelector) {
-								if (!((SimpleSelector) currentSelector).getPseudoClasses().contains(ps))
-									mustBreak = true;
-							} else {
-								mustBreak = true;
-								break;
-							}
-						}
-					if (mustBreak)
-						continue;
-				}
+//				if (checkingSelector instanceof SimpleSelector) {
+//					boolean mustBreak = false;
+//					List<PseudoClass> pseudoClasses = ((SimpleSelector) checkingSelector).getPseudoClasses();
+//					for (PseudoClass ps : pseudoClasses)
+//						if (ps.isPseudoclassWithNoXpathEquivalence()) {
+//							if (currentSelector instanceof SimpleSelector) {
+//								if (!((SimpleSelector) currentSelector).getPseudoClasses().contains(ps))
+//									mustBreak = true;
+//							} else {
+//								mustBreak = true;
+//								break;
+//							}
+//						}
+//					if (mustBreak)
+//						continue;
+//				}
 
-				if (currentNodeList.getLength() != 0 &&
-						currentNodeList.getLength() == checkingNodeList.getLength()) {
-					boolean equal = true;
-					for (int i = 0; i < currentNodeList.getLength(); i++) {
-						if (!currentNodeList.item(i).equals(checkingNodeList.item(i))) {
-							equal = false;
-							break;
-						}
-
-					}
-					if (equal) {
-						visitedSelectors.add(checkingSelectorIndex);
-						typeIVBDuplication.addSelector(checkingSelector);
-					}
+				if (currentNodeList.equals(checkingNodeList)) {
+					visitedSelectors.add(checkingSelectorIndex);
+					typeIVBDuplication.addSelector(checkingSelector);
 				}
 			}
 			if (typeIVBDuplication.getSelectors().size() > 1) {

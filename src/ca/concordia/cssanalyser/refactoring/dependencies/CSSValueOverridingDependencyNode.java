@@ -27,7 +27,8 @@ public class CSSValueOverridingDependencyNode implements CSSDependencyNode {
 		CSSValueOverridingDependencyNode otherValueOverridingDependencyNode = (CSSValueOverridingDependencyNode)otherCSSDependencyNode;
 		                                                                                                                         
 		return this.selector.selectorEquals(otherValueOverridingDependencyNode.getSelector()) &&
-				this.declaration.declarationIsEquivalent(otherValueOverridingDependencyNode.declaration);                    
+				(this.declaration.declarationEquals(otherValueOverridingDependencyNode.declaration) ||
+				this.declaration.declarationIsEquivalent(otherValueOverridingDependencyNode.declaration));                    
 				                                                                                                                 
 	}
 		
@@ -68,7 +69,7 @@ public class CSSValueOverridingDependencyNode implements CSSDependencyNode {
 
 	@Override
 	public String toString() {
-		return selector.toString() + "$" + declaration.toString();
+		return selector.toString() + "<" + selector.getMediaQueryLists()  + ">" + "$" + declaration.toString();
 	}
 	
 	

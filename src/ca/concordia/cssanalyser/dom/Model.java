@@ -3,7 +3,6 @@ package ca.concordia.cssanalyser.dom;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import org.w3c.dom.Document;
 
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
@@ -46,6 +45,5 @@ public class Model {
 	 */
 	public List<StyleSheet> getStyleSheets() {
 		return stylesheets;
-	}
-	
+	}	
 }

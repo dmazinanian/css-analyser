@@ -4,7 +4,7 @@ public class CSSDependencyDifference<E> {
 	
 	enum CSSDependencyDifferenceType {
 		MISSING,
-		RIVERSED,
+		REVERSED,
 		ADDED
 	}
 	
@@ -26,8 +26,8 @@ public class CSSDependencyDifference<E> {
 			case MISSING:
 				toReturn = "Missing dependency";
 				break;
-			case RIVERSED:
-				toReturn = "Riveresed dependency";
+			case REVERSED:
+				toReturn = "Reversed dependency";
 				break;
 		}
 		return toReturn + ": " + dependency;

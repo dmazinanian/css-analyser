@@ -38,7 +38,7 @@ public class DeclarationValue implements Cloneable {
 	 * @param type The type of value based on {@link ValueType}
 	 */
 	public DeclarationValue(String value, boolean isMissing, ValueType type) {
-		this.realInFileValue = value;
+		this.realInFileValue = value.trim();
 		isAMissingValue = isMissing;
 		valueType = type;
 		// only alphabets or dashes
@@ -131,7 +131,7 @@ public class DeclarationValue implements Cloneable {
 			else
 				return true;
 		}
-		return (realInFileValue.equals(other.realInFileValue));
+		return (realInFileValue.equalsIgnoreCase(other.realInFileValue));
 	}
 	
 	/**

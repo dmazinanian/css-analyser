@@ -102,4 +102,8 @@ public class PseudoClass {
 		return new PseudoClass(name, value);
 	}
 
+	public boolean isPseudoclassWithNoXpathEquivalence() {
+		return isPseudoclassWithNoXpathEquivalence(this.name);
+	}
+
 }

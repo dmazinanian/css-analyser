@@ -1,14 +1,24 @@
 package ca.concordia.cssanalyser.cssmodel;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.w3c.dom.Document;
+
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
+import ca.concordia.cssanalyser.dom.DOMNodeWrapper;
+import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
 
 
 /**
@@ -19,8 +29,8 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 public class StyleSheet {
 
 	private Set<Selector> listOfSelectors;
-	//private Set<Declaration> listOfDeclarations;
 	private String cssFilePath;
+	//private MediaQueryList listOfMedias;
 
 	public StyleSheet() {
 		listOfSelectors = new LinkedHashSet<>();
@@ -92,14 +102,71 @@ public class StyleSheet {
 	public String toString() {
 
 		StringBuilder toReturn = new StringBuilder();
-		for (Selector s : listOfSelectors) {
-			toReturn.append(s + " { \n");
-			for (Declaration d : s.getDeclarations())
-				toReturn.append("    " + d + "; \n");
-			toReturn.append("} \n\n");
+		Set<MediaQueryList> lastMediaQueryLists = null;
+		Iterator<Selector> selectorIterator = listOfSelectors.iterator();
+		int currentIndentation = 0;
+		if (selectorIterator.hasNext()) {
+			Selector s = selectorIterator.next();
+			while(true)  {
+				if (lastMediaQueryLists == null || (lastMediaQueryLists != null && !lastMediaQueryLists.equals(s.getMediaQueryLists()))) {
+					for (Iterator<MediaQueryList> mediaQueryList = s.getMediaQueryLists().iterator(); mediaQueryList.hasNext();) {
+						MediaQueryList mql = mediaQueryList.next();
+						if (lastMediaQueryLists != null && !lastMediaQueryLists.contains(mql)) {
+							toReturn.append(getIndentsString(currentIndentation));
+							toReturn.append(mql + " {" + System.lineSeparator() + System.lineSeparator()); // Open media query
+							currentIndentation++;
+						}
+					}
+					lastMediaQueryLists = s.getMediaQueryLists();
+				}
+				
+				toReturn.append(getIndentsString(currentIndentation) + s + " {" + System.lineSeparator());
+				for (Declaration d : s.getDeclarations()) {
+					if (d instanceof ShorthandDeclaration) {
+						if (((ShorthandDeclaration)d).isVirtual())
+							continue;
+					}
+					toReturn.append(getIndentsString(currentIndentation + 1) + d);
+					if (d.isImportant())
+						toReturn.append(" !important");
+					toReturn.append(";" + System.lineSeparator());
+				}
+				toReturn.append(getIndentsString(currentIndentation) + "}" + System.lineSeparator() + System.lineSeparator());
+				
+				if (selectorIterator.hasNext()) {
+					s = selectorIterator.next();
+					if (lastMediaQueryLists != null) {
+						if (!lastMediaQueryLists.equals(s.getMediaQueryLists())) {
+							// For each MediaQueryList which is not in the new selector, close the MediaQuery
+							for (MediaQueryList mq : lastMediaQueryLists) {
+								if (!s.getMediaQueryLists().contains(mq)) {
+									currentIndentation--;
+									toReturn.append(getIndentsString(currentIndentation) + "}" + System.lineSeparator() + System.lineSeparator()); // close media query
+								}
+							}
+						}
+					}
+				} else {
+					break;
+				}
+			}
+			
+			while (currentIndentation > 0) { // unclosed media queries
+				currentIndentation--;
+				toReturn.append(getIndentsString(currentIndentation) + "}" + System.lineSeparator()); // close media query
+			
+			}
+			
 		}
 
 		return toReturn.toString();
+	}
+
+	private String getIndentsString(int currentIndentation) {
+		String s = "";
+		for (int i = 0; i < currentIndentation; i++)
+			s += "\t";
+		return s;
 	}
 
 	public void addSelectors(StyleSheet s) {
@@ -119,4 +186,50 @@ public class StyleSheet {
 			styleSheet.addSelector(s.clone());
 		return styleSheet;
 	}
+
+	/**
+	 * Maps every base selector to a node list in the stylesheet
+	 * @param document
+	 * @param styleSheet
+	 * @return
+	 */
+	public Map<BaseSelector, DOMNodeWrapperList> mapStylesheetOnDocument(Document document) {
+		List<BaseSelector> allSelectors = getAllBaseSelectors();
+		Map<BaseSelector, DOMNodeWrapperList> selectorNodeListMap = new LinkedHashMap<>();
+		for (BaseSelector selector : allSelectors) {
+			selectorNodeListMap.put(selector, selector.getSelectedNodes(document));
+		}
+		return selectorNodeListMap;
+	}
+
+	/**
+	 * Returns a list of documents' node in addition to the CSS selectors which
+	 * select each node
+	 * @param document
+	 * @param styleSheet
+	 * @return
+	 */
+	public Map<DOMNodeWrapper, List<BaseSelector>> getCSSClassesForDOMNodes(Document document) {
+			
+		// Map every node in the DOM tree to a list of selectors in the stylesheet
+		Map<DOMNodeWrapper, List<BaseSelector>> nodeToSelectorsMapping = new HashMap<>();
+		for (BaseSelector selector : getAllBaseSelectors()) {
+			DOMNodeWrapperList matchedNodes = selector.getSelectedNodes(document);
+			for (DOMNodeWrapper domNodeWrapper : matchedNodes) {
+				List<BaseSelector> correspondingSelectors = nodeToSelectorsMapping.get(domNodeWrapper);
+				if (correspondingSelectors == null) {
+					correspondingSelectors = new ArrayList<>();
+				}
+				correspondingSelectors.add(selector);
+				nodeToSelectorsMapping.put(domNodeWrapper, correspondingSelectors);
+			}
+		}
+		return nodeToSelectorsMapping;
+	}
+
+	public void addMediaQueryList(MediaQueryList forMedia) {
+		for (Selector s : listOfSelectors)
+			s.addMediaQueryList(forMedia);
+	}
+
 }

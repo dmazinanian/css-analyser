@@ -32,8 +32,8 @@ public class RefactorDuplications {
 				newGroupingSelector.add((BaseSelector)selector.copyEmptySelector());
 			}
 		}
+		newGroupingSelector.addMediaQueryLists(itemset.getSupport().iterator().next().mediaQueryLists());
 		
-
 		Set<Declaration> declarationsToBeRemoved = new HashSet<>();
 		for (Item currentItem : itemset) {
 			
@@ -61,6 +61,10 @@ public class RefactorDuplications {
 			Selector newSelector = selectorToBeAdded.copyEmptySelector();
 			// Only add declaration which are not marked to the refactored stylesheet
 			for (Declaration d : selectorToBeAdded.getDeclarations()) {
+				if (d instanceof ShorthandDeclaration) {
+					if (((ShorthandDeclaration)d).isVirtual())
+						continue;
+				}
 				if (!declarationsToBeRemoved.contains(d)) {
 					newSelector.addDeclaration(d.clone()); 
 				}

@@ -2,8 +2,9 @@ package ca.concordia.cssanalyser.parser;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
-
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,6 @@ import org.w3c.css.sac.LexicalUnit;
 import org.w3c.css.sac.Locator;
 import org.w3c.css.sac.SACMediaList;
 import org.w3c.css.sac.SelectorList;
-
 import org.w3c.flute.parser.LexicalUnitImpl;
 import org.w3c.flute.parser.selectors.AdjacentSelector;
 import org.w3c.flute.parser.selectors.AndConditionImpl;
@@ -26,6 +26,7 @@ import org.w3c.flute.parser.selectors.CaretCondition;
 import org.w3c.flute.parser.selectors.ChildSelectorImpl;
 import org.w3c.flute.parser.selectors.ClassConditionImpl;
 import org.w3c.flute.parser.selectors.ConditionalSelectorImpl;
+import org.w3c.flute.parser.selectors.ContainsCondition;
 import org.w3c.flute.parser.selectors.DescendantSelectorImpl;
 import org.w3c.flute.parser.selectors.DirectAdjacentSelectorImpl;
 import org.w3c.flute.parser.selectors.ElementSelectorImpl;
@@ -36,32 +37,29 @@ import org.w3c.flute.parser.selectors.LangConditionImpl;
 import org.w3c.flute.parser.selectors.NegativeConditionImpl;
 import org.w3c.flute.parser.selectors.OneOfAttributeConditionImpl;
 import org.w3c.flute.parser.selectors.PseudoClassConditionImpl;
-import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
-import org.w3c.flute.parser.selectors.ContainsCondition;
 import org.w3c.flute.parser.selectors.PseudoElementCondition;
+import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
 
 import ca.concordia.cssanalyser.csshelper.ColorHelper;
-import ca.concordia.cssanalyser.csshelper.NamedColors;
+import ca.concordia.cssanalyser.csshelper.NamedColorsHelper;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.DeclarationFactory;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationEquivalentValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
-import ca.concordia.cssanalyser.cssmodel.media.SingleMedia;
-import ca.concordia.cssanalyser.cssmodel.media.GroupedMedia;
-import ca.concordia.cssanalyser.cssmodel.media.Media;
-import ca.concordia.cssanalyser.cssmodel.selectors.SimpleSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.DescendantSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.ChildSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.cssmodel.selectors.AdjacentSiblingSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.SiblingSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.ChildSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.DescendantSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.NegationPseudoClass;
 import ca.concordia.cssanalyser.cssmodel.selectors.PseudoClass;
 import ca.concordia.cssanalyser.cssmodel.selectors.PseudoElement;
-import ca.concordia.cssanalyser.cssmodel.selectors.NegationPseudoClass;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SiblingSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.SimpleSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorConditionType;
 
@@ -72,12 +70,13 @@ public class CSSDocumentHandler implements DocumentHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSSDocumentHandler.class);
 
 	private Selector currentSelector;
-	private Media currentMedia;
+	private Set<MediaQueryList> currentMediaQueryLists;
 	private StyleSheet styleSheet;
 	private int numberOfVisitedElements = 0;
 
 	public CSSDocumentHandler(StyleSheet styleSheet) {
 		this.styleSheet = styleSheet;
+		currentMediaQueryLists = new LinkedHashSet<>();
 	}
 
 	@Override
@@ -116,16 +115,21 @@ public class CSSDocumentHandler implements DocumentHandler {
 	@Override
 	public void importStyle(String path, SACMediaList forMedia, String arg2)
 			throws CSSException {
+		
+	}
+	
+	public void importStyle(String path, MediaQueryList forMedia, String arg2) throws CSSException  {
 		//According to CSS3 '@import' rules must occur before all rules other than '@charset' rule
-		File file = new File(styleSheet.getFilePath());
-		String parentFolder = file.getParent(); 
-		CSSParser parser = new CSSParser();
-		try {
-			StyleSheet importedStyleSheet = parser.parseExternalCSS(parentFolder + "/" + path);
-			styleSheet.addSelectors(importedStyleSheet);
-		} catch (Exception ex) {
-			LOGGER.warn("Couldn't parse or import " + parentFolder + "/" + path);
-		}
+			File file = new File(styleSheet.getFilePath());
+			String parentFolder = file.getParent(); 
+			CSSParser parser = new CSSParser();
+			try {
+				StyleSheet importedStyleSheet = parser.parseExternalCSS(parentFolder + "/" + path);
+				importedStyleSheet.addMediaQueryList(forMedia);
+				styleSheet.addSelectors(importedStyleSheet);
+			} catch (Exception ex) {
+				LOGGER.warn("Couldn't parse or import " + parentFolder + "/" + path);
+			}
 	}
 
 	@Override
@@ -134,52 +138,60 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 	@Override
 	public void startMedia(SACMediaList mediaList) throws CSSException {
-		if (currentMedia == null) {
-			currentMedia = getMedia(mediaList);
-		} else {
-			GroupedMedia groupedMedia;
-			if (currentMedia instanceof SingleMedia) {
-				groupedMedia = new GroupedMedia();
-				groupedMedia.addMedia((SingleMedia) currentMedia);
-			} else {
-				groupedMedia = (GroupedMedia)currentMedia;
-			}
-			Media tempMedia = getMedia(mediaList);
-			if (tempMedia instanceof SingleMedia)
-				groupedMedia.addMedia((SingleMedia)tempMedia);
-			else 
-				groupedMedia.addAllMedia((GroupedMedia)tempMedia);
-			currentMedia = groupedMedia;
-		}	
+//		if (currentMediaQueryList == null) {
+//			currentMediaQueryList = getMedia(mediaList);
+//		} else {
+//			MediaQueryList groupedMedia;
+//			if (currentMediaQueryList instanceof MediaQuery) {
+//				groupedMedia = new MediaQueryList();
+//				groupedMedia.addMedia((MediaQuery) currentMediaQueryList);
+//			} else {
+//				groupedMedia = (MediaQueryList)currentMediaQueryList;
+//			}
+//			Media tempMedia = getMedia(mediaList);
+//			if (tempMedia instanceof MediaQuery)
+//				groupedMedia.addMedia((MediaQuery)tempMedia);
+//			else 
+//				groupedMedia.addAllMedia((MediaQueryList)tempMedia);
+//			currentMediaQueryList = groupedMedia;
+//		}	
+	}
+	// Change these methods to accept media query list. also the parser
+	public void startMedia(MediaQueryList mediaQueryList) {
+		currentMediaQueryLists.add(mediaQueryList);
 	}
 	
-	private Media getMedia(SACMediaList sacMedia) {
-		Media media;
-		if (sacMedia.getLength() == 1) {
-			media = new SingleMedia(sacMedia.item(0));
-		} else {
-			GroupedMedia groupedMedia = new GroupedMedia();
-			for (int i = 0; i < sacMedia.getLength(); i++)
-				groupedMedia.addMedia(new SingleMedia(sacMedia.item(i)));
-			media = groupedMedia;
-		}
-		return media;
+	public void endMedia(MediaQueryList mediaQueryList) {
+		currentMediaQueryLists.remove(mediaQueryList);
 	}
+	
+//	private Media getMedia(SACMediaList sacMedia) {
+//		Media media;
+//		if (sacMedia.getLength() == 1) {
+//			media = new MediaQuery(sacMedia.item(0));
+//		} else {
+//			MediaQueryList groupedMedia = new MediaQueryList();
+//			for (int i = 0; i < sacMedia.getLength(); i++)
+//				groupedMedia.addMedia(new MediaQuery(sacMedia.item(i)));
+//			media = groupedMedia;
+//		}
+//		return media;
+//	}
 
 	@Override
 	public void endMedia(SACMediaList mediaList) throws CSSException {
-		if (currentMedia instanceof SingleMedia) {
-			currentMedia = null;
-		} else {
-			GroupedMedia groupedMedia = (GroupedMedia)currentMedia;
-			for (int i = 0; i < mediaList.getLength(); i++) {
-				groupedMedia.removeMedia(mediaList.item(i));
-			}
-			if (groupedMedia.size() == 1)
-				currentMedia = new SingleMedia(groupedMedia.getAtomicMedia(0).getMediaName());
-			else if (groupedMedia.size() == 0)
-				currentMedia = null;
-		}
+//		if (currentMediaQueryList instanceof MediaQuery) {
+//			currentMediaQueryList = null;
+//		} else {
+//			MediaQueryList groupedMedia = (MediaQueryList)currentMediaQueryList;
+//			for (int i = 0; i < mediaList.getLength(); i++) {
+//				groupedMedia.removeMedia(mediaList.item(i));
+//			}
+//			if (groupedMedia.size() == 1)
+//				currentMediaQueryList = new MediaQuery(groupedMedia.getAtomicMedia(0).getMediaType());
+//			else if (groupedMedia.size() == 0)
+//				currentMediaQueryList = null;
+//		}
 	}
 
 	@Override
@@ -236,27 +248,30 @@ public class CSSDocumentHandler implements DocumentHandler {
 	private Selector getSelector(SelectorList list, Locator locator) {
 		Selector s = null;
 		if (list.getLength() > 1) {
-			GroupingSelector groupedSelectors = new GroupingSelector(locator.getLineNumber(), locator.getColumnNumber());
+			GroupingSelector groupedSelectors = new GroupingSelector();
+			groupedSelectors.setLineNumber(locator.getLineNumber());
 			for (int i = 0; i < list.getLength(); i++) {
 				try {
 					BaseSelector newAtomicSelector = SACSelectorToAtomicSelector(list.item(i));
 					newAtomicSelector.setLineNumber(locator.getLineNumber());
-					newAtomicSelector.setColumnNumber(locator.getColumnNumber());
-					if (currentMedia != null)
-						newAtomicSelector.setMedia(currentMedia);
+					newAtomicSelector.setColumnNumber(locator.getColumnNumber() - newAtomicSelector.toString().length() + 1);
+					if (currentMediaQueryLists.size() > 0)
+						newAtomicSelector.addMediaQueryLists(currentMediaQueryLists);
 					groupedSelectors.add(newAtomicSelector);
 				} catch (Exception ex) {
 					LOGGER.warn(ex.toString());
 				}
 			}
+			groupedSelectors.setColumnNumber(locator.getColumnNumber() - groupedSelectors.toString().length() + 1);
+			groupedSelectors.addMediaQueryLists(currentMediaQueryLists);
 			s = groupedSelectors;
 		} else {
 			try {
 				s = SACSelectorToAtomicSelector(list.item(0));
 				s.setLineNumber(locator.getLineNumber());
-				s.setColumnNumber(locator.getColumnNumber());
-				if (currentMedia != null)
-					s.setMedia(currentMedia);
+				s.setColumnNumber(locator.getColumnNumber() - s.toString().length() + 1);
+				if (currentMediaQueryLists.size() > 0)
+					s.addMediaQueryLists(currentMediaQueryLists);
 				// styleSheet.addSelector(currentSelector);
 			} catch (Exception ex) {
 				LOGGER.warn(ex.toString());
@@ -296,7 +311,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 			DescendantSelectorImpl sacDescendantSelector = (DescendantSelectorImpl) selector;
 			BaseSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getAncestorSelector());
-			BaseSelector childAtomicSelector = SACSelectorToAtomicSelector(sacDescendantSelector.getSimpleSelector());
+			SimpleSelector childAtomicSelector = (SimpleSelector)SACSelectorToAtomicSelector(sacDescendantSelector.getSimpleSelector());
 			DescendantSelector s = new DescendantSelector(parentAtomicSelector, childAtomicSelector);
 
 			return s;
@@ -310,7 +325,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			ChildSelectorImpl sacChildSelectorImpl = (ChildSelectorImpl) selector;
 
 			BaseSelector parentAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getAncestorSelector());
-			BaseSelector childAtomicSelector = SACSelectorToAtomicSelector(sacChildSelectorImpl.getSimpleSelector());
+			SimpleSelector childAtomicSelector = (SimpleSelector)SACSelectorToAtomicSelector(sacChildSelectorImpl.getSimpleSelector());
 
 			BaseSelector selectorToReturn;
 
@@ -321,8 +336,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 				((SimpleSelector) selectorToReturn).addPseudoClass(new PseudoClass(pseudoClass.getLocalName()));
 
 			} else {
-				selectorToReturn = new ChildSelector(
-						parentAtomicSelector, childAtomicSelector);
+				selectorToReturn = new ChildSelector(parentAtomicSelector, childAtomicSelector);
 			}
 
 			return selectorToReturn;
@@ -338,14 +352,14 @@ public class CSSDocumentHandler implements DocumentHandler {
 
 			DirectAdjacentSelectorImpl sacDirectAdjacentSelector = (DirectAdjacentSelectorImpl) selector;
 			BaseSelector parentSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSelector());
-			BaseSelector childSelector = SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSiblingSelector());
+			SimpleSelector childSelector = (SimpleSelector)SACSelectorToAtomicSelector(sacDirectAdjacentSelector.getSiblingSelector());
 			return new AdjacentSiblingSelector(parentSelector, childSelector);
 			
 		} else if (selector instanceof AdjacentSelector) {
 			
 			AdjacentSelector sacAdjacentSelector = (AdjacentSelector) selector;
 			BaseSelector parentSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSelector());
-			BaseSelector childSelector = SACSelectorToAtomicSelector(sacAdjacentSelector.getSiblingSelector());
+			SimpleSelector childSelector = (SimpleSelector)SACSelectorToAtomicSelector(sacAdjacentSelector.getSiblingSelector());
 			return new SiblingSelector(parentSelector, childSelector);
 			
 		} else if (selector instanceof ConditionalSelectorImpl) {
@@ -537,7 +551,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			if ("currentColor".equals(stringValue))
 				colorEquivalent = "currentColor";
 			else 
-				colorEquivalent = NamedColors.getRGBAColor(stringValue.toLowerCase());
+				colorEquivalent = NamedColorsHelper.getRGBAColor(stringValue.toLowerCase());
 			if (colorEquivalent != null)
 				return new DeclarationEquivalentValue(stringValue, colorEquivalent, ValueType.COLOR);
 			
@@ -755,11 +769,15 @@ public class CSSDocumentHandler implements DocumentHandler {
 		case LexicalUnit.SAC_EM:
 			// 1em = 100%, if we are talking about font
 			realVal = String.valueOf(value.getFloatValue()) + "em";
-			if ("font".equals(propertyName) || "font-size".equals(propertyName)) {
+			if ("font".equals(propertyName) || "font-size".equals(propertyName) || "line-height".equals(propertyName)) {
 				eqVal = String.valueOf(value.getFloatValue() * 100) + "%";
 				return new DeclarationEquivalentValue(realVal, eqVal, ValueType.PERCENTAGE);
 			} 
 			return new DeclarationValue(realVal, ValueType.TIME);
+		case LexicalUnitImpl.REM:
+			// 1rem = 100% of the parent's font. SO we don't add 
+			realVal = String.valueOf(value.getFloatValue()) + "rem";
+			return new DeclarationValue(realVal, ValueType.PERCENTAGE);
 		case LexicalUnit.SAC_PERCENTAGE:
 			realVal = eqVal = String.valueOf(value.getFloatValue() + "%");
 			if (value.getFloatValue() == 0) {

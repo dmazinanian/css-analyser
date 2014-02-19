@@ -264,7 +264,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 		int realDeclarationsLength = 0;
 		for (Item item : this.itemset) {
 			for (Declaration declaration : item){
-				// The declaration must be in the involving selectors in this refactorin opportunity
+				// The declaration must be in the involving selectors in this refactoring opportunity
 				if (this.getSupport().contains(declaration.getSelector()))
 				{		
 					if (declaration instanceof ShorthandDeclaration) {

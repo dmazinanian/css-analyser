@@ -262,10 +262,13 @@ public class ItemSetList implements Set<ItemSet> {
 
 	public static ItemSet findItemSetWithMaxImpact(List<ItemSetList> itemSetList) {
 		ItemSet itemSetWithMaxImpact = null;
+		int maxImpact = Integer.MIN_VALUE;
 		for (ItemSetList isl : itemSetList)
 			for (ItemSet is : isl) {
-				if (itemSetWithMaxImpact == null || itemSetWithMaxImpact.getRefactoringImpact() < is.getRefactoringImpact())
+				if (itemSetWithMaxImpact == null || is.getRefactoringImpact() > maxImpact) {
 					itemSetWithMaxImpact = is;
+					maxImpact = is.getRefactoringImpact();
+				}
 			}
 		return itemSetWithMaxImpact;
 	}

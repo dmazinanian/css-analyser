@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Set;
 
 import ca.concordia.cssanalyser.csshelper.ListStyleHelper;
-import ca.concordia.cssanalyser.csshelper.NamedColors;
+import ca.concordia.cssanalyser.csshelper.NamedColorsHelper;
+import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
+import ca.concordia.cssanalyser.cssmodel.CSSSource;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationEquivalentValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
@@ -30,6 +32,9 @@ public class Declaration implements Cloneable {
 	protected final boolean isImportant;
 	protected int numberOfMissingValues;
 	protected final boolean isCommaSeparatedListOfValues;
+	protected CSSOrigin origin = CSSOrigin.AUTHOR;
+	protected CSSSource source = CSSSource.EXTERNAL;
+
 	
 	/**
 	 * Creates a new instance of Declaration and 
@@ -57,7 +62,7 @@ public class Declaration implements Cloneable {
 	 * @param addMissingValues
 	 */
 	public Declaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int fileLineNumber, int fileColNumber, boolean important, boolean addMissingValues) {
-		property = propertyName;
+		property = propertyName.trim();
 		declarationValues = values;
 		parentSelector = belongsTo;
 		lineNumber = fileLineNumber;
@@ -1216,7 +1221,7 @@ public class Declaration implements Cloneable {
 				
 		int numberOfValuesForWhichOrderIsImportant = 0;
 		for (DeclarationValue v : allValues)
-			if (!v.isKeyword() || "inherit".equals(v.getValue()) || "none".equals(v.getValue()) || NamedColors.getRGBAColor(v.getValue()) != null)
+			if (!v.isKeyword() || "inherit".equals(v.getValue()) || "none".equals(v.getValue()) || NamedColorsHelper.getRGBAColor(v.getValue()) != null)
 				numberOfValuesForWhichOrderIsImportant++;
 		
 		boolean[] checkedValues = new boolean[allValues.size()];
@@ -1282,7 +1287,17 @@ public class Declaration implements Cloneable {
 	 * @return
 	 */
 	public boolean declarationIsEquivalent(Declaration otherDeclaration) {
-		return (property.equals(otherDeclaration.property) && valuesEquivalent(otherDeclaration, false));
+		return compareDeclarations(otherDeclaration, false, true);
+	}
+	
+	/**
+	 * Return true if the given declarations is equivalent
+	 * with this declaration, ignoring the vendor-prefix properties
+	 * @param otherDeclaration
+	 * @return
+	 */
+	public boolean declarationIsEquivalent(Declaration otherDeclaration, boolean nonVendorPrefixesEquivalent) {
+		return compareDeclarations(otherDeclaration, nonVendorPrefixesEquivalent, true);		
 	}
 	
 	/**
@@ -1292,7 +1307,30 @@ public class Declaration implements Cloneable {
 	 * @return
 	 */
 	public boolean declarationEquals(Declaration otherDeclaration) {
-		return (property.equals(otherDeclaration.property) && valuesEquivalent(otherDeclaration, true));
+		return compareDeclarations(otherDeclaration, false, false);
+	}
+	
+	private boolean compareDeclarations(Declaration otherDeclaration, boolean skipVendor, boolean equivalent) {
+		String p1 = property;
+		String p2 = otherDeclaration.property;
+		if (skipVendor) {
+			p1 = getNonVendorProperty(p1);
+			p2 = getNonVendorProperty(p2);
+		}
+		if (otherDeclaration.isImportant() != isImportant)
+			return false;
+		if (!p1.equals(p2))
+			return false;
+		if (parentSelector.getMediaQueryLists() == null) {
+			if (otherDeclaration.parentSelector.getMediaQueryLists() != null) {
+				if (otherDeclaration.parentSelector.getMediaQueryLists().size() != 0)
+					return false;
+			}
+		} else {				
+			if (!parentSelector.getMediaQueryLists().equals(otherDeclaration.parentSelector.getMediaQueryLists()))
+				return false;
+		}
+		return valuesEquivalent(otherDeclaration, !equivalent);
 	}
 	
 	/**
