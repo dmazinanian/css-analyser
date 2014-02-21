@@ -55,30 +55,9 @@ public class ItemSet implements Set<Item>, Cloneable {
 		if (getClass() != obj.getClass())
 			return false;
 
-		ItemSet otherObj = (ItemSet)obj;
+		ItemSet otherObj = (ItemSet)obj;	
 		
-//		if (itemset.equals(otherObj.itemset) &&
-//				!otherObj.itemset.equals(itemset)) {
-//			//itemset.equals(otherObj.itemset);
-//			//otherObj.itemset.equals(itemset);
-//			for (Item i : otherObj.itemset) {
-//				if (!itemset.contains(i));
-//					System.out.println();
-//			}
-//			for (Item i : itemset) {
-//				if (!otherObj.itemset.contains(i));
-//					System.out.println();
-//			}
-//		}
-//		else if (itemset.equals(otherObj.itemset) &&
-//				!otherObj.itemset.equals(itemset)) {
-//			itemset.equals(otherObj.itemset);
-//			otherObj.itemset.equals(itemset);
-//		}
-		
-		
-		
-		return itemset.equals(otherObj.itemset);// || otherObj.itemset.equals(itemset);
+		return itemset.equals(otherObj.itemset);
 	}
 
 	@Override
@@ -244,7 +223,11 @@ public class ItemSet implements Set<Item>, Cloneable {
 	 * grouping.
 	 * @return
 	 */
+	private int refactoringImpact = -1;
 	public int getRefactoringImpact() {
+		if (refactoringImpact != -1)
+			return refactoringImpact;
+		
 		int result = 0;
 		
 		int newSelectorCharsLength = 0;
@@ -283,6 +266,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 		}
 		
 		result = realDeclarationsLength - groupedDeclarationsLength - newSelectorCharsLength;
-		return result;
+		refactoringImpact = result;
+		return refactoringImpact;
 	}
 }

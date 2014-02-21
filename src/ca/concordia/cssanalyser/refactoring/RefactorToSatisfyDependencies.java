@@ -1,75 +1,80 @@
 package ca.concordia.cssanalyser.refactoring;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import solver.Solver;
+import solver.constraints.IntConstraintFactory;
+import solver.variables.IntVar;
+import solver.variables.VariableFactory;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependency;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
-import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyNode;
 
 public class RefactorToSatisfyDependencies {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(RefactorToSatisfyDependencies.class);
-	
+	/**
+	 * Refactores a stylesheet to satisfy the given dependencies
+	 * @param styleSheet
+	 * @param listOfDependenciesToBeHeld
+	 * @return
+	 */
 	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld) {
 		
 		StyleSheet refactoredStyleSheet = new StyleSheet();
 		
-		Map<CSSValueOverridingDependencyNode, Selector> dependencyToNewSelectroMapping = new HashMap<>();
 		
-		// Only selectors which have a role in the dependencies list are important to be considered.
+		/*
+		 * Only selectors which have a role in the dependencies list are important to be considered.
+		 * Others must be added to the style sheet without any problem 
+		 */
+	
 		Set<Selector> markedSelectorsToRemove = new HashSet<>();
-		final Map<Selector, Integer> selectorToConstraintCountMap = new HashMap<>();
+		
+		/*
+		 * We map every dependency in the original CSS file to the new selectors in the 
+		 * given style sheet.
+		 * Every dependency has two selectors, so the map is from dependency to an array
+		 * of selectors that has two members always.
+		 */
+		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap = new HashMap<>();
+
 		for (BaseSelector selector : styleSheet.getAllBaseSelectors()) {
+
 			for (Declaration d : selector.getDeclarations()) {
+
 				for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
 					
 					if (dependency.getSelector1().selectorEquals(selector) && dependency.getDeclaration1().declarationEquals(d)) {
-												
-						dependencyToNewSelectroMapping.put(dependency.getStartingNode(), d.getSelector());
 						markedSelectorsToRemove.add(d.getSelector());
-						incrementSelectorConstraintsNumber(selectorToConstraintCountMap, d.getSelector());
-						
-					} else if (dependency.getSelector2().selectorEquals(selector) && dependency.getDeclaration2().declarationEquals(d)) {
-						
-						
-						dependencyToNewSelectroMapping.put(dependency.getEndingNode(), d.getSelector());
+						putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, d.getSelector(), 0);
+					}
+					if (dependency.getSelector2().selectorEquals(selector) && dependency.getDeclaration2().declarationEquals(d)) {
 						markedSelectorsToRemove.add(d.getSelector());
-						incrementSelectorConstraintsNumber(selectorToConstraintCountMap, d.getSelector());
+						putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, d.getSelector(), 1);
 					}
 				}
 			}	
 		}
 		
-		TreeSet<Selector> ts = new TreeSet<>(new Comparator<Selector>() {
-
-			@Override
-			public int compare(Selector o1, Selector o2) {
-				if (o1 == o2)
-					return 0;
-				if (selectorToConstraintCountMap.get(o1) > selectorToConstraintCountMap.get(o2))
-					return -1;
-				return 1;
+		// IntraSelector dependency shouldn't be here
+		Set<CSSValueOverridingDependency> markedDependenciesToRemove = new HashSet<>();
+		for (CSSValueOverridingDependency d : dependencyNodeToSelectorMap.keySet()) {
+			Selector[] selectors = getCorrespondingRealSelectors(dependencyNodeToSelectorMap, d);
+			if (selectors[0] == selectors[1]) {
+				markedDependenciesToRemove.add(d);
+				markedSelectorsToRemove.remove(selectors[0]);
+				markedSelectorsToRemove.remove(selectors[1]);
 			}
-		});
+		}
+		for (CSSValueOverridingDependency d : markedDependenciesToRemove)
+			dependencyNodeToSelectorMap.remove(d);
 		
-		for (Selector s : selectorToConstraintCountMap.keySet())
-			ts.add(s);
-		
-		LinkedList<Selector> selectorsToReArrange = new LinkedList<>(ts);
-
 		
 		// Add other selectors to the style sheet
 		for (Selector selectorToBeAdded : styleSheet.getAllSelectors()) {
@@ -77,99 +82,99 @@ public class RefactorToSatisfyDependencies {
 				refactoredStyleSheet.addSelector(selectorToBeAdded);
 		}
 		
-		// Assign numbers 1 to N (positions of the selectors)
-		int maxNumberToAssign = selectorsToReArrange.size();
+		// 1. Create a Solver 
+		Solver solver = new Solver("Selector reordering problem");
 		
-		// Solve the CSP for remaining selectors and add them to the style sheet
-		Map<Selector, Integer> selectorsAssignment = new HashMap<>();
-		LinkedList<Integer> values = new LinkedList<>();
-		for (int i = 1; i <= maxNumberToAssign; i++)
-			values.add(i);
+		// Map every selector to a Solver variable
+		Map<Selector, IntVar<?>> createdVars = new HashMap<>();
 		
-		boolean result = backTrackingSearch(selectorsAssignment, selectorsToReArrange, values, listOfDependenciesToBeHeld, maxNumberToAssign, dependencyToNewSelectroMapping);
+		// 2. Create variables through the variable factory
+		// For each selector, we define a variable
+		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
+
+			Selector[] correspondingSelectors = dependencyNodeToSelectorMap.get(dependency);
+			
+			if (correspondingSelectors == null)
+				continue;
+			
+			Selector s1 = correspondingSelectors[0];
+			Selector s2 = correspondingSelectors[1];
+
+			IntVar<?> x, y;
+			
+			if (!createdVars.containsKey(s1)) {
+				x = VariableFactory.bounded(s1.toString(), 1, markedSelectorsToRemove.size(), solver);
+				createdVars.put(s1, x);
+			}
+			else {
+				x = createdVars.get(s1);
+			}
+
+			if (!createdVars.containsKey(s2)) {
+				y = VariableFactory.bounded(s2.toString(), 1, markedSelectorsToRemove.size(), solver);
+				createdVars.put(s2, y);
+			}
+			else {
+				y = createdVars.get(s2);
+			}
+
+			// 3. Create and post constraints by using constraint factories
+			solver.post(IntConstraintFactory.arithm(x, "<", y));
+
+		}
+
+		// All the variables have to have unique values
+		IntVar<?>[] allVars = new IntVar<?>[createdVars.size()];
+		allVars = createdVars.values().toArray(allVars);
+		solver.post(IntConstraintFactory.alldifferent(allVars, "BC"));
+	 
+		// 4. Define the search strategy (?)
+		//solver.set(IntStrategyFactory.inputOrder_InDomainMin(test));
+		
+		// 5. Launch the resolution process
+		boolean result = solver.findSolution();
 		
 		if (result) {
-			// Reverse the order of the map
+			// Reverse the the map, because we need to see which number is assigned
+			// to which selector
 			Map<Integer, Selector> assignmentToSelectorMap = new HashMap<>();
-			for (Selector s : selectorsAssignment.keySet()) {
-				assignmentToSelectorMap.put(selectorsAssignment.get(s), s);
+			for (Selector s : createdVars.keySet()) {
+				assignmentToSelectorMap.put(createdVars.get(s).getValue(), s);
 			}
 			
-			for (int i = 1; i <= selectorsAssignment.size(); i++)
+			// Put the selectors in the stylesheet in order
+			for (int i = 1; i <= assignmentToSelectorMap.size(); i++)
 				refactoredStyleSheet.addSelector(assignmentToSelectorMap.get(i));
 		
 			return refactoredStyleSheet;
 			
 		} else {
-			
-			LOGGER.warn("Ordering is not possible!");
-			throw new RuntimeException("Ordering is not possible");
-			
+			return null;
+			// It is better to throw something at least. I know.
 		}
 		
 	}
 
-	private void incrementSelectorConstraintsNumber(Map<Selector, Integer> selectorToConstraintCountMap, Selector selector) {
-		Integer count = selectorToConstraintCountMap.get(selector);
-		if (count == null) {
-			count = 0;
-		}
-		count++;
-		selectorToConstraintCountMap.put(selector, count);
+	private void putCorrespondingRealSelectors(Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap,
+			CSSValueOverridingDependency dependency, Selector selector, int i) {
+		
+		Selector[] realSelectorsForThisDependency = getCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency);
+		realSelectorsForThisDependency[i] = selector;
+		dependencyNodeToSelectorMap.put(dependency, realSelectorsForThisDependency);
+		
 	}
 
-	private boolean backTrackingSearch(Map<Selector, Integer> selectorsAssignment, 
-			LinkedList<Selector> selectorsToReArrange, LinkedList<Integer> values,
-			CSSValueOverridingDependencyList listOfDependenciesToBeHeld,
-			int numberOfItems, Map<CSSValueOverridingDependencyNode, Selector> dependencyToNewSelectroMapping) {
-		// If assignment is complete, return
-		if (selectorsAssignment.size() == numberOfItems) {
-			return true;
+	private Selector[] getCorrespondingRealSelectors(Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap,
+			CSSValueOverridingDependency dependency) {
+		
+		Selector[] realSelectorsForThisDependency = dependencyNodeToSelectorMap.get(dependency); 
+		
+		if (realSelectorsForThisDependency == null) {
+			realSelectorsForThisDependency = new Selector[2];
 		}
-		else {
-			LinkedList<Integer> valuesCopy = new LinkedList<>(values); // Value domain for this selector
-			Selector variable = selectorsToReArrange.removeFirst();
-			while (valuesCopy.size() > 0) {
-				int i = valuesCopy.removeFirst();
-				selectorsAssignment.put(variable, i);
-				if (consistent(selectorsAssignment, listOfDependenciesToBeHeld, dependencyToNewSelectroMapping)) {
-					int indexOfValueToBeRemoved = values.indexOf(i);
-					if (indexOfValueToBeRemoved >= 0)
-						values.remove(indexOfValueToBeRemoved);
-					boolean result = backTrackingSearch(selectorsAssignment, selectorsToReArrange, values, listOfDependenciesToBeHeld, numberOfItems, dependencyToNewSelectroMapping);
-					if (result)
-						return true;
-					else {
-						selectorsAssignment.remove(variable);
-						if (indexOfValueToBeRemoved >= 0)
-							values.add(i);
-					}
-				} else {
-					selectorsAssignment.remove(variable);
-					//selectorsToReArrange.addFirst(variable);
-				}
-			}
-			selectorsToReArrange.addFirst(variable);
-		}
-		return false;
+		return realSelectorsForThisDependency;
 	}
 
-	private boolean consistent(Map<Selector, Integer> selectorsAssignment, CSSValueOverridingDependencyList listOfDependenciesToBeHeld, Map<CSSValueOverridingDependencyNode, Selector> dependencyToNewSelectroMapping) {
-		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
-
-			Selector selector1 = dependencyToNewSelectroMapping.get(dependency.getStartingNode());
-			Integer selector1Location = selectorsAssignment.get(selector1);
-			
-			Selector selector2 = dependencyToNewSelectroMapping.get(dependency.getEndingNode());
-			Integer selector2Location = selectorsAssignment.get(selector2);
-			
-			if (selector1Location != null && selector2Location != null)
-				if (selector1Location > selector2Location)
-					return false;
-				else if (selector1Location == selector2Location && selector1 != selector2)
-					return false;
-		}
-		return true;
-	}
+	
 	
 }

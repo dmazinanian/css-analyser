@@ -180,22 +180,22 @@ public class FPGrowth {
 	private void addItemSet(Set<Item> is) {
 		ItemSet newItemSet = new ItemSet();
 		newItemSet.addAll(is);
-		for (int i = newItemSet.size() + 1; i <= resultItemSetLists.keySet().size(); i++) {
-			ItemSetList isl = resultItemSetLists.get(i);
-			if (isl != null && isl.containsSuperSet(newItemSet)) {
-				return;
-			}
-		}
+//		for (int i = newItemSet.size() + 1; i <= resultItemSetLists.keySet().size(); i++) {
+//			ItemSetList isl = resultItemSetLists.get(i);
+//			if (isl != null && isl.containsSuperSet(newItemSet)) {
+//				return;
+//			}
+//		}
 		ItemSetList correspondingItemSetList = resultItemSetLists.get(newItemSet.size());
 		if (correspondingItemSetList == null) {
 			correspondingItemSetList = new ItemSetList();
 			resultItemSetLists.put(newItemSet.size(), correspondingItemSetList);
 		}
 		correspondingItemSetList.add(newItemSet);
-		for (int i = 1; i < newItemSet.size(); i++) {
-			ItemSetList isl = resultItemSetLists.get(i);
-			if (isl != null)
-				isl.removeSubset(newItemSet);
-		}
+//		for (int i = 1; i < newItemSet.size(); i++) {
+//			ItemSetList isl = resultItemSetLists.get(i);
+//			if (isl != null)
+//				isl.removeSubset(newItemSet);
+//		}
 	}
 }

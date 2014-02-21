@@ -4,7 +4,10 @@ package ca.concordia.cssanalyser.analyser;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,7 +121,7 @@ public class CSSAnalyser {
 	}
 
 	/**
-	 * Invoking this method would result to the creation of 
+	 * Invoking this method will result to the creation of 
 	 * one folder for each CSS file in the specified analysis folder. 
 	 * The name of this folder would end with ".analyse".
 	 * The output results for each kind of analysis is written in the 
@@ -152,7 +155,7 @@ public class CSSAnalyser {
 			String filePath = styleSheet.getFilePath();
 			String folderName = filePath + ".analyse";
 					
-			LOGGER.warn("Finding different kinds of duplication in " + filePath);
+			LOGGER.warn("Finding different types of duplication in " + filePath);
 			
 			DuplicationDetector duplicationFinder = new DuplicationDetector(styleSheet);
 			duplicationFinder.findDuplications();
@@ -172,18 +175,15 @@ public class CSSAnalyser {
 			DuplicationIncstanceList typeIIIDuplications = duplicationFinder.getTypeIIIDuplications();
 			IOHelper.writeLinesToFile(typeIIIDuplications, folderName + "/typeIII.txt");
 			
-			DuplicationIncstanceList typeIVADuplications = duplicationFinder.getTypeIVADuplications();
-			IOHelper.writeLinesToFile(typeIVADuplications, folderName + "/typeIVA.txt");
+//			DuplicationIncstanceList typeIVADuplications = duplicationFinder.getTypeIVADuplications();
+//			IOHelper.writeLinesToFile(typeIVADuplications, folderName + "/typeIVA.txt");
 			
-			if (!dontUseDOM) {
+			//if (!dontUseDOM) {
 				//duplicationFinder.findTypeFourBDuplication(model.getDocument());
 				//DuplicationIncstanceList typeIVBDuplications = duplicationFinder.getTypeIVBDuplications();
 				//IOHelper.writeLinesToFile(typeIVBDuplications, folderName + "/typeIVB.txt");
-			}
-			
-			//Map<BaseSelector, DOMNodeWrapperList> test = styleSheet.mapStylesheetOnDocument(model.getDocument());
-			
-			
+			//}
+						
 		
 			List<ItemSetList> aprioriResults = null, fpgrowthResults = null;
 			
@@ -230,60 +230,8 @@ public class CSSAnalyser {
 		//IOHelper.writeLinesToFile(analytics, "E:/Davood/joomla-cms-css-typeIV/analytics.txt", true);
 					
 	}
-
-//	private void WriteRefactoringOpportunitiesAndImpacts() {
 	
-	/*Comparator<ItemSet> comparator = new Comparator<ItemSet>() {
-		public int compare(ItemSet o1, ItemSet o2) {
-			return Integer.compare(o1.getRefactoringImpact(), o2.getRefactoringImpact());
-		};
-	};
-
-		TreeSet<ItemSet> opportunities = new TreeSet<ItemSet>(comparator);
-		for (ItemSetList isl : fpgrowthResults)
-			for (ItemSet is : isl)
-				opportunities.add(is);*/
-//		
-//		List<String> opp = new ArrayList<>();
-//		
-//		for (ItemSet is : opportunities)
-//			//System.out.println(is + " : " + is.getRefactoringImpact());
-//			opp.add(is.getSupport().size() + "," + is.size() + "," + is.getRefactoringImpact());
-//		
-//		IOHelper.writeLinesToFile(opp, folderName + "/oppnumbers.txt");
-//		
-//		List<String> opp2 = new ArrayList<>();
-//		
-//		for (ItemSet itemSetAndSupport : opportunities) {
-//			//System.out.println(is + " : " + is.getRefactoringImpact());
-//			StringBuilder sets = new StringBuilder();
-//
-//			
-//
-//				StringBuilder set = new StringBuilder("{");
-//
-//				for (Item d : itemSetAndSupport) {
-//					set.append("(" + d.getFirstDeclaration() + "), ");
-//				}
-//
-//				set.delete(set.length() - 2, set.length()).append("}");
-//
-//				sets.append(set);
-//				sets.append(", " + itemSetAndSupport.getSupport().size() + " : ");
-//
-//				// for (Selector s : itemSetAndSupport.getSupport())
-//				// sets.append(s + ", ");
-//				sets.append(itemSetAndSupport.getSupport());
-//
-//			opp2.add(sets.toString() + ", " + itemSetAndSupport.getRefactoringImpact());
-//		}
-//		
-//		IOHelper.writeLinesToFile(opp2, folderName + "/opp.txt");
-		
-//	}
-
-	private void refactorGroupingOpportunities(int MIN_SUPPORT,
-			StyleSheet styleSheet, String folderName,
+	private void refactorGroupingOpportunities(int MIN_SUPPORT, StyleSheet styleSheet, String folderName, 
 			List<ItemSetList> fpgrowthResults, Document dom) {
 
 		StyleSheet originalStyleSheet = styleSheet;
@@ -295,74 +243,161 @@ public class CSSAnalyser {
 		} else {                                                                                                         
 			dependencyDetector = new CSSDependencyDetector(originalStyleSheet);                                     
 		}
+		
 		CSSValueOverridingDependencyList originalDependencies = dependencyDetector.findOverridingDependancies();
+		
+		TreeSet<ItemSet> itemSetsTreeSet = new TreeSet<>(new Comparator<ItemSet>() {
 
+			@Override
+			public int compare(ItemSet o1, ItemSet o2) {
+				if (o1 == o2)
+					return 0;
+				
+				int i = o1.getRefactoringImpact();
+				int j = o2.getRefactoringImpact();
+
+				if (i != j)
+					return -Integer.compare(i, j);
+				return 1;
+			}
+
+		});
+		List<ItemSet> itemSetsSortedList = null;
+		
+		List<ItemSet> listOfInfeasibleRefactorings = new ArrayList<>();
+		
 		int i = 0;
+		boolean refactoringWasPossible = true;
 		while (true) {
-			i++;
-			// Find itemset with max impact
-			ItemSet itemSetWithMaxImpact = ItemSetList.findItemSetWithMaxImpact(fpgrowthResults);
-			
-			if (itemSetWithMaxImpact == null || itemSetWithMaxImpact.getRefactoringImpact() < 0)
-				break;
 
-			LOGGER.warn("Applying round " + i + " of refactoring on " + originalStyleSheet.getFilePath() + ".");
-			styleSheet = RefactorDuplications.groupingRefactoring(styleSheet, itemSetWithMaxImpact);
-			IOHelper.writeStringToFile(styleSheet.toString(), folderName + "/refactored" + i + ".css");
-													
-			fpgrowthResults  = null;
+			if (refactoringWasPossible) {
+				i++;
+				itemSetsTreeSet.clear();
+				for (ItemSetList isl : fpgrowthResults) {
+					for (ItemSet is : isl) {
+						if (is.getRefactoringImpact() > 0) {
+							itemSetsTreeSet.add(is);
+						}
+					}
+				}
+
+
+				itemSetsSortedList = new ArrayList<>(itemSetsTreeSet);
+			}
+			
+			if (i == 11)
+				System.out.print("");
+			
+			if (itemSetsSortedList.size() == 0) {
+				// No more refactoring is possible to reduce the size
+				break;
+			}
+			
+			// Find a feasible refactoring opportunity with max impact 
+			ItemSet itemSetWithMaxImpact = null;
+			do {
+				itemSetWithMaxImpact = itemSetsSortedList.get(0);
+				itemSetsSortedList.remove(0);
+			} while (containsItemSet(listOfInfeasibleRefactorings, itemSetWithMaxImpact));
+
+			LOGGER.warn("Applying round " + i + " of refactoring on " + originalStyleSheet.getFilePath() + " to reduce " + itemSetWithMaxImpact.getRefactoringImpact() + " characters.");
+			StyleSheet newStyleSheet = RefactorDuplications.groupingRefactoring(styleSheet, itemSetWithMaxImpact);
+			IOHelper.writeStringToFile(newStyleSheet.toString(), folderName + "/refactored" + i + ".css");
+
 			CSSParser parser = new CSSParser();
 			try {
-				styleSheet = parser.parseExternalCSS(folderName + "/refactored" + i + ".css");
+				newStyleSheet = parser.parseExternalCSS(folderName + "/refactored" + i + ".css");
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
-			
+
 			if (!dontUseDOM) {
-				refactoredDependencyDetector = new CSSDependencyDetector(styleSheet, dom);          
+				refactoredDependencyDetector = new CSSDependencyDetector(newStyleSheet, dom);          
 			} else {
-				refactoredDependencyDetector = new CSSDependencyDetector(styleSheet); 
+				refactoredDependencyDetector = new CSSDependencyDetector(newStyleSheet); 
 			}
-			
+
 			CSSValueOverridingDependencyList refactoredDependencies = refactoredDependencyDetector.findOverridingDependancies();
-			
+
 			CSSDependencyDifferenceList differences = originalDependencies.getDifferencesWith(refactoredDependencies);
-			
-			StringBuilder test = new StringBuilder(); 
-			test.append(originalDependencies);                                                                                
-			test.append(System.lineSeparator());                                                                                            
-			test.append(refactoredDependencies);                                                                                                                                                                                  
-			test.append(System.lineSeparator());                                    
-			test.append(differences);
-			
-			IOHelper.writeStringToFile(test.toString(), folderName + "/dependency-differences" + i + ".txt");
-			
+
 			if (differences.size() > 0) {
 				
+				IOHelper.writeStringToFile(differences.toString(), folderName + "/dependency-differences" + i + ".txt");
+				
+				LOGGER.warn("Reordering needed at round " + i);
+
 				RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
-				StyleSheet refactoredAndOrdered = r.refactorToSatisfyOverridingDependencies(styleSheet, originalDependencies); 
-				CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(refactoredAndOrdered, dom); 
-				
-				IOHelper.writeStringToFile(refactoredAndOrdered.toString(), folderName + "/refactored-ordered" + i + ".css");
-				
-				CSSValueOverridingDependencyList dependencies2 = dependencyDetector2.findOverridingDependancies();        
-				LOGGER.warn("Differences in dependencies after reordering " + i);  
-				LOGGER.warn(originalDependencies.getDifferencesWith(dependencies2).toString() + "\n");	
-				
-				try {
-					styleSheet = parser.parseExternalCSS(folderName + "/refactored-ordered" + i + ".css");
-				} catch (Exception ex) {
-					ex.printStackTrace();
+				StyleSheet refactoredAndOrdered = r.refactorToSatisfyOverridingDependencies(newStyleSheet, originalDependencies); 
+
+				if (refactoredAndOrdered == null) { // It was not possible to satisfy constraints 
+
+					refactoringWasPossible = false;
+					listOfInfeasibleRefactorings.add(itemSetWithMaxImpact);
+					LOGGER.warn("Reordering was not feasible, applying the next refactoring opportunity at round " + i);
+					
+				} else {
+
+					refactoringWasPossible = true;
+
+					CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(refactoredAndOrdered, dom); 
+
+					IOHelper.writeStringToFile(refactoredAndOrdered.toString(), folderName + "/refactored-reordered" + i + ".css");
+
+					CSSValueOverridingDependencyList dependenciesReordered = dependencyDetector2.findOverridingDependancies();
+					differences = originalDependencies.getDifferencesWith(dependenciesReordered);
+					
+					if (differences.size() > 0) {
+						LOGGER.warn("Differences in dependencies after reordering " + i + "\n");  
+						LOGGER.warn(differences.toString() + "\n");	
+						IOHelper.writeStringToFile(differences.toString(), folderName + "/dependency-differences-after-reordering" + i + ".txt");
+					}
+					
+					try {
+						newStyleSheet = parser.parseExternalCSS(folderName + "/refactored-reordered" + i + ".css");
+					} catch (Exception ex) {
+						ex.printStackTrace();
+					}
 				}
+			} else { // If there were not difference between dependencies after grouping
+				refactoringWasPossible = true;
 			}
 			
-			DuplicationDetector duplicationFinderRefacored = new DuplicationDetector(styleSheet);
-			duplicationFinderRefacored.findDuplications();
-			fpgrowthResults = duplicationFinderRefacored.fpGrowth(MIN_SUPPORT);
-			duplicationFinderRefacored = null;
-			
-			
+			if (refactoringWasPossible) {
+				styleSheet = newStyleSheet;
+				DuplicationDetector duplicationFinderRefacored = new DuplicationDetector(styleSheet);
+				duplicationFinderRefacored.findDuplications();
+				fpgrowthResults = duplicationFinderRefacored.fpGrowth(MIN_SUPPORT);
+				duplicationFinderRefacored = null;
+			}
 		}
+		
+		// styleSheet object is the final refactored version
+		//model.compareAppliedStyles(originalStyleSheet, styleSheet);
+	}
+
+	private boolean containsItemSet(List<ItemSet> listOfItemSetsToCheck, ItemSet itemSet) {
+		boolean itemSetFound = true;
+		for (ItemSet is : listOfItemSetsToCheck) {
+			if (is.size() == itemSet.size() && is.getSupport().size() == itemSet.getSupport().size()) {
+				for (Item i : is) {
+					boolean itemFound = false;
+					for (Item j : itemSet) {
+						if (i.getFirstDeclaration().declarationEquals(j.getFirstDeclaration())) {
+							itemFound = true;
+							break;
+						}
+					}
+					if (!itemFound) {
+						itemSetFound = false;
+						break;
+					}
+				}
+				if (itemSetFound)
+					return true;
+			}
+		}
+		return false;
 	}
 
 	private void refactorGroupingOpportunities(final int MIN_SUPPORT,

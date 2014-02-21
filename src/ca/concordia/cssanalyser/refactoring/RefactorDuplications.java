@@ -18,6 +18,13 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 public class RefactorDuplications {
 	
+	/**
+	 * Applies the grouping refactoring for the given ItemSet.
+	 * Doesn't touch the original given stylesheet
+	 * @param originalStyleSheet
+	 * @param itemset
+	 * @return
+	 */
 	public static StyleSheet groupingRefactoring(StyleSheet originalStyleSheet, ItemSet itemset) {
 		
 		// First create a new grouped selector for refactoring

@@ -1,11 +1,16 @@
 package ca.concordia.cssanalyser.dom;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
+import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 
 
 /**
@@ -45,5 +50,6 @@ public class Model {
 	 */
 	public List<StyleSheet> getStyleSheets() {
 		return stylesheets;
-	}	
+	}
+
 }
