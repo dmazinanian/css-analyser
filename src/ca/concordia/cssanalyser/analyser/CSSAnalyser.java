@@ -438,7 +438,7 @@ public class CSSAnalyser {
 		File originalCSSFile = new File(styleSheet.getFilePath() + ".analyse/formatted.css");
 		File refactoredCSSFile = new File(refactored.getFilePath());
 		
-		String fileName = originalCSSFile.getName();
+		String fileName = (new File(styleSheet.getFilePath())).getName();
 		
 		float sizeBeforeRefactoring = (originalCSSFile.length() / 1024F);// + (originalCSSFile.length() % 1024 != 0 ? 1 : 0);
 		float sizeAfterRefactoring = (refactoredCSSFile.length() / 1024F);// + (refactoredCSSFile.length() % 1024 != 0 ? 1 : 0);
@@ -448,7 +448,9 @@ public class CSSAnalyser {
 			if (!"".equals(l.trim()))
 				sloc++;
 		
-		int numberOfCloneSets = dupResults.get(0).size();
+		int numberOfCloneSets = 0;
+		if (dupResults.size() > 0) 
+			numberOfCloneSets = dupResults.get(0).size();
 		
 		int numberOfRefactoringOpportunities = 0;
 		for (ItemSetList isl : dupResults)
