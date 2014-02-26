@@ -386,7 +386,7 @@ public class SimpleSelector extends BaseSelector {
 				/* In case if the pseudo class is unsupported, we need to return an
 				 * empty string so the analyzer would skip this selector 
 				 */
-				if (PseudoClass.isPseudoclassWithNoXpathEquivalence(pseudoClass.getName()))
+				if (pseudoClass.isPseudoclassWithNoXpathEquivalence())
 					//throw new UnsupportedSelectorToXPathException(this);
 					continue;
 

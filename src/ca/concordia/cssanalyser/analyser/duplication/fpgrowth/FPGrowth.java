@@ -10,9 +10,6 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
@@ -20,7 +17,7 @@ import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 
 public class FPGrowth {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(FPGrowth.class);
+	//private static Logger LOGGER = LoggerFactory.getLogger(FPGrowth.class);
 	
 	private final Map<Integer, ItemSetList> resultItemSetLists;
 	
@@ -115,12 +112,12 @@ public class FPGrowth {
 			}
 			//addItemSet(currentItems);
 		} else {
-			int x = 0;
+			//int x = 0;
 			// Start from the end of the header table of tree.
 			for (Item item : tree.getHeaderTable()) {
-				if (topLevel) {
-					LOGGER.info("Item " + ++x + " of " + tree.getHeaderTable().size());
-				}
+//				if (topLevel) {
+//					LOGGE.info("Item " + ++x + " of " + tree.getHeaderTable().size());
+//				}
 				// First see if the current prefix is frequent.
 				int support = tree.getTotalSupport(item);
 				if (support < minSupport)

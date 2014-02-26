@@ -143,6 +143,13 @@ public final class IOHelper {
 		}
 		
 	}
+
+	public static boolean deleteFile(String path) {
+		File f = new File(path);
+		if (f.exists())
+			return f.delete();
+		return false;
+	}
 	
 	
 	

@@ -11,12 +11,9 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 
 import ca.concordia.cssanalyser.crawler.plugin.CSSCatcher;
 
-import com.crawljax.browser.EmbeddedBrowser.BrowserType;
 import com.crawljax.core.CrawljaxRunner;
-import com.crawljax.core.configuration.BrowserConfiguration;
 import com.crawljax.core.configuration.CrawljaxConfiguration;
 import com.crawljax.core.configuration.CrawljaxConfiguration.CrawljaxConfigurationBuilder;
-import com.crawljax.core.configuration.Form;
 import com.crawljax.core.configuration.InputSpecification;
 import com.crawljax.plugins.crawloverview.CrawlOverview;
 
@@ -45,21 +42,12 @@ public class Crawler {
 		CrawljaxConfigurationBuilder builder = CrawljaxConfiguration.builderFor(websiteURI);
 		
 		CSSCatcher cssCatcher = new CSSCatcher();
-		cssCatcher.setOutputFolder(outputFolder + "/css");
+		cssCatcher.setOutputFolder(outputFolder + "css/");
 		
 		builder.addPlugin(new CrawlOverview());
 		builder.addPlugin(cssCatcher);
 
-		//System.getProperties().setProperty("webdriver.chrome.driver", "chromedriver.exe");
-		//builder.setBrowserConfig(new BrowserConfiguration(BrowserType.CHROME, 2));
-		builder.setBrowserConfig(new BrowserConfiguration(BrowserType.FIREFOX, 2));
-		builder.crawlRules().insertRandomDataInInputForms(false);
-		builder.crawlRules().dontClick("*");
-		
-		builder.setOutputDirectory(new File(outputFolder + "/crawler"));
-				
 		configureCrawljax(builder);
-		
 		
 		CrawljaxRunner crawljax = new CrawljaxRunner(builder.build());
 		
@@ -73,19 +61,34 @@ public class Crawler {
 	 */
 	private void configureCrawljax(CrawljaxConfigurationBuilder builder) {
 		
-		builder.crawlRules().insertRandomDataInInputForms(false);
 		//builder.crawlRules().clickDefaultElements();
 		//builder.crawlRules().dontClick("input").withAttribute("value", "I don't recognize");
-		builder.crawlRules().click("input").withAttribute("type", "submit");
+		//builder.crawlRules().click("input").withAttribute("type", "submit");
 		//builder.crawlRules().dontClick("a").underXPath("//*[@id='pageFooter']");
 		//builder.crawlRules().dontClick("a").underXPath("//*[@id='content']/div/div[2]");
+		//System.getProperties().setProperty("webdriver.chrome.driver", "chromedriver.exe");
+		//builder.setBrowserConfig(new BrowserConfiguration(BrowserType.CHROME, 2));w
+		//builder.setBrowserConfig(new BrowserConfiguration(BrowserType.FIREFOX, 2));
+		builder.crawlRules().insertRandomDataInInputForms(false);
+		builder.crawlRules().clickElementsInRandomOrder(true);
+		builder.crawlRules().crawlFrames(true);
 		
-		InputSpecification inputSpecification = new InputSpecification();
-		Form loginForm = new Form();
-		inputSpecification.setValuesInForm(loginForm).beforeClickElement("input").withAttribute("type", "submit").withAttribute("value", "Log In");
-		builder.crawlRules().setInputSpec(inputSpecification);
+
+		builder.crawlRules().dontClick("*");
+		InputSpecification input = new InputSpecification();
+		// when Crawljax encouters a form element with the id or name "q" enter "Crawljax"
+//		inputSpecification.setValuesInForm(loginForm).beforeClickElement("input").withAttribute("type", "submit").withAttribute("value", "Log In");
+		String uname = "";
+		String passwd = "";
+		input.field("username").setValue(uname);
+		input.field("passwd").setValue(passwd);
+		builder.crawlRules().setInputSpec(input);
+		builder.crawlRules().click("button");
 		
-		builder.setMaximumDepth(10);
+		builder.setOutputDirectory(new File(outputFolder + "/crawljax"));
+						
+		builder.setMaximumDepth(1);
+		builder.setMaximumStates(2);
 		
 	}
 

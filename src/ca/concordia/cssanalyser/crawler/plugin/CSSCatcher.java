@@ -16,6 +16,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.concordia.cssanalyser.io.IOHelper;
+
 import com.crawljax.browser.EmbeddedBrowser;
 import com.crawljax.core.CrawlerContext;
 import com.crawljax.core.plugin.GeneratesOutput;
@@ -39,7 +41,7 @@ public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 	public CSSCatcher() {
 		cssHrefs = new HashSet<>();
 	}
-
+	
 	@Override
 	public void onNewState(CrawlerContext arg0, StateVertex arg1) {
 
@@ -89,6 +91,9 @@ public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 		
 		int lastSlashPosition = href.lastIndexOf('/');
 		
+		if (href.contains("https://s.yimg.com/zz/combo?kx/yucs/uh3/uh/css/928/uh-min.css&kx/yucs/uh3/uh3_top_bar/css/278/no_icons-min.css&kx/yucs/uh3/search/css/513/blue_border-min.css&kx/yucs/uh3/uh/css/928/uh_ssl-min.css&nq/s/a/o/global-fresh_54_4354.css&nq/s/a/o/buttons-fresh_54_4354.css&nq/s/a/o/lists-fresh_54_4354.css&nq/s/a/o/boxes_54_4354.css&nq/s/a/o/mail-fresh_54_4354.css&nq/s/a/o/mail-candygram-fresh_54_4354.css&nq/s/a/style_54_4354.css&nq/s/a/messagelist_54_4354.css&nq/s/a/conversations_54_4354.css&nq/s/a/basepane_54_4354.css&nq/s/a/pane_54_4354.css&nq/s/a/notifications_54_4354.css&nq/s/a/ads_54_4354.css&nq/s/a/pc-overrides_54_4354.css&nq/s/a/compose_54_4354.css&nq/s/a/lozenge_54_4354.css&nq/s/a/search_54_4354.css&nq/s/a/boss_54_4354.css&nq/s/a/navigation_54_4354.css&nq/s/a/nav-tabs_54_4354.css&nq/s/a/sponsored-themes_54_4354.css&nq/s/a/theme/purple_54_4354.css&nq/s/a/o/thread-inbox_54_4354.css&nq/s/a/o/infscroll_54_4354.css&nq/s/a/o/vertPrev_54_4354.css&nq/s/a/o/thread-inbox-header-fresh_54_4354.css&nq/s/a/o/mod-thread-fresh_54_4354.css&nq/s/a/o/tutorial_54_4354.css&nq/s/a/o/searchtooltip_54_4354.css&nq/s/a/o/convstooltip_54_4354.css&nq/s/a/o/themestooltip_54_4354.css&nq/s/a/o/buttonctx_54_4354.css"))
+			System.out.print("");
+		
 		// Get the name of file and append it to the desired folder
 		String cssFileName = DigestUtils.shaHex(href.substring(lastSlashPosition));//href.substring(lastSlashPosition).replaceAll("[<>\\/?*:\"|]", "_");
 		//if (cssFileName.length() > 128)
@@ -102,55 +107,60 @@ public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 		
 		//while ((new File(cssFilePath)).exists())
 		//	cssFilePath += "_.css";
-		if ((new File(cssFilePath)).exists())
-			return;
-		
-		FileOutputStream fos = null;
-		
-		try {
+		//if (!(new File(cssFilePath)).exists()) {
 			
-			fos = new FileOutputStream(cssFilePath);
-			
-			// Lets add some information to the head of this css file
-			String headerText = String.format("/* \n" +
-										  " * Created by CSSCatcher plugin for Crawljax\n" +
-										  " * CSS file is for Crawljax DOM state %s\n" +
-										  " * CSS file was contained in %s" +
-										  " * Downloaded from %s\n" +
-										  " */\n\n",  forWebSite, stateName, href);
-			
-			byte[] headerBytes = headerText.getBytes();
-			
-			fos.write(headerBytes);
-			
-			URL remoteCSSFile = new URL(href);
-			HttpURLConnection urlConnection = (HttpURLConnection) remoteCSSFile.openConnection();
-		    urlConnection.setUseCaches(false);
-		    urlConnection.setDoOutput(false);
-		    urlConnection.setReadTimeout(10000);
-			ReadableByteChannel rbc = Channels.newChannel(urlConnection.getInputStream());
-			fos.getChannel().transferFrom(rbc, headerBytes.length, Long.MAX_VALUE);
-					
-		} catch (MalformedURLException e) {
-			
-			LOGGER.warn("Malformed url for file:" + href);
-			
-		} catch (IOException e) {
-			
-			LOGGER.warn("IOException for file:" + href);
-			e.printStackTrace();
-			
-		} finally {
-			
+			FileOutputStream fos = null;
+
 			try {
-				fos.close();
-				LOGGER.info("Saved file" + cssFilePath);
-			} catch (Exception e) {
-				// Swallow 
+
+				fos = new FileOutputStream(cssFilePath);
+
+				// Lets add some information to the head of this css file
+				String headerText = String.format("/* \n" +
+						" * Created by CSSCatcher plugin for Crawljax\n" +
+						" * CSS file is for Crawljax DOM state %s\n" +
+						" * CSS file was contained in %s" +
+						" * Downloaded from %s\n" +
+						" */\n\n",  forWebSite, stateName, href);
+
+				byte[] headerBytes = headerText.getBytes();
+
+				fos.write(headerBytes);
+				
+				if (!href.startsWith("file://")) {
+					URL remoteCSSFile = new URL(href);
+					HttpURLConnection urlConnection = (HttpURLConnection) remoteCSSFile.openConnection();
+					urlConnection.setUseCaches(false);
+					urlConnection.setDoOutput(false);
+					urlConnection.setReadTimeout(10000);
+					ReadableByteChannel rbc = Channels.newChannel(urlConnection.getInputStream());
+					fos.getChannel().transferFrom(rbc, headerBytes.length, Long.MAX_VALUE);
+				} else {
+					String localFile = IOHelper.readFileToString(href.replaceFirst("file://[/]?", ""));
+					fos.write(localFile.getBytes());
+				}
+
+			} catch (MalformedURLException e) {
+
+				LOGGER.warn("Malformed url for file:" + href);
+
+			} catch (IOException e) {
+
+				LOGGER.warn("IOException for file:" + href);
+				e.printStackTrace();
+
+			} finally {
+
+				try {
+					fos.close();
+					LOGGER.info("Saved file " + cssFilePath);
+				} catch (Exception e) {
+					// Swallow 
+				}
+
 			}
-			
 		}
-	}
+	//}
 
 	/**
 	 * Returns a collection of all CSS hrefs,
@@ -188,7 +198,7 @@ public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 			LOGGER.warn(String.format("CSSCatcher: output folder %s is not empty. Existing files would be overwriten.", path));
 		} else {
 			folder.mkdir();
-			LOGGER.info(String.format("Folder %s did not exits, it was created.", path));
+			LOGGER.info(String.format("Created folder %s", path));
 		}
 		outputPatch = folder.getAbsolutePath();
 		

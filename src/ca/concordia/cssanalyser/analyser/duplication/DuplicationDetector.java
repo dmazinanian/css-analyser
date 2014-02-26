@@ -41,6 +41,7 @@ public class DuplicationDetector {
 	 *  In apriori algorithm, this map is used in order to accelerate finding supports 
 	 */
 	private Map<Declaration, Item> declarationItemMap = new HashMap<>();
+	private Map<Item, Set<Integer>> itemToDuplicationInstanceTypeMapper = new HashMap<>();
 	
 	public DuplicationDetector(StyleSheet stylesheet) {
 		this.stylesheet = stylesheet;
@@ -170,6 +171,7 @@ public class DuplicationDetector {
 					// This only used in apriori and fpgrowth
 					newItem.add(checkingDeclaration);
 					declarationItemMap.put(checkingDeclaration, newItem);
+					putInItemToInstanceMapper(newItem, 1);
 				}
 				if (!equals && !visitedEquivalentDeclarations.contains(checkingDecIndex) && 
 						(currentDeclaration.declarationIsEquivalent(checkingDeclaration))) {// || (equals && currentTypeIIDuplicatedDeclarations.size() > 1)) {
@@ -182,6 +184,7 @@ public class DuplicationDetector {
 					
 					newItem.add(checkingDeclaration);
 					declarationItemMap.put(checkingDeclaration, newItem);
+					putInItemToInstanceMapper(newItem, 2);
 				}
 				
 			}
@@ -211,6 +214,14 @@ public class DuplicationDetector {
 
 	}
 	
+	private void putInItemToInstanceMapper(Item item, int i) {
+		Set<Integer> instances = itemToDuplicationInstanceTypeMapper.get(item);
+		if (instances == null)
+			instances = new HashSet<>();
+		instances.add(i);
+		itemToDuplicationInstanceTypeMapper.put(item, instances);
+	}
+
 	/**
 	 * Finds typeIII duplications 
 	 */
@@ -281,9 +292,9 @@ public class DuplicationDetector {
 							virtualShorthand.getRealValues().add(v.clone());
 						
 						// For apriori
-						Item item = declarationItemMap.get(checkingDeclaration);
-						
+						Item item = declarationItemMap.get(checkingDeclaration);					
 						item.add(virtualShorthand , true);
+						putInItemToInstanceMapper(item, 3);
 						selector.addDeclaration(virtualShorthand);
 						declarationItemMap.put(virtualShorthand, item);
 					}
@@ -424,6 +435,24 @@ public class DuplicationDetector {
 		return fpGrowth.mine(itemSets, minSupport);
 	}
 
+	/**
+	 * Returns all the items including different type instances
+	 * @param type
+	 * @return
+	 */
+	public Map<Integer, List<Item>> getItemsIncludingTypenstances() {
+		Map<Integer, List<Item>> toReturn = new HashMap<>();
+		
+		for (int i = 1; i <= 3; i++)
+			toReturn.put(i, new ArrayList<Item>());
+		
+		for (Item item : itemToDuplicationInstanceTypeMapper.keySet()) {
+			for (int i : itemToDuplicationInstanceTypeMapper.get(item)) {
+				toReturn.get(i).add(item);
+			}
+		}
+		return toReturn;
+	}
 		
 
 }

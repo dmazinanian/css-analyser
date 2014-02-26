@@ -30,7 +30,10 @@ public class StyleSheet {
 
 	private Set<Selector> listOfSelectors;
 	private String cssFilePath;
-	//private MediaQueryList listOfMedias;
+	public int numberOfAppliedRefactorigns;
+	public int numberOfPositiveRefactorings;
+	
+	
 
 	public StyleSheet() {
 		listOfSelectors = new LinkedHashSet<>();

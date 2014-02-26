@@ -6,7 +6,10 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 import org.slf4j.Logger;
@@ -15,10 +18,14 @@ import org.w3c.dom.Document;
 
 import ca.concordia.cssanalyser.analyser.duplication.DuplicationDetector;
 import ca.concordia.cssanalyser.analyser.duplication.DuplicationIncstanceList;
+import ca.concordia.cssanalyser.analyser.duplication.DuplicationInstance;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
+import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.dom.DOMHelper;
 import ca.concordia.cssanalyser.dom.Model;
 import ca.concordia.cssanalyser.io.IOHelper;
@@ -39,6 +46,7 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDepen
 public class CSSAnalyser {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSSAnalyser.class);
+	
 	private final String folderPath;
 	private final Model model;
 	private boolean doApriori = false;
@@ -130,24 +138,31 @@ public class CSSAnalyser {
 	 */
 	public void analyse(final int MIN_SUPPORT) throws IOException {
 		
-//		String headerLine = "file_name|" +
-//				"size|" +
-//				"sloc|" +
-//				"num_selectors|" +
-//				"num_atomic_sel|" +
-//				"num_grouped_sel|" +
-//				"num_decs|" +
-//				"typeI|" +
-//				"typeII|" +
-//				"typeIII|" +
-//				"typeIV_A|" +
-//				"typeIV_B|" +
-//				"number_of_duplicated_declarations|" +
-//				"selectors_with_duplicated_declaration|" +
-//				"longest_dup|" +
-//				"max_sup_longest_dup";
-//		List<String> analytics = new ArrayList<>();
-		//analytics.add(headerLine);
+		IOHelper.deleteFile(folderPath + "/analytics.txt");
+		
+		String headerLine = "file_name|" +
+				"size|" +
+				"sloc|" +
+				"num_selectors|" +
+				"num_base_sel|" +
+				"num_grouped_sel|" +
+				"num_decs|" +
+				"typeI|" +
+				"typeII|" +
+				"typeIII|" +
+				"number_of_duplicated_declarations|" +
+				"selectors_with_duplicated_declaration|" +
+				"longest_dup|" +
+				"max_sup_longest_dup|" +
+				"clone_sets|" +
+				"refactoring_opportunities|" +
+				"applied_refactorings_count|" +
+				"number_of_positive_refactorings|" +
+				"size_after" + System.lineSeparator();
+		
+		IOHelper.writeStringToFile(headerLine, folderPath + "/analytics.txt", false);
+
+		
 	
 		// Do the analysis for each CSS file
 		for (StyleSheet styleSheet : model.getStyleSheets()) {
@@ -157,8 +172,8 @@ public class CSSAnalyser {
 					
 			LOGGER.warn("Finding different types of duplication in " + filePath);
 			
-			DuplicationDetector duplicationFinder = new DuplicationDetector(styleSheet);
-			duplicationFinder.findDuplications();
+			DuplicationDetector duplicationDetector = new DuplicationDetector(styleSheet);
+			duplicationDetector.findDuplications();
 
 			
 			IOHelper.createFolder(folderName, true);
@@ -166,16 +181,16 @@ public class CSSAnalyser {
 			IOHelper.writeStringToFile(styleSheet.toString(), folderName + "/formatted.css");
 
 			
-			DuplicationIncstanceList typeIDuplications = duplicationFinder.getTypeIDuplications();
+			DuplicationIncstanceList typeIDuplications = duplicationDetector.getTypeIDuplications();
 			IOHelper.writeLinesToFile(typeIDuplications, folderName + "/typeI.txt");
 		
-			DuplicationIncstanceList typeIIDuplications = duplicationFinder.getTypeIIDuplications();
+			DuplicationIncstanceList typeIIDuplications = duplicationDetector.getTypeIIDuplications();
 			IOHelper.writeLinesToFile(typeIIDuplications, folderName + "/typeII.txt");
 			
-			DuplicationIncstanceList typeIIIDuplications = duplicationFinder.getTypeIIIDuplications();
+			DuplicationIncstanceList typeIIIDuplications = duplicationDetector.getTypeIIIDuplications();
 			IOHelper.writeLinesToFile(typeIIIDuplications, folderName + "/typeIII.txt");
 			
-//			DuplicationIncstanceList typeIVADuplications = duplicationFinder.getTypeIVADuplications();
+			//			DuplicationIncstanceList typeIVADuplications = duplicationFinder.getTypeIVADuplications();
 //			IOHelper.writeLinesToFile(typeIVADuplications, folderName + "/typeIVA.txt");
 			
 			//if (!dontUseDOM) {
@@ -192,7 +207,7 @@ public class CSSAnalyser {
 				LOGGER.warn("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT + " on " + filePath);
 
 				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-				aprioriResults = duplicationFinder.apriori(MIN_SUPPORT);
+				aprioriResults = duplicationDetector.apriori(MIN_SUPPORT);
 				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				long time = (end - start) / 1000000L;
 				IOHelper.writeLinesToFile(aprioriResults, folderName + "/apriori.txt");
@@ -206,33 +221,43 @@ public class CSSAnalyser {
 				LOGGER.warn("Applying fpgrowth algorithm with minimum support count of " + MIN_SUPPORT + " on " + filePath);
 				
 				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-				fpgrowthResults = duplicationFinder.fpGrowth(MIN_SUPPORT);
+				fpgrowthResults = duplicationDetector.fpGrowth(MIN_SUPPORT);
 				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				long time = (end - start) / 1000000L;
 				IOHelper.writeLinesToFile(fpgrowthResults, folderName + "/fpgrowth.txt");
 				
+				
 				LOGGER.warn("Done FP-Growth in " + time);
-								
+				
+				LOGGER.warn("Applying grouping refactoring opportunities");
+				StyleSheet refactored;
 				if (!dontUseDOM) {
-					refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, folderName, fpgrowthResults, model.getDocument());
+					refactored = refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, folderName, fpgrowthResults, model.getDocument());
 				} else {
-					refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, folderName, fpgrowthResults);
+					refactored = refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, folderName, fpgrowthResults);
 				}
+				
+				String analytics = getAnalytics(styleSheet, refactored, duplicationDetector, fpgrowthResults);
+				
+				IOHelper.writeStringToFile(analytics + System.lineSeparator(), folderPath + "/analytics.txt" , true);
 				
 			}
 			
 			if (compareAprioriAndFPGrowth)
 				compareAprioriAndFPGrowth(aprioriResults, fpgrowthResults);
 			
-			//getAnalytics(styleSheet, duplicationFinder, fpgrowthResults, analytics); 
 		}
 		
-		//IOHelper.writeLinesToFile(analytics, "E:/Davood/joomla-cms-css-typeIV/analytics.txt", true);
 					
 	}
 	
-	private void refactorGroupingOpportunities(int MIN_SUPPORT, StyleSheet styleSheet, String folderName, 
-			List<ItemSetList> fpgrowthResults, Document dom) {
+	private StyleSheet refactorGroupingOpportunities(final int MIN_SUPPORT, StyleSheet styleSheet, String folderName, List<ItemSetList> fpgrowthResults) {
+		
+		return refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, folderName, fpgrowthResults, null);
+		
+	}
+	
+	private StyleSheet refactorGroupingOpportunities(int MIN_SUPPORT, StyleSheet styleSheet, String folderName,	List<ItemSetList> fpgrowthResults, Document dom) {
 
 		StyleSheet originalStyleSheet = styleSheet;
 		
@@ -266,6 +291,9 @@ public class CSSAnalyser {
 		
 		List<ItemSet> listOfInfeasibleRefactorings = new ArrayList<>();
 		
+		boolean firstRun = true;
+		int numberOfPositiveRefactorings = 0; 
+		
 		int i = 0;
 		boolean refactoringWasPossible = true;
 		while (true) {
@@ -283,11 +311,14 @@ public class CSSAnalyser {
 
 
 				itemSetsSortedList = new ArrayList<>(itemSetsTreeSet);
+				
+				if (firstRun) {
+					firstRun = false;
+					numberOfPositiveRefactorings = itemSetsSortedList.size();
+				}
 			}
 			
-			if (i == 11)
-				System.out.print("");
-			
+		
 			if (itemSetsSortedList.size() == 0) {
 				// No more refactoring is possible to reduce the size
 				break;
@@ -365,6 +396,8 @@ public class CSSAnalyser {
 			
 			if (refactoringWasPossible) {
 				styleSheet = newStyleSheet;
+				styleSheet.numberOfAppliedRefactorigns = i;
+				styleSheet.numberOfPositiveRefactorings = numberOfPositiveRefactorings;
 				DuplicationDetector duplicationFinderRefacored = new DuplicationDetector(styleSheet);
 				duplicationFinderRefacored.findDuplications();
 				fpgrowthResults = duplicationFinderRefacored.fpGrowth(MIN_SUPPORT);
@@ -372,8 +405,8 @@ public class CSSAnalyser {
 			}
 		}
 		
-		// styleSheet object is the final refactored version
-		//model.compareAppliedStyles(originalStyleSheet, styleSheet);
+		return styleSheet;
+		
 	}
 
 	private boolean containsItemSet(List<ItemSet> listOfItemSetsToCheck, ItemSet itemSet) {
@@ -399,92 +432,108 @@ public class CSSAnalyser {
 		}
 		return false;
 	}
-
-	private void refactorGroupingOpportunities(final int MIN_SUPPORT,
-			StyleSheet styleSheet, String folderName,
-			List<ItemSetList> fpgrowthResults) {
-		
-		refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, folderName, fpgrowthResults, null);
-		
-	}
 	
-//	private void getAnalytics(StyleSheet styleSheet, DuplicationDetector finder, List<ItemSetList> dupResults, List<String> analytics) {
-//		
-//		File file = new File(styleSheet.getFilePath());
-//		
-//		String fileName = file.getName();
-//		
-//		long size = (file.length() / 1024) + (file.length() % 1024 != 0 ? 1 : 0);
-//		int sloc = 0;
-//		String[] lines = styleSheet.toString().split("\r\n|\r|\n");
-//		for (String l : lines)
-//			if (!"".equals(l.trim()))
-//				sloc++;
-//		
-//		int numberOfSelectors = styleSheet.getAllSelectors().size();
-//		int numberOfAtomicSelectors = styleSheet.getAllBaseSelectors().size();
-//		int numberOfDeclarations = styleSheet.getAllDeclarations().size();
-//		int numberOfGroupedSelectors = 0;
-//		for (Selector selector : styleSheet.getAllSelectors())
-//			if (selector instanceof GroupingSelector)
-//				numberOfGroupedSelectors++;
-//		
-//		int numberOfTypeIDuplications = finder.getTypeIDuplications().getSize();
-//		int numberOfTypeIIDuplications = finder.getTypeIIDuplications().getSize();
-//		int numberOfTypeIIIDuplications = finder.getTypeIIIDuplications().getSize();
-//		int numberOfTypeIVADuplications = finder.getTypeIVADuplications().getSize();
-//		int numberOfTypeIVBDuplications = 0;
-//		if (finder.getTypeIVBDuplications() != null) 
-//			finder.getTypeIVBDuplications().getSize();
-//
-//		Set<Selector> selectorsInDuplicatedDeclarations = new HashSet<>();
-//		for (DuplicationInstance d : finder.getTypeIDuplications())
-//			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
-//		
-//		for (DuplicationInstance d : finder.getTypeIIDuplications())
-//			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
-//		
-//		for (DuplicationInstance d : finder.getTypeIIIDuplications())
-//			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
-//		
-//		int numberOfSelectorsWithDuplications = selectorsInDuplicatedDeclarations.size();
-//			
-//		Set<Declaration> duplicatedDeclarations = new HashSet<>();
-//		for (ItemSetList isl : dupResults)
-//			for (ItemSet is : isl)
-//				for (Item i : is)
-//					for (Declaration d : i)
-//						duplicatedDeclarations.add(d);
-//		
-//		int numberOfDuplicatedDeclarations = duplicatedDeclarations.size(); 
-//				
-//		int longestDupLength = dupResults.size();
-//		int maxSupForLongestDup = 0; 
-//		try {
-//			maxSupForLongestDup = dupResults.get(dupResults.size() - 1).getMaximumSupport();
-//		} catch (Exception ex) {
-//			// Swallow
-//		}
-//				
-//		StringBuilder line = new StringBuilder();
-//		line.append(fileName + "|");
-//		line.append(size + "|");
-//		line.append(sloc + "|");
-//		line.append(numberOfSelectors + "|");
-//		line.append(numberOfAtomicSelectors + "|");
-//		line.append(numberOfGroupedSelectors + "|");
-//		line.append(numberOfDeclarations + "|");
-//		line.append(numberOfTypeIDuplications + "|");
-//		line.append(numberOfTypeIIDuplications + "|");
-//		line.append(numberOfTypeIIIDuplications + "|");
-//		line.append(numberOfTypeIVADuplications + "|");
-//		line.append(numberOfTypeIVBDuplications + "|");
-//		line.append(numberOfDuplicatedDeclarations + "|");
-//		line.append(numberOfSelectorsWithDuplications + "|");
-//		line.append(longestDupLength + "|");
-//		line.append(maxSupForLongestDup );
-//		analytics.add(line.toString());
-//	}
+	private String getAnalytics(StyleSheet styleSheet, StyleSheet refactored, DuplicationDetector finder, List<ItemSetList> dupResults) {
+		
+		File originalCSSFile = new File(styleSheet.getFilePath() + ".analyse/formatted.css");
+		File refactoredCSSFile = new File(refactored.getFilePath());
+		
+		String fileName = originalCSSFile.getName();
+		
+		float sizeBeforeRefactoring = (originalCSSFile.length() / 1024F);// + (originalCSSFile.length() % 1024 != 0 ? 1 : 0);
+		float sizeAfterRefactoring = (refactoredCSSFile.length() / 1024F);// + (refactoredCSSFile.length() % 1024 != 0 ? 1 : 0);
+		int sloc = 0;
+		String[] lines = styleSheet.toString().split("\r\n|\r|\n");
+		for (String l : lines)
+			if (!"".equals(l.trim()))
+				sloc++;
+		
+		int numberOfCloneSets = dupResults.get(0).size();
+		
+		int numberOfRefactoringOpportunities = 0;
+		for (ItemSetList isl : dupResults)
+			numberOfRefactoringOpportunities += isl.size();
+		
+		IOHelper.writeStringToFile("\n\nNumber of all possible refactoring opportunities " + numberOfRefactoringOpportunities, styleSheet.getFilePath() + ".analyse/fpgrowth.txt", true);
+			
+		int numberOfSelectors = styleSheet.getAllSelectors().size();
+		int numberOfAtomicSelectors = styleSheet.getAllBaseSelectors().size();
+		int numberOfDeclarations = styleSheet.getAllDeclarations().size();
+		int numberOfGroupedSelectors = 0;
+		for (Selector selector : styleSheet.getAllSelectors())
+			if (selector instanceof GroupingSelector)
+				numberOfGroupedSelectors++;
+		
+		String cloneSetTypesCount = "Number of clone sets including type I to III instnaces: ";
+		Map<Integer, List<Item>> typeToItemsMapper = finder.getItemsIncludingTypenstances();
+		cloneSetTypesCount += typeToItemsMapper.get(1).size() + "\t" + typeToItemsMapper.get(2).size() + "\t" + typeToItemsMapper.get(3).size(); 
+		IOHelper.writeStringToFile(cloneSetTypesCount, styleSheet.getFilePath() + ".analyse/clone types.txt");
+		
+		int conductedRefactorings = refactored.numberOfAppliedRefactorigns;
+		int numberOfPositiveRefactorings = refactored.numberOfPositiveRefactorings;
+		
+		int numberOfTypeIDuplications = typeToItemsMapper.get(1).size(); //finder.getTypeIDuplications().getSize();
+		int numberOfTypeIIDuplications =  typeToItemsMapper.get(2).size();
+		int numberOfTypeIIIDuplications = typeToItemsMapper.get(3).size();
+		//int numberOfTypeIVADuplications = finder.getTypeIVADuplications().getSize();
+		//int numberOfTypeIVBDuplications = 0;
+		if (finder.getTypeIVBDuplications() != null) 
+			finder.getTypeIVBDuplications().getSize();
+
+		Set<Selector> selectorsInDuplicatedDeclarations = new HashSet<>();
+		for (DuplicationInstance d : finder.getTypeIDuplications())
+			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
+		
+		for (DuplicationInstance d : finder.getTypeIIDuplications())
+			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
+		
+		for (DuplicationInstance d : finder.getTypeIIIDuplications())
+			selectorsInDuplicatedDeclarations.addAll(d.getSelectors());
+		
+		int numberOfSelectorsWithDuplications = selectorsInDuplicatedDeclarations.size();
+			
+		Set<Declaration> duplicatedDeclarations = new HashSet<>();
+		for (ItemSetList isl : dupResults)
+			for (ItemSet is : isl)
+				for (Item i : is)
+					for (Declaration d : i)
+						duplicatedDeclarations.add(d);
+		
+		int numberOfDuplicatedDeclarations = duplicatedDeclarations.size(); 
+				
+		int longestDupLength = dupResults.size();
+		int maxSupForLongestDup = 0; 
+		try {
+			maxSupForLongestDup = dupResults.get(dupResults.size() - 1).getMaximumSupport();
+		} catch (Exception ex) {
+			// Swallow
+		}
+				
+		StringBuilder line = new StringBuilder();
+		line.append(fileName + "|");
+		line.append(sizeBeforeRefactoring + "|");
+		line.append(sloc + "|");
+		line.append(numberOfSelectors + "|");
+		line.append(numberOfAtomicSelectors + "|");
+		line.append(numberOfGroupedSelectors + "|");
+		line.append(numberOfDeclarations + "|");
+		line.append(numberOfTypeIDuplications + "|");
+		line.append(numberOfTypeIIDuplications + "|");
+		line.append(numberOfTypeIIIDuplications + "|");
+		//line.append(numberOfTypeIVADuplications + "|");
+		//line.append(numberOfTypeIVBDuplications + "|");
+		line.append(numberOfDuplicatedDeclarations + "|");
+		line.append(numberOfSelectorsWithDuplications + "|");
+		line.append(longestDupLength + "|");
+		line.append(maxSupForLongestDup + "|");
+		line.append(numberOfCloneSets + "|");
+		line.append(numberOfRefactoringOpportunities + "|");
+		line.append(conductedRefactorings + "|");
+		line.append(numberOfPositiveRefactorings + "|");
+		line.append(sizeAfterRefactoring);
+
+		return line.toString();
+	}
 
 	private void compareAprioriAndFPGrowth(List<ItemSetList> aprioriResults,
 			List<ItemSetList> fpgrowthResults) {

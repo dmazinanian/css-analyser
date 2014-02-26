@@ -59,7 +59,7 @@ public class CSSAnalyserApp {
 						mode = Mode.valueOf(value.toUpperCase());
 						break;
 					case "infolder":
-						inputFolder = value.replace("\\", "/");;
+						inputFolder = value.replace("\\", "/");
 						if (!inputFolder.endsWith("/"))
 							inputFolder = inputFolder + "/";
 						break;
@@ -106,15 +106,15 @@ public class CSSAnalyserApp {
 			
 			for (String currentUrl : urls) {
 			
-				String outputFolderPath = outputFolder + currentUrl.replaceFirst("http[s]?://", "").replace("/", "_");
+				String outputFolderPath = outputFolder + currentUrl.replaceFirst("http[s]?://", "").replaceFirst("file://", "").replace("/", "_").replace(":", "_") + "/";
 				// Make sure to configure ca.concordia.cssanalyser.crawler in Crawler class
 				Crawler crawler = new Crawler(currentUrl, outputFolderPath);
 				crawler.start();
 
 				//System.out.println(System.getProperty("user.dir"));
 
-				// Get all ca.concordia.cssanalyser.dom states in outputFolder/ca.concordia.cssanalyser.crawler/doms		
-				List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "crawler/doms", "html");	
+				// Get all ca.concordia.cssanalyser.dom states in outputFolder/crawljax/doms		
+				List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "crawljax/doms", "html");	
 				for (File domStateHtml : allStatesFiles) {
 
 					String stateName = domStateHtml.getName();
@@ -135,7 +135,7 @@ public class CSSAnalyserApp {
 				return;
 			}
 			
-			List<File> allStatesFiles = IOHelper.searchForFiles(inputFolder + "crawler/doms", "html");	
+			List<File> allStatesFiles = IOHelper.searchForFiles(inputFolder + "crawljax/doms", "html");	
 			for (File domStateHtml : allStatesFiles) {
 				
 				String stateName = domStateHtml.getName();

@@ -94,7 +94,7 @@ public class RefactorToSatisfyDependencies {
 
 			Selector[] correspondingSelectors = dependencyNodeToSelectorMap.get(dependency);
 			
-			if (correspondingSelectors == null)
+			if (correspondingSelectors == null || correspondingSelectors[0] == null || correspondingSelectors[1] == null)
 				continue;
 			
 			Selector s1 = correspondingSelectors[0];
@@ -123,6 +123,9 @@ public class RefactorToSatisfyDependencies {
 
 		}
 
+		if (createdVars.size() == 0)
+			return styleSheet;
+		
 		// All the variables have to have unique values
 		IntVar<?>[] allVars = new IntVar<?>[createdVars.size()];
 		allVars = createdVars.values().toArray(allVars);
