@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDifference.CSSDependencyDifferenceType;
+
 public class CSSDependencyDifferenceList implements Iterable<CSSDependencyDifference<?>> {
 
 	private final List<CSSDependencyDifference<?>> differences;
@@ -33,6 +35,14 @@ public class CSSDependencyDifferenceList implements Iterable<CSSDependencyDiffer
 	public Iterator<CSSDependencyDifference<?>> iterator() {
 		return differences.iterator();
 	}
+
+	public boolean allMissing() {
+		for (CSSDependencyDifference<?> diff : differences)
+			if (diff.getType() != CSSDependencyDifferenceType.MISSING)
+				return false;
+		return true;
+	}
+	
 	
 
 	

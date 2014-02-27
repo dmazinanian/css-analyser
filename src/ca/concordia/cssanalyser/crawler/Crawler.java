@@ -14,7 +14,6 @@ import ca.concordia.cssanalyser.crawler.plugin.CSSCatcher;
 import com.crawljax.core.CrawljaxRunner;
 import com.crawljax.core.configuration.CrawljaxConfiguration;
 import com.crawljax.core.configuration.CrawljaxConfiguration.CrawljaxConfigurationBuilder;
-import com.crawljax.core.configuration.InputSpecification;
 import com.crawljax.plugins.crawloverview.CrawlOverview;
 
 
@@ -74,16 +73,16 @@ public class Crawler {
 		builder.crawlRules().crawlFrames(true);
 		
 
-		builder.crawlRules().dontClick("*");
-		InputSpecification input = new InputSpecification();
+		//builder.crawlRules().dontClick("*");
+		//InputSpecification input = new InputSpecification();
 		// when Crawljax encouters a form element with the id or name "q" enter "Crawljax"
 //		inputSpecification.setValuesInForm(loginForm).beforeClickElement("input").withAttribute("type", "submit").withAttribute("value", "Log In");
-		String uname = "";
-		String passwd = "";
-		input.field("username").setValue(uname);
-		input.field("passwd").setValue(passwd);
-		builder.crawlRules().setInputSpec(input);
-		builder.crawlRules().click("button");
+		//String uname = "";
+		//String passwd = "";
+		//input.field("username").setValue(uname);
+		//input.field("passwd").setValue(passwd);
+		//builder.crawlRules().setInputSpec(input);
+		//builder.crawlRules().click("button");
 		
 		builder.setOutputDirectory(new File(outputFolder + "/crawljax"));
 						

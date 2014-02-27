@@ -1,8 +1,9 @@
 package ca.concordia.cssanalyser.refactoring.dependencies;
 
+
 public class CSSDependencyDifference<E> {
 	
-	enum CSSDependencyDifferenceType {
+	public enum CSSDependencyDifferenceType {
 		MISSING,
 		REVERSED,
 		ADDED
@@ -31,6 +32,10 @@ public class CSSDependencyDifference<E> {
 				break;
 		}
 		return toReturn + ": " + dependency;
+	}
+
+	public CSSDependencyDifferenceType getType() {
+		return type;
 	}
 	
 }

@@ -352,7 +352,7 @@ public class CSSAnalyser {
 
 			CSSDependencyDifferenceList differences = originalDependencies.getDifferencesWith(refactoredDependencies);
 
-			if (differences.size() > 0) {
+			if (differences.size() > 0 && !differences.allMissing()) {
 				
 				IOHelper.writeStringToFile(differences.toString(), folderName + "/dependency-differences" + i + ".txt");
 				
