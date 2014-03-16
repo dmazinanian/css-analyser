@@ -1,7 +1,9 @@
 #css-analyser
 
-This tool is designed for analysis and safe refactoring of CSS files.
+This tool is designed for analysis and safe refactoring of the CSS code.
 Right now, it finds three different types of duplication in CSS files and safely refactores them.
+
+I am developing this tool as an infrastructure for my research on CSS during my PhD studies.
 
 ##License
 
@@ -13,12 +15,11 @@ This tool supports three modes:
 
 * **Crawl mode** In this mode, tool uses [Crawljax](https://github.com/crawljax/crawljax) 
 to crawl web pages of the given url(s). Then it analyzes all the CSS files of the cawled web pages,
-with respect to the collected DOM states. 
-
+with respect to the collected DOM states. <br />
 For using this mode, use `--mode:crawl --url:"http://to.be.analyzed" --outfolder:"path/to/analyzed/info/folder"`.
 Tool will gather DOM states using Crawljax in the outfolder. It also creates a folder called css, in which 
 all the CSS files are saved. 
-
+<br />
 It is also possible to use `--urlfile:"path/to/file"`, to provide a list of websites for analysis. Websites 
 URLs must be given one per line in this file.
 
