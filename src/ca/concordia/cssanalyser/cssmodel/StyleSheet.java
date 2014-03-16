@@ -19,6 +19,8 @@ import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.dom.DOMNodeWrapper;
 import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 
 /**
@@ -32,6 +34,7 @@ public class StyleSheet {
 	private String cssFilePath;
 	public int numberOfAppliedRefactorigns;
 	public int numberOfPositiveRefactorings;
+	private CSSValueOverridingDependencyList orderDependencies;
 	
 	
 
@@ -233,6 +236,32 @@ public class StyleSheet {
 	public void addMediaQueryList(MediaQueryList forMedia) {
 		for (Selector s : listOfSelectors)
 			s.addMediaQueryList(forMedia);
+	}
+	
+	public CSSValueOverridingDependencyList getLastComputetOrderDependencies() {
+		return orderDependencies;
+	}
+
+	public CSSValueOverridingDependencyList getValueOverridingDependencies(Document dom) {
+		
+		CSSDependencyDetector dependencyDetector;
+		
+		if (dom != null) {                                                                                               
+			dependencyDetector = new CSSDependencyDetector(this, dom);
+		} else {                                                                                                         
+			dependencyDetector = new CSSDependencyDetector(this);                                     
+		}
+		
+		orderDependencies = dependencyDetector.findOverridingDependancies();
+		
+		return orderDependencies;
+		
+	}
+	
+	public CSSValueOverridingDependencyList getValueOverridingDependencies() {
+		
+		return getValueOverridingDependencies(null);
+		
 	}
 
 }

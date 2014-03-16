@@ -20,9 +20,11 @@ public class FPGrowth {
 	//private static Logger LOGGER = LoggerFactory.getLogger(FPGrowth.class);
 	
 	private final Map<Integer, ItemSetList> resultItemSetLists;
+	private final boolean removeSubsets;
 	
-	public FPGrowth() { 
+	public FPGrowth(boolean removeSubSets) { 
 		resultItemSetLists = new HashMap<>();
+		this.removeSubsets = removeSubSets;
 	}
 	
 	public List<ItemSetList> mine(Collection<TreeSet<Item>> dataSet, int minSupport) {
@@ -175,24 +177,34 @@ public class FPGrowth {
 	 * delete all subsets
 	 */
 	private void addItemSet(Set<Item> is) {
+		addItemSet(is, removeSubsets);
+	}
+	
+	private void addItemSet(Set<Item> is, boolean removeSubsets) {
 		ItemSet newItemSet = new ItemSet();
 		newItemSet.addAll(is);
-//		for (int i = newItemSet.size() + 1; i <= resultItemSetLists.keySet().size(); i++) {
-//			ItemSetList isl = resultItemSetLists.get(i);
-//			if (isl != null && isl.containsSuperSet(newItemSet)) {
-//				return;
-//			}
-//		}
+		if (removeSubsets) {
+			// Remove super sets
+			for (int i = newItemSet.size() + 1; i <= resultItemSetLists.keySet().size(); i++) {
+				ItemSetList isl = resultItemSetLists.get(i);
+				if (isl != null && isl.containsSuperSet(newItemSet)) {
+					return;
+				}
+			}
+		}
 		ItemSetList correspondingItemSetList = resultItemSetLists.get(newItemSet.size());
 		if (correspondingItemSetList == null) {
 			correspondingItemSetList = new ItemSetList();
 			resultItemSetLists.put(newItemSet.size(), correspondingItemSetList);
 		}
 		correspondingItemSetList.add(newItemSet);
-//		for (int i = 1; i < newItemSet.size(); i++) {
-//			ItemSetList isl = resultItemSetLists.get(i);
-//			if (isl != null)
-//				isl.removeSubset(newItemSet);
-//		}
+		if (removeSubsets) {
+			// Remove sub sets
+			for (int i = 1; i < newItemSet.size(); i++) {
+				ItemSetList isl = resultItemSetLists.get(i);
+				if (isl != null)
+					isl.removeSubset(newItemSet);
+			}
+		}
 	}
 }

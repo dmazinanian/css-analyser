@@ -10,6 +10,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import ca.concordia.cssanalyser.crawler.plugin.CSSCatcher;
+import ca.concordia.cssanalyser.crawler.plugin.LoginPlugin;
 
 import com.crawljax.core.CrawljaxRunner;
 import com.crawljax.core.configuration.CrawljaxConfiguration;
@@ -40,12 +41,6 @@ public class Crawler {
 		
 		CrawljaxConfigurationBuilder builder = CrawljaxConfiguration.builderFor(websiteURI);
 		
-		CSSCatcher cssCatcher = new CSSCatcher();
-		cssCatcher.setOutputFolder(outputFolder + "css/");
-		
-		builder.addPlugin(new CrawlOverview());
-		builder.addPlugin(cssCatcher);
-
 		configureCrawljax(builder);
 		
 		CrawljaxRunner crawljax = new CrawljaxRunner(builder.build());
@@ -60,6 +55,14 @@ public class Crawler {
 	 */
 	private void configureCrawljax(CrawljaxConfigurationBuilder builder) {
 		
+		CSSCatcher cssCatcher = new CSSCatcher();
+		cssCatcher.setOutputFolder(outputFolder + "css/");
+		
+		builder.addPlugin(new CrawlOverview());
+		builder.addPlugin(cssCatcher);
+		
+		builder.addPlugin(new LoginPlugin());
+		
 		//builder.crawlRules().clickDefaultElements();
 		//builder.crawlRules().dontClick("input").withAttribute("value", "I don't recognize");
 		//builder.crawlRules().click("input").withAttribute("type", "submit");
@@ -69,20 +72,11 @@ public class Crawler {
 		//builder.setBrowserConfig(new BrowserConfiguration(BrowserType.CHROME, 2));w
 		//builder.setBrowserConfig(new BrowserConfiguration(BrowserType.FIREFOX, 2));
 		builder.crawlRules().insertRandomDataInInputForms(false);
-		builder.crawlRules().clickElementsInRandomOrder(true);
+		builder.crawlRules().clickElementsInRandomOrder(false);
 		builder.crawlRules().crawlFrames(true);
+		builder.crawlRules().dontClick("*");
 		
-
-		//builder.crawlRules().dontClick("*");
-		//InputSpecification input = new InputSpecification();
-		// when Crawljax encouters a form element with the id or name "q" enter "Crawljax"
-//		inputSpecification.setValuesInForm(loginForm).beforeClickElement("input").withAttribute("type", "submit").withAttribute("value", "Log In");
-		//String uname = "";
-		//String passwd = "";
-		//input.field("username").setValue(uname);
-		//input.field("passwd").setValue(passwd);
-		//builder.crawlRules().setInputSpec(input);
-		//builder.crawlRules().click("button");
+		//com.crawljax.browser.WebDriverBackedEmbeddedBrowser s;
 		
 		builder.setOutputDirectory(new File(outputFolder + "/crawljax"));
 						

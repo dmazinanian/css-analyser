@@ -2,18 +2,13 @@ package ca.concordia.cssanalyser.app;
 
 
 import java.io.File;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import ca.concordia.cssanalyser.analyser.CSSAnalyser;
 import ca.concordia.cssanalyser.crawler.Crawler;
-import ca.concordia.cssanalyser.cssdiff.Diff;
-import ca.concordia.cssanalyser.cssdiff.differences.DifferenceList;
-import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.io.IOHelper;
-import ca.concordia.cssanalyser.parser.CSSParser;
 
 
 
@@ -33,6 +28,7 @@ public class CSSAnalyserApp {
 		Mode mode = Mode.CRAWL;
 		String urlFile = "";
 		String css1Path = "", css2Path= "";
+		String inputFoldersFile = "";
 		
 		if (args.length == 0) {
 			System.out.println("No input file or URL provided.");
@@ -62,6 +58,9 @@ public class CSSAnalyserApp {
 						inputFolder = value.replace("\\", "/");
 						if (!inputFolder.endsWith("/"))
 							inputFolder = inputFolder + "/";
+						break;
+					case "foldersfile":
+						inputFoldersFile = value;
 						break;
 					case "urlfile":
 						urlFile = value;
@@ -130,21 +129,40 @@ public class CSSAnalyserApp {
 			
 			break;
 		case FOLDER:
-			if ("".equals(inputFolder)) {
-				System.out.println("Please provide an input folder with --infolder:in/folder.");
+
+			List<String> folders = new ArrayList<>();
+			
+			if (!"".equals(inputFolder))
+				folders.add(inputFolder);
+			else if (!"".equals(inputFoldersFile)) {
+				String file = IOHelper.readFileToString(inputFoldersFile);
+				String[] lines = file.split("\n|\r|\r\n");
+				for (String line : lines) {
+					if (!"".equals(line.trim())) {
+						line = line.replace("\\",  "/");
+						if (!line.endsWith("/"))
+							line = line + "/";
+						folders.add(line);
+					}
+				}
+			} else {
+				System.out.println("Please provide an input folder with --infolder:in/folder or set of folders using --foldersfile.");
 				return;
 			}
 			
-			List<File> allStatesFiles = IOHelper.searchForFiles(inputFolder + "crawljax/doms", "html");	
-			for (File domStateHtml : allStatesFiles) {
-				
-				String stateName = domStateHtml.getName();
-				// Remove .html
-				String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
-				
-				CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), inputFolder + "css/" + correspondingCSSFolderName);
-				cssAnalyser.analyse(minsup);
-				
+			for (String folder : folders) {
+			
+				List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");	
+				for (File domStateHtml : allStatesFiles) {
+
+					String stateName = domStateHtml.getName();
+					// Remove .html
+					String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
+
+					CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), folder + "css/" + correspondingCSSFolderName);
+					cssAnalyser.analyse(minsup);
+
+				}
 			}
 			
 			break;
@@ -159,15 +177,15 @@ public class CSSAnalyserApp {
 
 			break;
 		case DIFF:
-			CSSParser parser = new CSSParser();
-			try {
-				StyleSheet css1 =  parser.parseExternalCSS(css1Path);
-				StyleSheet css2 =  parser.parseExternalCSS(css2Path);
-				DifferenceList dl = Diff.diff(css1, css2);
-				System.out.println(dl);
-			} catch (Exception ex) {
-				System.out.println(ex);
-			}
+//			CSSParser parser = new CSSParser();
+//			try {
+//				StyleSheet css1 =  parser.parseExternalCSS(css1Path);
+//				StyleSheet css2 =  parser.parseExternalCSS(css2Path);
+//				DifferenceList dl = Diff.diff(css1, css2);
+//				System.out.println(dl);
+//			} catch (Exception ex) {
+//				System.out.println(ex);
+//			}
 			break;
 		}			
 		

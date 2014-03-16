@@ -27,6 +27,7 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	private final Set<Declaration> virtualDeclarations = new HashSet<>();
 	private final Set<Selector> support;
 	private ItemSet paretnItemSet;
+	private Set<Integer> duplicationTypes = new HashSet<>();
 	
 	/**
 	 * Creates an empty Item
@@ -279,5 +280,12 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 		return null;
 	}
 	
+	public void addDuplicationType(int type) {
+		this.duplicationTypes.add(type);
+	}
+	
+	public Set<Integer> getDuplicationTypes() {
+		return this.duplicationTypes;
+	}
 	
 }
