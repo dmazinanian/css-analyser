@@ -226,19 +226,14 @@ public class CSSAnalyser {
 				long time = (end - start) / 1000000L;
 				IOHelper.writeLinesToFile(aprioriResults, analyticsFolderPath + "/apriori.txt");
 				
-				LOGGER.warn("Done Apriori in " + time);
+				LOGGER.info("Done Apriori in " + time);
 			
 			}
 			
 			if (doFPGrowth) {
 
-				LOGGER.info("Applying fpgrowth algorithm with minimum support count of " + MIN_SUPPORT + " on " + filePath);
-				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				fpgrowthResults = duplicationDetector.fpGrowth(MIN_SUPPORT, false);
-				long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-				long time = (end - start) / 1000000L;
 				IOHelper.writeLinesToFile(fpgrowthResults, analyticsFolderPath + "/fpgrowth-subsumed.txt");
-				LOGGER.info("Done FP-Growth in " + time);
 				
 //				int numberOfPositiveSubsumed = 0, numberOrRefactoringsSubsumed = 0;
 //				for (ItemSetList isl : fpgrowthResults) {
@@ -252,6 +247,7 @@ public class CSSAnalyser {
 //				String str = "Subsumed\tPositive\r\n" + String.valueOf(numberOrRefactoringsSubsumed) + "\t" + String.valueOf(numberOfPositiveSubsumed);
 //				IOHelper.writeStringToFile(str, analyticsFolderPath + "/refactoring-opportunities-positive-subsumed.txt");
 //				
+				long start, end, time;
 				LOGGER.info("Applying grouping refactoring opportunities");
 				start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				StyleSheet refactored;

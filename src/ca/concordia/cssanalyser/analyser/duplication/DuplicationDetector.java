@@ -1,5 +1,6 @@
 package ca.concordia.cssanalyser.analyser.duplication;
 
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,6 +10,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 import ca.concordia.cssanalyser.analyser.duplication.TypeFourDuplicationInstance.TypeIVBDuplication;
@@ -33,6 +36,9 @@ import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
  * @author Davood Mazinanian
  */
 public class DuplicationDetector {
+	
+	private static Logger LOGGER = LoggerFactory.getLogger(DuplicationDetector.class);
+
 
 	private StyleSheet stylesheet;
 
@@ -462,6 +468,9 @@ public class DuplicationDetector {
 
 	public List<ItemSetList> fpGrowth(int minSupport, boolean removeSubsets) {
 		
+		LOGGER.info("Applying fpgrowth algorithm with minimum support count of " + minSupport + " on " + stylesheet.getFilePath());
+		long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+		
 		List<TreeSet<Item>> itemSets = new ArrayList<>(stylesheet.getAllSelectors().size());
 
 		for (Selector s : stylesheet.getAllSelectors()) {
@@ -477,7 +486,12 @@ public class DuplicationDetector {
 		}
 
 		FPGrowth fpGrowth = new FPGrowth(removeSubsets);
-		return fpGrowth.mine(itemSets, minSupport);
+		List<ItemSetList> results = fpGrowth.mine(itemSets, minSupport);
+		long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+		long time = (end - start) / 1000000L;
+		LOGGER.info("Done FP-Growth in " + time);
+		
+		return results;
 	}
 
 	/**

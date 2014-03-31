@@ -33,5 +33,5 @@ containing CSS files (with "css" extension) for analysis using `--infolder:"path
 not possible in this mode.
 
 ### FP-Growth minsup
-Using `--minsup`, one may provide minimum support for FP-Growth, that is, the minimum number of selectors 
+Using `--minsup`, one may provide minimum support count for FP-Growth, that is, the minimum number of selectors 
 which have one or more duplicated declarations. The default value is 2.
