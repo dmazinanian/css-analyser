@@ -73,7 +73,7 @@ public class CSSAnalyserCLI {
 			
 			if (params.getInputFolderPath() != null)
 				folders.add(params.getInputFolderPath());
-			else if (params.getListOfFoldersPathsToBeCrawled() != null) {
+			else if (params.getListOfFoldersPathsToBeCrawledFile() != null) {
 				folders.addAll(params.getFoldersListToBeCrawled());
 			} else {
 				LOGGER.error("Please provide an input folder with --infolder:in/folder or list of folders using --foldersfile:path/to/file.");
@@ -81,17 +81,20 @@ public class CSSAnalyserCLI {
 			}
 			
 			for (String folder : folders) {
-			
 				List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");	
-				for (File domStateHtml : allStatesFiles) {
-
-					String stateName = domStateHtml.getName();
-					// Remove .html
-					String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
-
-					CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), folder + "css/" + correspondingCSSFolderName);
-					cssAnalyser.analyse(params.getFPGrowthMinsup());
-
+				if (allStatesFiles.size() == 0) {
+					LOGGER.warn("No HTML file found in " + folder + "crawljax/doms, skipping this folder");
+				} else {
+					for (File domStateHtml : allStatesFiles) {
+	
+						String stateName = domStateHtml.getName();
+						// Remove .html
+						String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
+	
+						CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), folder + "css/" + correspondingCSSFolderName);
+						cssAnalyser.analyse(params.getFPGrowthMinsup());
+	
+					}
 				}
 			}
 			

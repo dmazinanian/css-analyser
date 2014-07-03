@@ -1,5 +1,6 @@
 package ca.concordia.cssanalyser.app;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -134,7 +135,7 @@ class ParametersParser {
 	 * a list of folder path's in which program analyze crawled data.
 	 * @return
 	 */
-	public String getListOfFoldersPathsToBeCrawled() {
+	public String getListOfFoldersPathsToBeCrawledFile() {
 		return params.get("foldersfile");
 	}
 	
@@ -188,15 +189,16 @@ class ParametersParser {
 		List<String> folderPaths = new ArrayList<>();
 		
 		try {
-			String file = IOHelper.readFileToString(getListOfFoldersPathsToBeCrawled());
+			String folderPathsFile = getListOfFoldersPathsToBeCrawledFile();
+			String file = IOHelper.readFileToString(folderPathsFile);
 			String[] lines = file.split("\n|\r|\r\n");
 			for (String line : lines) {
 				if (!"".equals(line.trim())) {
-					folderPaths.add(formatPath(line));
+					folderPaths.add((new File(folderPathsFile).getParentFile().getCanonicalPath()) + "/" + formatPath(line));
 				}
 			}
 		} catch (IOException ioe) {
-			
+			LOGGER.error("IO Exception in reading file " + getListOfFoldersPathsToBeCrawledFile());
 		}
 		
 		return folderPaths;
