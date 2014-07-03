@@ -66,7 +66,8 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	}
 	
 	public boolean add(Declaration e, boolean isVirtual) {
-		virtualDeclarations.add(e);
+		if (isVirtual)
+			virtualDeclarations.add(e);
 		boolean supportsChanged = support.add(e.getSelector());
 		boolean declarationsChanged = declarations.add(e);
 		if (paretnItemSet != null && supportsChanged)

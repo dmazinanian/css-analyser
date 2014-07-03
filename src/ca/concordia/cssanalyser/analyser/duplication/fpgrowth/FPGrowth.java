@@ -21,13 +21,32 @@ public class FPGrowth {
 	
 	private final Map<Integer, ItemSetList> resultItemSetLists;
 	private final boolean removeSubsets;
+	private final ItemSetList returningDummyObject;
 	
 	public FPGrowth(boolean removeSubSets) { 
-		resultItemSetLists = new HashMap<>();
-		this.removeSubsets = removeSubSets;
+		this(removeSubSets, new ItemSetList());
 	}
 	
-	public List<ItemSetList> mine(Collection<TreeSet<Item>> dataSet, int minSupport) {
+	/**
+	 * Creates a new object of FPGrowth class
+	 * @param removeSubSets Identify whether the
+	 * subsumed ItemSets must be removed or not. A subsumed
+	 * ItemSet is the one of which all items are exists in a 
+	 * bigger ItemSet, and the support of the bigger ItemSet
+	 * is the same as the support set of the smaller ItemSet.
+	 * 
+	 * @param dummyObject a dummy object of type ItemSetList
+	 * (or any subclass). The resulting ItemSetLists will
+	 * have the same type if this given dummy object.
+	 */
+	public FPGrowth(boolean removeSubSets, ItemSetList dummyObject) {
+		this.resultItemSetLists = new HashMap<>();
+		this.removeSubsets = removeSubSets;
+		this.returningDummyObject = dummyObject;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T  extends ItemSetList> List<T> mine(Collection<TreeSet<Item>> dataSet, int minSupport) {
 		
 		FPTree tree = generateFPTree(dataSet);
 
@@ -36,10 +55,10 @@ public class FPGrowth {
 		tree = null;
 		
 		// Deliver results in order. Could we use TreeMap?!
-		List<ItemSetList> results = new ArrayList<>();
+		List<T> results = new ArrayList<>();
 		for (int i = 1; i <= resultItemSetLists.size(); i++) {
 			if (resultItemSetLists.get(i) != null) {
-				results.add(resultItemSetLists.get(i));
+				results.add((T)resultItemSetLists.get(i));
 			}
 		}
 
@@ -194,7 +213,12 @@ public class FPGrowth {
 		}
 		ItemSetList correspondingItemSetList = resultItemSetLists.get(newItemSet.size());
 		if (correspondingItemSetList == null) {
-			correspondingItemSetList = new ItemSetList();
+			try {
+				correspondingItemSetList = returningDummyObject.getClass().newInstance();
+			} catch (InstantiationException | IllegalAccessException e) {
+				e.printStackTrace();
+				throw new RuntimeException(e);
+			}
 			resultItemSetLists.put(newItemSet.size(), correspondingItemSetList);
 		}
 		correspondingItemSetList.add(newItemSet);

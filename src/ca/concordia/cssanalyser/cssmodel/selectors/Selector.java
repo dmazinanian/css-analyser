@@ -13,6 +13,8 @@ public abstract class Selector  {
 	
 	protected int lineNumber;
 	protected int columnNumber;
+	private int offset;
+	private int lenghth;
 	protected Set<MediaQueryList> mediaQueryLists;
 	protected Set<Declaration> declarations;
 	protected CSSSource source = CSSSource.EXTERNAL;
@@ -34,6 +36,22 @@ public abstract class Selector  {
 		declarations.add(declaration);
 	}
 
+	public int getOffset() {
+		return this.offset;
+	}
+	
+	public void setOffset(int offset) {
+		this.offset = offset;
+	}
+	
+	public int getLength() {
+		return this.lenghth;
+	}
+	
+	public void setLength(int length) {
+		this.lenghth = length;
+	}
+		
 	public Set<Declaration> getDeclarations() {
 		return declarations;
 	}
@@ -59,9 +77,6 @@ public abstract class Selector  {
 		return mediaQueryLists;
 	}
 
-//	public void setMediaQueryList(MediaQueryList mediaQueryList) {
-//		this.mediaQueryList = mediaQueryList;
-//	}
 	
 	/**
 	 * The equals() method for different selectors have different meanings

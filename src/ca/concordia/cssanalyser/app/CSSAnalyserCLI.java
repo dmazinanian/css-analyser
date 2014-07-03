@@ -11,11 +11,16 @@ import org.slf4j.LoggerFactory;
 
 import ca.concordia.cssanalyser.analyser.CSSAnalyser;
 import ca.concordia.cssanalyser.crawler.Crawler;
+import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.io.IOHelper;
+import ca.concordia.cssanalyser.parser.CSSParser;
+import ca.concordia.cssanalyser.parser.CSSParserFactory;
+import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
+import ca.concordia.cssanalyser.parser.ParseException;
 
-public class CSSAnalyserApp {
+public class CSSAnalyserCLI {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(CSSAnalyserApp.class);
+	private static Logger LOGGER = LoggerFactory.getLogger(CSSAnalyserCLI.class);
 
 	public static void main(String[] args) throws IOException {
 		
@@ -66,9 +71,9 @@ public class CSSAnalyserApp {
 
 			List<String> folders = new ArrayList<>();
 			
-			if (!"".equals(params.getInputFolderPath()))
+			if (params.getInputFolderPath() != null)
 				folders.add(params.getInputFolderPath());
-			else if (!"".equals(params.getListOfFoldersPathsToBeCrawled())) {
+			else if (params.getListOfFoldersPathsToBeCrawled() != null) {
 				folders.addAll(params.getFoldersListToBeCrawled());
 			} else {
 				LOGGER.error("Please provide an input folder with --infolder:in/folder or list of folders using --foldersfile:path/to/file.");
@@ -92,17 +97,49 @@ public class CSSAnalyserApp {
 			
 			break;
 		case NODOM:
-			if ("".equals(params.getInputFolderPath())) {
-				LOGGER.error("Please provide an input folder with --infolder:in/folder.");
+			CSSAnalyser cssAnalyser = null;
+			if (!"".equals(params.getInputFolderPath())) {
+				cssAnalyser = new CSSAnalyser(params.getInputFolderPath());
+			} else if (!"".equals(params.getFilePath())) {
+				cssAnalyser = new CSSAnalyser(params.getFilePath());
+			} else {
+				LOGGER.error("Please provide an input folder with --infolder:in/folder or a CSS file using --file:file/path");
 				return;
 			}
-			CSSAnalyser cssAnalyser = new CSSAnalyser(params.getInputFolderPath());
 			cssAnalyser.analyse(params.getFPGrowthMinsup());
-
 			break;
 		case DIFF:
-		case PREP:
 			throw new RuntimeException("Not yet implemented");
+		case PREP:
+			if (!"".equals(params.getFilePath())) {
+				
+				//try {
+					//FluteCSSParser parser = new FluteCSSParser();
+					//
+					
+					try {
+						
+						CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
+						StyleSheet styleSheet = parser.parseExternalCSS(params.getFilePath());
+						
+						
+						
+					} catch (ParseException e) {
+						
+						e.printStackTrace();
+						
+					}
+					
+					//LessRefactoringOpportunitiesDetector lessRefactoringOpportunities = new LessRefactoringOpportunitiesDetector(lessStyleSheet);
+					//lessRefactoringOpportunities.findMixinRefactoringOpportunities();
+					
+				//} catch (ParseException ex) {
+					LOGGER.error("Error in parsing CSS file " + params.getFilePath());
+				//}
+			}
+			else 
+				LOGGER.error("No CSS file is provided.");
+			break;
 		default:
 		}		
 	}

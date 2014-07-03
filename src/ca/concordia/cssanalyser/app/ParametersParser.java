@@ -203,6 +203,15 @@ class ParametersParser {
 	}
 
 	public String getFilePath() {
-		return params.get("path");
+		return params.get("file");
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		for (String key : params.keySet()) {
+			builder.append("--" + key + ":\"" + params.get(key) + "\" ");
+		}
+		return builder.toString().trim();
 	}
 }

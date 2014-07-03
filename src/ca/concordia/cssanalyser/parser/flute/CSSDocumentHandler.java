@@ -1,4 +1,4 @@
-package ca.concordia.cssanalyser.parser;
+package ca.concordia.cssanalyser.parser.flute;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -122,7 +122,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 		//According to CSS3 '@import' rules must occur before all rules other than '@charset' rule
 			File file = new File(styleSheet.getFilePath());
 			String parentFolder = file.getParent(); 
-			CSSParser parser = new CSSParser();
+			FluteCSSParser parser = new FluteCSSParser();
 			try {
 				StyleSheet importedStyleSheet = parser.parseExternalCSS(parentFolder + "/" + path);
 				importedStyleSheet.addMediaQueryList(forMedia);

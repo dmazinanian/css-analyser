@@ -26,7 +26,7 @@ import org.w3c.flute.parser.selectors.ConditionFactoryImpl;
 import org.w3c.flute.util.Encoding;
 
 // :)
-import ca.concordia.cssanalyser.parser.CSSDocumentHandler;
+import ca.concordia.cssanalyser.parser.flute.CSSDocumentHandler;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQuery;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.cssmodel.media.MediaFeatureExpression;

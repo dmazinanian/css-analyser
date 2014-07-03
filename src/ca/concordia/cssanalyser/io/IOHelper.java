@@ -150,6 +150,20 @@ public final class IOHelper {
 			return f.delete();
 		return false;
 	}
+
+	public static boolean isFolder(String path) {
+		File file = new File(path);
+		
+		if (file.isDirectory())
+			return true;
+		
+		return false;
+	}
+
+	public static String getContainingFolder(String path) {
+		File f = new File(path);
+		return f.getParent();
+	}
 	
 	
 	

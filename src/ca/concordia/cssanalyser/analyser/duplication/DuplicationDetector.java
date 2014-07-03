@@ -544,5 +544,48 @@ public class DuplicationDetector {
 
 		return toReturn;
 	}
+	
+	/**
+	 * Get the declarations with the same properties across different selectors
+	 * @return
+	 */
+	public Map<String, Item> getDeclarationsWithTheSameProperties() {
+			
+		Map<String, Item> propertyToItemMapper = new HashMap<>();
+		
+		for (Declaration declaration : stylesheet.getAllDeclarations()) {
+			
+			// Skip the virtual shorthand declarations
+//			if (declaration instanceof ShorthandDeclaration) {
+//				ShorthandDeclaration shorthand = (ShorthandDeclaration)declaration;
+//				if (shorthand.isVirtual())
+//					continue;
+//			}
+			
+			
+			/*
+			 * In case of individual properties which could be a part of a
+			 * shorthand property 
+			 */
+			Set<String> correspondingProperties = ShorthandDeclaration.getShorthandPropertyNames(declaration.getProperty());
+			correspondingProperties.add(declaration.getProperty());
+
+			for (String property : correspondingProperties) {
+	
+				Item propertyItem = propertyToItemMapper.get(property);
+				
+				if (propertyItem == null) {	
+					propertyItem = new Item();
+					propertyToItemMapper.put(property, propertyItem);
+				}
+				
+				propertyItem.add(declaration);
+				
+			}
+			
+		}
+		
+		return propertyToItemMapper;
+	}
 
 }

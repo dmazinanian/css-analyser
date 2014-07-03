@@ -63,7 +63,7 @@ public class ItemSetList implements Set<ItemSet> {
 			StringBuilder set = new StringBuilder("{");
 
 			for (Item d : itemSetAndSupport) {
-				set.append("(" + d.getFirstDeclaration() + "), ");
+				set.append("(" + getRepresentativeItemString(d) + "), ");
 			}
 
 			set.delete(set.length() - 2, set.length()).append("}");
@@ -86,6 +86,10 @@ public class ItemSetList implements Set<ItemSet> {
 			sets.insert(0, heading);
 		}
 		return sets.toString();
+	}
+
+	protected String getRepresentativeItemString(Item item) {
+		return item.getFirstDeclaration().toString();
 	}
 
 	@Override

@@ -29,6 +29,8 @@ public class ItemSet implements Set<Item>, Cloneable {
 	private final Set<Item> itemset;
 	private final Set<Selector> support;
 	private ItemSetList parentItemSetList;
+	// Store refactoring impact, so don't compute it again
+	protected int refactoringImpact = -1;
 	
 	public ItemSet() {
 		itemset = new HashSet<>();
@@ -97,6 +99,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 			}
 			else
 				supportChanged = support.retainAll(e.getSupport());
+			refactoringImpact = -1;
 		}
 		e.setParentItemSet(this);
 		if (parentItemSetList != null && supportChanged)
@@ -119,6 +122,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 	public void clear() {
 		itemset.clear();
 		support.clear();
+		refactoringImpact = -1;
 	}
 
 	@Override
@@ -146,6 +150,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 		boolean changed = itemset.remove(o);
 		if (changed) {
 			rebuildSupport();
+			refactoringImpact = -1;
 		}
 		return changed;
 	}
@@ -172,6 +177,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 		boolean changed = itemset.removeAll(c);
 		if (changed) {
 			rebuildSupport();
+			refactoringImpact = -1;
 		}
 		return changed;
 	}
@@ -181,6 +187,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 		boolean changed = itemset.retainAll(c);
 		if (changed) {
 			rebuildSupport();
+			refactoringImpact = -1;
 		}
 		return changed;
 	}
@@ -223,7 +230,6 @@ public class ItemSet implements Set<Item>, Cloneable {
 	 * grouping.
 	 * @return
 	 */
-	private int refactoringImpact = -1;
 	public int getRefactoringImpact() {
 		if (refactoringImpact != -1)
 			return refactoringImpact;

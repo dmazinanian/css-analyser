@@ -2,6 +2,7 @@ package ca.concordia.cssanalyser.analyser;
 
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.dom.DOMHelper;
 import ca.concordia.cssanalyser.dom.Model;
 import ca.concordia.cssanalyser.io.IOHelper;
-import ca.concordia.cssanalyser.parser.CSSParser;
+import ca.concordia.cssanalyser.parser.flute.FluteCSSParser;
 import ca.concordia.cssanalyser.refactoring.RefactorDuplications;
 import ca.concordia.cssanalyser.refactoring.RefactorToSatisfyDependencies;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
@@ -45,34 +46,54 @@ public class CSSAnalyser {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSSAnalyser.class);
 	
-	private final String folderPath;
 	private final Model model;
 	private boolean doApriori = false;
 	private boolean doFPGrowth = true;
 	private boolean dontUseDOM = false;
 	private boolean compareAprioriAndFPGrowth = false;
+	private final String folderPath;
 	
 	/**
 	 * Through this constructor, one should pass the
-	 * folder containing all CSS files. Program will search
-	 * for all files with extension ".css" and does the 
-	 * analysis for these files 
+	 * folder containing all CSS files (or a single CSS file). Program will search
+	 * for all files with extension ".css" in the given folder and conducts the 
+	 * analysis for each file.
 	 * @param cssContainingFolder
+	 * @param domStateHTMLPath
+	 * @throws FileNotFoundException Could not find the given directory or css file.
 	 */
-	public CSSAnalyser(String domStateHTMLPath, String cssContainingFolder) {
+	public CSSAnalyser(String domStateHTMLPath, String cssContainingFolderOrFilePath) throws FileNotFoundException {
 		
-		folderPath = cssContainingFolder;
-		Document document = DOMHelper.getDocument(domStateHTMLPath);
+		if (!IOHelper.exists(cssContainingFolderOrFilePath))
+			throw new FileNotFoundException();
+		
+		List<File> cssFiles = null;
+		
+		if (IOHelper.isFolder(cssContainingFolderOrFilePath)) {
+			this.folderPath = cssContainingFolderOrFilePath;
+			// Search for all CSS files in this folder
+			cssFiles = IOHelper.searchForFiles(cssContainingFolderOrFilePath, "css");
+			if (cssFiles.size() == 0) {
+				LOGGER.error("There is no CSS file in " + cssContainingFolderOrFilePath);
+			}
+		} else {
+			cssFiles = new ArrayList<>();
+			cssFiles.add(new File(cssContainingFolderOrFilePath));
+			this.folderPath = IOHelper.getContainingFolder(cssContainingFolderOrFilePath);
+		}
+		
+		Document document = null;
+		if (domStateHTMLPath != null)
+			document = DOMHelper.getDocument(domStateHTMLPath);
+		else 
+			dontUseDOM = true;
 		model = new Model(document);
-		parseStyleSheets();
+		parseStyleSheets(cssFiles);
 		
 	}
 	
-	public CSSAnalyser(String cssContainingFolder) {
-		dontUseDOM = true;
-		model = new Model(null);
-		folderPath = cssContainingFolder;
-		parseStyleSheets();
+	public CSSAnalyser(String cssContainingFolderOrCSSFilePath) throws FileNotFoundException {
+		this(cssContainingFolderOrCSSFilePath, null);
 		
 	}
 	
@@ -102,20 +123,12 @@ public class CSSAnalyser {
 		compareAprioriAndFPGrowth = value;
 	}
 	
-	private void parseStyleSheets() {
-		
-		// Lets search for all CSS files
-		List<File> files = IOHelper.searchForFiles(folderPath, "css");
-
-		if (files.size() == 0) {
-			LOGGER.warn("No CSS file found in " + folderPath);
-			return;
-		}
-		
+	private void parseStyleSheets(List<File> files ) {
+				
 		for (File file : files) {
 			String filePath = file.getAbsolutePath();
 			LOGGER.info("Now parsing " + filePath);
-			CSSParser parser = new CSSParser();
+			FluteCSSParser parser = new FluteCSSParser();
 			try {
 				StyleSheet styleSheet = parser.parseExternalCSS(filePath);
 				model.addStyleSheet(styleSheet);
@@ -357,7 +370,7 @@ public class CSSAnalyser {
 			StyleSheet newStyleSheet = RefactorDuplications.groupingRefactoring(styleSheet, itemSetWithMaxImpact);
 			IOHelper.writeStringToFile(newStyleSheet.toString(), folderName + "/refactored" + i + ".css");
 
-			CSSParser parser = new CSSParser();
+			FluteCSSParser parser = new FluteCSSParser();
 			try {
 				newStyleSheet = parser.parseExternalCSS(folderName + "/refactored" + i + ".css");
 			} catch (Exception ex) {
