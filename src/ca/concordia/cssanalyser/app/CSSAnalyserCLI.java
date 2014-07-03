@@ -28,17 +28,17 @@ public class CSSAnalyserCLI {
 		
 		switch (params.getProgramMode()) {
 		case CRAWL:
-			if ("".equals(params.getOutputFolderPath())) {
+			if (params.getOutputFolderPath() == null) {
 				LOGGER.error("Please provide an output folder using --outfolder:out/folder.");
 				return;
-			} else if ("".equals(params.getUrl()) && "".equals(params.getListOfURLsToAnalyzeFilePath())) {
+			} else if (params.getUrl() == null && params.getListOfURLsToAnalyzeFilePath() == null) {
 				LOGGER.error("Please provide a url using --url:http://url/to/site or the file containing list of urls using --urlfile:path/to/url");
 				return;
 			}
 			
 			List<String> urls = new ArrayList<>();
 			
-			if (!"".equals(params.getListOfURLsToAnalyzeFilePath())) {
+			if (params.getListOfURLsToAnalyzeFilePath() != null) {
 				urls.addAll(params.getURLs());
 			} else {
 				urls.add(params.getUrl());
