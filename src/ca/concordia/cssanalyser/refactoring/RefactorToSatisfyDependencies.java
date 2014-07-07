@@ -86,7 +86,7 @@ public class RefactorToSatisfyDependencies {
 		Solver solver = new Solver("Selector reordering problem");
 		
 		// Map every selector to a Solver variable
-		Map<Selector, IntVar<?>> createdVars = new HashMap<>();
+		Map<Selector, IntVar> createdVars = new HashMap<>();
 		
 		// 2. Create variables through the variable factory
 		// For each selector, we define a variable
@@ -100,7 +100,7 @@ public class RefactorToSatisfyDependencies {
 			Selector s1 = correspondingSelectors[0];
 			Selector s2 = correspondingSelectors[1];
 
-			IntVar<?> x, y;
+			IntVar x, y;
 			
 			if (!createdVars.containsKey(s1)) {
 				x = VariableFactory.bounded(s1.toString(), 1, markedSelectorsToRemove.size(), solver);
@@ -127,7 +127,7 @@ public class RefactorToSatisfyDependencies {
 			return styleSheet;
 		
 		// All the variables have to have unique values
-		IntVar<?>[] allVars = new IntVar<?>[createdVars.size()];
+		IntVar[] allVars = new IntVar[createdVars.size()];
 		allVars = createdVars.values().toArray(allVars);
 		solver.post(IntConstraintFactory.alldifferent(allVars, "BC"));
 	 
