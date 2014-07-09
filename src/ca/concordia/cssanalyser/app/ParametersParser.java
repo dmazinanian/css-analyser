@@ -51,7 +51,7 @@ class ParametersParser {
 					case "outfolder":
 					case "infolder":
 					case "foldersfile":
-					case "urlfile":
+					case "urlsfile":
 					case "css1":
 					case "css2":
 					case "file":
@@ -135,12 +135,12 @@ class ParametersParser {
 	 * a list of folder path's in which program analyze crawled data.
 	 * @return
 	 */
-	public String getListOfFoldersPathsToBeCrawledFile() {
+	public String getListOfFoldersPathsToBeAnayzedFile() {
 		return params.get("foldersfile");
 	}
 	
 	public String getListOfURLsToAnalyzeFilePath() {
-		return params.get("urlfile");
+		return params.get("urlsfile");
 	}
 	
 	public String getCSS1FilePath() {
@@ -184,21 +184,29 @@ class ParametersParser {
 	 * Get list of folders from the given file using --fildersfile:path/to/file
 	 * @return
 	 */
-	public Collection<? extends String> getFoldersListToBeCrawled() {
+	public Collection<? extends String> getFoldersListToBeAnalyzed() {
 		
 		List<String> folderPaths = new ArrayList<>();
 		
 		try {
-			String folderPathsFile = getListOfFoldersPathsToBeCrawledFile();
+			String folderPathsFile = getListOfFoldersPathsToBeAnayzedFile();
 			String file = IOHelper.readFileToString(folderPathsFile);
 			String[] lines = file.split("\n|\r|\r\n");
+			String folderPathsFileParentPath = new File(folderPathsFile).getParentFile().getCanonicalPath();
 			for (String line : lines) {
 				if (!"".equals(line.trim())) {
-					folderPaths.add((new File(folderPathsFile).getParentFile().getCanonicalPath()) + "/" + formatPath(line));
+					String path = formatPath(line);
+					if (new File(folderPathsFileParentPath + "/" + path).exists())
+						folderPaths.add(folderPathsFileParentPath + "/" + path);
+					else if (new File(path).exists())
+						folderPaths.add(path);
+					else
+						LOGGER.warn("\"" + path + "\" is not a valid relative or abolute path.");
+						
 				}
 			}
 		} catch (IOException ioe) {
-			LOGGER.error("IO Exception in reading file " + getListOfFoldersPathsToBeCrawledFile());
+			LOGGER.error("IO Exception in reading file " + getListOfFoldersPathsToBeAnayzedFile());
 		}
 		
 		return folderPaths;

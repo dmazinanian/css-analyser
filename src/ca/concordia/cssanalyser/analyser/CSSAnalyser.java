@@ -231,7 +231,7 @@ public class CSSAnalyser {
 			
 			if (doApriori) {
 			
-				LOGGER.warn("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT + " on " + filePath);
+				LOGGER.info("Applying apriori algorithm with minimum support count of " + MIN_SUPPORT + " on " + filePath);
 
 				long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				aprioriResults = duplicationDetector.apriori(MIN_SUPPORT);
@@ -366,7 +366,7 @@ public class CSSAnalyser {
 				break;
 			
 
-			LOGGER.warn("Applying round " + i + " of refactoring on " + originalStyleSheet.getFilePath() + " to reduce " + itemSetWithMaxImpact.getRefactoringImpact() + " characters.");
+			LOGGER.info("Applying round " + i + " of refactoring on " + originalStyleSheet.getFilePath() + " to reduce " + itemSetWithMaxImpact.getRefactoringImpact() + " characters.");
 			StyleSheet newStyleSheet = RefactorDuplications.groupingRefactoring(styleSheet, itemSetWithMaxImpact);
 			IOHelper.writeStringToFile(newStyleSheet.toString(), folderName + "/refactored" + i + ".css");
 
@@ -385,7 +385,7 @@ public class CSSAnalyser {
 				
 				IOHelper.writeStringToFile(differences.toString(), folderName + "/dependency-differences" + i + ".txt");
 				
-				LOGGER.warn("Reordering needed at round " + i);
+				LOGGER.info("Reordering needed at round " + i);
 
 				RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
 				StyleSheet refactoredAndOrdered = r.refactorToSatisfyOverridingDependencies(newStyleSheet, originalDependencies); 
@@ -394,7 +394,7 @@ public class CSSAnalyser {
 
 					refactoringWasPossible = false;
 					listOfInfeasibleRefactorings.add(itemSetWithMaxImpact);
-					LOGGER.warn("Reordering was not feasible, applying the next refactoring opportunity at round " + i);
+					LOGGER.info("Reordering was not feasible, applying the next refactoring opportunity at round " + i);
 					
 				} else {
 

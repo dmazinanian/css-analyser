@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -12,7 +13,9 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import ca.concordia.cssanalyser.crawler.plugin.CSSCatcher;
 import ca.concordia.cssanalyser.crawler.plugin.LoginPlugin;
 
+import com.crawljax.browser.EmbeddedBrowser.BrowserType;
 import com.crawljax.core.CrawljaxRunner;
+import com.crawljax.core.configuration.BrowserConfiguration;
 import com.crawljax.core.configuration.CrawljaxConfiguration;
 import com.crawljax.core.configuration.CrawljaxConfiguration.CrawljaxConfigurationBuilder;
 import com.crawljax.plugins.crawloverview.CrawlOverview;
@@ -61,7 +64,7 @@ public class Crawler {
 		builder.addPlugin(new CrawlOverview());
 		builder.addPlugin(cssCatcher);
 		
-		builder.addPlugin(new LoginPlugin());
+		//builder.addPlugin(new LoginPlugin());
 		
 		//builder.crawlRules().clickDefaultElements();
 		//builder.crawlRules().dontClick("input").withAttribute("value", "I don't recognize");
@@ -69,8 +72,8 @@ public class Crawler {
 		//builder.crawlRules().dontClick("a").underXPath("//*[@id='pageFooter']");
 		//builder.crawlRules().dontClick("a").underXPath("//*[@id='content']/div/div[2]");
 		//System.getProperties().setProperty("webdriver.chrome.driver", "chromedriver.exe");
-		//builder.setBrowserConfig(new BrowserConfiguration(BrowserType.CHROME, 2));w
-		//builder.setBrowserConfig(new BrowserConfiguration(BrowserType.FIREFOX, 2));
+		//builder.setBrowserConfig(new BrowserConfiguration(BrowserType.CHROME, 2));
+		builder.setBrowserConfig(new BrowserConfiguration(BrowserType.FIREFOX, 1));
 		builder.crawlRules().insertRandomDataInInputForms(false);
 		builder.crawlRules().clickElementsInRandomOrder(false);
 		builder.crawlRules().crawlFrames(true);
@@ -82,6 +85,9 @@ public class Crawler {
 						
 		builder.setMaximumDepth(1);
 		builder.setMaximumStates(2);
+		
+		builder.crawlRules().waitAfterReloadUrl(20, TimeUnit.MILLISECONDS);
+		builder.crawlRules().waitAfterEvent(200, TimeUnit.MILLISECONDS);
 		
 	}
 

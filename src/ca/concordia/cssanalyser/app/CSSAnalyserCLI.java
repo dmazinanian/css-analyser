@@ -73,8 +73,8 @@ public class CSSAnalyserCLI {
 			
 			if (params.getInputFolderPath() != null)
 				folders.add(params.getInputFolderPath());
-			else if (params.getListOfFoldersPathsToBeCrawledFile() != null) {
-				folders.addAll(params.getFoldersListToBeCrawled());
+			else if (params.getListOfFoldersPathsToBeAnayzedFile() != null) {
+				folders.addAll(params.getFoldersListToBeAnalyzed());
 			} else {
 				LOGGER.error("Please provide an input folder with --infolder:in/folder or list of folders using --foldersfile:path/to/file.");
 				return;
