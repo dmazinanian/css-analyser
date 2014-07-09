@@ -101,12 +101,10 @@ public class CSSAnalyserCLI {
 			break;
 		case NODOM:
 			CSSAnalyser cssAnalyser = null;
-			if (!"".equals(params.getInputFolderPath())) {
+			if (params.getInputFolderPath() != null) {
 				cssAnalyser = new CSSAnalyser(params.getInputFolderPath());
-			} else if (!"".equals(params.getFilePath())) {
-				cssAnalyser = new CSSAnalyser(params.getFilePath());
 			} else {
-				LOGGER.error("Please provide an input folder with --infolder:in/folder or a CSS file using --file:file/path");
+				LOGGER.error("Please provide an input folder with --infolder:in/folder");
 				return;
 			}
 			cssAnalyser.analyse(params.getFPGrowthMinsup());
