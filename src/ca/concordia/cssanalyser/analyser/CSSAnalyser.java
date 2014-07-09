@@ -93,7 +93,7 @@ public class CSSAnalyser {
 	}
 	
 	public CSSAnalyser(String cssContainingFolderOrCSSFilePath) throws FileNotFoundException {
-		this(cssContainingFolderOrCSSFilePath, null);
+		this(null, cssContainingFolderOrCSSFilePath);
 		
 	}
 	
