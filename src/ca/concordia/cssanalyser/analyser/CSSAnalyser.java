@@ -65,7 +65,7 @@ public class CSSAnalyser {
 	public CSSAnalyser(String domStateHTMLPath, String cssContainingFolderOrFilePath) throws FileNotFoundException {
 		
 		if (!IOHelper.exists(cssContainingFolderOrFilePath))
-			throw new FileNotFoundException();
+			throw new FileNotFoundException("Folder not found: " + cssContainingFolderOrFilePath);
 		
 		List<File> cssFiles = null;
 		

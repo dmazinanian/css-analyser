@@ -2,6 +2,7 @@ package ca.concordia.cssanalyser.app;
 
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,9 +59,15 @@ public class CSSAnalyserCLI {
 					String stateName = domStateHtml.getName();
 					// Remove .html
 					String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
+					
+					try {
 
-					CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), outputFolderPath + "css/" + correspondingCSSFolderName);
-					cssAnalyser.analyse(params.getFPGrowthMinsup());
+						CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), outputFolderPath + "css/" + correspondingCSSFolderName);
+						cssAnalyser.analyse(params.getFPGrowthMinsup());
+					
+					} catch (FileNotFoundException fnfe) {
+						LOGGER.warn(fnfe.getMessage());
+					}
 
 				}
 				
@@ -90,9 +97,15 @@ public class CSSAnalyserCLI {
 						String stateName = domStateHtml.getName();
 						// Remove .html
 						String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
+						
+						try {
 	
-						CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), folder + "css/" + correspondingCSSFolderName);
-						cssAnalyser.analyse(params.getFPGrowthMinsup());
+							CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), folder + "css/" + correspondingCSSFolderName);
+							cssAnalyser.analyse(params.getFPGrowthMinsup());
+						
+						} catch (FileNotFoundException fnfe) {
+							LOGGER.warn(fnfe.getMessage());
+						}
 	
 					}
 				}
@@ -102,7 +115,11 @@ public class CSSAnalyserCLI {
 		case NODOM:
 			CSSAnalyser cssAnalyser = null;
 			if (params.getInputFolderPath() != null) {
-				cssAnalyser = new CSSAnalyser(params.getInputFolderPath());
+				try {
+					cssAnalyser = new CSSAnalyser(params.getInputFolderPath());
+				} catch (FileNotFoundException fnfe) {
+					LOGGER.warn(fnfe.getMessage());
+				}
 			} else {
 				LOGGER.error("Please provide an input folder with --infolder:in/folder");
 				return;

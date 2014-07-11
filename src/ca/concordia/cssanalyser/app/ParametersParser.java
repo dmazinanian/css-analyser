@@ -195,6 +195,8 @@ class ParametersParser {
 			String folderPathsFileParentPath = new File(folderPathsFile).getParentFile().getCanonicalPath();
 			for (String line : lines) {
 				if (!"".equals(line.trim())) {
+					if (line.startsWith("--"))
+						continue;
 					String path = formatPath(line);
 					if (new File(folderPathsFileParentPath + "/" + path).exists())
 						folderPaths.add(folderPathsFileParentPath + "/" + path);
@@ -208,7 +210,7 @@ class ParametersParser {
 		} catch (IOException ioe) {
 			LOGGER.error("IO Exception in reading file " + getListOfFoldersPathsToBeAnayzedFile());
 		}
-		
+		System.out.println(folderPaths.size());
 		return folderPaths;
 	}
 
