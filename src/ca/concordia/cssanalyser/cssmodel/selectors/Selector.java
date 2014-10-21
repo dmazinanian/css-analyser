@@ -1,11 +1,19 @@
 package ca.concordia.cssanalyser.cssmodel.selectors;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
 import ca.concordia.cssanalyser.cssmodel.CSSSource;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 
 
@@ -138,6 +146,76 @@ public abstract class Selector  {
 
 	public void addMediaQueryList(MediaQueryList forMedia) {
 		mediaQueryLists.add(forMedia);		
+	}
+
+	/**
+	 * Returns all virtual shorthand declarations for this selector.
+	 * Please note that, virtual shorthand declarations <b>DO NOT</b> have the 
+	 * real values, because it is not easy to get, from individual declarations, the values
+	 * for the equivalent shorthand declarations.
+	 * Therefore, from a virtual shorthand declaration, only use 1) property name and 2) individual properties 
+	 * @return
+	 */
+	public Iterable<ShorthandDeclaration> getVirtualShorthandDeclarations() {
+		/*
+		 * For each selector, we loop over the declarations to see whether a
+		 * declaration could become the individual property for one
+		 * shorthand property (like margin-left which is an individual
+		 * declaration of margin). We keep all individual properties of a
+		 * same type (like margin-top, -left, -right and -bottom) which are
+		 * in the same selector in a set (namely currentIndividuals) and add
+		 * this set to a map (named shorthandedDeclarations) which maps the
+		 * name of corresponding shorthand property (margin, in our example)
+		 * to the mentioned set.
+		 */
+		Map<String, Set<Declaration>> shorthandedDeclarations = new HashMap<>();
+	
+		for (Declaration declaration : getDeclarations()) {
+			String property = declaration.getProperty();
+			/*
+			 * If a property is the individual property for one or more
+			 * shorthand properties,
+			 * ShorthandDeclaration#getShorthandPropertyNames() method
+			 * returns a set containing the name of those shorthand
+			 * properties (for example, providing margin-left would result
+			 * to margin)
+			 */
+			Set<String> shorthands = ShorthandDeclaration.getShorthandPropertyNames(property);
+			/*
+			 * We add the entry (or update the existing entry) in the
+			 * HashMap, which maps the mentioned shorthand properties to the
+			 * individual properties
+			 */
+			for (String shorthand : shorthands) {
+				Set<Declaration> currentIndividuals = shorthandedDeclarations.get(shorthand);
+				if (currentIndividuals == null)
+					currentIndividuals = new HashSet<>();
+				currentIndividuals.add(declaration);
+				shorthandedDeclarations.put(shorthand, currentIndividuals);
+			}
+		}
+	
+		/*
+		 * Make a virtual shorthand for every possibility
+		 * 
+		 */
+		List<ShorthandDeclaration> virtualShorthands = new ArrayList<>();
+		for (Entry<String, Set<Declaration>> entry : shorthandedDeclarations.entrySet()) {
+	
+			// Create a shorthand and compare it with a real shorthand
+			ShorthandDeclaration virtualShorthand = new ShorthandDeclaration(
+					entry.getKey(), new ArrayList<DeclarationValue>(),
+					this, -1, -1, false);
+			// Important, important
+			virtualShorthand.isVirtual(true);
+			for (Declaration dec : entry.getValue()) {
+				virtualShorthand.addIndividualDeclaration(dec);
+			}
+			
+			virtualShorthands.add(virtualShorthand);
+			
+		}
+		return virtualShorthands;
 	}
 	
 }

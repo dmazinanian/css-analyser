@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents CSS "selector1 selector2" selectors
+ * Represents CSS "selector1 selector2" selectors <br />
  * selector1 and selector2 are of type {@link BaseSelector}
  * so for example, for selector1 selector2 selector 3, we have two selectors
  * one of which is again a {@link DescendantSelector} and anoter is an {@link DescendantSelector}

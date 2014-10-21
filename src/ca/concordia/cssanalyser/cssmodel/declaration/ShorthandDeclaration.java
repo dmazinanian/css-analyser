@@ -36,8 +36,8 @@ public class ShorthandDeclaration extends Declaration {
 		initializeShorthandsMap();
 	}
 
-	public ShorthandDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int fileLineNumber, int fileColNumber, boolean important) {
-		super(propertyName, values, belongsTo, fileLineNumber, fileColNumber, important);
+	public ShorthandDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int offset, int length, boolean important) {
+		super(propertyName, values, belongsTo, offset, length, important);
 		if (individualDeclarations == null)
 			individualDeclarations =  new HashMap<>();
 	}
@@ -1035,7 +1035,7 @@ public class ShorthandDeclaration extends Declaration {
 				individual.getRealValues().add(v);
 			}
 		} else {
-			individual = DeclarationFactory.getDeclaration(propertyName, valuesList, parentSelector, lineNumber, colNumber, isImportant, true);
+			individual = DeclarationFactory.getDeclaration(propertyName, valuesList, parentSelector, offset, length, isImportant, true);
 		}
 
 		addIndividualDeclaration(individual);

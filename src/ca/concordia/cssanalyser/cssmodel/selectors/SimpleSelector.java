@@ -62,7 +62,8 @@ public class SimpleSelector extends BaseSelector {
 	 * 			Column number of the source of container stylesheet.
 	 * 
 	 */
-	public SimpleSelector(GroupingSelector parent, int fileLineNumber,
+	public SimpleSelector(GroupingSelector parent, 
+			int fileLineNumber,
 			int fileColumnNumber) {
 		super(parent, fileLineNumber, fileColumnNumber);
 		conditions = new ArrayList<>();

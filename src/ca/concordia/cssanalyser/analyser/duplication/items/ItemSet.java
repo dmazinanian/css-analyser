@@ -1,8 +1,10 @@
 package ca.concordia.cssanalyser.analyser.duplication.items;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
@@ -230,7 +232,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 	 * grouping.
 	 * @return
 	 */
-	public int getRefactoringImpact() {
+	public int getGroupingRefactoringImpact() {
 		if (refactoringImpact != -1)
 			return refactoringImpact;
 		
@@ -274,5 +276,18 @@ public class ItemSet implements Set<Item>, Cloneable {
 		result = realDeclarationsLength - groupedDeclarationsLength - newSelectorCharsLength;
 		refactoringImpact = result;
 		return refactoringImpact;
+	}
+	
+	/**
+	 * Returns one declaration for every item in this itemset.
+	 * Uses {@link Item#getFirstDeclaration()} for getting the representative declaration from ItemSet 
+	 * @return
+	 */
+	public List<Declaration> getRepresentativeDeclarations() {
+		List<Declaration> declarations = new ArrayList<>();
+		for (Item item : itemset) {
+			declarations.add(item.getFirstDeclaration());
+		}
+		return declarations;
 	}
 }

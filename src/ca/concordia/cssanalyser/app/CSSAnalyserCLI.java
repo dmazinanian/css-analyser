@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -13,11 +14,18 @@ import org.slf4j.LoggerFactory;
 import ca.concordia.cssanalyser.analyser.CSSAnalyser;
 import ca.concordia.cssanalyser.crawler.Crawler;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
+import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
+import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
 import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
 import ca.concordia.cssanalyser.parser.ParseException;
+import ca.concordia.cssanalyser.refactoring.topreprocessors.MixinRefactoringOpportunity;
+import ca.concordia.cssanalyser.refactoring.topreprocessors.PreprocessorRefactoringOpportunitiesDetector;
+import ca.concordia.cssanalyser.refactoring.topreprocessors.PreprocessorRefactoringOpportunity;
+import ca.concordia.cssanalyser.refactoring.topreprocessors.less.LessRefactoringOpportunitiesDetector;
 
 public class CSSAnalyserCLI {
 	
@@ -130,30 +138,22 @@ public class CSSAnalyserCLI {
 			throw new RuntimeException("Not yet implemented");
 		case PREP:
 			if (!"".equals(params.getFilePath())) {
-				
-				//try {
-					//FluteCSSParser parser = new FluteCSSParser();
-					//
+
+
+				try {
 					
-					try {
-						
-						CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
-						StyleSheet styleSheet = parser.parseExternalCSS(params.getFilePath());
-						
-						
-						
-					} catch (ParseException e) {
-						
-						e.printStackTrace();
-						
-					}
+
+					CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
+					StyleSheet styleSheet = parser.parseExternalCSS(params.getFilePath());
+//					PreprocessorRefactoringOpportunitiesDetector preprocessorOpportunities = new PreprocessorRefactoringOpportunitiesDetector(styleSheet);
+//					Iterable<MixinRefactoringOpportunity> refactoringOpportunities = preprocessorOpportunities.findMixinOpportunities();
 					
-					//LessRefactoringOpportunitiesDetector lessRefactoringOpportunities = new LessRefactoringOpportunitiesDetector(lessStyleSheet);
-					//lessRefactoringOpportunities.findMixinRefactoringOpportunities();
-					
-				//} catch (ParseException ex) {
-					LOGGER.error("Error in parsing CSS file " + params.getFilePath());
-				//}
+
+				} catch (ParseException e) {
+//
+//					e.printStackTrace();
+//
+				}
 			}
 			else 
 				LOGGER.error("No CSS file is provided.");

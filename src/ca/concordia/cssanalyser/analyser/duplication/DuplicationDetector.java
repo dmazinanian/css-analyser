@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -43,7 +42,7 @@ public class DuplicationDetector {
 	private StyleSheet stylesheet;
 
 	/*
-	 * This map contains all selectors for a given declaration In apriori
+	 * This map contains all selectors for a given declaration In apriori (and FP-Growth)
 	 * algorithm, this map is used in order to accelerate finding supports
 	 */
 	private Map<Declaration, Item> declarationItemMap = new HashMap<>();
@@ -162,17 +161,12 @@ public class DuplicationDetector {
 
 			while (++checkingDecIndex < allDeclarations.size()) {
 
-				Declaration checkingDeclaration = allDeclarations
-						.get(checkingDecIndex);
+				Declaration checkingDeclaration = allDeclarations.get(checkingDecIndex);
 
-				boolean equals = currentDeclaration
-						.declarationEquals(checkingDeclaration);
+				boolean equals = currentDeclaration.declarationEquals(checkingDeclaration);
 
-				if (equals
-						&& !visitedIdenticalDeclarations
-								.contains(currentDeclarationIndex)
-						&& !visitedIdenticalDeclarations
-								.contains(checkingDecIndex)) {
+				if (equals && !visitedIdenticalDeclarations.contains(currentDeclarationIndex)
+						&& !visitedIdenticalDeclarations.contains(checkingDecIndex)) {
 
 					// We have found type I duplication
 					// We add the checkingDeclaration, it will add the Selector
@@ -186,22 +180,13 @@ public class DuplicationDetector {
 					declarationItemMap.put(checkingDeclaration, newItem);
 					newItem.addDuplicationType(1);
 				}
-				if (!equals
-						&& !visitedEquivalentDeclarations
-								.contains(checkingDecIndex)
-						&& (currentDeclaration
-								.declarationIsEquivalent(checkingDeclaration))) {// ||
-																					// (equals
-																					// &&
-																					// currentTypeIIDuplicatedDeclarations.size()
-																					// >
-																					// 1))
-																					// {
+				if (!equals && !visitedEquivalentDeclarations.contains(checkingDecIndex)
+						    && (currentDeclaration.declarationIsEquivalent(checkingDeclaration))) {
+					// || (equals && currentTypeIIDuplicatedDeclarations.size() > 1)) {
 					/*
 					 * We have found type II duplication
 					 */
-					currentTypeIIDuplicatedDeclarations
-							.add(checkingDeclaration);
+					currentTypeIIDuplicatedDeclarations.add(checkingDeclaration);
 					visitedEquivalentDeclarations.add(checkingDecIndex);
 					mustAddCurrentTypeTwoDuplication = true;
 
@@ -255,87 +240,35 @@ public class DuplicationDetector {
 
 		for (Selector selector : selectors) {
 
-			/*
-			 * For each selector, we loop over the declarations to see whether a
-			 * declaration could become the individual property for one
-			 * shorthand property (like margin-left which is an individual
-			 * declaration of margin). We keep all individual properties of a
-			 * same type (like margin-top, -left, -right and -bottom) which are
-			 * in the same selector in a set (namely currentIndividuals) and add
-			 * this set to a map (named shorthandedDeclarations) which maps the
-			 * name of corresponding shorthand property (margin, in our example)
-			 * to the mentioned set.
-			 */
-			Map<String, Set<Declaration>> shorthandedDeclarations = new HashMap<>();
+			for (ShorthandDeclaration virtualShorthand : selector.getVirtualShorthandDeclarations()) {
+				
+				// For each real shorthand in the style sheet, we compare it with the virtual shorthands of this selectors
+				for (Declaration checkingDeclaration : stylesheet.getAllDeclarations()) {
+					if (checkingDeclaration.getSelector() != selector && checkingDeclaration instanceof ShorthandDeclaration) {
+						ShorthandDeclaration checkingShorthandDeclaration = (ShorthandDeclaration) checkingDeclaration;
+						if(virtualShorthand.individualDeclarationsEquivalent(checkingShorthandDeclaration)) {
+							TypeThreeDuplicationInstance duplication = 
+									new TypeThreeDuplicationInstance(checkingShorthandDeclaration, virtualShorthand.getIndividualDeclarations());
+							typeThreeDuplicationsList.addDuplication(duplication);
 
-			for (Declaration declaration : selector.getDeclarations()) {
-				String property = declaration.getProperty();
-				/*
-				 * If a property is the individual property for one or more
-				 * shorthand properties,
-				 * ShorthandDeclaration#getShorthandPropertyNames() method
-				 * returns a set containing the name of those shorthand
-				 * properties (for example, providing margin-left would result
-				 * to margin)
-				 */
-				Set<String> shorthands = ShorthandDeclaration
-						.getShorthandPropertyNames(property);
-				/*
-				 * We add the entry (or update the existing entry) in the
-				 * HashMap, which maps the mentioned shorthand properties to the
-				 * individual properties
-				 */
-				for (String shorthand : shorthands) {
-					Set<Declaration> currentIndividuals = shorthandedDeclarations
-							.get(shorthand);
-					if (currentIndividuals == null)
-						currentIndividuals = new HashSet<>();
-					currentIndividuals.add(declaration);
-					shorthandedDeclarations.put(shorthand, currentIndividuals);
-				}
-			}
+							/*
+							 * Well, well, when we add individual declarations to a virtual shorthand, it does not add the real values to the
+							 * virtual shorthand declaration itself. Indeed it is difficult to get values from individual shorthand declarations.
+							 */
+							
+							for (DeclarationValue v : checkingDeclaration.getRealValues())
+								virtualShorthand.getRealValues().add(v.clone());
 
-			/*
-			 * Then we search all the Declarations of current stylesheet to see
-			 * whether one shorthand property has the equal (or equivalent)
-			 */
-			for (Entry<String, Set<Declaration>> entry : shorthandedDeclarations
-					.entrySet()) {
+							// For apriori and FP-Growth
+							Item item = declarationItemMap.get(checkingDeclaration);
 
-				// Create a shorthand and compare it with a real shorthand
-				ShorthandDeclaration virtualShorthand = new ShorthandDeclaration(
-						entry.getKey(), new ArrayList<DeclarationValue>(),
-						selector, -1, -1, false);
-				virtualShorthand.isVirtual(true);
-				for (Declaration dec : entry.getValue()) {
-					virtualShorthand.addIndividualDeclaration(dec);
-				}
+							item.add(virtualShorthand, true);
 
-				// For each real shorthand:
-				for (Declaration checkingDeclaration : stylesheet
-						.getAllDeclarations()) {
-					if (checkingDeclaration instanceof ShorthandDeclaration
-							&& virtualShorthand
-									.individualDeclarationsEquivalent((ShorthandDeclaration) checkingDeclaration)) {
+							item.addDuplicationType(3);
 
-						TypeThreeDuplicationInstance duplication = new TypeThreeDuplicationInstance(
-								(ShorthandDeclaration) checkingDeclaration,
-								entry.getValue());
-						typeThreeDuplicationsList.addDuplication(duplication);
-
-						for (DeclarationValue v : checkingDeclaration
-								.getRealValues())
-							virtualShorthand.getRealValues().add(v.clone());
-
-						// For apriori
-						Item item = declarationItemMap.get(checkingDeclaration);
-
-						item.add(virtualShorthand, true);
-
-						item.addDuplicationType(3);
-
-						selector.addDeclaration(virtualShorthand);
-						declarationItemMap.put(virtualShorthand, item);
+							selector.addDeclaration(virtualShorthand);
+							declarationItemMap.put(virtualShorthand, item);
+						}
 					}
 				}
 			}

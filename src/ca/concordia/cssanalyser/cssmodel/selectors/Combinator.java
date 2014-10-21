@@ -18,20 +18,6 @@ public abstract class Combinator extends BaseSelector {
 	public abstract BaseSelector getLeftHandSideSelector(); 
 	
 	@Override
-	public void setLineNumber(int linNumber) {
-		super.setLineNumber(linNumber);
-		getRightHandSideSelector().setLineNumber(linNumber);
-		getLeftHandSideSelector().setLineNumber(linNumber);
-	}
-	
-	@Override
-	public void setColumnNumber(int fileColumnNumber) {
-		super.setColumnNumber(fileColumnNumber);
-		getRightHandSideSelector().setColumnNumber(fileColumnNumber);
-		getLeftHandSideSelector().setColumnNumber(fileColumnNumber);
-	}
-	
-	@Override
 	public DOMNodeWrapperList getSelectedNodes(Document document) {
 		DOMNodeWrapperList toReturn = new DOMNodeWrapperList();
 		try {

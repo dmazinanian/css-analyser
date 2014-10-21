@@ -22,17 +22,17 @@ public class DeclarationFactory {
 	 * @param propertyName
 	 * @param values
 	 * @param belongsTo
-	 * @param fileLineNumber
-	 * @param fileColNumber
+	 * @param offset
+	 * @param length
 	 * @param important
 	 * @return
 	 */
-	public static Declaration getDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int fileLineNumber, int fileColNumber, boolean important,
+	public static Declaration getDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int offset, int length, boolean important,
 			boolean addMissingValues) {
 		if (ShorthandDeclaration.isShorthandProperty(propertyName))
-			return new ShorthandDeclaration(propertyName, values, belongsTo, fileLineNumber, fileColNumber, important);
+			return new ShorthandDeclaration(propertyName, values, belongsTo, offset, length, important);
 		else 
-			return new Declaration(propertyName, values, belongsTo, fileLineNumber, fileColNumber, important, addMissingValues);
+			return new Declaration(propertyName, values, belongsTo, offset, length, important, addMissingValues);
 	}
 	
 }

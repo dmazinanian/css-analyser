@@ -90,7 +90,7 @@ public class TypeOneDuplicationInstance implements DuplicationInstance {
 				continue;
 			string += "\t[" + list.get(0) + "] in the following places: \n";
 			for (Declaration declaration : list)
-				string += "\t\t" + declaration.getLineNumber() + " : " + declaration.getColumnNumber() + " \n"; 
+				string += "\t\t" + declaration.getOffset() + " : " + declaration.getLength() + " \n"; 
 		}
 		return string;
 	}

@@ -26,8 +26,8 @@ public class Declaration implements Cloneable {
 	protected final String property;
 	protected final List<DeclarationValue> declarationValues;
 	protected Selector parentSelector;
-	protected final int lineNumber;
-	protected final int colNumber;
+	protected final int offset;
+	protected final int length;
 	protected final boolean isImportant;
 	protected int numberOfMissingValues;
 	protected final boolean isCommaSeparatedListOfValues;
@@ -42,12 +42,12 @@ public class Declaration implements Cloneable {
 	 * @param propertyName
 	 * @param values
 	 * @param belongsTo
-	 * @param fileLineNumber
-	 * @param fileColNumber
+	 * @param offset
+	 * @param length
 	 * @param important
 	 */
-	public Declaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int fileLineNumber, int fileColNumber, boolean important) {
-		this(propertyName, values, belongsTo, fileLineNumber, fileColNumber, important, true); 
+	public Declaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int offset, int length, boolean important) {
+		this(propertyName, values, belongsTo, offset, length, important, true); 
 	}
 	
 	/**
@@ -55,17 +55,17 @@ public class Declaration implements Cloneable {
 	 * @param propertyName
 	 * @param values
 	 * @param belongsTo
-	 * @param fileLineNumber
-	 * @param fileColNumber
+	 * @param offset
+	 * @param length
 	 * @param important
 	 * @param addMissingValues
 	 */
-	public Declaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int fileLineNumber, int fileColNumber, boolean important, boolean addMissingValues) {
+	public Declaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int offset, int length, boolean important, boolean addMissingValues) {
 		property = propertyName.trim();
 		declarationValues = values;
 		parentSelector = belongsTo;
-		lineNumber = fileLineNumber;
-		colNumber = fileColNumber;
+		this.offset = offset;
+		this.length = length;
 		isImportant = important;
 		isCommaSeparatedListOfValues = isCommaSeparated(property);
 		
@@ -548,19 +548,19 @@ public class Declaration implements Cloneable {
 	}
 	
 	/**
-	 * Returns the line number in the source CSS file
+	 * Returns the offset in the source CSS file
 	 * @return
 	 */
-	public int getLineNumber() {
-		return lineNumber;
+	public int getOffset() {
+		return offset;
 	}
 
 	/**
-	 * Returns the column number in the source CSS file
+	 * Returns the length of the declaration in the source CSS file
 	 * @return
 	 */
-	public int getColumnNumber() {
-		return colNumber;
+	public int getLength() {
+		return length;
 	}
 	
 
@@ -600,14 +600,14 @@ public class Declaration implements Cloneable {
 		if (hashCode == -1) {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + colNumber;
+			result = prime * result + length;
 			result = prime
 					* result
 					+ ((declarationValues == null) ? 0 : declarationValues
 							.hashCode());
 			result = prime * result + (isCommaSeparatedListOfValues ? 1231 : 1237);
 			result = prime * result + (isImportant ? 1231 : 1237);
-			result = prime * result + lineNumber;
+			result = prime * result + offset;
 			result = prime * result + numberOfMissingValues;
 			result = prime * result
 					+ ((parentSelector == null) ? 0 : parentSelector.hashCode());
@@ -627,9 +627,9 @@ public class Declaration implements Cloneable {
 		if (getClass() != obj.getClass())
 			return false;
 		Declaration other = (Declaration) obj;
-		if (colNumber != other.colNumber)
+		if (offset != other.offset)
 			return false;
-		if (lineNumber != other.lineNumber)
+		if (length != other.length)
 			return false;
 		if (isCommaSeparatedListOfValues != other.isCommaSeparatedListOfValues)
 			return false;
@@ -662,7 +662,7 @@ public class Declaration implements Cloneable {
 		for (DeclarationValue v : declarationValues) {
 			values.add(v.clone());
 		}
-		return DeclarationFactory.getDeclaration(property, values, parentSelector, lineNumber, colNumber, isImportant, false);
+		return DeclarationFactory.getDeclaration(property, values, parentSelector, offset, length, isImportant, false);
 		//return new Declaration(property, values, parentSelector, lineNumber, colNumber, isImportant, false);
 	}
 }

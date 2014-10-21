@@ -269,9 +269,9 @@ public class ItemSetList implements Set<ItemSet> {
 		int maxImpact = Integer.MIN_VALUE;
 		for (ItemSetList isl : itemSetList)
 			for (ItemSet is : isl) {
-				if (itemSetWithMaxImpact == null || is.getRefactoringImpact() > maxImpact) {
+				if (itemSetWithMaxImpact == null || is.getGroupingRefactoringImpact() > maxImpact) {
 					itemSetWithMaxImpact = is;
-					maxImpact = is.getRefactoringImpact();
+					maxImpact = is.getGroupingRefactoringImpact();
 				}
 			}
 		return itemSetWithMaxImpact;

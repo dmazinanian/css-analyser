@@ -310,8 +310,8 @@ public class CSSAnalyser {
 				if (o1 == o2)
 					return 0;
 				
-				int i = o1.getRefactoringImpact();
-				int j = o2.getRefactoringImpact();
+				int i = o1.getGroupingRefactoringImpact();
+				int j = o2.getGroupingRefactoringImpact();
 
 				if (i != j)
 					return -Integer.compare(i, j);
@@ -335,7 +335,7 @@ public class CSSAnalyser {
 				itemSetsTreeSet.clear();
 				for (ItemSetList isl : fpgrowthResults) {
 					for (ItemSet is : isl) {
-						if (is.getRefactoringImpact() > 0) {
+						if (is.getGroupingRefactoringImpact() > 0) {
 							itemSetsTreeSet.add(is);
 						}
 					}
@@ -366,7 +366,7 @@ public class CSSAnalyser {
 				break;
 			
 
-			LOGGER.info("Applying round " + i + " of refactoring on " + originalStyleSheet.getFilePath() + " to reduce " + itemSetWithMaxImpact.getRefactoringImpact() + " characters.");
+			LOGGER.info("Applying round " + i + " of refactoring on " + originalStyleSheet.getFilePath() + " to reduce " + itemSetWithMaxImpact.getGroupingRefactoringImpact() + " characters.");
 			StyleSheet newStyleSheet = RefactorDuplications.groupingRefactoring(styleSheet, itemSetWithMaxImpact);
 			IOHelper.writeStringToFile(newStyleSheet.toString(), folderName + "/refactored" + i + ".css");
 
@@ -490,7 +490,7 @@ public class CSSAnalyser {
 		for (ItemSetList isl : dupResultsSubsumed) {
 			numberOfRefactoringOpportunitiesExcludedSubsumed += isl.size();
 			for (ItemSet is : isl)
-				if (is.getRefactoringImpact() > 0)
+				if (is.getGroupingRefactoringImpact() > 0)
 					numberOfRefactoringOpportunitiesExcludedSubsumedPositive++;
 		}
 		

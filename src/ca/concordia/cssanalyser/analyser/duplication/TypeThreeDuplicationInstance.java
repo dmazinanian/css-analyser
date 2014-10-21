@@ -3,6 +3,7 @@
  */
 package ca.concordia.cssanalyser.analyser.duplication;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,10 +25,9 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 public class TypeThreeDuplicationInstance implements DuplicationInstance {
 
 	private final ShorthandDeclaration shorthandDeclaration;
-	private final Set<Declaration> individualDeclarations;
+	private final Collection<Declaration> individualDeclarations;
 
-	public TypeThreeDuplicationInstance(ShorthandDeclaration shorthand,
-			Set<Declaration> individual) {
+	public TypeThreeDuplicationInstance(ShorthandDeclaration shorthand, Collection<Declaration> individual) {
 		shorthandDeclaration = shorthand;
 		individualDeclarations = individual;
 	}
@@ -50,11 +50,11 @@ public class TypeThreeDuplicationInstance implements DuplicationInstance {
 		StringBuilder individualString = new StringBuilder();
 		for (Declaration dec : individualDeclarations)
 			individualString.append(String.format("%s (%s, %s); ", dec,
-					dec.getLineNumber(), dec.getColumnNumber()));
+					dec.getOffset(), dec.getLength()));
 
 		return String.format("%s (%s, %s) = %s", shorthandDeclaration,
-				shorthandDeclaration.getLineNumber(),
-				shorthandDeclaration.getColumnNumber(),
+				shorthandDeclaration.getOffset(),
+				shorthandDeclaration.getLength(),
 				individualString.substring(0, individualString.length() - 2));
 
 	}
