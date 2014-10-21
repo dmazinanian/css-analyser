@@ -1,4 +1,4 @@
-Ignore/
-bin/
+/Ignore
 desktop.ini
+/bin
 *.*~
