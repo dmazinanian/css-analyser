@@ -156,6 +156,14 @@ public class ShorthandDeclaration extends Declaration {
 									 "font-family");
 	}
 	
+	/**
+	 * Returns an Iterable containing all shorthand property names
+	 * @return
+	 */
+	public static Iterable<String> getAllShorthandProperties() {
+		return shorthandProperties.keySet();
+	}
+	
 	private static void addShorthandProperty(String shorthandPropertyName, String... individualPropertyNames) {
 		shorthandProperties.put(shorthandPropertyName, new HashSet<>(Arrays.asList(individualPropertyNames)));
 	}
