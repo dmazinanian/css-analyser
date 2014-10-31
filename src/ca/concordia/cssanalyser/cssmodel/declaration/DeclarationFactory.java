@@ -23,16 +23,17 @@ public class DeclarationFactory {
 	 * @param values
 	 * @param belongsTo
 	 * @param offset
-	 * @param length
+	 * @param fileColNumber
 	 * @param important
 	 * @return
 	 */
-	public static Declaration getDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int offset, int length, boolean important,
-			boolean addMissingValues) {
+	public static Declaration getDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int offset, int length, boolean important, boolean addMissingValues) {
+		if (MultiValuedDeclaration.isMultiValuedProperty(propertyName)) 
+			return new MultiValuedDeclaration(propertyName, values, belongsTo, offset, length, important, addMissingValues);
 		if (ShorthandDeclaration.isShorthandProperty(propertyName))
-			return new ShorthandDeclaration(propertyName, values, belongsTo, offset, length, important);
+			return new ShorthandDeclaration(propertyName, values, belongsTo, offset, length, important, addMissingValues);
 		else 
-			return new Declaration(propertyName, values, belongsTo, offset, length, important, addMissingValues);
+			return new SingleValuedDeclaration(propertyName, values.get(0), belongsTo, offset, length, important);
 	}
 	
 }

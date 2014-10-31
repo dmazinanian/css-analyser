@@ -50,12 +50,14 @@ public class LessStyleSheetAdapter {
  				Selector selector = null;
  				
  				if (ruleSetNode.getSelectors().size() == 1) { // One selector, this is a base selector
- 					selector = getSelector(ruleSetNode.getSelectors().get(0));
- 				} else { // More than 1 selector, it is a grouping selector
+ 					
+ 					selector = getBaseSelectorFromLessSelector(ruleSetNode.getSelectors().get(0));
+ 					
+ 				} else { // More than 1 selector, this is a grouping selector
  					GroupingSelector grouping = new GroupingSelector();
 
  					for (com.github.sommeri.less4j.core.ast.Selector lessSelector : ruleSetNode.getSelectors()) {
- 						grouping.add(getSelector(lessSelector));					
+ 						grouping.add(getBaseSelectorFromLessSelector(lessSelector));					
  					}
  					
  					com.github.sommeri.less4j.core.ast.Selector firstSelector = ruleSetNode.getSelectors().get(0);
@@ -79,20 +81,31 @@ public class LessStyleSheetAdapter {
 		return styleSheet;
 	}
 
-	private BaseSelector getSelector(com.github.sommeri.less4j.core.ast.Selector lessSelector) {
+	/**
+	 * Converts a Less4j Selector which only has one child to a BaseSelector.
+	 * A Less4j Selector might be a combinator or a simple selector. 
+	 * @param lessSelector
+	 * @return
+	 */
+	private BaseSelector getBaseSelectorFromLessSelector(com.github.sommeri.less4j.core.ast.Selector lessSelector) {
 		
 		BaseSelector toReturn = null;
 		
+		// In the Less selector, every part is a simple selector 
 		if (lessSelector.getParts().size() == 1) { // simple selector, not a combinator
+			
 			toReturn = getSimpleSelectorFromLessSelectorPart(lessSelector.getParts().get(0));
+			
 		} else { // combinator
-			toReturn = getCombinator(lessSelector.getParts());
+			
+			toReturn = getCombinatorFromLessSelectorParts(lessSelector.getParts());
+			
 		}
 		
 		return toReturn;
 	}
 
-	private BaseSelector getCombinator(List<SelectorPart> parts) {
+	private BaseSelector getCombinatorFromLessSelectorParts(List<SelectorPart> parts) {
 
 		if (parts.size() == 0)
 			return null;
@@ -110,7 +123,7 @@ public class LessStyleSheetAdapter {
 		partsCopy.remove(partsCopy.size() - 1);
 		
 		if (partsCopy.size() != 0) {
-			BaseSelector leftHandSelector = getCombinator(partsCopy);
+			BaseSelector leftHandSelector = getCombinatorFromLessSelectorParts(partsCopy);
 			switch (lastPart.getLeadingCombinator().getCombinator()) {
 			//ADJACENT_SIBLING("+"), CHILD(">"), DESCENDANT("' '"), GENERAL_SIBLING("~"), HAT("^"), CAT("^^");
 			case ADJACENT_SIBLING:
@@ -193,7 +206,7 @@ public class LessStyleSheetAdapter {
 				PseudoClass adaptedPseudoClass = null;
 				if ("not".equals(pseudoClass.getName().toLowerCase())) {
 					com.github.sommeri.less4j.core.ast.Selector parameter = (com.github.sommeri.less4j.core.ast.Selector)pseudoClass.getParameter();
-					adaptedPseudoClass = new NegationPseudoClass(getSelector(parameter));
+					adaptedPseudoClass = new NegationPseudoClass(getBaseSelectorFromLessSelector(parameter));
 				} else {
 					adaptedPseudoClass =  new PseudoClass(pseudoClass.getName());
 					if (pseudoClass.hasParameters()) {

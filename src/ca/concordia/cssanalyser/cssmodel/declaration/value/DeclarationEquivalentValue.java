@@ -13,8 +13,8 @@ package ca.concordia.cssanalyser.cssmodel.declaration.value;
 	<li>1KHz = 1000Hz</li>
 	<li>...</li>
  * </ul>
- * The {@link ca.concordia.cssanalyser.parser.flute.CSSDocumentHandler <code>CSSDocumentHandler</code>} is responsible for converting these
- * values ant putting them in appropriate objects (either {@link DeclarationEquivalentValue} or {@link DeclarationEquivalentValue}
+ * The parser is responsible for converting these values and putting them in appropriate objects
+ * (either {@link DeclarationEquivalentValue} or {@link DeclarationEquivalentValue}
  * 
  * The main objective of having this class is for finding type II duplications
  * @see DeclarationValue, CSSDocumentHandler

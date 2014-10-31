@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,7 +28,7 @@ public class ItemSetList implements Set<ItemSet> {
 	private Map<Set<Selector>, Set<ItemSet>> supportItemSetMap = new HashMap<>();
 
 	public ItemSetList() {
-		itemsets = new HashSet<>();
+		itemsets = new LinkedHashSet<>();
 	}
 
 	@Override

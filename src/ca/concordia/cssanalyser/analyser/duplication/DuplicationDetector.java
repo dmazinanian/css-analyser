@@ -256,8 +256,8 @@ public class DuplicationDetector {
 							 * virtual shorthand declaration itself. Indeed it is difficult to get values from individual shorthand declarations.
 							 */
 							
-							for (DeclarationValue v : checkingDeclaration.getRealValues())
-								virtualShorthand.getRealValues().add(v.clone());
+							for (DeclarationValue v : checkingShorthandDeclaration.getValues())
+								virtualShorthand.getValues().add(v.clone());
 
 							// For apriori and FP-Growth
 							Item item = declarationItemMap.get(checkingDeclaration);

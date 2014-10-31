@@ -3,6 +3,7 @@ package ca.concordia.cssanalyser.analyser.duplication.items;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
@@ -33,8 +34,8 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	 * Creates an empty Item
 	 */
 	public Item() {
-		declarations = new HashSet<>();
-		support = new HashSet<>();
+		declarations = new LinkedHashSet<>();
+		support = new LinkedHashSet<>();
 	}
 	
 	

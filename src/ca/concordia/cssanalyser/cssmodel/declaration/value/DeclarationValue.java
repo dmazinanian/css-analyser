@@ -15,6 +15,8 @@ public class DeclarationValue implements Cloneable {
 	protected final String realInFileValue;
 	protected boolean isAMissingValue;
 	protected final ValueType valueType;
+	protected String correspondingStyleProperty;
+	
 	private final boolean isKeyword;
 	
 	/**
@@ -87,6 +89,26 @@ public class DeclarationValue implements Cloneable {
 		return isKeyword;
 	}
 	
+	/**
+	 * Returns to which style property this value belongs.
+	 * This is mostly used in comparing declaration having more than one value.
+	 * For instance, in declaration <code>margin: 2px 4px 3px 5px</code>,
+	 * the first value (2px) corresponds to top margin, so the value for this 
+	 * property will be set accordingly
+	 * @return
+	 */
+	public String getCorrespondingStyleProperty() {
+		return correspondingStyleProperty;
+	}
+
+	/**
+	 * Sets the style property to which this value belongs.
+	 * @see #getCorrespondingStyleProperty()
+	 * @param styleProperty
+	 */
+	public void setCorrespondingStyleProperty(String styleProperty) {
+		this.correspondingStyleProperty = styleProperty;
+	}
 	
 	/**
 	 * Returns the type of this value
@@ -96,13 +118,11 @@ public class DeclarationValue implements Cloneable {
 	public ValueType getType() {
 		return valueType;
 	}
-	
-	public boolean equivalent(DeclarationEquivalentValue otherValue) {
-		return (((DeclarationEquivalentValue)otherValue).equivalent(this));
-	}
-	
+		
 	public boolean equivalent(DeclarationValue otherValue) {
-		return equals(otherValue);
+		if (otherValue instanceof DeclarationEquivalentValue)
+			return otherValue.equivalent(this);
+		return this.equals(otherValue);
 	}
 		
 	/**
@@ -114,7 +134,8 @@ public class DeclarationValue implements Cloneable {
 	}
 
 	/**
-	 * Checks the equality based on real value
+	 * Checks the equality only based on the real value,
+	 * ignoring the case of the value
 	 */
 	@Override
 	public boolean equals(Object obj) { 
@@ -150,4 +171,6 @@ public class DeclarationValue implements Cloneable {
 	public DeclarationValue clone() {
 		return new DeclarationValue(realInFileValue, isAMissingValue, valueType);
 	}
+	
+	
 }

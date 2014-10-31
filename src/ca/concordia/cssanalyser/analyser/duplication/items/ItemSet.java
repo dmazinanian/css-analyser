@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -35,8 +36,8 @@ public class ItemSet implements Set<Item>, Cloneable {
 	protected int refactoringImpact = -1;
 	
 	public ItemSet() {
-		itemset = new HashSet<>();
-		support = new HashSet<>();
+		itemset = new LinkedHashSet<>();
+		support = new LinkedHashSet<>();
 	} 
 	
 	public ItemSet(Set<Item> declarations, Set<Selector> support) {
