@@ -22,7 +22,7 @@ public class PseudoClass {
 	static String[] unsupportedPseudoClassesArray = new String[] {
 		"link", "active", "hover", "visited", "focus", 
 		"first-letter", "first-line", "before", "after", "target",
-		"root", "enabled", "disabled"
+		"enabled", "disabled"
 	};
 	
 	static Set<String> unsupportedPseudoClasses = new HashSet<>(Arrays.asList(unsupportedPseudoClassesArray));

@@ -508,6 +508,13 @@ public class SimpleSelector extends BaseSelector {
 					}
 					xpathConditions.add(String.format(finalCondition, insideConditions));
 					break;
+				case "root":
+					/*
+					 * Name must be the same as the name of the root element, 
+					 * and it should not have any other parents
+					 */
+					xpathConditions.add("(name() = name(/*) and (name(..) = ''))");
+					break;
 				}
 			}
 		} // End of pseudo classes!
