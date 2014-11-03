@@ -235,9 +235,7 @@ public class DuplicationDetector {
 
 		typeThreeDuplicationsList = new DuplicationIncstanceList();
 
-		Set<Selector> selectors = stylesheet.getAllSelectors();
-
-		for (Selector selector : selectors) {
+		for (Selector selector : stylesheet.getAllSelectors()) {
 
 			for (ShorthandDeclaration virtualShorthand : selector.getVirtualShorthandDeclarations()) {
 				
