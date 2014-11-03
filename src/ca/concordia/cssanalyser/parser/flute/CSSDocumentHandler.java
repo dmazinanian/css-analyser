@@ -52,6 +52,7 @@ import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.cssmodel.selectors.AdjacentSiblingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.ChildSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.Combinator;
 import ca.concordia.cssanalyser.cssmodel.selectors.DescendantSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.NegationPseudoClass;
@@ -332,8 +333,13 @@ public class CSSDocumentHandler implements DocumentHandler {
 			if (sacChildSelectorImpl.getSimpleSelector() instanceof PseudoElementSelectorImpl) {
 				selectorToReturn = parentAtomicSelector;
 				PseudoElementSelectorImpl pseudoClass = (PseudoElementSelectorImpl) sacChildSelectorImpl.getSimpleSelector();
-
-				((SimpleSelector) selectorToReturn).addPseudoClass(new PseudoClass(pseudoClass.getLocalName()));
+				SimpleSelector simpleSelector;
+				if (selectorToReturn instanceof SimpleSelector) // in case of .test:test
+					simpleSelector = ((SimpleSelector) selectorToReturn);
+				else // in case of .test .test2:test
+					simpleSelector = ((Combinator)selectorToReturn).getRightHandSideSelector();
+				
+				simpleSelector.addPseudoClass(new PseudoClass(pseudoClass.getLocalName()));
 
 			} else {
 				selectorToReturn = new ChildSelector(parentAtomicSelector, childAtomicSelector);

@@ -271,21 +271,24 @@ public class CSSAnalyser {
 				}
 				end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				time = (end - start) / 1000000L;
-				LOGGER.info("Done " + refactored.numberOfAppliedRefactorigns + " grouping refactoring opportunities on " + time + " ms");
+				LOGGER.info("Applied " + refactored.numberOfAppliedRefactorigns + " grouping refactorings in " + time + " ms");
+				LOGGER.info("Collecting more info for the further analysis...");
 				
 				List<ItemSetList> fpgrowthResultsSubsumed = duplicationDetector.fpGrowth(MIN_SUPPORT, true);
 				
 				String analytics = getAnalytics(styleSheet, refactored, duplicationDetector, fpgrowthResults, fpgrowthResultsSubsumed);
 				
 				IOHelper.writeStringToFile(analytics + System.lineSeparator(), folderPath + "/analytics.txt" , true);
-				
+								
 			}
 			
 			if (compareAprioriAndFPGrowth)
 				compareAprioriAndFPGrowth(aprioriResults, fpgrowthResults);
 			
+			LOGGER.info("Done analysis for " + filePath);
 		}
 		
+		LOGGER.info("Done.");
 					
 	}
 	

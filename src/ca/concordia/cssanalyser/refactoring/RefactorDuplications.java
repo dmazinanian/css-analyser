@@ -29,6 +29,7 @@ public class RefactorDuplications {
 		
 		// First create a new grouped selector for refactoring
 		GroupingSelector newGroupingSelector = new GroupingSelector();
+		
 		for (Selector selector : itemset.getSupport()) {
 			if (selector instanceof GroupingSelector) {
 				GroupingSelector grouping = (GroupingSelector)selector;
@@ -39,15 +40,18 @@ public class RefactorDuplications {
 				newGroupingSelector.add((BaseSelector)selector.copyEmptySelector());
 			}
 		}
+		// Add the media queries to the new grouping selector
 		newGroupingSelector.addMediaQueryLists(itemset.getSupport().iterator().next().mediaQueryLists());
 		
+		// Add declarations to this new grouping selector
+		// Have a place to mark declarations to be removed from the original selector
 		Set<Declaration> declarationsToBeRemoved = new HashSet<>();
 		for (Item currentItem : itemset) {
 			
-			// Add declarations to this new grouping selector
+			
 			newGroupingSelector.addDeclaration(currentItem.getDeclarationWithMinimumChars().clone());
 			
-			//Mark declarations to be deleted from returning stylesheet
+			//Mark declarations to be deleted from the original StyleSheet
 			for (Declaration currentDeclaration : currentItem) {
 				if (itemset.getSupport().contains(currentDeclaration.getSelector())) {
 					if (currentDeclaration instanceof ShorthandDeclaration && ((ShorthandDeclaration)currentDeclaration).isVirtual()) {
@@ -60,7 +64,7 @@ public class RefactorDuplications {
 			}
 		}
 		
-		// Create a new empty stylesheet (refactored one)
+		// Create a new empty StyleSheet (the refactored one)
 		StyleSheet refactoredStyleSheet = new StyleSheet();
 		
 		// Adding selectors to the refactored declarations
