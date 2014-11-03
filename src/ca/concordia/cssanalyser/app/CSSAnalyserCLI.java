@@ -18,14 +18,14 @@ import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.io.IOHelper;
+import ca.concordia.cssanalyser.migration.topreprocessors.MixinRefactoringOpportunity;
+import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorRefactoringOpportunitiesDetector;
+import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorRefactoringOpportunity;
+import ca.concordia.cssanalyser.migration.topreprocessors.less.LessRefactoringOpportunitiesDetector;
 import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
 import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
 import ca.concordia.cssanalyser.parser.ParseException;
-import ca.concordia.cssanalyser.refactoring.topreprocessors.MixinRefactoringOpportunity;
-import ca.concordia.cssanalyser.refactoring.topreprocessors.PreprocessorRefactoringOpportunitiesDetector;
-import ca.concordia.cssanalyser.refactoring.topreprocessors.PreprocessorRefactoringOpportunity;
-import ca.concordia.cssanalyser.refactoring.topreprocessors.less.LessRefactoringOpportunitiesDetector;
 
 public class CSSAnalyserCLI {
 	

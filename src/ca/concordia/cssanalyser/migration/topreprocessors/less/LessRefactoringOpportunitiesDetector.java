@@ -1,4 +1,4 @@
-package ca.concordia.cssanalyser.refactoring.topreprocessors.less;
+package ca.concordia.cssanalyser.migration.topreprocessors.less;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,7 @@ import ca.concordia.cssanalyser.analyser.duplication.items.PropertyItemSetList;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
-import ca.concordia.cssanalyser.refactoring.topreprocessors.PreprocessorRefactoringOpportunity;
+import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorRefactoringOpportunity;
 
 public class LessRefactoringOpportunitiesDetector {
 	private StyleSheet styleSheet;

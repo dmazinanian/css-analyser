@@ -1,4 +1,4 @@
-package ca.concordia.cssanalyser.refactoring.topreprocessors;
+package ca.concordia.cssanalyser.migration.topreprocessors;
 
 public abstract class PreprocessorRefactoringOpportunity {
 	private double rank;
