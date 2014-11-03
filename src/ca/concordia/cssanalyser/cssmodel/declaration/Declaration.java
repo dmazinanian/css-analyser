@@ -127,6 +127,8 @@ public abstract class Declaration implements Cloneable {
 	 */
 	public void setSelector(Selector selector) {
 		this.parentSelector = selector;
+		if (!this.parentSelector.containsDeclaration(this))
+			this.parentSelector.addDeclaration(this);
 	}
 
 	/**

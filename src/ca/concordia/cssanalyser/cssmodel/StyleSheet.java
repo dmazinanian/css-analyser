@@ -51,7 +51,9 @@ public class StyleSheet {
 	 * @param selector
 	 */
 	public void addSelector(Selector selector) {
-		selectors.put(selector, selectors.size() + 1);
+		if (!selectors.containsKey(selector)) {
+			selectors.put(selector, selectors.size() + 1);
+		}
 		selector.setParentStyleSheet(this);
 	}
 	

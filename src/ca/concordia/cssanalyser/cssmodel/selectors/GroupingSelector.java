@@ -203,8 +203,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 			newOne.add(s.clone());
 		if (this.mediaQueryLists != null)
 			newOne.addMediaQueryLists(this.mediaQueryLists);
-		newOne.declarations = new LinkedHashSet<>();
-		for (Declaration d : this.declarations)
+		for (Declaration d : this.declarations.keySet())
 			newOne.addDeclaration(d.clone());
 		return newOne;
 	}

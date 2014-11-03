@@ -90,7 +90,7 @@ public class RefactorDuplications {
 		// Remove empty selectors from refactored stylesheet
 		List<Selector> selectorsToBeRemoved = new ArrayList<>(); 
 		for (Selector selector : refactoredStyleSheet.getAllSelectors()) {
-			if (selector.getDeclarations().size() == 0)
+			if (selector.getNumberOfDeclarations() == 0)
 				selectorsToBeRemoved.add(selector);
 		}
 		refactoredStyleSheet.removeSelectors(selectorsToBeRemoved);

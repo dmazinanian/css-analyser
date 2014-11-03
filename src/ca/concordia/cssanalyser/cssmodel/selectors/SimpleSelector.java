@@ -2,7 +2,6 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -276,8 +275,7 @@ public class SimpleSelector extends BaseSelector {
 		for (PseudoElement pseudoElement : this.pseudoElements)
 			newOne.addPseudoElement(pseudoElement.clone());
 		
-		newOne.declarations = new LinkedHashSet<>();
-		for (Declaration d : this.declarations)
+		for (Declaration d : this.declarations.keySet())
 			newOne.addDeclaration(d.clone());
 		
 		return newOne;

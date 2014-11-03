@@ -3,6 +3,7 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,10 +26,8 @@ public abstract class Selector  {
 	protected int offset;
 	protected int lenghth;
 	protected StyleSheet parentStyleSheet;
-	
-
 	protected Set<MediaQueryList> mediaQueryLists;
-	protected Set<Declaration> declarations;
+	protected Map<Declaration, Integer> declarations;
 	protected CSSSource source = CSSSource.EXTERNAL;
 	protected CSSOrigin origin = CSSOrigin.AUTHOR;
 	
@@ -39,7 +38,7 @@ public abstract class Selector  {
 	public Selector(int fileLineNumber, int fileColNumber) {
 		lineNumber = fileLineNumber;
 		columnNumber = fileColNumber;
-		declarations = new LinkedHashSet<>();
+		declarations = new LinkedHashMap<>();
 		mediaQueryLists = new LinkedHashSet<>();
 		
 	}
@@ -65,8 +64,13 @@ public abstract class Selector  {
 	}
 	
 	public void addDeclaration(Declaration declaration) {
+		if (!declarations.containsKey(declaration))
+			declarations.put(declaration, declarations.size() + 1);
 		declaration.setSelector(this);
-		declarations.add(declaration);
+	}
+	
+	public int getNumberOfDeclarations() {
+		return declarations.size();
 	}
 
 	public int getOffset() {
@@ -85,8 +89,12 @@ public abstract class Selector  {
 		this.lenghth = length;
 	}
 		
-	public Set<Declaration> getDeclarations() {
-		return declarations;
+	public Iterable<Declaration> getDeclarations() {
+		return declarations.keySet();
+	}
+	
+	public boolean containsDeclaration(Declaration declaration) {
+		return this.declarations.containsKey(declaration);
 	}
 	
 
@@ -108,6 +116,10 @@ public abstract class Selector  {
 
 	public Set<MediaQueryList> getMediaQueryLists() {
 		return mediaQueryLists;
+	}
+	
+	public int getDeclarationNumber(Declaration declaration) {
+		return declarations.get(declaration);
 	}
 	
 	/**
@@ -159,7 +171,7 @@ public abstract class Selector  {
 	 */
 	public Selector copyEmptySelector() {
 		Selector newEmptySelector = this.clone();
-		newEmptySelector.getDeclarations().clear();
+		newEmptySelector.declarations.clear();
 		return newEmptySelector;
 	}
 	
