@@ -83,12 +83,14 @@ public class RefactorToSatisfyDependencies {
 		// Map every selector to a Solver variable
 		Map<Selector, IntVar> createdVars = new HashMap<>();
 		
-		List<Selector> selectors = new ArrayList<>(styleSheet.getAllSelectors());
+		List<Selector> selectors =  new  ArrayList<>();
+		for (Selector s : styleSheet.getAllSelectors())
+			selectors.add(s);
 		
 		// Create one variable for each selector in the style sheet
 		for (int i = 0; i < selectors.size(); i++) {
 			Selector selectorToBeAdded = selectors.get(i);
-			IntVar x = VariableFactory.bounded(i + ": " + selectorToBeAdded.toString(), 1, styleSheet.getAllSelectors().size(), solver);
+			IntVar x = VariableFactory.bounded(i + ": " + selectorToBeAdded.toString(), 1, styleSheet.getNumberOfSelectors(), solver);
 			createdVars.put(selectorToBeAdded, x);
 		}
 		

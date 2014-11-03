@@ -282,8 +282,10 @@ public class DuplicationDetector {
 
 		typeFourADuplicationsList = new DuplicationIncstanceList();
 		int currentSelectorIndex = -1;
-		List<Selector> allSelectors = new ArrayList<>(
-				stylesheet.getAllSelectors());
+		List<Selector> allSelectors = new ArrayList<>();
+		for (Selector s : stylesheet.getAllSelectors())
+				allSelectors.add(s);
+		
 		Set<Integer> visitedSelectors = new HashSet<>();
 		while (++currentSelectorIndex < allSelectors.size()) {
 			if (visitedSelectors.contains(currentSelectorIndex))
@@ -401,7 +403,7 @@ public class DuplicationDetector {
 		LOGGER.info("Applying fpgrowth algorithm with minimum support count of " + minSupport + " on " + stylesheet.getFilePath());
 		long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 		
-		List<TreeSet<Item>> itemSets = new ArrayList<>(stylesheet.getAllSelectors().size());
+		List<TreeSet<Item>> itemSets = new ArrayList<>(stylesheet.getNumberOfSelectors());
 
 		for (Selector s : stylesheet.getAllSelectors()) {
 			TreeSet<Item> currentItems = new TreeSet<>();

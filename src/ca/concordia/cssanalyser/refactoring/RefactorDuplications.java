@@ -93,7 +93,7 @@ public class RefactorDuplications {
 			if (selector.getDeclarations().size() == 0)
 				selectorsToBeRemoved.add(selector);
 		}
-		refactoredStyleSheet.getAllSelectors().removeAll(selectorsToBeRemoved);
+		refactoredStyleSheet.removeSelectors(selectorsToBeRemoved);
 		
 		return refactoredStyleSheet;
 

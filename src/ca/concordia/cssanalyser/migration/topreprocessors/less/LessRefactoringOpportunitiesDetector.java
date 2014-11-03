@@ -31,7 +31,7 @@ public class LessRefactoringOpportunitiesDetector {
 		
 		if (duplicatedProperties.size() > 0) {
 		
-			List<TreeSet<Item>> itemSets = new ArrayList<>(styleSheet.getAllSelectors().size());
+			List<TreeSet<Item>> itemSets = new ArrayList<>(styleSheet.getNumberOfSelectors());
 	
 			for (Selector s : styleSheet.getAllSelectors()) {
 				TreeSet<Item> currentItems = new TreeSet<>();

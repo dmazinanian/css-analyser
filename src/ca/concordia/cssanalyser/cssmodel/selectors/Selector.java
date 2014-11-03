@@ -11,6 +11,7 @@ import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
 import ca.concordia.cssanalyser.cssmodel.CSSSource;
+import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
@@ -21,8 +22,11 @@ public abstract class Selector  {
 	
 	protected int lineNumber;
 	protected int columnNumber;
-	private int offset;
-	private int lenghth;
+	protected int offset;
+	protected int lenghth;
+	protected StyleSheet parentStyleSheet;
+	
+
 	protected Set<MediaQueryList> mediaQueryLists;
 	protected Set<Declaration> declarations;
 	protected CSSSource source = CSSSource.EXTERNAL;
@@ -39,6 +43,27 @@ public abstract class Selector  {
 		mediaQueryLists = new LinkedHashSet<>();
 		
 	}
+	
+	/**
+	 * Gets the parent style sheet of this Selector 
+	 * @return the parentStyleSheet
+	 */
+	public StyleSheet getParentStyleSheet() {
+		return parentStyleSheet;
+	}
+
+	/** 
+	 * Sets the parent style sheet of this Selector.
+	 * If the selector is not currently in the StyleSheet,
+	 * it will add it to the StyleSheet.
+	 * @param parentStyleSheet the parentStyleSheet to set
+	 */
+	public void setParentStyleSheet(StyleSheet parentStyleSheet) {
+		this.parentStyleSheet = parentStyleSheet;
+		if (!parentStyleSheet.containsSelector(this))
+			parentStyleSheet.addSelector(this);
+	}
+	
 	public void addDeclaration(Declaration declaration) {
 		declaration.setSelector(this);
 		declarations.add(declaration);
@@ -84,7 +109,14 @@ public abstract class Selector  {
 	public Set<MediaQueryList> getMediaQueryLists() {
 		return mediaQueryLists;
 	}
-
+	
+	/**
+	 * Returns the selector number in the style sheet
+	 * @return
+	 */
+	public int getSelectorNumber() {
+		return parentStyleSheet.getSelectorNumber(this);
+	}
 	
 	/**
 	 * The equals() method for different selectors have different meanings

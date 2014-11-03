@@ -30,14 +30,14 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDepen
  */
 public class StyleSheet {
 
-	private Set<Selector> listOfSelectors;
+	private Map<Selector, Integer> selectors;
 	private String cssFilePath;
 	private CSSValueOverridingDependencyList orderDependencies;
 	
 	
 
 	public StyleSheet() {
-		listOfSelectors = new LinkedHashSet<>();
+		selectors = new LinkedHashMap<>();
 	}
 	
 	public void setPath(String path) {
@@ -51,7 +51,8 @@ public class StyleSheet {
 	 * @param selector
 	 */
 	public void addSelector(Selector selector) {
-		listOfSelectors.add(selector);
+		selectors.put(selector, selectors.size() + 1);
+		selector.setParentStyleSheet(this);
 	}
 	
 	/**
@@ -59,8 +60,8 @@ public class StyleSheet {
 	 * 
 	 * @return List<Selector>
 	 */
-	public Set<Selector> getAllSelectors() {
-		return listOfSelectors;
+	public Iterable<Selector> getAllSelectors() {
+		return selectors.keySet();
 	}
 
 	/**
@@ -73,7 +74,7 @@ public class StyleSheet {
 	public List<BaseSelector> getAllBaseSelectors() {
 		List<BaseSelector> allBaseSelectors = new ArrayList<>();
 
-		for (Selector selector : listOfSelectors) { // Look inside all selectors
+		for (Selector selector : selectors.keySet()) { // Look inside all selectors
 			if (selector instanceof BaseSelector) {
 				allBaseSelectors.add((BaseSelector) selector);
 			} else if (selector instanceof GroupingSelector) {
@@ -95,7 +96,7 @@ public class StyleSheet {
 	public Set<Declaration> getAllDeclarations() {
 		//if (listOfDeclarations == null) {
 			Set<Declaration> listOfDeclarations = new LinkedHashSet<>();
-			for (Selector selector : listOfSelectors)
+			for (Selector selector : selectors.keySet())
 				for (Declaration declaration : selector.getDeclarations())
 					listOfDeclarations.add(declaration);
 		//}
@@ -107,7 +108,7 @@ public class StyleSheet {
 
 		StringBuilder toReturn = new StringBuilder();
 		Set<MediaQueryList> lastMediaQueryLists = null;
-		Iterator<Selector> selectorIterator = listOfSelectors.iterator();
+		Iterator<Selector> selectorIterator = selectors.keySet().iterator();
 		int currentIndentation = 0;
 		if (selectorIterator.hasNext()) {
 			Selector s = selectorIterator.next();
@@ -186,7 +187,7 @@ public class StyleSheet {
 	public StyleSheet clone() {
 		StyleSheet styleSheet = new StyleSheet();
 		styleSheet.cssFilePath = cssFilePath;
-		for (Selector s : this.listOfSelectors)
+		for (Selector s : this.selectors.keySet())
 			styleSheet.addSelector(s.clone());
 		return styleSheet;
 	}
@@ -232,7 +233,7 @@ public class StyleSheet {
 	}
 
 	public void addMediaQueryList(MediaQueryList forMedia) {
-		for (Selector s : listOfSelectors)
+		for (Selector s : selectors.keySet())
 			s.addMediaQueryList(forMedia);
 	}
 	
@@ -260,6 +261,26 @@ public class StyleSheet {
 		
 		return getValueOverridingDependencies(null);
 		
+	}
+
+	public int getNumberOfSelectors() {
+		return selectors.size();
+	}
+
+	public void removeSelectors(List<Selector> selectorsToBeRemoved) {
+		for (Selector s : selectorsToBeRemoved)
+			selectors.remove(s);
+		int i = 1;
+		for (Selector s : selectors.keySet())
+			selectors.put(s, i++);
+	}
+
+	public int getSelectorNumber(Selector selector) {
+		return selectors.get(selector);
+	}
+
+	public boolean containsSelector(Selector selector) {
+		return selectors.containsKey(selector);
 	}
 
 }
