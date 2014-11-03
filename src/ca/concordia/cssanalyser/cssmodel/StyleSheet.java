@@ -32,8 +32,6 @@ public class StyleSheet {
 
 	private Set<Selector> listOfSelectors;
 	private String cssFilePath;
-	public int numberOfAppliedRefactorigns;
-	public int numberOfPositiveRefactorings;
 	private CSSValueOverridingDependencyList orderDependencies;
 	
 	

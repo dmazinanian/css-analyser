@@ -264,20 +264,20 @@ public class CSSAnalyser {
 				long start, end, time;
 				LOGGER.info("Applying grouping refactoring opportunities");
 				start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-				StyleSheet refactored;
+				BatchGroupingRefactoringResult refactoringResults;
 				if (!dontUseDOM) {
-					refactored = refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, analyticsFolderPath, fpgrowthResults, model.getDocument());
+					refactoringResults = refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, analyticsFolderPath, fpgrowthResults, model.getDocument());
 				} else {
-					refactored = refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, analyticsFolderPath, fpgrowthResults);
+					refactoringResults = refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, analyticsFolderPath, fpgrowthResults);
 				}
 				end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				time = (end - start) / 1000000L;
-				LOGGER.info("Applied " + refactored.numberOfAppliedRefactorigns + " grouping refactorings in " + time + " ms");
+				LOGGER.info("Applied " + refactoringResults.getNumberOfAppliedRefactorings() + " grouping refactorings in " + time + " ms");
 				LOGGER.info("Collecting more info for the further analysis...");
 				
 				List<ItemSetList> fpgrowthResultsSubsumed = duplicationDetector.fpGrowth(MIN_SUPPORT, true);
 				
-				String analytics = getAnalytics(styleSheet, refactored, duplicationDetector, fpgrowthResults, fpgrowthResultsSubsumed);
+				String analytics = getAnalytics(styleSheet, refactoringResults, duplicationDetector, fpgrowthResults, fpgrowthResultsSubsumed);
 				
 				IOHelper.writeStringToFile(analytics + System.lineSeparator(), folderPath + "/analytics.txt" , true);
 								
@@ -293,13 +293,33 @@ public class CSSAnalyser {
 					
 	}
 	
-	private StyleSheet refactorGroupingOpportunities(final int MIN_SUPPORT, StyleSheet styleSheet, String folderName, List<ItemSetList> fpgrowthResults) {
+	private static class BatchGroupingRefactoringResult {
+		private final StyleSheet styleSheet;
+		private final int numberOfAppliedRefactorings;
+		private final int numberOfPositiveRefactorins;
+		public BatchGroupingRefactoringResult(StyleSheet styleSheet, int appliedRefactorings, int positiveRefactorins) {
+			this.styleSheet = styleSheet;
+			this.numberOfAppliedRefactorings = appliedRefactorings;
+			this.numberOfPositiveRefactorins = positiveRefactorins;
+		}
+		public StyleSheet getStyleSheet() {
+			return styleSheet;
+		}
+		public int getNumberOfAppliedRefactorings() {
+			return numberOfAppliedRefactorings;
+		}
+		public int getNumberOfPositiveRefactorins() {
+			return numberOfPositiveRefactorins;
+		}
+	}
+	
+	private BatchGroupingRefactoringResult refactorGroupingOpportunities(final int MIN_SUPPORT, StyleSheet styleSheet, String folderName, List<ItemSetList> fpgrowthResults) {
 		
 		return refactorGroupingOpportunities(MIN_SUPPORT, styleSheet, folderName, fpgrowthResults, null);
 		
 	}
 	
-	private StyleSheet refactorGroupingOpportunities(int MIN_SUPPORT, StyleSheet styleSheet, String folderName,	List<ItemSetList> fpgrowthResults, Document dom) {
+	private BatchGroupingRefactoringResult refactorGroupingOpportunities(int MIN_SUPPORT, StyleSheet styleSheet, String folderName,	List<ItemSetList> fpgrowthResults, Document dom) {
 
 		StyleSheet originalStyleSheet = styleSheet;
 				
@@ -329,13 +349,13 @@ public class CSSAnalyser {
 		
 		boolean firstRun = true;
 		int numberOfPositiveRefactorings = 0; 
-		
-		int i = 0;
+		int numberOfAppliedRefactorings = 0;
 		boolean refactoringWasPossible = true;
+		
 		while (true) {
 
 			if (refactoringWasPossible) {
-				i++;
+				numberOfAppliedRefactorings++;
 				itemSetsTreeSet.clear();
 				for (ItemSetList isl : fpgrowthResults) {
 					for (ItemSet is : isl) {
@@ -394,13 +414,13 @@ public class CSSAnalyser {
 				break;
 			
 
-			LOGGER.info("Applying round " + i + " of refactoring on " + originalStyleSheet.getFilePath() + " to reduce " + itemSetWithMaxImpact.getGroupingRefactoringImpact() + " characters.");
+			LOGGER.info("Applying round " + numberOfAppliedRefactorings + " of refactoring on " + originalStyleSheet.getFilePath() + " to reduce " + itemSetWithMaxImpact.getGroupingRefactoringImpact() + " characters.");
 			StyleSheet newStyleSheet = RefactorDuplications.groupingRefactoring(styleSheet, itemSetWithMaxImpact);
-			IOHelper.writeStringToFile(newStyleSheet.toString(), folderName + "/refactored" + i + ".css");
+			IOHelper.writeStringToFile(newStyleSheet.toString(), folderName + "/refactored" + numberOfAppliedRefactorings + ".css");
 
 			FluteCSSParser parser = new FluteCSSParser();
 			try {
-				newStyleSheet = parser.parseExternalCSS(folderName + "/refactored" + i + ".css");
+				newStyleSheet = parser.parseExternalCSS(folderName + "/refactored" + numberOfAppliedRefactorings + ".css");
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -411,9 +431,9 @@ public class CSSAnalyser {
 
 			if (differences.size() > 0 && !differences.allMissing()) {
 				
-				IOHelper.writeStringToFile(differences.toString(), folderName + "/dependency-differences" + i + ".txt");
+				IOHelper.writeStringToFile(differences.toString(), folderName + "/dependency-differences" + numberOfAppliedRefactorings + ".txt");
 				
-				LOGGER.info("Reordering needed at round " + i);
+				LOGGER.info("Reordering needed at round " + numberOfAppliedRefactorings);
 
 				RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
 				StyleSheet refactoredAndOrdered = r.refactorToSatisfyOverridingDependencies(newStyleSheet, originalDependencies); 
@@ -422,7 +442,7 @@ public class CSSAnalyser {
 
 					refactoringWasPossible = false;
 					listOfInfeasibleRefactorings.add(itemSetWithMaxImpact);
-					LOGGER.info("Reordering was not feasible, applying the next refactoring opportunity at round " + i);
+					LOGGER.info("Reordering was not feasible, applying the next refactoring opportunity at round " + numberOfAppliedRefactorings);
 					
 				} else {
 
@@ -430,19 +450,19 @@ public class CSSAnalyser {
 
 					CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(refactoredAndOrdered, dom); 
 
-					IOHelper.writeStringToFile(refactoredAndOrdered.toString(), folderName + "/refactored-reordered" + i + ".css");
+					IOHelper.writeStringToFile(refactoredAndOrdered.toString(), folderName + "/refactored-reordered" + numberOfAppliedRefactorings + ".css");
 
 					CSSValueOverridingDependencyList dependenciesReordered = dependencyDetector2.findOverridingDependancies();
 					differences = originalDependencies.getDifferencesWith(dependenciesReordered);
 					
 					if (differences.size() > 0) {
-						LOGGER.warn("Differences in dependencies after reordering " + i + "\n");  
+						LOGGER.warn("Differences in dependencies after reordering " + numberOfAppliedRefactorings + "\n");  
 						LOGGER.warn(differences.toString() + "\n");	
-						IOHelper.writeStringToFile(differences.toString(), folderName + "/dependency-differences-after-reordering" + i + ".txt");
+						IOHelper.writeStringToFile(differences.toString(), folderName + "/dependency-differences-after-reordering" + numberOfAppliedRefactorings + ".txt");
 					}
 					
 					try {
-						newStyleSheet = parser.parseExternalCSS(folderName + "/refactored-reordered" + i + ".css");
+						newStyleSheet = parser.parseExternalCSS(folderName + "/refactored-reordered" + numberOfAppliedRefactorings + ".css");
 					} catch (Exception ex) {
 						ex.printStackTrace();
 					}
@@ -453,8 +473,6 @@ public class CSSAnalyser {
 			
 			if (refactoringWasPossible) {
 				styleSheet = newStyleSheet;
-				styleSheet.numberOfAppliedRefactorigns = i;
-				styleSheet.numberOfPositiveRefactorings = numberOfPositiveRefactorings;
 				DuplicationDetector duplicationFinderRefacored = new DuplicationDetector(styleSheet);
 				duplicationFinderRefacored.findDuplications();
 				fpgrowthResults = duplicationFinderRefacored.fpGrowth(MIN_SUPPORT, false);
@@ -462,7 +480,8 @@ public class CSSAnalyser {
 			}
 		}
 		
-		return styleSheet;
+		
+		return new BatchGroupingRefactoringResult(styleSheet, numberOfAppliedRefactorings, numberOfPositiveRefactorings);
 		
 	}
 
@@ -490,10 +509,10 @@ public class CSSAnalyser {
 		return false;
 	}
 	
-	private String getAnalytics(StyleSheet styleSheet, StyleSheet refactored, DuplicationDetector finder, List<ItemSetList> dupResults, List<ItemSetList> dupResultsSubsumed) {
+	private String getAnalytics(StyleSheet styleSheet, BatchGroupingRefactoringResult refactoringResults, DuplicationDetector finder, List<ItemSetList> dupResults, List<ItemSetList> dupResultsSubsumed) {
 		
 		File originalCSSFile = new File(styleSheet.getFilePath() + ".analyse/formatted.css");
-		File refactoredCSSFile = new File(refactored.getFilePath());
+		File refactoredCSSFile = new File(refactoringResults.getStyleSheet().getFilePath());
 		
 		String fileName = (new File(styleSheet.getFilePath())).getName();
 		
@@ -537,8 +556,8 @@ public class CSSAnalyser {
 //		cloneSetTypesCount += typeToItemsMapper.get(1).size() + "\t" + typeToItemsMapper.get(2).size() + "\t" + typeToItemsMapper.get(3).size(); 
 //		IOHelper.writeStringToFile(cloneSetTypesCount, styleSheet.getFilePath() + ".analyse/clone types.txt");
 		
-		int conductedRefactorings = refactored.numberOfAppliedRefactorigns;
-		int numberOfPositiveRefactorings = refactored.numberOfPositiveRefactorings;
+		int conductedRefactorings = refactoringResults.getNumberOfAppliedRefactorings();
+		int numberOfPositiveRefactorings = refactoringResults.getNumberOfPositiveRefactorins();
 		
 		String cloneSetTypesCount = "Number of clone sets including type I to III instnaces: 1 2 3 12 13 23 123\r\n";
 		Map<Integer, List<Item>> typeToItemsMapper = finder.getItemsIncludingTypenstances();
