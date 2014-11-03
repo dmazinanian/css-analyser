@@ -1186,7 +1186,6 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 			/*
 			 * Copy, so if we are adding a real declaration, we don't want to
 			 * modify it. 
-			 * 
 			 */
 			declaration = declaration.clone();
 			if (declaration instanceof MultiValuedDeclaration) {
@@ -1259,6 +1258,15 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 		ShorthandDeclaration sd = new ShorthandDeclaration(property, values, parentSelector, offset, length, isImportant, true);
 		sd.isVirtual(isVirtual);
 		return sd;
+	}
+	
+	@Override
+	protected String getValuesString() {
+		if (!isVirtual)
+			return super.getValuesString();
+		else {
+			return "VIRTUAL";
+		}
 	}
 
 }

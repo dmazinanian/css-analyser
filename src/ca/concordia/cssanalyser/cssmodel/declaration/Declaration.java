@@ -1,6 +1,8 @@
 package ca.concordia.cssanalyser.cssmodel.declaration;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
@@ -287,5 +289,22 @@ public abstract class Declaration implements Cloneable {
 	public abstract Declaration clone();		
 	
 	public abstract String toString();
+	
+	/**
+	 * Returns a map which maps every style property to a list of declaration values.
+	 * In the case of single-valued declarations, it returns a map with one mapping: property -> the only value.
+	 * In the case of multi-values declarations, it maps every style property to a list.
+	 * Each member of the list represents one layer (in multi-layered, comma-separated values).
+	 * This list will have one item, if the property is not comma-separated.
+	 * Each of the items of this list will be a collection of values, corresponding to the
+	 * given property name.
+	 * for instance, for property <code>font: bold 10pt Tahoma, Arial</code>,
+	 * calling this method like <code>getPropertyToValuesMap("font-familty")</code> will
+	 * return a list with one item, which is a collection containing "Tahoma" and "Arial".
+	 * @return
+	 */
+	public abstract Map<String, ?> getPropertyToValuesMap();
+
+	public abstract Collection<String> getStyleProperties();
 	
 }

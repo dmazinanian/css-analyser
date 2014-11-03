@@ -518,6 +518,17 @@ public class MultiValuedDeclaration extends Declaration {
 	
 	@Override
 	public String toString() {
+		String toReturn = getValuesString();
+		
+		return String.format("%s: %s", property, toReturn);
+	}
+
+	/**
+	 * Returns the string corresponding to the values
+	 * @return
+	 */
+	protected String getValuesString() {
+		
 		StringBuilder valueString = new StringBuilder("");
 		for (int i = 0; i < declarationValues.size(); i++) {
 			DeclarationValue v = declarationValues.get(i);
@@ -538,11 +549,7 @@ public class MultiValuedDeclaration extends Declaration {
 			valueString.append(v + (addSpace ? " " : ""));
 		}
 		
-		String toReturn = valueString.toString();
-		if (toReturn.length() > 0)
-			toReturn = toReturn.substring(0, toReturn.length() - 1);
-		
-		return String.format("%s: %s", property, toReturn);
+		return valueString.toString().trim();
 	}
 
 	int hashCode = -1;
@@ -721,6 +728,72 @@ public class MultiValuedDeclaration extends Declaration {
 		
 		return true;
 		
+	}
+	
+	/**
+	 * Returns all the style properties possible for the values of this multi-valued declaration
+	 * @return
+	 */
+	@Override
+	public Collection<String> getStyleProperties() {
+		Set<String> toReturn = new HashSet<>();
+		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet())
+			toReturn.add(propertyAndLayer.getPropertyName());
+		return toReturn;
+	}
+	
+	/**
+	 * Returns a Collection of DeclarationValue's for the given property.
+	 * For the multi-valued properties, it returns the values corresponding to the first layer.
+	 * Returns null if such a DeclarationValue is not found.
+	 * @param styleProperty
+	 * @return
+	 */
+	public Collection<DeclarationValue> getDeclarationValuesForStyleProperty(String styleProperty) {
+		return getDeclarationValuesForStyleProperty(styleProperty, 1);
+	}
+	
+	/**
+	 * Returns a Collection of DeclarationValue's for the given property, in the given layer.
+	 * Returns null if such a DeclarationValue is not found. 
+	 * @param styleProperty
+	 * @return
+	 */
+	public Collection<DeclarationValue> getDeclarationValuesForStyleProperty(String styleProperty, int forLayer) {
+		return stylePropertyToDeclarationValueMap.get(new PropertyAndLayer(styleProperty, forLayer));
+	}
+
+	@Override
+	public Map<String, List<Collection<DeclarationValue>>> getPropertyToValuesMap() {
+		
+		//Map<Integer, List<PropertyAndLayer>> layerToPropertyMapper = getLayerToPropertyAndLayerMap();
+		
+		Map<String, List<Collection<DeclarationValue>>> toReturn = new HashMap<>();
+		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet()) {
+			Collection<DeclarationValue> values = stylePropertyToDeclarationValueMap.get(propertyAndLayer);
+			List<Collection<DeclarationValue>> declarationValues = toReturn.get(propertyAndLayer.getPropertyName());
+			if (declarationValues == null) {
+				declarationValues = new ArrayList<Collection<DeclarationValue>>();
+				toReturn.put(propertyAndLayer.getPropertyName(), declarationValues);
+			}
+			declarationValues.set(propertyAndLayer.propertyLayer - 1, values);
+		}
+		return toReturn;
+		
+	}
+
+	protected Map<Integer, List<PropertyAndLayer>> getLayerToPropertyAndLayerMap() {
+		Map<Integer, List<PropertyAndLayer>> layerToPropertyMapper = new HashMap<>();
+		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet()) {
+			List<PropertyAndLayer> currentList = layerToPropertyMapper.get(propertyAndLayer.getPropertyLayer());
+			if (currentList == null) {
+				currentList = new ArrayList<>();	
+				layerToPropertyMapper.put(propertyAndLayer.getPropertyLayer(), currentList);
+			}
+			
+			currentList.add(propertyAndLayer);
+		}
+		return layerToPropertyMapper;
 	}
 	
 

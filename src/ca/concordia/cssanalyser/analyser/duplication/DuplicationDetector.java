@@ -22,7 +22,6 @@ import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
-import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
@@ -255,9 +254,9 @@ public class DuplicationDetector {
 							 * Well, well, when we add individual declarations to a virtual shorthand, it does not add the real values to the
 							 * virtual shorthand declaration itself. Indeed it is difficult to get values from individual shorthand declarations.
 							 */
-							
-							for (DeclarationValue v : checkingShorthandDeclaration.getValues())
-								virtualShorthand.getValues().add(v.clone());
+													
+							//for (DeclarationValue v : checkingShorthandDeclaration.getValues())
+							//	virtualShorthand.getValues().add(v.clone());
 
 							// For apriori and FP-Growth
 							Item item = declarationItemMap.get(checkingDeclaration);

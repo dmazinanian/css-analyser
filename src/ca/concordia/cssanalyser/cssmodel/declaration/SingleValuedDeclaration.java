@@ -1,5 +1,11 @@
 package ca.concordia.cssanalyser.cssmodel.declaration;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
@@ -109,6 +115,20 @@ public class SingleValuedDeclaration extends Declaration {
 		} else if (!declarationValue.equals(other.declarationValue))
 			return false;
 		return true;
+	}
+
+	@Override
+	public Map<String, DeclarationValue> getPropertyToValuesMap() {
+		Map<String, DeclarationValue> toReturn = new HashMap<>();
+		toReturn.put(property, declarationValue);
+		return toReturn;
+	}
+	
+	@Override
+	public Collection<String> getStyleProperties() {
+		Set<String> toReturn = new HashSet<>();
+		toReturn.add(property);
+		return toReturn;
 	}
 
 	

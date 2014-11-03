@@ -25,6 +25,7 @@ import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.dom.DOMHelper;
@@ -339,7 +340,31 @@ public class CSSAnalyser {
 				for (ItemSetList isl : fpgrowthResults) {
 					for (ItemSet is : isl) {
 						if (is.getGroupingRefactoringImpact() > 0) {
-							itemSetsTreeSet.add(is);
+							/*
+							 *  If a shorthand declaration is virtual in all its selectors in an item of the itemset,
+							 *  the itemset cannot be used for the refactoring.
+							 *  It should be real in at least one of the selectors in the current itemset's support.
+							 */
+							boolean itemSetIsDoable = true;
+							for (Item currentItem : is) {
+								boolean declarationIsNotVirtualInAllSelectors = false;
+								for (Declaration declaration : currentItem) {
+									if (declaration instanceof ShorthandDeclaration) {
+										ShorthandDeclaration shorthand = (ShorthandDeclaration)declaration;
+										if (is.getSupport().contains(shorthand.getSelector()) && !shorthand.isVirtual()) {
+											declarationIsNotVirtualInAllSelectors = true;
+											break;
+										}
+									}
+								}
+								if (!declarationIsNotVirtualInAllSelectors) {
+									itemSetIsDoable = false;
+									break;
+								}
+							}
+							
+							if (itemSetIsDoable)
+								itemSetsTreeSet.add(is);
 						}
 					}
 				}
