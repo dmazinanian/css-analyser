@@ -543,7 +543,7 @@ public class CSSAnalyser {
 		
 		IOHelper.writeStringToFile("\n\nNumber of all possible refactoring opportunities " + numberOfRefactoringOpportunities, styleSheet.getFilePath() + ".analyse/fpgrowth.txt", true);
 			
-		int numberOfSelectors = styleSheet.getAllSelectors().size();
+		int numberOfSelectors = styleSheet.getNumberOfSelectors();
 		int numberOfAtomicSelectors = styleSheet.getAllBaseSelectors().size();
 		int numberOfDeclarations = styleSheet.getAllDeclarations().size();
 		int numberOfGroupedSelectors = 0;
