@@ -272,6 +272,7 @@ public class StyleSheet {
 	public void removeSelectors(List<Selector> selectorsToBeRemoved) {
 		for (Selector s : selectorsToBeRemoved)
 			selectors.remove(s);
+		// Update the numbers associated with every declaration
 		int i = 1;
 		for (Selector s : selectors.keySet())
 			selectors.put(s, i++);

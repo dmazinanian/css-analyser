@@ -14,7 +14,7 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 /**
  * The representation of a single CSS declaration which consists of a
  * a property (as a String).
- * Values will be there in the subclasses, depending on the numbr of values (as {@link DeclarationValue}s. 
+ * Values will be there in the subclasses, depending on the number of values (as {@link DeclarationValue}s. 
  * 
  * @author Davood Mazinanian
  *

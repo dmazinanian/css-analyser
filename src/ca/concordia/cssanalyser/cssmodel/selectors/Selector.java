@@ -163,6 +163,10 @@ public abstract class Selector  {
 	public void removeDeclaration(Declaration declaration) {
 		declaration.setSelector(null);
 		this.declarations.remove(declaration);
+		// Update the numbers associated with declarations
+		int i = 0;
+		for (Declaration d : declarations.keySet())
+			declarations.put(d, i++);
 	}
 
 	/**
