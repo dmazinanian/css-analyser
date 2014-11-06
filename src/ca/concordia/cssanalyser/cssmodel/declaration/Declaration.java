@@ -309,4 +309,8 @@ public abstract class Declaration implements Cloneable {
 
 	public abstract Collection<String> getStyleProperties();
 	
+	public int getDeclarationNumber() {
+		return this.parentSelector.getDeclarationNumber(this);
+	}
+	
 }

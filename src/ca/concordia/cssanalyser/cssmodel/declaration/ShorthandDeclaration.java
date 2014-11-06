@@ -1268,5 +1268,18 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 			return "VIRTUAL";
 		}
 	}
+	
+	@Override
+	public int getDeclarationNumber() {
+		if (this.isVirtual) {
+			// Get the mean of the numbers of individual declarations
+			int sum = 0;
+			for (Declaration individual : individualDeclarations.values())
+				sum += individual.getDeclarationNumber();
+
+			return (int)Math.floor((float)sum / this.individualDeclarations.values().size());
+		}
+		return super.getDeclarationNumber();
+	}
 
 }

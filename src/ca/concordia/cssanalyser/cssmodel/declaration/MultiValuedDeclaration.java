@@ -795,7 +795,5 @@ public class MultiValuedDeclaration extends Declaration {
 		}
 		return layerToPropertyMapper;
 	}
-	
-
 	 
 }
