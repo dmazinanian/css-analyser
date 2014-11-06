@@ -38,7 +38,9 @@ public class PreprocessorRefactoringOpportunitiesDetector {
 				List<Declaration> duplicatedDeclarations = itemSet.getRepresentativeDeclarations();
 				
 				// A Mixin refactoring opportunity also needs the selectors involved in the duplication
-				List<Selector> itemSetSelectors = new ArrayList<>(itemSet.getSupport());
+				List<Selector> itemSetSelectors = new ArrayList<>();
+				for (Selector s : itemSet.getSupport())
+					itemSetSelectors.add(s);
 				
 				List<DeclarationValueDifference> differentDeclarations = new ArrayList<>();
 				

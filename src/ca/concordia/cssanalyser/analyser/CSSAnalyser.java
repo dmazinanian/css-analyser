@@ -371,7 +371,7 @@ public class CSSAnalyser {
 								for (Declaration declaration : currentItem) {
 									if (declaration instanceof ShorthandDeclaration) {
 										ShorthandDeclaration shorthand = (ShorthandDeclaration)declaration;
-										if (is.getSupport().contains(shorthand.getSelector()) && !shorthand.isVirtual()) {
+										if (is.supportContains(shorthand.getSelector()) && !shorthand.isVirtual()) {
 											declarationIsNotVirtualInAllSelectors = true;
 											break;
 										}
@@ -489,7 +489,7 @@ public class CSSAnalyser {
 	private boolean containsItemSet(List<ItemSet> listOfItemSetsToCheck, ItemSet itemSet) {
 		boolean itemSetFound = true;
 		for (ItemSet is : listOfItemSetsToCheck) {
-			if (is.size() == itemSet.size() && is.getSupport().size() == itemSet.getSupport().size()) {
+			if (is.size() == itemSet.size() && is.getSupportSize() == itemSet.getSupportSize()) {
 				for (Item i : is) {
 					boolean itemFound = false;
 					for (Item j : itemSet) {

@@ -8,11 +8,13 @@ import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
 /**
- * 
+ * An item contains a set of equal or equivalent declarations.
+ * The set of selectors corresponding to these declarations is called the support of this item.
  * @author Davood Mazinanian
  *
  */
@@ -29,6 +31,7 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	private final Set<Selector> support;
 	private ItemSet paretnItemSet;
 	private Set<Integer> duplicationTypes = new HashSet<>();
+	private Iterable<MediaQueryList> mediaQueryLists;
 	
 	/**
 	 * Creates an empty Item
@@ -45,8 +48,7 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	 */
 	public Item(Declaration declaration) {
 		this();
-		declarations.add(declaration);
-		support.add(declaration.getSelector());
+		add(declaration);
 	}
 	
 	/**
@@ -55,38 +57,43 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	 * @param declarations
 	 */
 	public Item(Set<Declaration> declarations) {
-		this.declarations = declarations;
-		support = new HashSet<>();
+		this();
 		for (Declaration d : declarations)
-			support.add(d.getSelector());
+			add(d);
 	}
 	
 	@Override
 	public boolean add(Declaration e) {
-		return add(e, false);
-	}
-	
-	public boolean add(Declaration e, boolean isVirtual) {
-		if (isVirtual)
-			virtualDeclarations.add(e);
+		if (e instanceof ShorthandDeclaration) {
+			if (((ShorthandDeclaration)e).isVirtual())
+				virtualDeclarations.add(e);
+		}
 		boolean supportsChanged = support.add(e.getSelector());
 		boolean declarationsChanged = declarations.add(e);
-		if (paretnItemSet != null && supportsChanged)
-			paretnItemSet.rebuildSupport();
+		if (supportsChanged) {
+			if (support.size() == 1)
+				this.mediaQueryLists = e.getSelector().getMediaQueryLists();
+			if (paretnItemSet != null)
+				paretnItemSet.rebuildSupport();
+		}
 		return declarationsChanged;
 	}
+	
 
 	@Override
 	public boolean addAll(Collection<? extends Declaration> c) {
-		for (Declaration d : c)
-			support.add(d.getSelector());
-		return declarations.addAll(c);
+		boolean changed = false;
+		for (Declaration d : declarations)
+			if (add(d))
+				changed = true;
+		return changed;
 	}
 
 	@Override
 	public void clear() {
 		declarations.clear();
 		support.clear();
+		mediaQueryLists = null;
 	}
 
 	@Override
@@ -111,32 +118,35 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 
 	@Override
 	public boolean remove(Object o) {
-		if (o instanceof Declaration)
-		{
+		if (o instanceof Declaration) {
 			Declaration d = (Declaration) o;
 			support.remove(d.getSelector());
 		}
-		rebuildSupport();
+		if (support.isEmpty())
+			mediaQueryLists = null;
 		return declarations.remove(o);
-	}
-
-	private void rebuildSupport() {
-		for (Declaration d : declarations) {
-			support.add(d.getSelector());
-		}
 	}
 
 	@Override
 	public boolean removeAll(Collection<?> c) {
-		boolean changed = declarations.removeAll(c);
-		rebuildSupport();
+		boolean changed = false;
+		for (Object o : c)
+			if (remove(o))
+				changed = true;
 		return changed;
 	}
 
 	@Override
 	public boolean retainAll(Collection<?> c) {
 		boolean changed = retainAll(c);
-		rebuildSupport();
+		if (changed) {
+			support.clear();
+			for (Declaration d : declarations) {
+				support.add(d.getSelector());
+			}
+			if (support.isEmpty())
+				mediaQueryLists = null;
+		}
 		return changed;
 	}
 
@@ -184,10 +194,10 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	
 	@Override
 	protected Item clone() {
-		return new Item(new HashSet<Declaration>(declarations));
+		return new Item(declarations);
 	}
 	
-	public Set<Selector> getSupport() {
+	public Iterable<Selector> getSupport() {
 		return support;
 	}
 
@@ -244,8 +254,8 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	 */
 	@Override
 	public int compareTo(Item otherItem) {
-		if (this.getSupport().size() != otherItem.getSupport().size()) {
-			return Integer.compare(this.getSupport().size(), otherItem.getSupport().size());
+		if (this.support.size() != otherItem.support.size()) {
+			return Integer.compare(this.support.size(), otherItem.support.size());
 		} else {
 			/* 
 			 * If two Items have the same support count,
@@ -287,7 +297,15 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	}
 	
 	public Set<Integer> getDuplicationTypes() {
-		return this.duplicationTypes;
+		return new HashSet<>(this.duplicationTypes);
+	}
+	
+	public Iterable<MediaQueryList> getMediaQueryLists() {
+		return this.mediaQueryLists;
+	}
+
+	public int getSupportSize() {
+		return this.support.size();
 	}
 	
 }

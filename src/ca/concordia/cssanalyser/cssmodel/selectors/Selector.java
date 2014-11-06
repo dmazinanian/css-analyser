@@ -113,10 +113,6 @@ public abstract class Selector  {
 	public void setColumnNumber(int fileColumnNumber) {
 		columnNumber = fileColumnNumber;
 	}
-
-	public Set<MediaQueryList> getMediaQueryLists() {
-		return mediaQueryLists;
-	}
 	
 	public int getDeclarationNumber(Declaration declaration) {
 		return declarations.get(declaration);
@@ -188,7 +184,7 @@ public abstract class Selector  {
 		mediaQueryLists.remove(mediaQueryList);
 	}
 	
-	public Iterable<MediaQueryList> mediaQueryLists() {
+	public Set<MediaQueryList> getMediaQueryLists() {
 		return mediaQueryLists;
 	}
 

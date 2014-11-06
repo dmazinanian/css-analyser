@@ -259,7 +259,7 @@ public class DuplicationDetector {
 							// For apriori and FP-Growth
 							Item item = declarationItemMap.get(checkingDeclaration);
 
-							item.add(virtualShorthand, true);
+							item.add(virtualShorthand);
 
 							item.addDuplicationType(3);
 
@@ -409,7 +409,7 @@ public class DuplicationDetector {
 			TreeSet<Item> currentItems = new TreeSet<>();
 			for (Declaration d : s.getDeclarations()) {
 				Item item = declarationItemMap.get(d);
-				if (item.getSupport().size() >= minSupport) {
+				if (item.getSupportSize() >= minSupport) {
 					currentItems.add(item);
 				}
 			}

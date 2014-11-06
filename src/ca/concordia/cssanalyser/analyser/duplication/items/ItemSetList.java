@@ -25,7 +25,7 @@ public class ItemSetList implements Set<ItemSet> {
 	private final Set<ItemSet> itemsets;
 	private int maximumSupport = 0;
 	// Keep track of all itemsets with similar support
-	private Map<Set<Selector>, Set<ItemSet>> supportItemSetMap = new HashMap<>();
+	private Map<Iterable<Selector>, Set<ItemSet>> supportItemSetMap = new HashMap<>();
 
 	public ItemSetList() {
 		itemsets = new LinkedHashSet<>();
@@ -33,21 +33,21 @@ public class ItemSetList implements Set<ItemSet> {
 
 	@Override
 	public boolean add(ItemSet itemSet) {
-		if (itemSet.getSupport().size() > maximumSupport)
-			maximumSupport = itemSet.getSupport().size();
+		if (itemSet.getSupportSize() > maximumSupport)
+			maximumSupport = itemSet.getSupportSize();
 		addtoSupportItemSetsMap(itemSet);
 		itemSet.setParentItemSetList(this);
 		return itemsets.add(itemSet);
 	}
-
-	public boolean add(Set<Item> itemsSet, Set<Selector> supportSelectors) {
-		if (supportSelectors.size() > maximumSupport)
-			maximumSupport = supportSelectors.size();
-		ItemSet newItemSet = new ItemSet(itemsSet, supportSelectors);
-		addtoSupportItemSetsMap(newItemSet);
-		newItemSet.setParentItemSetList(this);
-		return itemsets.add(newItemSet);
-	}
+//
+//	public boolean add(Set<Item> itemsSet, Set<Selector> supportSelectors) {
+//		if (supportSelectors.size() > maximumSupport)
+//			maximumSupport = supportSelectors.size();
+//		ItemSet newItemSet = new ItemSet(itemsSet, supportSelectors);
+//		addtoSupportItemSetsMap(newItemSet);
+//		newItemSet.setParentItemSetList(this);
+//		return itemsets.add(newItemSet);
+//	}
 
 	@Override
 	public int size() {
@@ -70,7 +70,7 @@ public class ItemSetList implements Set<ItemSet> {
 			set.delete(set.length() - 2, set.length()).append("}");
 
 			sets.append(set);
-			sets.append(", " + itemSetAndSupport.getSupport().size() + " : ");
+			sets.append(", " + itemSetAndSupport.getSupportSize() + " : ");
 
 			// for (Selector s : itemSetAndSupport.getSupport())
 			// sets.append(s + ", ");
@@ -105,8 +105,8 @@ public class ItemSetList implements Set<ItemSet> {
 		boolean changed = itemsets.addAll(c);
 		if (changed) {
 			for (ItemSet newItemSet : c) {
-				if (maximumSupport < newItemSet.getSupport().size())
-					maximumSupport = newItemSet.getSupport().size();
+				if (maximumSupport < newItemSet.getSupportSize())
+					maximumSupport = newItemSet.getSupportSize();
 				addtoSupportItemSetsMap(newItemSet);
 			}
 		}
@@ -153,7 +153,7 @@ public class ItemSetList implements Set<ItemSet> {
 		boolean changed = itemsets.remove(o);
 		if (changed) {
 			removeFromSupportItemSetsMap((ItemSet) o);
-			if (((ItemSet) o).getSupport().size() == maximumSupport)
+			if (((ItemSet) o).getSupportSize() == maximumSupport)
 				calculateMaxSupport();
 		}
 		return changed;
@@ -189,8 +189,8 @@ public class ItemSetList implements Set<ItemSet> {
 	void calculateMaxSupport() {
 		maximumSupport = 0;
 		for (ItemSet itemset : itemsets)
-			if (maximumSupport < itemset.getSupport().size())
-				maximumSupport = itemset.getSupport().size();
+			if (maximumSupport < itemset.getSupportSize())
+				maximumSupport = itemset.getSupportSize();
 	}
 
 	@Override

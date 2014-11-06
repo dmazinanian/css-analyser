@@ -38,7 +38,7 @@ public class LessRefactoringOpportunitiesDetector {
 				for (Declaration d : s.getDeclarations()) {
 					String property = d.getProperty();
 					Item item = duplicatedProperties.get(property);
-					if (item.getSupport().size() >= minSupport) {
+					if (item.getSupportSize() >= minSupport) {
 						currentItems.add(item);
 					}
 				}

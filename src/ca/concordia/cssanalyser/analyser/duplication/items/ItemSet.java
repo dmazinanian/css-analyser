@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
@@ -34,18 +34,20 @@ public class ItemSet implements Set<Item>, Cloneable {
 	private ItemSetList parentItemSetList;
 	// Store refactoring impact, so don't compute it again
 	protected int refactoringImpact = -1;
+	protected Iterable<MediaQueryList> mediaQueryLists;
 	
 	public ItemSet() {
-		itemset = new LinkedHashSet<>();
-		support = new LinkedHashSet<>();
+		itemset = new HashSet<>();
+		support = new HashSet<>();
 	} 
 	
-	public ItemSet(Set<Item> declarations, Set<Selector> support) {
-		itemset = declarations;
-		this.support = support;
+	public ItemSet(Set<Item> items) {
+		this();
+		for (Item item : items)
+			add(item);
 	}
 	
-	public Set<Selector> getSupport() {
+	public Iterable<Selector> getSupport() {
 		return support;
 	}
 	
@@ -72,7 +74,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 	
 	@Override
 	public ItemSet clone() {
-		return new ItemSet(new HashSet<Item>(itemset), new HashSet<Selector>(support));
+		return new ItemSet(itemset);
 	}
 	
 	@Override
@@ -98,10 +100,13 @@ public class ItemSet implements Set<Item>, Cloneable {
 		boolean supportChanged = false;
 		if (itemsChanged) {
 			if (itemset.size() == 1) {
-				supportChanged = support.addAll(e.getSupport());
+				supportChanged = true;
+				for (Selector s : e.getSupport())
+					support.add(s);
+				mediaQueryLists = e.getMediaQueryLists();
 			}
 			else
-				supportChanged = support.retainAll(e.getSupport());
+				supportChanged = support.retainAll((Collection<Selector>)e.getSupport());
 			refactoringImpact = -1;
 		}
 		e.setParentItemSet(this);
@@ -126,6 +131,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 		itemset.clear();
 		support.clear();
 		refactoringImpact = -1;
+		mediaQueryLists = null;
 	}
 
 	@Override
@@ -166,13 +172,16 @@ public class ItemSet implements Set<Item>, Cloneable {
 		support.clear();
 		boolean mustUnion = true;
 		for (Item i : itemset) {
+			Collection<Selector> selectors = (Collection<Selector>)i.getSupport();
 			if (mustUnion) {
-				support.addAll(i.getSupport());
+				support.addAll(selectors);
 				mustUnion = false;
 			} else {
-				support.retainAll(i.getSupport());
+				support.retainAll(selectors);
 			}
 		}
+		if (itemset.size() == 0)
+			mediaQueryLists = null;
 	}
 
 	@Override
@@ -257,7 +266,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 		for (Item item : this.itemset) {
 			for (Declaration declaration : item){
 				// The declaration must be in the involving selectors in this refactoring opportunity
-				if (this.getSupport().contains(declaration.getSelector()))
+				if (this.support.contains(declaration.getSelector()))
 				{		
 					if (declaration instanceof ShorthandDeclaration) {
 						ShorthandDeclaration shorthand = (ShorthandDeclaration)declaration;
@@ -290,5 +299,17 @@ public class ItemSet implements Set<Item>, Cloneable {
 			declarations.add(item.getFirstDeclaration());
 		}
 		return declarations;
+	}
+
+	public Iterable<MediaQueryList> getMediaQueryLists() {
+		return this.mediaQueryLists;
+	}
+
+	public boolean supportContains(Selector selector) {
+		return support.contains(selector);
+	}
+
+	public int getSupportSize() {
+		return support.size();
 	}
 }

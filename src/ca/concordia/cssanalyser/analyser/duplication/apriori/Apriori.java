@@ -80,7 +80,7 @@ public class Apriori {
 					/*
 					 * Also, L(k) should not contain this new itemset.
 					 */
-					if (newItemSet.getSupport().size() >= minSupport && !toReturn.contains(newItemSet)) {		
+					if (newItemSet.getSupportSize() >= minSupport && !toReturn.contains(newItemSet)) {		
 							toReturn.add(newItemSet.clone()); 
 					} 
 				}
@@ -93,7 +93,7 @@ public class Apriori {
 		
 		ItemSetList Lk = new ItemSetList();
 		for (ItemSet itemset : itemSetList) {
-			if (itemset.getSupport().size() >= minSupportCount) {
+			if (itemset.getSupportSize() >= minSupportCount) {
 				Lk.add(itemset);
 			}
 		}

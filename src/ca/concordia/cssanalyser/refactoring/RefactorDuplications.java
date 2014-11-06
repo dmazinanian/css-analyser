@@ -41,7 +41,7 @@ public class RefactorDuplications {
 			}
 		}
 		// Add the media queries to the new grouping selector
-		newGroupingSelector.addMediaQueryLists(itemset.getSupport().iterator().next().mediaQueryLists());
+		newGroupingSelector.addMediaQueryLists(itemset.getMediaQueryLists());
 		
 		// Add declarations to this new grouping selector
 		// Have a place to mark declarations to be removed from the original selector
@@ -53,7 +53,7 @@ public class RefactorDuplications {
 			
 			//Mark declarations to be deleted from the original StyleSheet
 			for (Declaration currentDeclaration : currentItem) {
-				if (itemset.getSupport().contains(currentDeclaration.getSelector())) {
+				if (itemset.supportContains(currentDeclaration.getSelector())) {
 					if (currentDeclaration instanceof ShorthandDeclaration && ((ShorthandDeclaration)currentDeclaration).isVirtual()) {
 						for (Declaration individual : ((ShorthandDeclaration)currentDeclaration).getIndividualDeclarations())
 							declarationsToBeRemoved.add(individual);
