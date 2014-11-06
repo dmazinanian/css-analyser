@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.NotImplementedException;
+
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationEquivalentValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
@@ -387,6 +389,16 @@ public class MultiValuedDeclaration extends Declaration {
 				}
 				break;
 			}
+			
+			case "font-family": {
+				for (DeclarationValue value : declarationValues) {
+					assignStylePropertyToValue("font-family", 1, value, true);
+				}
+				break;
+			}
+			
+			default:
+				throw new NotImplementedException("Shorthand property " + property + " not handled.");
 					
 		}
 		
