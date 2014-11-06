@@ -25,8 +25,12 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		listOfBaseSelectors = new LinkedHashSet<>();
 	}
 
-	public Set<BaseSelector> getBaseSelectors() {
+	public Iterable<BaseSelector> getBaseSelectors() {
 		return listOfBaseSelectors;
+	}
+	
+	public int getBaseSelectorsSize() {
+		return listOfBaseSelectors.size();
 	}
 
 	@Override
