@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 import ca.concordia.cssanalyser.analyser.duplication.TypeFourDuplicationInstance.TypeIVBDuplication;
@@ -19,6 +18,7 @@ import ca.concordia.cssanalyser.analyser.duplication.fpgrowth.FPGrowth;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
@@ -35,7 +35,7 @@ import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
  */
 public class DuplicationDetector {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(DuplicationDetector.class);
+	private static Logger LOGGER = FileLogger.getLogger(DuplicationDetector.class);
 
 
 	private StyleSheet stylesheet;
@@ -419,7 +419,7 @@ public class DuplicationDetector {
 		List<ItemSetList> results = fpGrowth.mine(itemSets, minSupport);
 		long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 		long time = (end - start) / 1000000L;
-		LOGGER.info("Done FP-Growth in " + time);
+		LOGGER.info("Done FP-Growth in " + time + " ms");
 		
 		return results;
 	}

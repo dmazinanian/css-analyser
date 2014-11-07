@@ -14,8 +14,8 @@ import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.io.IOHelper;
 
 import com.crawljax.browser.EmbeddedBrowser;
@@ -33,7 +33,7 @@ import com.crawljax.core.state.StateVertex;
  */
 public class CSSCatcher implements OnNewStatePlugin, GeneratesOutput {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(CSSCatcher.class);
+	private static final Logger LOGGER = FileLogger.getLogger(CSSCatcher.class);
 
 	private final Set<String> cssHrefs;
 	private String outputPatch = "";

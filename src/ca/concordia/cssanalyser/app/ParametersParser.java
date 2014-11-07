@@ -21,7 +21,7 @@ import ca.concordia.cssanalyser.io.IOHelper;
  */
 class ParametersParser {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(ParametersParser.class);
+	private static Logger LOGGER = FileLogger.getLogger(ParametersParser.class);
 	
 	private Map<String, String> params;
 

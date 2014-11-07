@@ -4,13 +4,12 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
 
-
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.css.sac.InputSource;
 import org.w3c.css.sac.Parser;
 import org.w3c.css.sac.helpers.ParserFactory;
 
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.parser.ParseException;
@@ -22,7 +21,7 @@ public class FluteCSSParser implements CSSParser {
 
 	private Parser parser;
 	
-	private Logger LOGGER = LoggerFactory.getLogger(FluteCSSParser.class);
+	private Logger LOGGER = FileLogger.getLogger(FluteCSSParser.class);
 	
 	static {
 		System.setProperty("org.w3c.css.sac.parser", "org.w3c.flute.parser.Parser");

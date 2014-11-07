@@ -17,7 +17,7 @@ import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 
 public class FPGrowth {
 	
-	//private static Logger LOGGER = LoggerFactory.getLogger(FPGrowth.class);
+	//private static Logger LOGGER = FileLogger.getLogger(FPGrowth.class);
 	
 	private final Map<Integer, ItemSetList> resultItemSetLists;
 	private final boolean removeSubsets;

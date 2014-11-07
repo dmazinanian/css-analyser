@@ -29,7 +29,7 @@ import ca.concordia.cssanalyser.parser.ParseException;
 
 public class CSSAnalyserCLI {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(CSSAnalyserCLI.class);
+	private static Logger LOGGER = FileLogger.getLogger(CSSAnalyserCLI.class);
 
 	public static void main(String[] args) throws IOException {
 		

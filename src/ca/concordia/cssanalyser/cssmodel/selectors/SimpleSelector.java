@@ -8,10 +8,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
 import ca.concordia.cssanalyser.dom.DOMHelper;
@@ -36,7 +36,7 @@ public class SimpleSelector extends BaseSelector {
 	private List<PseudoClass> pseudoClasses;
 	private List<PseudoElement> pseudoElements;
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleSelector.class);
+	private static final Logger LOGGER = FileLogger.getLogger(SimpleSelector.class);
 
 	public SimpleSelector() {
 		this(null);

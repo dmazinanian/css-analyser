@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.css.sac.CSSException;
 import org.w3c.css.sac.Condition;
 import org.w3c.css.sac.ConditionalSelector;
@@ -40,6 +39,7 @@ import org.w3c.flute.parser.selectors.PseudoClassConditionImpl;
 import org.w3c.flute.parser.selectors.PseudoElementCondition;
 import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
 
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.csshelper.ColorHelper;
 import ca.concordia.cssanalyser.csshelper.NamedColorsHelper;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
@@ -68,7 +68,7 @@ import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorConditionT
 
 public class CSSDocumentHandler implements DocumentHandler {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(CSSDocumentHandler.class);
+	private static final Logger LOGGER = FileLogger.getLogger(CSSDocumentHandler.class);
 
 	private Selector currentSelector;
 	private Set<MediaQueryList> currentMediaQueryLists;

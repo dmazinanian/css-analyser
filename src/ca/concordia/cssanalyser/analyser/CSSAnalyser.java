@@ -14,7 +14,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 import ca.concordia.cssanalyser.analyser.duplication.DuplicationDetector;
@@ -23,6 +22,7 @@ import ca.concordia.cssanalyser.analyser.duplication.DuplicationInstance;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
@@ -45,7 +45,8 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDepen
  */
 public class CSSAnalyser {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(CSSAnalyser.class);
+	private static final Logger LOGGER = FileLogger.getLogger(CSSAnalyser.class);
+
 	
 	private final Model model;
 	private boolean doApriori = false;
@@ -64,6 +65,8 @@ public class CSSAnalyser {
 	 * @throws FileNotFoundException Could not find the given directory or css file.
 	 */
 	public CSSAnalyser(String domStateHTMLPath, String cssContainingFolderOrFilePath) throws FileNotFoundException {
+		
+		FileLogger.addFileAppender(cssContainingFolderOrFilePath + "/log.log", false);
 		
 		if (!IOHelper.exists(cssContainingFolderOrFilePath))
 			throw new FileNotFoundException("Folder not found: " + cssContainingFolderOrFilePath);

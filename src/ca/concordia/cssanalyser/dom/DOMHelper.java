@@ -12,15 +12,15 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.io.IOHelper;
 
 public final class DOMHelper {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(DOMHelper.class);
+	private static final Logger LOGGER = FileLogger.getLogger(DOMHelper.class);
 		
 	/**
 	 * Reads all the HTML files (with extension .html) in the given folder.

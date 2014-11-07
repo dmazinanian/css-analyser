@@ -10,12 +10,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import ca.concordia.cssanalyser.app.FileLogger;
 
 
 public final class IOHelper {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(IOHelper.class);
+	private static final Logger LOGGER = FileLogger.getLogger(IOHelper.class);
 
 	public static List<File> searchForFiles(String folderPath,
 			String withExtension) {
