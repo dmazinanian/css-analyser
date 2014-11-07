@@ -210,7 +210,7 @@ class ParametersParser {
 		} catch (IOException ioe) {
 			LOGGER.error("IO Exception in reading file " + getListOfFoldersPathsToBeAnayzedFile());
 		}
-		System.out.println(folderPaths.size());
+		//System.out.println(folderPaths.size());
 		return folderPaths;
 	}
 

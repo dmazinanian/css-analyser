@@ -1,9 +1,12 @@
 package ca.concordia.cssanalyser.refactoring;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
@@ -30,7 +33,22 @@ public class RefactorDuplications {
 		// First create a new grouped selector for refactoring
 		GroupingSelector newGroupingSelector = new GroupingSelector();
 		
-		for (Selector selector : itemset.getSupport()) {
+		// Sort selectors in this new grouping selector based on their appearance in their original file
+		SortedSet<Selector> sortedSet = new TreeSet<>(new Comparator<Selector>() {
+
+			@Override
+			public int compare(Selector o1, Selector o2) {
+				if (o1.getSelectorNumber() >= o2.getSelectorNumber())
+					return 1;
+				return -1;
+			}
+			
+		});
+		
+		for (Selector s : itemset.getSupport())
+				sortedSet.add(s);
+		
+		for (Selector selector : sortedSet) {
 			if (selector instanceof GroupingSelector) {
 				GroupingSelector grouping = (GroupingSelector)selector;
 				for (BaseSelector baseSelector : grouping.getBaseSelectors()) {
@@ -44,12 +62,22 @@ public class RefactorDuplications {
 		newGroupingSelector.addMediaQueryLists(itemset.getMediaQueryLists());
 		
 		// Add declarations to this new grouping selector
+		// We want to add declarations based on their appearance in the original file
+		
+		SortedSet<Declaration> sortedDeclarations = new TreeSet<>(new Comparator<Declaration>() {
+			@Override
+			public int compare(Declaration o1, Declaration o2) {
+				if (o1.getDeclarationNumber() >= o2.getDeclarationNumber())
+					return 1;
+				return -1;
+			}
+		});
+		
 		// Have a place to mark declarations to be removed from the original selector
 		Set<Declaration> declarationsToBeRemoved = new HashSet<>();
 		for (Item currentItem : itemset) {
-			
-			
-			newGroupingSelector.addDeclaration(currentItem.getDeclarationWithMinimumChars().clone());
+
+			sortedDeclarations.add(currentItem.getDeclarationWithMinimumChars());
 			
 			//Mark declarations to be deleted from the original StyleSheet
 			for (Declaration currentDeclaration : currentItem) {
@@ -63,6 +91,10 @@ public class RefactorDuplications {
 				}
 			}
 		}
+		
+		
+		for (Declaration declaration : sortedDeclarations)
+			newGroupingSelector.addDeclaration(declaration.clone());
 		
 		// Create a new empty StyleSheet (the refactored one)
 		StyleSheet refactoredStyleSheet = new StyleSheet();

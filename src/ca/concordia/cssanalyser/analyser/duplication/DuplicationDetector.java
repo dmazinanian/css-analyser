@@ -103,8 +103,7 @@ public class DuplicationDetector {
 		C1 = new ItemSetList();
 
 		// Lets get all the declarations
-		List<Declaration> allDeclarations = new ArrayList<>(
-				stylesheet.getAllDeclarations());
+		List<Declaration> allDeclarations = new ArrayList<>(stylesheet.getAllDeclarations());
 
 		// We don't want to repeat, being identical is a symmetric relation
 		Set<Integer> visitedIdenticalDeclarations = new HashSet<>();
@@ -116,8 +115,7 @@ public class DuplicationDetector {
 		int currentDeclarationIndex = -1;
 		while (++currentDeclarationIndex < allDeclarations.size()) {
 
-			Declaration currentDeclaration = allDeclarations
-					.get(currentDeclarationIndex);
+			Declaration currentDeclaration = allDeclarations.get(currentDeclarationIndex);
 
 			int checkingDecIndex = currentDeclarationIndex;
 

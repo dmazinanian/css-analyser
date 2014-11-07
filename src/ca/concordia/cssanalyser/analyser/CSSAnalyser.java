@@ -25,13 +25,13 @@ import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.dom.DOMHelper;
 import ca.concordia.cssanalyser.dom.Model;
 import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.parser.flute.FluteCSSParser;
+import ca.concordia.cssanalyser.refactoring.BatchGroupingRefactoringResult;
 import ca.concordia.cssanalyser.refactoring.RefactorDuplications;
 import ca.concordia.cssanalyser.refactoring.RefactorToSatisfyDependencies;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
@@ -247,7 +247,7 @@ public class CSSAnalyser {
 			if (doFPGrowth) {
 
 				fpgrowthResults = duplicationDetector.fpGrowth(MIN_SUPPORT, false);
-				IOHelper.writeLinesToFile(fpgrowthResults, analyticsFolderPath + "/fpgrowth-subsumed.txt");
+				IOHelper.writeLinesToFile(fpgrowthResults, analyticsFolderPath + "/fpgrowth.txt");
 				
 //				int numberOfPositiveSubsumed = 0, numberOrRefactoringsSubsumed = 0;
 //				for (ItemSetList isl : fpgrowthResults) {
@@ -276,6 +276,7 @@ public class CSSAnalyser {
 				LOGGER.info("Collecting more info for the further analysis...");
 				
 				List<ItemSetList> fpgrowthResultsSubsumed = duplicationDetector.fpGrowth(MIN_SUPPORT, true);
+				IOHelper.writeLinesToFile(fpgrowthResultsSubsumed, analyticsFolderPath + "/fpgrowth-subsumed.txt");
 				
 				String analytics = getAnalytics(styleSheet, refactoringResults, duplicationDetector, fpgrowthResults, fpgrowthResultsSubsumed);
 				
@@ -291,26 +292,6 @@ public class CSSAnalyser {
 		
 		LOGGER.info("Done.");
 					
-	}
-	
-	private static class BatchGroupingRefactoringResult {
-		private final StyleSheet styleSheet;
-		private final int numberOfAppliedRefactorings;
-		private final int numberOfPositiveRefactorins;
-		public BatchGroupingRefactoringResult(StyleSheet styleSheet, int appliedRefactorings, int positiveRefactorins) {
-			this.styleSheet = styleSheet;
-			this.numberOfAppliedRefactorings = appliedRefactorings;
-			this.numberOfPositiveRefactorins = positiveRefactorins;
-		}
-		public StyleSheet getStyleSheet() {
-			return styleSheet;
-		}
-		public int getNumberOfAppliedRefactorings() {
-			return numberOfAppliedRefactorings;
-		}
-		public int getNumberOfPositiveRefactorins() {
-			return numberOfPositiveRefactorins;
-		}
 	}
 	
 	private BatchGroupingRefactoringResult refactorGroupingOpportunities(final int MIN_SUPPORT, StyleSheet styleSheet, String folderName, List<ItemSetList> fpgrowthResults) {
@@ -360,30 +341,7 @@ public class CSSAnalyser {
 				for (ItemSetList isl : fpgrowthResults) {
 					for (ItemSet is : isl) {
 						if (is.getGroupingRefactoringImpact() > 0) {
-							/*
-							 *  If a shorthand declaration is virtual in all its selectors in an item of the itemset,
-							 *  the itemset cannot be used for the refactoring.
-							 *  It should be real in at least one of the selectors in the current itemset's support.
-							 */
-							boolean itemSetIsDoable = true;
-							for (Item currentItem : is) {
-								boolean declarationIsNotVirtualInAllSelectors = false;
-								for (Declaration declaration : currentItem) {
-									if (declaration instanceof ShorthandDeclaration) {
-										ShorthandDeclaration shorthand = (ShorthandDeclaration)declaration;
-										if (is.supportContains(shorthand.getSelector()) && !shorthand.isVirtual()) {
-											declarationIsNotVirtualInAllSelectors = true;
-											break;
-										}
-									}
-								}
-								if (!declarationIsNotVirtualInAllSelectors) {
-									itemSetIsDoable = false;
-									break;
-								}
-							}
-							
-							if (itemSetIsDoable)
+							if (is.isAppliable())
 								itemSetsTreeSet.add(is);
 						}
 					}

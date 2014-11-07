@@ -312,4 +312,34 @@ public class ItemSet implements Set<Item>, Cloneable {
 	public int getSupportSize() {
 		return support.size();
 	}
+
+	/**
+	 *  If a shorthand declaration is virtual in all its selectors in an item of the itemset,
+	 *  the itemset cannot be used for the refactoring.
+	 *  It should be real in at least one of the selectors in the current itemset's support.
+	 */
+	public boolean isAppliable() {
+		boolean itemSetIsDoable = true;
+		for (Item currentItem : this) {
+			boolean declarationIsNotVirtualInAllSelectors = false;
+			boolean allDeclarationsAreNonShorthand = false;
+			for (Declaration declaration : currentItem) {
+				if (declaration instanceof ShorthandDeclaration) {
+					ShorthandDeclaration shorthand = (ShorthandDeclaration)declaration;
+					if (supportContains(shorthand.getSelector()) && !shorthand.isVirtual()) {
+						declarationIsNotVirtualInAllSelectors = true;
+						break;
+					}
+				} else {
+					allDeclarationsAreNonShorthand = true;
+					break;
+				}
+			}
+			if (!allDeclarationsAreNonShorthand && !declarationIsNotVirtualInAllSelectors) {
+				itemSetIsDoable = false;
+				break;
+			}
+		}
+		return itemSetIsDoable;
+	}
 }
