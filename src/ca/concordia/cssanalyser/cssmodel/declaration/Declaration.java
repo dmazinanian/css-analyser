@@ -7,7 +7,6 @@ import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
 import ca.concordia.cssanalyser.cssmodel.CSSSource;
-import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 

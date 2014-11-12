@@ -40,13 +40,12 @@ import org.w3c.flute.parser.selectors.PseudoElementCondition;
 import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
 
 import ca.concordia.cssanalyser.app.FileLogger;
-import ca.concordia.cssanalyser.csshelper.ColorHelper;
-import ca.concordia.cssanalyser.csshelper.NamedColorsHelper;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.DeclarationFactory;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationEquivalentValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
+import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValueFactory;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.cssmodel.selectors.AdjacentSiblingSelector;
@@ -546,268 +545,93 @@ public class CSSDocumentHandler implements DocumentHandler {
 			 * drop this kind of value but we still support it
 			 * http://www.w3.org/TR/2013/CR-css3-values-20130730/
 			 */
-			return new DeclarationValue("attr(" + value.getStringValue() + ")", ValueType.ATTR);
+			return DeclarationValueFactory.getDeclarationValue(Declaration.getNonVendorProperty(propertyName), "attr(" + value.getStringValue() + ")", ValueType.ATTR);
 		case LexicalUnit.SAC_IDENT:
 			/*
 			 * Different types of values may be in this group, like
 			 * color values, etc.
 			 */
-			String colorEquivalent;
-			String stringValue = value.getStringValue();
-			if ("currentColor".equals(stringValue))
-				colorEquivalent = "currentColor";
-			else 
-				colorEquivalent = NamedColorsHelper.getRGBAColor(stringValue.toLowerCase());
-			if (colorEquivalent != null)
-				return new DeclarationEquivalentValue(stringValue, colorEquivalent, ValueType.COLOR);
-			
-			switch (stringValue) {
-			case "none":
-				return new DeclarationEquivalentValue(stringValue, stringValue, ValueType.IDENT);
-			case "left":
-			case "top":
-				switch (propertyName) {
-				case "background-position":
-				case "background":
-				case "perspective-origin":
-				case "transform-origin":
-					return new DeclarationEquivalentValue(stringValue, "0.0px", ValueType.LENGTH);
-				}
-				break;
-			case "right":
-			case "bottom":
-				switch (propertyName) {
-				case "background-position":
-				case "background":
-				case "perspective-origin":
-				case "transform-origin":
-					return new DeclarationEquivalentValue(stringValue, "100.0%", ValueType.LENGTH);
-				}
-				break;
-			case "center":
-				switch (propertyName) {
-				case "background-position":
-				case "background":
-				case "perspective-origin":
-				case "transform-origin":
-					return new DeclarationEquivalentValue(stringValue, "50.0%", ValueType.LENGTH);
-				}
-				break;
-			case "bold":
-				return new DeclarationEquivalentValue(stringValue, "700", ValueType.INTEGER);
-			case "normal":
-				if (propertyName.equals("font-weight"))
-					return new DeclarationEquivalentValue(stringValue, "400", ValueType.INTEGER);
-				// What should we do for font shorthand property?!
-			}
-
-			return new DeclarationValue(stringValue, ValueType.IDENT);
+			return DeclarationValueFactory.getDeclarationValue(propertyName, value.getStringValue(), ValueType.IDENT);
 			
 		case LexicalUnit.SAC_STRING_VALUE:
 			// Values coming between ' and " are modeled in this way in SAC
-			return new DeclarationValue("'" + value.getStringValue() + "'", ValueType.STRING);
+			return DeclarationValueFactory.getDeclarationValue(propertyName, "'" + value.getStringValue() + "'", ValueType.STRING);
 			
 		// All color could be converted to RGBA
 		case LexicalUnitImpl.HEX_COLOR:
 			// Three or six-digit hex value
-			return new DeclarationEquivalentValue("#" + value.getStringValue().toLowerCase(), ColorHelper.RGBAFromHEX(value.getStringValue()), ValueType.COLOR);
+			String realVal = "#" + value.getStringValue().toLowerCase();
+			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.COLOR);
 		case LexicalUnit.SAC_RGBCOLOR:
-			// flute models the commas as operators so no separator needed - from GWT
-			String realVal = "rgb(" + addSeparators(getAllValues("rgb", value.getParameters()), ", ") + ")";
-			String eqVal = ColorHelper.RGBAfromRGB(value.getParameters());
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.COLOR);
+			return getColorValue(propertyName, "rgb", value);
 		case LexicalUnitImpl.RGBA_COLOR:
-			realVal = "rgba(" + addSeparators(getAllValues("rgba", value.getParameters()), ", ") + ")";
-			eqVal = ColorHelper.RGBA(value.getParameters());
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.COLOR);
+			return getColorValue(propertyName, "rgba", value);
 		case LexicalUnitImpl.HSL_COLOR:
-			realVal = "hsl(" + addSeparators(getAllValues("hsl", value.getParameters()), ", ") + ")";
-			eqVal = ColorHelper.RGBAFromHSLA(value.getParameters());
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.COLOR);
+			return getColorValue(propertyName, "hsl", value);
 		case LexicalUnitImpl.HSLA_COLOR:
-			realVal = "hsla(" + addSeparators(getAllValues("hsla", value.getParameters()), ", ") + ")";
-			eqVal = ColorHelper.RGBAFromHSLA(value.getParameters());
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.COLOR);
+			return getColorValue(propertyName, "hsla", value);
 			
 		case LexicalUnit.SAC_INTEGER:
-			int val = value.getIntegerValue();
-			if (val == 0)
-				switch (propertyName) {
-				case "margin":
-				case "margin-left":
-				case "margin-right":
-				case "margin-top":
-				case "margin-bottom":
-				case "padding":
-				case "padding-left":
-				case "padding-right":
-				case "padding-bottom":
-				case "padding-top":
-				case "top":
-				case "left":
-				case "bottom":
-				case "right":
-				case "height":
-				case "width":
-				case "max-height":
-				case "max-width":
-				case "min-height":
-				case "min-width":
-				case "background-position":
-				case "background-size":
-				case "background":
-				case "border":				
-				case "border-bottom":
-				case "border-left":				
-				case "border-right":				
-				case "border-top":				
-				case "outline":
-				case "border-top-width":
-				case "border-bottom-width":
-				case "border-left-width":
-				case "border-right-width":
-				case "border-width":
-				case "outline-width":
-				case "border-radius":
-				case "-webkit-border-radius":
-				case "-moz-border-radius":
-				case "border-bottom-left-radius":
-				case "border-bottom-right-radius":
-				case "border-bottom-top-radius":
-				case "border-bottom-bottom-radius":
-				case "column-width":
-				case "-webkit-column-width":
-				case "-moz-column-width":
-				case "column-rule-width":
-				case "-moz-column-rule-width":
-				case "-webkit-column-rule-width":
-				case "column-gap":
-				case "-moz-column-gap":
-				case "-webkit-column-gap":
-				case "perspective-origin":
-				case "-webkit-perspective-origin":
-				case "text-shadow":
-				case "box-shadow":
-				/*
-				 * Dangorous to do!
-				 * case "transform-origin":
-				 * case "-ms-transform-origin":
-				 * case "-webkit-transform-origin":
-				 */
-					
-					return new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH);	
-				}
-			return new DeclarationValue(String.valueOf(val), ValueType.INTEGER);
+			return DeclarationValueFactory.getDeclarationValue(propertyName, String.valueOf(value.getIntegerValue()), ValueType.INTEGER);
 		case LexicalUnit.SAC_REAL:
-			return new DeclarationValue(String.valueOf(value.getFloatValue()), ValueType.REAL);
+			return DeclarationValueFactory.getDeclarationValue(propertyName, DeclarationValueFactory.formatFloat(value.getFloatValue()), ValueType.REAL);
 			
 		// Length values may be convertible to each other
 		case LexicalUnit.SAC_PICA:
-			// 1pc = 12pt = 16px
-			realVal = String.valueOf(value.getFloatValue()) + "pc";
-			eqVal = String.valueOf(value.getFloatValue() * 16) + "px";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+			return DeclarationValueFactory.getFontValue(propertyName, value.getFloatValue(), "pc");
 		case LexicalUnit.SAC_POINT:
-			// 72pt is 96px
-			realVal = String.valueOf(value.getFloatValue()) + "pt";
-			eqVal = String.valueOf(value.getFloatValue() / 72F * 96F) + "px";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+			return DeclarationValueFactory.getFontValue(propertyName, value.getFloatValue(), "pt");
 		case LexicalUnit.SAC_INCH:
-			// Every inch is 96px
-			realVal = String.valueOf(value.getFloatValue()) + "in";
-			eqVal = String.valueOf(value.getFloatValue() * 96F) + "px";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+			return DeclarationValueFactory.getFontValue(propertyName, value.getFloatValue(), "in");
 		case LexicalUnit.SAC_CENTIMETER:
-			// Every cm is (2.54^-1 * 96)px
-			// In browser, every cm is about 38px
-			realVal = String.valueOf(value.getFloatValue()) + "cm";
-			eqVal = String.valueOf(value.getFloatValue() * 38F) + "px";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+			return DeclarationValueFactory.getFontValue(propertyName, value.getFloatValue(), "cm");
 		case LexicalUnit.SAC_MILLIMETER:
-			//every mm is 0.01 cm
-			realVal = String.valueOf(value.getFloatValue()) + "mm";
-			eqVal = String.valueOf(value.getFloatValue() * 38F / 100F) + "px";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+			return DeclarationValueFactory.getFontValue(propertyName, value.getFloatValue(), "mm");
 		case LexicalUnit.SAC_PIXEL:
-			realVal = eqVal = String.valueOf(value.getFloatValue()) + "px";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.LENGTH);
+			return DeclarationValueFactory.getFontValue(propertyName, value.getFloatValue(), "px");
 			
 		// We convert all angle values to degree.
 		case LexicalUnit.SAC_GRADIAN:
-			// 1grad = 0.9deg
-			realVal = String.valueOf(value.getFloatValue()) + "grad";
-			eqVal = String.valueOf(value.getFloatValue() * 0.9F) + "deg";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.ANGLE);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "grad";
+			return  DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.ANGLE);
 		case LexicalUnit.SAC_RADIAN:
-			// 2pi rad = 360deg
-			realVal = String.valueOf(value.getFloatValue()) + "rad";
-			eqVal = String.valueOf(value.getFloatValue() / (2 * 3.1415926F) * 360) + "deg";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.ANGLE);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "rad";
+			return  DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.ANGLE);
 		case LexicalUnitImpl.TURN:
-			// 1turn = 360deg
-			realVal = String.valueOf(value.getFloatValue()) + "turn";
-			eqVal = String.valueOf(value.getFloatValue() * 360) + "deg";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.ANGLE);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "turn";
+			return  DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.ANGLE);
 		case LexicalUnit.SAC_DEGREE:
-			realVal = eqVal = String.valueOf(value.getFloatValue()) + "deg";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.ANGLE);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "deg";
+			return  DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.ANGLE);
 			
 		case LexicalUnit.SAC_KILOHERTZ:
-			// 1KHz = 1000Hz
-			realVal = String.valueOf(value.getFloatValue()) + "KHz";
-			eqVal = String.valueOf(value.getFloatValue() * 1000) + "hz";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.FREQUENCY);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "khz";
+			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.FREQUENCY);
 		case LexicalUnit.SAC_HERTZ:
-			realVal = eqVal = value.getFloatValue() + "hz";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.FREQUENCY);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "hz";
+			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.FREQUENCY);
 			
 		// s and ms are convertible to each other
 		case LexicalUnit.SAC_SECOND:
-			// Each second is 1000 ms
-			realVal = String.valueOf(value.getFloatValue()) + "s";
-			eqVal = String.valueOf(value.getFloatValue() * 1000) + "ms";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.TIME);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "s";
+			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.TIME);
 		case LexicalUnit.SAC_MILLISECOND:
-			realVal = eqVal = value.getFloatValue() + "ms";
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.TIME);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "ms";
+			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.TIME);
 			
 		// EM and % are somehow the same. 	
 		case LexicalUnit.SAC_EM:
-			// 1em = 100%, if we are talking about font
-			realVal = String.valueOf(value.getFloatValue()) + "em";
-			if ("font".equals(propertyName) || "font-size".equals(propertyName) || "line-height".equals(propertyName)) {
-				eqVal = String.valueOf(value.getFloatValue() * 100) + "%";
-				return new DeclarationEquivalentValue(realVal, eqVal, ValueType.PERCENTAGE);
-			} 
-			return new DeclarationValue(realVal, ValueType.TIME);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "em";			
+			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.LENGTH);
+			
 		case LexicalUnitImpl.REM:
 			// 1rem = 100% of the parent's font. SO we don't add 
-			realVal = String.valueOf(value.getFloatValue()) + "rem";
-			return new DeclarationValue(realVal, ValueType.PERCENTAGE);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "rem";
+			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.PERCENTAGE);
+			
 		case LexicalUnit.SAC_PERCENTAGE:
-			realVal = eqVal = String.valueOf(value.getFloatValue() + "%");
-			if (value.getFloatValue() == 0) {
-				switch (propertyName) {
-				case "background-position":
-				case "background-size":
-				case "border-radius":
-				case "-webkit-border-radius":
-				case "-moz-border-radius":
-				case "border-bottom-left-radius":
-				case "border-bottom-right-radius":
-				case "border-bottom-top-radius":
-				case "border-bottom-bottom-radius":
-				case "transform-origin":
-					eqVal = "0.0px";
-					break;
-				case "rgb":
-				case "rgba":
-				case "hsl":
-				case "hsla":
-					eqVal = "0";
-				}
-			}
-			return new DeclarationEquivalentValue(realVal, eqVal, ValueType.PERCENTAGE);
+			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "%";
+			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.PERCENTAGE);
 		
 			
 		case LexicalUnit.SAC_EX:
@@ -817,45 +641,46 @@ public class CSSDocumentHandler implements DocumentHandler {
 			 */
 		case LexicalUnit.SAC_DIMENSION:
 			//Unknown dimension :)
-			return new DeclarationValue(String.valueOf(value.getFloatValue() + value.getDimensionUnitText().toLowerCase()), ValueType.DIMENSION);
+			return DeclarationValueFactory.getDeclarationValue(propertyName, 
+					DeclarationValueFactory.formatFloat(value.getFloatValue()) + value.getDimensionUnitText().toLowerCase(), ValueType.DIMENSION);
 			
 		case LexicalUnit.SAC_URI:
 			realVal = "url('" + value.getStringValue() + "')";
-			if ("".equals(value.getStringValue().trim()))
-				return new DeclarationEquivalentValue(realVal, "none", ValueType.URL);
-			return new DeclarationValue(realVal, ValueType.URL);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,realVal, ValueType.URL);
+			
 		case LexicalUnit.SAC_OPERATOR_COMMA:
-			return new DeclarationValue(",", ValueType.SEPARATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,",", ValueType.SEPARATOR);
+			
 		case LexicalUnit.SAC_COUNTER_FUNCTION:
 		case LexicalUnit.SAC_COUNTERS_FUNCTION:
 		case LexicalUnit.SAC_FUNCTION:
-			return new DeclarationValue(value.getFunctionName() + "(" + addSeparators(getAllValues(value.getFunctionName(), value.getParameters()), " ")	+ ")", ValueType.FUNCTION);
+			return DeclarationValueFactory.getDeclarationValue(propertyName, value.getFunctionName() + "(" + addSeparators(getAllValues(value.getFunctionName(), value.getParameters()), " ")	+ ")", ValueType.FUNCTION);
 		case LexicalUnit.SAC_INHERIT:
-			return new DeclarationValue("inherit", ValueType.INHERIT);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,"inherit", ValueType.INHERIT);
 		case LexicalUnit.SAC_OPERATOR_EXP:
-			return new DeclarationValue("^", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,"^", ValueType.OPERATOR);
 		case LexicalUnit.SAC_OPERATOR_GE:
-			return new DeclarationValue(">=", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,">=", ValueType.OPERATOR);
 		case LexicalUnit.SAC_OPERATOR_GT:
-			return new DeclarationValue(">", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,">", ValueType.OPERATOR);
 		case LexicalUnit.SAC_OPERATOR_LE:
-			return new DeclarationValue("<=", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,"<=", ValueType.OPERATOR);
 		case LexicalUnit.SAC_OPERATOR_LT:
-			return new DeclarationValue("<", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,"<", ValueType.OPERATOR);
 		case LexicalUnit.SAC_OPERATOR_MINUS:
-			return new DeclarationValue("-", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,"-", ValueType.OPERATOR);
 		case LexicalUnit.SAC_OPERATOR_MOD:
-			return new DeclarationValue("%", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,"%", ValueType.OPERATOR);
 		case LexicalUnit.SAC_OPERATOR_MULTIPLY:
-			return new DeclarationValue("*", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,"*", ValueType.OPERATOR);
 		case LexicalUnit.SAC_OPERATOR_PLUS:
-			return new DeclarationValue("+", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,"+", ValueType.OPERATOR);
 		case LexicalUnit.SAC_OPERATOR_SLASH:
-			return new DeclarationValue("/", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,"/", ValueType.OPERATOR);
 		case LexicalUnit.SAC_OPERATOR_TILDE:
-			return new DeclarationValue("~", ValueType.OPERATOR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName,"~", ValueType.OPERATOR);
 		case LexicalUnit.SAC_RECT_FUNCTION: {
-			return new DeclarationValue( "rect(" + addSeparators(getAllValues("rect", value.getParameters()), " ") + ")", ValueType.FUNCTION);
+			return DeclarationValueFactory.getDeclarationValue(propertyName, "rect(" + addSeparators(getAllValues("rect", value.getParameters()), " ") + ")", ValueType.FUNCTION);
 		}
 		case LexicalUnit.SAC_SUB_EXPRESSION:
 			// Never happens cause ca.concordia.cssanalyser.parser does not support it?
@@ -869,6 +694,16 @@ public class CSSDocumentHandler implements DocumentHandler {
 		//	return "(" + addSeparators(getAllValues(value.getParameters()), " ") + ")" ;
 		}
 		throw new RuntimeException("Unhandled LexicalUnit type " + value.getLexicalUnitType());
+	}
+
+	private DeclarationValue getColorValue(String propertyName, String colorFunction, LexicalUnit value) {
+		try {
+			String val = colorFunction + "(" + addSeparators(getAllValues(colorFunction, value.getParameters()), ", ") + ")";
+			return DeclarationValueFactory.getDeclarationValue(propertyName, val, ValueType.COLOR);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	/**
@@ -893,6 +728,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 	public int getNumberOfVisitedSelectors() {
 		return numberOfVisitedElements;
 	}
+
 
 	
 

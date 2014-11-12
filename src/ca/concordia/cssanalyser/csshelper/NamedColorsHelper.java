@@ -169,6 +169,10 @@ public final class NamedColorsHelper {
 	 * @return
 	 */
 	public static String getRGBAColor(String namedColor) {
-		return colorValues.get(namedColor);
+		return colorValues.get(namedColor.toLowerCase());
+	}
+	
+	public static boolean isNamedColor(String identify) {
+		return colorValues.containsKey(identify.toLowerCase());
 	}
 }

@@ -11,7 +11,7 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
  * based on the property name
  * 
  * @author Davood Mazinanian
- *
+ *	
  */
 public class DeclarationFactory {
 
