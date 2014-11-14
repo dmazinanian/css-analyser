@@ -30,6 +30,9 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.dom.DOMHelper;
 import ca.concordia.cssanalyser.dom.Model;
 import ca.concordia.cssanalyser.io.IOHelper;
+import ca.concordia.cssanalyser.parser.CSSParser;
+import ca.concordia.cssanalyser.parser.CSSParserFactory;
+import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
 import ca.concordia.cssanalyser.parser.flute.FluteCSSParser;
 import ca.concordia.cssanalyser.refactoring.BatchGroupingRefactoringResult;
 import ca.concordia.cssanalyser.refactoring.RefactorDuplications;
@@ -132,12 +135,15 @@ public class CSSAnalyser {
 		for (File file : files) {
 			String filePath = file.getAbsolutePath();
 			LOGGER.info("Now parsing " + filePath);
-			FluteCSSParser parser = new FluteCSSParser();
+			//FluteCSSParser parser = new FluteCSSParser();
+			CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
 			try {
+				//StyleSheet styleSheet = parser.parseExternalCSS(filePath);
 				StyleSheet styleSheet = parser.parseExternalCSS(filePath);
 				model.addStyleSheet(styleSheet);
 			} catch (Exception ex) {
-				LOGGER.warn("Couldn't parse " + file + ". Skipping to the next file.");
+				throw new RuntimeException(ex);
+				//LOGGER.warn("Couldn't parse " + file + ". Skipping to the next file.");
 			}
 		}
 		

@@ -159,40 +159,52 @@ public class DeclarationValueFactory {
 					} catch (Exception e) {
 						
 					}
-				} else if (value.startsWith("rgba(")) {
+				} else if (value.startsWith("rgb")) {
 					String[] values = getCommaSeparatedValueParts(value);
-					if (values.length != 4)
-						throw new RuntimeException("Invalid rgba color: " + value);
+					
+					float a = 1F;
+					if (value.startsWith("rgba")) {
+						if (values.length != 4)
+							throw new RuntimeException("Invalid rgba color: " + value);
+						a = Math.min(Float.valueOf(values[3]), 1);
+					}
+					else {
+						if (values.length != 3)
+							throw new RuntimeException("Invalid rgb color: " + value);
+					}
+					
 					int r = getRgbComponentValue(values[0]);
 					int g = getRgbComponentValue(values[1]);
 					int b = getRgbComponentValue(values[2]);
-					float a = Math.min(Float.valueOf(values[3]), 1);
+
 					eqValue = ColorHelper.RGBA(r, g, b, a);
-				} else if (value.startsWith("rgb(")) {
+					
+				} else if (value.startsWith("hsl")) {
 					String[] values = getCommaSeparatedValueParts(value);
-					if (values.length != 3)
-						throw new RuntimeException("Invalid rgb color: " + value);
-					int r = getRgbComponentValue(values[0]);
-					int g = getRgbComponentValue(values[1]);
-					int b = getRgbComponentValue(values[2]);
-					eqValue = ColorHelper.RGBAfromRGB(r, g, b);
-				} else if (value.startsWith("hsla(")) {
-					String[] values = getCommaSeparatedValueParts(value);
-					if (values.length != 4)
-						throw new RuntimeException("Invalid hsla color: " + value);
+					
+					float a = 1F;
+					if (value.startsWith("hsla")) {
+						if (values.length != 4)
+							throw new RuntimeException("Invalid hsla color: " + value);
+						a = Math.min(Float.valueOf(values[3]), 1);
+					}
+					else {
+						if (values.length != 3)
+							throw new RuntimeException("Invalid hsl color: " + value);
+					}
+						
 					float h = Math.min(Integer.valueOf(values[0]), 360) / 360F;
-					float s = Math.min(Integer.valueOf(values[1].substring(0, values[1].length() - 2)), 100) / 100F;
-					float l = Math.min(Integer.valueOf(values[2].substring(0, values[2].length() - 2)), 100) / 100F;
-					float a = Math.min(Float.valueOf(values[3]), 1);
+					
+					float s,l;
+					try {
+						s = getPercentageValue(values[1]);
+						l = getPercentageValue(values[2]);
+					} catch (IllegalArgumentException e) {
+						throw new RuntimeException("Invalud percentage value in " + value);
+					}
+					
+					
 					eqValue = ColorHelper.RGBAFromHSLA(h, s, l, a);
-				} else if (value.startsWith("hsl(")) {
-					String[] values = getCommaSeparatedValueParts(value);
-					if (values.length != 3)
-						throw new RuntimeException("Invalid hsla color: " + value);
-					float h = Math.min(Integer.valueOf(values[0]), 360) / 360F;
-					float s = Math.min(Integer.valueOf(values[1].substring(0, values[1].length() - 2)), 100) / 100F;
-					float l = Math.min(Integer.valueOf(values[2].substring(0, values[2].length() - 2)), 100) / 100F;
-					eqValue = ColorHelper.RGBAFromHSLA(h, s, l, 1F);
 				}
 				return new DeclarationEquivalentValue(value, eqValue, ValueType.COLOR);
 			}
@@ -242,7 +254,10 @@ public class DeclarationValueFactory {
 					}
 				}
 				
-				return new DeclarationEquivalentValue(value, eqVal, ValueType.LENGTH);
+				if (!"".equals(eqVal))
+					return new DeclarationEquivalentValue(value, eqVal, ValueType.LENGTH);
+				
+				return new DeclarationValue(value, ValueType.LENGTH);
 			
 			}
 			case ANGLE: {
@@ -252,10 +267,10 @@ public class DeclarationValueFactory {
 					eqVal = formatFloat(Float.valueOf(value.replace("grad", "")) * 0.9F) + "deg";
 				} else if (value.endsWith("rad")) {
 					// 2pi rad = 360deg
-					eqVal = formatFloat(Float.valueOf(value.replace("grad", "")) / (2 * 3.1415926F) * 360) + "deg";	
+					eqVal = formatFloat(Float.valueOf(value.replace("rad", "")) / (2 * 3.1415926F) * 360) + "deg";	
 				} else if (value.endsWith("turn")) {
 					// 1turn = 360deg
-					eqVal = formatFloat(Float.valueOf(value.replace("grad", "")) * 360) + "deg";
+					eqVal = formatFloat(Float.valueOf(value.replace("turn", "")) * 360) + "deg";
 				} else if (value.endsWith("deg")) {
 					eqVal = value;
 				}
@@ -288,6 +303,17 @@ public class DeclarationValueFactory {
 		}
 	}
 
+	protected static float getPercentageValue(String string) throws IllegalArgumentException {
+		float s = 0;
+		if (string.endsWith("%"))
+			s = Math.min(Integer.valueOf(string.substring(0, string.length() - 1)), 100) / 100F;
+		else if ("0".equals(string))
+			s = 0;
+		else
+			throw new IllegalArgumentException("Invalid percent value");
+		return s;
+	}
+
 	protected static String[] getCommaSeparatedValueParts(String value) {
 		
 		String[] values = value.substring(value.indexOf("(") + 1, value.indexOf(")")).split(",");
@@ -311,7 +337,7 @@ public class DeclarationValueFactory {
 			return Math.min(Integer.valueOf(value), 255);
 	}
 	
-	public static String formatFloat(float f) {
+	public static String formatFloat(double f) {
 		if(f == (long) f)
 			return String.format("%d",(long)f);
 		else
