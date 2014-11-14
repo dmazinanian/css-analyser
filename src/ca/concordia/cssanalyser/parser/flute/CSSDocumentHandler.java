@@ -639,6 +639,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			 *  EX is calculated in a different way across different browsers
 			 * (IE-not known in which version-: 1ex = 0.5em, while not other browsers)
 			 */
+			return DeclarationValueFactory.getDeclarationValue(propertyName, DeclarationValueFactory.formatFloat(value.getFloatValue()) + "ex", ValueType.LENGTH);
 		case LexicalUnit.SAC_DIMENSION:
 			//Unknown dimension :)
 			return DeclarationValueFactory.getDeclarationValue(propertyName, 
