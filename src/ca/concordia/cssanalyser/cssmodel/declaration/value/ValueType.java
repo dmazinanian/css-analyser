@@ -22,5 +22,6 @@ public enum ValueType {
 	URL,
 	INHERIT,
 	ATTR,
-	OPERATOR
+	OPERATOR,
+	OTHER
 }
