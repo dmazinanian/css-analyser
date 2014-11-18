@@ -118,7 +118,8 @@ public class MultiValuedDeclaration extends Declaration {
 				"text-shadow",
 				"box-shadow",
 				"content",
-				"font-family"
+				"font-family",
+				"quotes"
 		};
 		for (String property : properties)
 			muliValuedProperties.add(property);
@@ -230,9 +231,9 @@ public class MultiValuedDeclaration extends Declaration {
 				// http://www.w3.org/TR/css3-transforms
 				if (declarationValues.size() == 1) {
 					addMissingValue(new DeclarationEquivalentValue("center", "50%", ValueType.LENGTH), 1);
-					addMissingValue(new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH), 2);
+					addMissingValue(new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH), 2);
 				} else if (declarationValues.size() == 2) {
-					addMissingValue(new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH), 2);
+					addMissingValue(new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH), 2);
 				}
 				assignStylePropertyToValue(XAXIS, declarationValues.get(0)); 
 				assignStylePropertyToValue(YAXIS, declarationValues.get(1)); 
@@ -334,19 +335,19 @@ public class MultiValuedDeclaration extends Declaration {
 						}
 						
 						if (vOffset == null) {
-							vOffset = new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH);
+							vOffset = new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH);
 							addMissingValue(vOffset, vOffsetPosition);
 							totalAddedMissingValues++;
 						}
 						
 						if (blurRadius == null) {
-							blurRadius = new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH);
+							blurRadius = new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH);
 							addMissingValue(blurRadius, blurPosition);
 							totalAddedMissingValues++;
 						}
 						
 						if ("box-shadow".equals(property) && spreadDistance == null) {
-							spreadDistance = new DeclarationEquivalentValue("0", "0.0px", ValueType.LENGTH);
+							spreadDistance = new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH);
 							addMissingValue(spreadDistance, distancePosition);
 							totalAddedMissingValues++;
 						}
@@ -370,7 +371,7 @@ public class MultiValuedDeclaration extends Declaration {
 						assignStylePropertyToValue(HOFFSET, currentLayerIndex, hOffset, false);
 						assignStylePropertyToValue(VOFFSET, currentLayerIndex, vOffset, false);
 						assignStylePropertyToValue(BLUR, currentLayerIndex, blurRadius, false);
-						if ("text-shadow".equals(property)) {
+						if ("box-shadow".equals(property)) {
 							assignStylePropertyToValue(SPREAD, currentLayerIndex, spreadDistance, false);
 							if (inset != null)
 								assignStylePropertyToValue(INSET, currentLayerIndex, inset, false);
@@ -396,9 +397,25 @@ public class MultiValuedDeclaration extends Declaration {
 				}
 				break;
 			}
-			
+			case "quotes": {
+				/*
+				 * http://www.w3schools.com/cssref/pr_gen_quotes.asp
+				 * An even number of strings. Each two of them are used for one level
+				 */
+				final String LEFTQ = "leftq";
+				final String RIGHTQ = "rightq";
+				
+				if (declarationValues.size() % 2 != 0) {
+					throw new RuntimeException("'quotes' property should have even number of variables");
+				}
+				for (int i = 0; i < declarationValues.size(); i += 2) {
+					assignStylePropertyToValue(LEFTQ, (i / 2) + 1, declarationValues.get(i), true);
+					assignStylePropertyToValue(RIGHTQ, (i / 2) + 1, declarationValues.get(i + 1), true);
+				}
+				break;
+			}
 			default:
-				throw new NotImplementedException("Shorthand property " + property + " not handled.");
+				throw new NotImplementedException("Multivalued property " + property + " not handled.");
 					
 		}
 		
