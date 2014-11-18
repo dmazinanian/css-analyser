@@ -104,6 +104,20 @@ public abstract class Declaration implements Cloneable {
 		return torReturn;
 	}
 	
+	public static String getNonHackedProperty(String property) {
+		String torReturn = property;
+		Set<String> prefixes = new HashSet<>();
+		prefixes.add("*");
+		prefixes.add("_");
+		
+		for (String prefix : prefixes)
+			if (torReturn.startsWith(prefix)) {
+				torReturn = torReturn.substring(prefix.length());
+				break;
+			}
+		return torReturn;
+	}
+	
 	/**
 	 * Returns true if the declaration is declared with !important
 	 * @return
