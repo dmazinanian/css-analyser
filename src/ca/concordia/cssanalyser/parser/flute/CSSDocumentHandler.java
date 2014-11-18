@@ -545,7 +545,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 			 * drop this kind of value but we still support it
 			 * http://www.w3.org/TR/2013/CR-css3-values-20130730/
 			 */
-			return DeclarationValueFactory.getDeclarationValue(Declaration.getNonVendorProperty(propertyName), "attr(" + value.getStringValue() + ")", ValueType.ATTR);
+			return DeclarationValueFactory.getDeclarationValue(propertyName, "attr(" + value.getStringValue() + ")", ValueType.ATTR);
 		case LexicalUnit.SAC_IDENT:
 			/*
 			 * Different types of values may be in this group, like
