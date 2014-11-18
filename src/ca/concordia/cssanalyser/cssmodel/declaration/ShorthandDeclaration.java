@@ -173,7 +173,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 		if (declarationValues == null || declarationValues.size() == 0)
 			return;
 
-		switch (getNonVendorProperty(property)) {
+		switch (getNonVendorProperty(getNonHackedProperty(property))) {
 		
 			case "border-radius": {
 	
@@ -1085,7 +1085,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 	 * @return
 	 */
 	public static boolean isShorthandProperty(String property) {
-		property = getNonVendorProperty(property);
+		property = getNonVendorProperty(getNonHackedProperty(property));
 		return shorthandProperties.containsKey(property);
 	}
 
@@ -1110,7 +1110,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 	 */
 	// TODO: Maybe consider using a BiMap
 	public static Set<String> getShorthandPropertyNames(String property) {
-		String nonVendorproperty = getNonVendorProperty(property);
+		String nonVendorproperty = getNonVendorProperty(getNonHackedProperty(property));
 		String prefix = "";
 		if (!property.equals(nonVendorproperty))
 			prefix = property.substring(0, property.indexOf(nonVendorproperty));

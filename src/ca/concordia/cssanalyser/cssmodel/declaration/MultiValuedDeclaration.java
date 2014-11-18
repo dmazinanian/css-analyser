@@ -126,7 +126,7 @@ public class MultiValuedDeclaration extends Declaration {
 	}
 
 	public static boolean isMultiValuedProperty(String propertyName) {
-		return muliValuedProperties.contains(getNonVendorProperty(propertyName));
+		return muliValuedProperties.contains(getNonVendorProperty(getNonHackedProperty(propertyName)));
 	}
 	
 	/**
@@ -141,7 +141,7 @@ public class MultiValuedDeclaration extends Declaration {
 		if (declarationValues == null || declarationValues.size() == 0)
 			return;
 
-		switch (getNonVendorProperty(property)) {
+		switch (getNonVendorProperty(getNonHackedProperty(property))) {
 	
 			case "background-position": {
 				//http://www.w3.org/TR/css3-background/#the-background-position
@@ -324,7 +324,7 @@ public class MultiValuedDeclaration extends Declaration {
 						int missingValueOffset = totalAddedMissingValues;
 						
 						int vOffsetPosition = 1, blurPosition = 2, distancePosition = 3, colorPosition = 3;
-						if ("box-shadow".equals(getNonVendorProperty(property))) {
+						if ("box-shadow".equals(getNonVendorProperty(getNonHackedProperty(property)))) {
 							colorPosition++;
 							if (inset != null) {
 								vOffsetPosition++;
