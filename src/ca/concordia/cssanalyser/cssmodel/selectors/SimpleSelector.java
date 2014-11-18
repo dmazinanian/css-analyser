@@ -502,8 +502,10 @@ public class SimpleSelector extends BaseSelector {
 					/*String pref =*/ negSelector.getXPathConditionsString(negativeConditions);
 					String finalCondition = "not(%s)";
 					String insideConditions = "";
-					for (String insideCondition : negativeConditions) {
-						insideConditions += insideCondition;
+					for (int i = 0; i < negativeConditions.size(); i++) {
+						insideConditions += negativeConditions.get(i);
+						if (i < negativeConditions.size() - 1)
+							insideConditions += " and ";
 					}
 					xpathConditions.add(String.format(finalCondition, insideConditions));
 					break;
@@ -556,7 +558,7 @@ public class SimpleSelector extends BaseSelector {
 
 		if (!elementAdded) {
 			prefix = "*"; 
-			if (!"*".equals(this.getSelectedElementName()))
+			if (!"*".equals(this.getSelectedElementName()) && !"".equals(this.getSelectedElementName()))
 				xpathConditions.add(String.format("name() = '%s'", this.getSelectedElementName().toUpperCase()));
 		}
 		
