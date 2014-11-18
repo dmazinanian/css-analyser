@@ -16,25 +16,25 @@ public class DeclarationValueFactory {
 	
 	public static DeclarationValue getDeclarationValue(String forProperty, String value, ValueType type) {
 		//return new DeclarationValue(value, type);
-		forProperty = Declaration.getNonVendorProperty(forProperty);
-		value = value.toLowerCase().trim();
+		forProperty = Declaration.getNonVendorProperty(Declaration.getNonHackedProperty(forProperty.toLowerCase()));
+		value = value.trim();
 		switch (type) {
 			case IDENT: {
 				if (NamedColorsHelper.isNamedColor(value))
 					return new DeclarationEquivalentValue(value, NamedColorsHelper.getRGBAColor(value), ValueType.COLOR);
-				switch (value) {
-					case "currentColor":
+				switch (value.toLowerCase()) {
+					case "currentcolor":
 						return new DeclarationValue(value, ValueType.COLOR);
 					case "none":
 						return new DeclarationEquivalentValue(value, value, ValueType.IDENT);
 					case "left":
 					case "top":
 						switch (forProperty) {
-						case "background-position":
-						case "background":
-						case "perspective-origin":
-						case "transform-origin":
-							return new DeclarationEquivalentValue(value, "0.0px", ValueType.LENGTH);
+							case "background-position":
+							case "background":
+							case "perspective-origin":
+							case "transform-origin":
+								return new DeclarationEquivalentValue(value, "0.0px", ValueType.LENGTH);
 						}
 						break;
 					case "right":
