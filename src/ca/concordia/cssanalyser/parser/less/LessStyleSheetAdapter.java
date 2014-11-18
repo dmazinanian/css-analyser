@@ -86,17 +86,24 @@ public class LessStyleSheetAdapter {
  					
  					selector = grouping;
  				}
- 				 				
+ 				
  				// Handle declarations
  				for (ASTCssNode declarationNode : ruleSetNode.getBody().getDeclarations()) {
  					
  					if (declarationNode instanceof com.github.sommeri.less4j.core.ast.Declaration) {
  						
  						com.github.sommeri.less4j.core.ast.Declaration lessDeclaration = (com.github.sommeri.less4j.core.ast.Declaration)declarationNode;  
+ 						
  						String property = lessDeclaration.getNameAsString();
+ 						List<DeclarationValue> values;
 
- 						List<DeclarationValue> values = getListOfDeclarationValuesFromLessExpression(property, lessDeclaration.getExpression());
-						
+ 						if (lessDeclaration.getExpression() != null) { // If a declaration does not have a value, happened in some cases
+ 							values = getListOfDeclarationValuesFromLessExpression(property, lessDeclaration.getExpression());
+ 						} else {
+ 							values  = new ArrayList<>();
+ 							values.add(new DeclarationValue("", ValueType.OTHER));
+ 						}
+
  						Declaration declaration = DeclarationFactory.getDeclaration(
  								property, values, selector, declarationNode.getSourceLine(), 
  								declarationNode.getSourceColumn(), lessDeclaration.isImportant(), true);
