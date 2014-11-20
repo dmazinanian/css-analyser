@@ -11,7 +11,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.slf4j.Logger;
 
+import com.fasterxml.jackson.databind.node.ShortNode;
+
+import ca.concordia.cssanalyser.app.CSSAnalyserCLI;
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.csshelper.ListStyleHelper;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationEquivalentValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
@@ -25,6 +30,8 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
  *
  */
 public class ShorthandDeclaration extends MultiValuedDeclaration {
+	
+	private static Logger LOGGER = FileLogger.getLogger(ShorthandDeclaration.class);
 
 	private Map<String, Declaration> individualDeclarations;
 
@@ -1060,6 +1067,10 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 					}
 				}
 	
+				break;
+			}
+			case "animation": {
+				LOGGER.warn("Animation property is not handled");
 				break;
 			}
 			default:

@@ -197,7 +197,10 @@ public class LessStyleSheetAdapter {
 			throw new RuntimeException(colorWithAlpha.toString());
 		}else if (expression instanceof IdentifierExpression) {
 			IdentifierExpression identifier = (IdentifierExpression)expression; 
-			values.add(DeclarationValueFactory.getDeclarationValue(property, identifier.getValue(), ValueType.IDENT));
+			String value = identifier.getValue();
+			if (value == null)
+				value = "";
+			values.add(DeclarationValueFactory.getDeclarationValue(property, value, ValueType.IDENT));
 		} else if (expression instanceof ColorExpression) {
 			ColorExpression colorExpression = (ColorExpression) expression;
 			values.add(DeclarationValueFactory.getDeclarationValue(property, colorExpression.getValue(), ValueType.COLOR)); 
@@ -205,23 +208,22 @@ public class LessStyleSheetAdapter {
 
 			FunctionExpression function =  (FunctionExpression)expression;
 			String functionName = function.getName();
-			if ("rgb".equals(functionName) || "hsl".equals(functionName) ||
-					"rgba".equals(functionName) || "hsla".equals(functionName)) {
+			if ("rgb".equals(functionName) || "hsl".equals(functionName) || "rgba".equals(functionName) || "hsla".equals(functionName)) {
 
-				String functionString = getFunctionStringFromLessFunctionExpression(function);
-
+				String functionString = getFunctionStringFromLessFunctionExpression(property, function);
 				values.add(DeclarationValueFactory.getDeclarationValue(property, functionString, ValueType.COLOR));
 
 			} else if(functionName.equals("url")) {
+				
 				if (function.getParameter().getChilds().get(1) instanceof CssString) {
 					String url = "url('" + ((CssString)function.getParameter().getChilds().get(1)).getValue() + "')"; 
 					values.add(DeclarationValueFactory.getDeclarationValue(property, url, ValueType.URL));
 				} else {
 					throw new RuntimeException("What is that?" + expression);
 				}
+				
 			} else {
-
-				String functionString = getFunctionStringFromLessFunctionExpression(function);
+				String functionString = getFunctionStringFromLessFunctionExpression(property, function);
 				values.add(DeclarationValueFactory.getDeclarationValue(property, functionString, ValueType.FUNCTION));
 			}
 		} else if (expression instanceof CssString) {
@@ -236,18 +238,19 @@ public class LessStyleSheetAdapter {
 		return values;
 	}
 
-	protected String getFunctionStringFromLessFunctionExpression(
-			FunctionExpression function) {
-		String functionString = function.getName() + "(" ;
-		// First child is the operator
-		for (int i = 1; i < function.getParameter().getChilds().size(); i++) {
-			functionString += function.getParameter().getChilds().get(i);
-			if (i < function.getParameter().getChilds().size() -1) {
-				functionString += ", ";
+	protected String getFunctionStringFromLessFunctionExpression(String property, FunctionExpression function) {
+		StringBuilder functionString = new StringBuilder(function.getName());
+		functionString.append("(");
+		List<DeclarationValue> values = getListOfDeclarationValuesFromLessExpression(property, function.getParameter());
+		for (Iterator<DeclarationValue> iterator = values.iterator(); iterator.hasNext(); ) {
+			DeclarationValue value = iterator.next();
+			if (value.getType() != ValueType.SEPARATOR && !functionString.toString().endsWith("(")) {
+				functionString.append(" ");
 			}
+			functionString.append(value.getValue());
 		}
-		functionString += ")";
-		return functionString;
+		functionString.append(")");
+		return functionString.toString();
 	}
 
 	/**
