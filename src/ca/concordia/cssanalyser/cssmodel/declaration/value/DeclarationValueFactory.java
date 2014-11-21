@@ -34,7 +34,7 @@ public class DeclarationValueFactory {
 							case "background":
 							case "perspective-origin":
 							case "transform-origin":
-								return new DeclarationEquivalentValue(value, "0.0px", ValueType.LENGTH);
+								return new DeclarationEquivalentValue(value, "0px", ValueType.LENGTH);
 						}
 						break;
 					case "right":
@@ -44,7 +44,7 @@ public class DeclarationValueFactory {
 						case "background":
 						case "perspective-origin":
 						case "transform-origin":
-							return new DeclarationEquivalentValue(value, "100.0%", ValueType.LENGTH);
+							return new DeclarationEquivalentValue(value, "100%", ValueType.LENGTH);
 						}
 						break;
 					case "center":
@@ -53,7 +53,7 @@ public class DeclarationValueFactory {
 						case "background":
 						case "perspective-origin":
 						case "transform-origin":
-							return new DeclarationEquivalentValue(value, "50.0%", ValueType.LENGTH);
+							return new DeclarationEquivalentValue(value, "50%", ValueType.LENGTH);
 						}
 						break;
 					case "bold":
