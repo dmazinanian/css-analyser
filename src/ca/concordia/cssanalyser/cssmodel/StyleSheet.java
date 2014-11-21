@@ -118,7 +118,7 @@ public class StyleSheet {
 				if (lastMediaQueryLists == null || (lastMediaQueryLists != null && !lastMediaQueryLists.equals(s.getMediaQueryLists()))) {
 					for (Iterator<MediaQueryList> mediaQueryList = s.getMediaQueryLists().iterator(); mediaQueryList.hasNext();) {
 						MediaQueryList mql = mediaQueryList.next();
-						if (lastMediaQueryLists != null && !lastMediaQueryLists.contains(mql)) {
+						if (lastMediaQueryLists == null || (lastMediaQueryLists != null && !lastMediaQueryLists.contains(mql))) {
 							toReturn.append(getIndentsString(currentIndentation));
 							toReturn.append(mql + " {" + System.lineSeparator() + System.lineSeparator()); // Open media query
 							currentIndentation++;
