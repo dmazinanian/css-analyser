@@ -5,7 +5,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.slf4j.Logger;
 
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.DeclarationFactory;
@@ -29,6 +31,7 @@ import ca.concordia.cssanalyser.cssmodel.selectors.SiblingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.SimpleSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorConditionType;
+import ca.concordia.cssanalyser.parser.ParseException;
 
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
 import com.github.sommeri.less4j.core.ast.BinaryExpression;
@@ -59,6 +62,8 @@ import com.github.sommeri.less4j.core.ast.SelectorPart;
  *
  */
 public class LessStyleSheetAdapter {
+	
+	private static Logger LOGGER = FileLogger.getLogger(LessStyleSheetAdapter.class);
 
 	public StyleSheet adapt(com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet) {
 		
@@ -128,22 +133,26 @@ public class LessStyleSheetAdapter {
 			}
 			MediaQuery query = new MediaQuery(prefix, mediumType, lessMediaQuery.getSourceLine(), lessMediaQuery.getSourceColumn());
 			for (MediaExpression lessMediaExpression : lessMediaQuery.getExpressions()) {
-				String feature = "";
-				String expression = "";
-				if (lessMediaExpression instanceof FixedMediaExpression) {
-					FixedMediaExpression fixedMediaExpression = (FixedMediaExpression)lessMediaExpression;
-					if (fixedMediaExpression.getExpression() != null) {
-						// Lets re-use a method that we already have, in an ugly manner
-						List<DeclarationValue> values = getListOfDeclarationValuesFromLessExpression("fake",  fixedMediaExpression.getExpression());
-						for (DeclarationValue value : values)
-							expression += value;
+				try {
+					String feature = "";
+					String expression = "";
+					if (lessMediaExpression instanceof FixedMediaExpression) {
+						FixedMediaExpression fixedMediaExpression = (FixedMediaExpression)lessMediaExpression;
+						if (fixedMediaExpression.getExpression() != null) {
+							// Lets re-use a method that we already have, in an ugly manner
+							List<DeclarationValue> values = getListOfDeclarationValuesFromLessExpression("fake",  fixedMediaExpression.getExpression());
+							for (DeclarationValue value : values)
+								expression += value;
+						}
+						feature = fixedMediaExpression.getFeature().getFeature();
+					} else if (lessMediaExpression instanceof InterpolatedMediaExpression) {
+						throw new RuntimeException("What is " + lessMediaExpression);
 					}
-					feature = fixedMediaExpression.getFeature().getFeature();
-				} else if (lessMediaExpression instanceof InterpolatedMediaExpression) {
-					throw new RuntimeException("What is " + lessMediaExpression);
+					MediaFeatureExpression featureExpression = new MediaFeatureExpression(feature, expression);
+					query.addMediaFeatureExpression(featureExpression);
+				} catch (ParseException ex) {
+					LOGGER.warn(String.format("Ignored media expression %s", lessMediaExpression.toString()));
 				}
-				MediaFeatureExpression featureExpression = new MediaFeatureExpression(feature, expression);
-				query.addMediaFeatureExpression(featureExpression);
 			}
 			
 			mediaQueryList.addMediaQuery(query);
@@ -179,27 +188,31 @@ public class LessStyleSheetAdapter {
 		
 		// Handle declarations
 		for (ASTCssNode declarationNode : ruleSetNode.getBody().getDeclarations()) {
-			
+						
 			if (declarationNode instanceof com.github.sommeri.less4j.core.ast.Declaration) {
 				
-				com.github.sommeri.less4j.core.ast.Declaration lessDeclaration = (com.github.sommeri.less4j.core.ast.Declaration)declarationNode;  
-				
-				String property = lessDeclaration.getNameAsString();
-				List<DeclarationValue> values;
-
-				if (lessDeclaration.getExpression() != null) { // If a declaration does not have a value, happened in some cases
-					values = getListOfDeclarationValuesFromLessExpression(property, lessDeclaration.getExpression());
-				} else {
-					values  = new ArrayList<>();
-					values.add(new DeclarationValue("", ValueType.OTHER));
+				try {
+					com.github.sommeri.less4j.core.ast.Declaration lessDeclaration = (com.github.sommeri.less4j.core.ast.Declaration)declarationNode;  
+					
+					String property = lessDeclaration.getNameAsString();
+					List<DeclarationValue> values;
+	
+					if (lessDeclaration.getExpression() != null) { // If a declaration does not have a value, happened in some cases
+						values = getListOfDeclarationValuesFromLessExpression(property, lessDeclaration.getExpression());
+					} else {
+						values  = new ArrayList<>();
+						values.add(new DeclarationValue("", ValueType.OTHER));
+					}
+	
+					Declaration declaration = DeclarationFactory.getDeclaration(
+							property, values, selector, declarationNode.getSourceLine(), 
+							declarationNode.getSourceColumn(), lessDeclaration.isImportant(), true);
+	
+					selector.addDeclaration(declaration);
+				} catch (Exception ex) {
+					LOGGER.warn("Could not read " + declarationNode + "; " + ex);
 				}
-
-				Declaration declaration = DeclarationFactory.getDeclaration(
-						property, values, selector, declarationNode.getSourceLine(), 
-						declarationNode.getSourceColumn(), lessDeclaration.isImportant(), true);
-
-				selector.addDeclaration(declaration);
-				
+					
 			} else {
 				throw new RuntimeException("What is that?" + declarationNode);
 			}
@@ -207,7 +220,7 @@ public class LessStyleSheetAdapter {
 		return selector;
 	}
 
-	private List<DeclarationValue> getListOfDeclarationValuesFromLessExpression(String property, Expression expression) {
+	private List<DeclarationValue> getListOfDeclarationValuesFromLessExpression(String property, Expression expression) throws ParseException {
 		
 		List<DeclarationValue> values = new ArrayList<>();
 		
@@ -291,7 +304,7 @@ public class LessStyleSheetAdapter {
 		return values;
 	}
 
-	private DeclarationValue getDeclarationValueFromLessNumberExpression(String property, NumberExpression numberExpression) {
+	private DeclarationValue getDeclarationValueFromLessNumberExpression(String property, NumberExpression numberExpression) throws ParseException {
 		
 		DeclarationValue value = null;
 		
@@ -326,14 +339,14 @@ public class LessStyleSheetAdapter {
 				else if ("rem".equals(numberExpression.getSuffix().toLowerCase()))
 					value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.PERCENTAGE);
 				else
-					throw new RuntimeException("What is " + property + ":" + numberExpression.getOriginalString());
+					throw new ParseException("What is " + property + ":" + numberExpression.getOriginalString());
 			default:
 				break;
 		}
 		return value;
 	}
 
-	protected String getFunctionStringFromLessFunctionExpression(String property, FunctionExpression function) {
+	protected String getFunctionStringFromLessFunctionExpression(String property, FunctionExpression function) throws ParseException {
 		StringBuilder functionString = new StringBuilder(function.getName());
 		functionString.append("(");
 		List<DeclarationValue> values = getListOfDeclarationValuesFromLessExpression(property, function.getParameter());
