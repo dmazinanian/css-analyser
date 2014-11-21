@@ -87,6 +87,11 @@ public class MultiValuedDeclaration extends Declaration {
 			return true;
 		}
 		
+		@Override
+		public String toString() {
+			return String.format("%s (layer %s)", propertyName, propertyLayer);
+		}
+		
 	}
 	
 	private static final Set<String> muliValuedProperties = new HashSet<>();
