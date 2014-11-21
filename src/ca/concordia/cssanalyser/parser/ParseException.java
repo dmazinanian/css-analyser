@@ -3,7 +3,11 @@ package ca.concordia.cssanalyser.parser;
 public class ParseException extends Exception {
 
 	public ParseException(Exception e) {
-		// Dummy
+		super(e);
+	}
+	
+	public ParseException(String message) {
+		super(message);
 	}
 
 	/**
