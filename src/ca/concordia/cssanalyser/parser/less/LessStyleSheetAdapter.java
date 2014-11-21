@@ -12,6 +12,10 @@ import ca.concordia.cssanalyser.cssmodel.declaration.DeclarationFactory;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValueFactory;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
+import ca.concordia.cssanalyser.cssmodel.media.MediaFeatureExpression;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQuery;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQuery.MediaQueryPrefix;
 import ca.concordia.cssanalyser.cssmodel.selectors.AdjacentSiblingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.ChildSelector;
@@ -33,11 +37,14 @@ import com.github.sommeri.less4j.core.ast.ColorExpression.ColorWithAlphaExpressi
 import com.github.sommeri.less4j.core.ast.CssClass;
 import com.github.sommeri.less4j.core.ast.CssString;
 import com.github.sommeri.less4j.core.ast.Expression;
+import com.github.sommeri.less4j.core.ast.FixedMediaExpression;
 import com.github.sommeri.less4j.core.ast.FunctionExpression;
 import com.github.sommeri.less4j.core.ast.IdSelector;
 import com.github.sommeri.less4j.core.ast.IdentifierExpression;
 import com.github.sommeri.less4j.core.ast.InterpolableName;
+import com.github.sommeri.less4j.core.ast.InterpolatedMediaExpression;
 import com.github.sommeri.less4j.core.ast.ListExpression;
+import com.github.sommeri.less4j.core.ast.MediaExpression;
 import com.github.sommeri.less4j.core.ast.ListExpressionOperator.Operator;
 import com.github.sommeri.less4j.core.ast.NamedColorExpression;
 import com.github.sommeri.less4j.core.ast.Nth;
@@ -58,69 +65,146 @@ public class LessStyleSheetAdapter {
 		StyleSheet styleSheet = new StyleSheet();
 		styleSheet.setPath(lessStyleSheet.getSource().toString());
 			
- 		for (ASTCssNode node : lessStyleSheet.getChilds()) {
+ 		List<ASTCssNode> nodes = lessStyleSheet.getChilds();
+		addSelectorsToStyleSheetFromLessASTNodes(styleSheet, nodes);
+		
+		System.out.println(styleSheet.toString());
+		return styleSheet;
+	}
+
+	private void addSelectorsToStyleSheetFromLessASTNodes(StyleSheet styleSheet, List<ASTCssNode> nodes) {
+		addSelectorsToStyleSheetFromLessASTNodes(styleSheet, nodes, null);
+	}
+	
+	private void addSelectorsToStyleSheetFromLessASTNodes(StyleSheet styleSheet, List<ASTCssNode> nodes, MediaQueryList mediaQueries) {
+		
+		for (ASTCssNode node : nodes) {
  			
  			if (node instanceof RuleSet) {
  				
  				RuleSet ruleSetNode = (RuleSet)node;
- 				Selector selector = null;
- 				
- 				if (ruleSetNode.getSelectors().size() == 1) { // One selector, this is a base selector
- 					
- 					selector = getBaseSelectorFromLessSelector(ruleSetNode.getSelectors().get(0));
- 					
- 				} else { // More than 1 selector, this is a grouping selector
- 					GroupingSelector grouping = new GroupingSelector();
-
- 					for (com.github.sommeri.less4j.core.ast.Selector lessSelector : ruleSetNode.getSelectors()) {
- 						grouping.add(getBaseSelectorFromLessSelector(lessSelector));					
- 					}
- 					
- 					com.github.sommeri.less4j.core.ast.Selector firstSelector = ruleSetNode.getSelectors().get(0);
- 					com.github.sommeri.less4j.core.ast.Selector lastSelector = ruleSetNode.getSelectors().get(ruleSetNode.getSelectors().size() - 1);
-
- 					grouping.setLineNumber(firstSelector.getSourceLine());
- 					grouping.setColumnNumber(firstSelector.getSourceColumn());
- 					grouping.setOffset(firstSelector.getUnderlyingStructure().getTokenStartIndex());
- 					grouping.setLength(lastSelector.getUnderlyingStructure().getTokenStopIndex() - firstSelector.getUnderlyingStructure().getTokenStartIndex());
- 					
- 					selector = grouping;
- 				}
- 				
- 				// Handle declarations
- 				for (ASTCssNode declarationNode : ruleSetNode.getBody().getDeclarations()) {
- 					
- 					if (declarationNode instanceof com.github.sommeri.less4j.core.ast.Declaration) {
- 						
- 						com.github.sommeri.less4j.core.ast.Declaration lessDeclaration = (com.github.sommeri.less4j.core.ast.Declaration)declarationNode;  
- 						
- 						String property = lessDeclaration.getNameAsString();
- 						List<DeclarationValue> values;
-
- 						if (lessDeclaration.getExpression() != null) { // If a declaration does not have a value, happened in some cases
- 							values = getListOfDeclarationValuesFromLessExpression(property, lessDeclaration.getExpression());
- 						} else {
- 							values  = new ArrayList<>();
- 							values.add(new DeclarationValue("", ValueType.OTHER));
- 						}
-
- 						Declaration declaration = DeclarationFactory.getDeclaration(
- 								property, values, selector, declarationNode.getSourceLine(), 
- 								declarationNode.getSourceColumn(), lessDeclaration.isImportant(), true);
- 						selector.addDeclaration(declaration);
- 						
- 					} else {
- 						throw new RuntimeException("What is that?" + declarationNode);
- 					}
- 				}
+ 				Selector selector = getSelectorFromLessRuleSet(ruleSetNode);
+ 				if (mediaQueries != null)
+ 					selector.addMediaQueryList(mediaQueries);
  				styleSheet.addSelector(selector);
+ 				
  			} else if (node instanceof com.github.sommeri.less4j.core.ast.Media) {
- 				throw new NotImplementedException("Media not yet implemented");
+ 				
+ 				com.github.sommeri.less4j.core.ast.Media lessMedia = (com.github.sommeri.less4j.core.ast.Media)node;
+ 				MediaQueryList mediaQueryList = getMediaQueryListFromLessMedia(lessMedia);
+ 				addSelectorsToStyleSheetFromLessASTNodes(styleSheet, lessMedia.getBody().getMembers(), mediaQueryList);
+ 				
  			}
+ 	
 		}
 		
-		System.out.println(styleSheet.toString());
-		return styleSheet;
+	}
+
+	private MediaQueryList getMediaQueryListFromLessMedia(com.github.sommeri.less4j.core.ast.Media lessMedia) {
+		// x and y, z and t is a list of media queries containing two media queries
+		MediaQueryList mediaQueryList = new MediaQueryList();
+		
+		for (com.github.sommeri.less4j.core.ast.MediaQuery lessMediaQuery : lessMedia.getMediums()) {
+			MediaQueryPrefix prefix = null;
+			String mediumType = "";
+			if (lessMediaQuery.getMedium() != null) {
+				if (lessMediaQuery.getMedium().getModifier() != null) {
+					switch (lessMediaQuery.getMedium().getModifier().getModifier()) {
+					case NOT:
+						prefix = MediaQueryPrefix.NOT;
+						break;
+					case ONLY:
+						prefix = MediaQueryPrefix.ONLY;
+						break;
+					case NONE:
+					default:
+						prefix = null;
+						break;
+					}
+				}
+				
+				if (lessMediaQuery.getMedium().getMediumType() != null)
+					mediumType = lessMediaQuery.getMedium().getMediumType().getName();
+			}
+			MediaQuery query = new MediaQuery(prefix, mediumType, lessMediaQuery.getSourceLine(), lessMediaQuery.getSourceColumn());
+			for (MediaExpression lessMediaExpression : lessMediaQuery.getExpressions()) {
+				String feature = "";
+				String expression = "";
+				if (lessMediaExpression instanceof FixedMediaExpression) {
+					FixedMediaExpression fixedMediaExpression = (FixedMediaExpression)lessMediaExpression;
+					if (fixedMediaExpression.getExpression() != null) {
+						// Lets re-use a method that we already have, in an ugly manner
+						List<DeclarationValue> values = getListOfDeclarationValuesFromLessExpression("fake",  fixedMediaExpression.getExpression());
+						for (DeclarationValue value : values)
+							expression += value;
+					}
+					feature = fixedMediaExpression.getFeature().getFeature();
+				} else if (lessMediaExpression instanceof InterpolatedMediaExpression) {
+					throw new RuntimeException("What is " + lessMediaExpression);
+				}
+				MediaFeatureExpression featureExpression = new MediaFeatureExpression(feature, expression);
+				query.addMediaFeatureExpression(featureExpression);
+			}
+			
+			mediaQueryList.addMediaQuery(query);
+		}
+		
+		return mediaQueryList;
+	}
+
+	private Selector getSelectorFromLessRuleSet(RuleSet ruleSetNode) {
+		Selector selector = null;
+		
+		if (ruleSetNode.getSelectors().size() == 1) { // One selector, this is a base selector
+			
+			selector = getBaseSelectorFromLessSelector(ruleSetNode.getSelectors().get(0));
+			
+		} else { // More than 1 selector, this is a grouping selector
+			GroupingSelector grouping = new GroupingSelector();
+
+			for (com.github.sommeri.less4j.core.ast.Selector lessSelector : ruleSetNode.getSelectors()) {
+				grouping.add(getBaseSelectorFromLessSelector(lessSelector));					
+			}
+			
+			com.github.sommeri.less4j.core.ast.Selector firstSelector = ruleSetNode.getSelectors().get(0);
+			com.github.sommeri.less4j.core.ast.Selector lastSelector = ruleSetNode.getSelectors().get(ruleSetNode.getSelectors().size() - 1);
+
+			grouping.setLineNumber(firstSelector.getSourceLine());
+			grouping.setColumnNumber(firstSelector.getSourceColumn());
+			grouping.setOffset(firstSelector.getUnderlyingStructure().getTokenStartIndex());
+			grouping.setLength(lastSelector.getUnderlyingStructure().getTokenStopIndex() - firstSelector.getUnderlyingStructure().getTokenStartIndex());
+			
+			selector = grouping;
+		}
+		
+		// Handle declarations
+		for (ASTCssNode declarationNode : ruleSetNode.getBody().getDeclarations()) {
+			
+			if (declarationNode instanceof com.github.sommeri.less4j.core.ast.Declaration) {
+				
+				com.github.sommeri.less4j.core.ast.Declaration lessDeclaration = (com.github.sommeri.less4j.core.ast.Declaration)declarationNode;  
+				
+				String property = lessDeclaration.getNameAsString();
+				List<DeclarationValue> values;
+
+				if (lessDeclaration.getExpression() != null) { // If a declaration does not have a value, happened in some cases
+					values = getListOfDeclarationValuesFromLessExpression(property, lessDeclaration.getExpression());
+				} else {
+					values  = new ArrayList<>();
+					values.add(new DeclarationValue("", ValueType.OTHER));
+				}
+
+				Declaration declaration = DeclarationFactory.getDeclaration(
+						property, values, selector, declarationNode.getSourceLine(), 
+						declarationNode.getSourceColumn(), lessDeclaration.isImportant(), true);
+
+				selector.addDeclaration(declaration);
+				
+			} else {
+				throw new RuntimeException("What is that?" + declarationNode);
+			}
+		}
+		return selector;
 	}
 
 	private List<DeclarationValue> getListOfDeclarationValuesFromLessExpression(String property, Expression expression) {
@@ -155,39 +239,8 @@ public class LessStyleSheetAdapter {
 
 			NumberExpression numberExpression = (NumberExpression)expression;
 
-			switch(numberExpression.getDimension()) {
-				case ANGLE:
-					values.add(DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.ANGLE));
-				case EMS:
-				case EXS:
-				case LENGTH:
-					values.add(DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.LENGTH));
-					break;
-				case FREQ:
-					values.add(DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.FREQUENCY));
-					break;
-				case NUMBER:
-					if (numberExpression.getOriginalString().indexOf(".") > -1)
-						values.add(DeclarationValueFactory.getDeclarationValue(property, DeclarationValueFactory.formatFloat(numberExpression.getValueAsDouble()), ValueType.REAL));
-					else
-						values.add(DeclarationValueFactory.getDeclarationValue(property, DeclarationValueFactory.formatFloat(numberExpression.getValueAsDouble()), ValueType.INTEGER));
-					break;
-				case PERCENTAGE:
-					values.add(DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.PERCENTAGE));
-					break;
-				case REPEATER:
-					throw new RuntimeException("What is " + property + ":" + numberExpression.getOriginalString());
-				case TIME:
-					values.add(DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.TIME));
-					break;
-				case UNKNOWN:
-					if ("turn".equals(numberExpression.getSuffix().toLowerCase()))
-						values.add(DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.ANGLE));
-					else
-						throw new RuntimeException("What is " + property + ":" + numberExpression.getOriginalString());
-				default:
-					break;
-			}
+			DeclarationValue value = getDeclarationValueFromLessNumberExpression(property, numberExpression);
+			values.add(value);
 
 		} else if (expression instanceof NamedColorExpression) {
 			NamedColorExpression  namedExpression = (NamedColorExpression)expression;
@@ -195,7 +248,7 @@ public class LessStyleSheetAdapter {
 		} else if (expression instanceof ColorWithAlphaExpression) {
 			ColorWithAlphaExpression colorWithAlpha = (ColorWithAlphaExpression)expression;
 			throw new RuntimeException(colorWithAlpha.toString());
-		}else if (expression instanceof IdentifierExpression) {
+		} else if (expression instanceof IdentifierExpression) {
 			IdentifierExpression identifier = (IdentifierExpression)expression; 
 			String value = identifier.getValue();
 			if (value == null)
@@ -236,6 +289,48 @@ public class LessStyleSheetAdapter {
 		}
 		
 		return values;
+	}
+
+	private DeclarationValue getDeclarationValueFromLessNumberExpression(String property, NumberExpression numberExpression) {
+		
+		DeclarationValue value = null;
+		
+		switch(numberExpression.getDimension()) {
+			case ANGLE:
+				value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.ANGLE);
+			case EMS:
+			case EXS:
+			case LENGTH:
+				value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.LENGTH);
+				break;
+			case FREQ:
+				value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.FREQUENCY);
+				break;
+			case NUMBER:
+				if (numberExpression.getOriginalString().indexOf(".") > -1)
+					value = DeclarationValueFactory.getDeclarationValue(property, DeclarationValueFactory.formatFloat(numberExpression.getValueAsDouble()), ValueType.REAL);
+				else
+					value = DeclarationValueFactory.getDeclarationValue(property, DeclarationValueFactory.formatFloat(numberExpression.getValueAsDouble()), ValueType.INTEGER);
+				break;
+			case PERCENTAGE:
+				value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.PERCENTAGE);
+				break;
+			case REPEATER:
+				throw new RuntimeException("What is " + property + ":" + numberExpression.getOriginalString());
+			case TIME:
+				value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.TIME);
+				break;
+			case UNKNOWN:
+				if ("turn".equals(numberExpression.getSuffix().toLowerCase()))
+					value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.ANGLE);
+				else if ("rem".equals(numberExpression.getSuffix().toLowerCase()))
+					value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.PERCENTAGE);
+				else
+					throw new RuntimeException("What is " + property + ":" + numberExpression.getOriginalString());
+			default:
+				break;
+		}
+		return value;
 	}
 
 	protected String getFunctionStringFromLessFunctionExpression(String property, FunctionExpression function) {
