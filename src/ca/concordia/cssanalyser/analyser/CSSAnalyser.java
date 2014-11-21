@@ -385,7 +385,7 @@ public class CSSAnalyser {
 			StyleSheet newStyleSheet = RefactorDuplications.groupingRefactoring(styleSheet, itemSetWithMaxImpact);
 			IOHelper.writeStringToFile(newStyleSheet.toString(), folderName + "/refactored" + refactoringRound + ".css");
 
-			FluteCSSParser parser = new FluteCSSParser();
+			CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
 			try {
 				newStyleSheet = parser.parseExternalCSS(folderName + "/refactored" + refactoringRound + ".css");
 			} catch (Exception ex) {
