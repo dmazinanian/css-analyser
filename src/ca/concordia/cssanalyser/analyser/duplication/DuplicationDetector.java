@@ -239,12 +239,16 @@ public class DuplicationDetector {
 				
 				// For each real shorthand in the style sheet, we compare it with the virtual shorthands of this selectors
 				for (Declaration checkingDeclaration : stylesheet.getAllDeclarations()) {
+					
 					if (checkingDeclaration.getSelector() != selector && checkingDeclaration instanceof ShorthandDeclaration) {
+					
 						ShorthandDeclaration checkingShorthandDeclaration = (ShorthandDeclaration) checkingDeclaration;
-						if(virtualShorthand.individualDeclarationsEquivalent(checkingShorthandDeclaration)) {
-							TypeThreeDuplicationInstance duplication = 
-									new TypeThreeDuplicationInstance(checkingShorthandDeclaration, virtualShorthand.getIndividualDeclarations());
+						
+						if(!checkingShorthandDeclaration.isVirtual() && virtualShorthand.individualDeclarationsEquivalent(checkingShorthandDeclaration)) {
+							
+							TypeThreeDuplicationInstance duplication =  new TypeThreeDuplicationInstance(checkingShorthandDeclaration, virtualShorthand.getIndividualDeclarations());
 							typeThreeDuplicationsList.addDuplication(duplication);
+							
 
 							/*
 							 * Well, well, when we add individual declarations to a virtual shorthand, it does not add the real values to the
