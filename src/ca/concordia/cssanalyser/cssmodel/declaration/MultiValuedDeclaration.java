@@ -113,6 +113,7 @@ public class MultiValuedDeclaration extends Declaration {
 				"border-bottom-right-radius",
 				"border-bottom-left-radius",
 				"transform-origin",
+				"transform",
 				"perspective-origin",
 				"border-spacing",
 				"text-shadow",
@@ -222,6 +223,13 @@ public class MultiValuedDeclaration extends Declaration {
 				}
 				assignStylePropertyToValue(HRADIUS, firstValue);
 				assignStylePropertyToValue(VRADIUS, secondValue);
+				break;
+			}
+			case "transform" : {
+				String TRANSFORM = "transform";
+				for (DeclarationValue value : declarationValues) {
+					assignStylePropertyToValue(TRANSFORM, value, true);
+				}
 				break;
 			}
 			case "transform-origin": {
