@@ -113,6 +113,7 @@ public class MultiValuedDeclaration extends Declaration {
 				"border-bottom-right-radius",
 				"border-bottom-left-radius",
 				"transform-origin",
+				"transition-property",
 				"transform",
 				"perspective-origin",
 				"border-spacing",
@@ -228,7 +229,8 @@ public class MultiValuedDeclaration extends Declaration {
 			case "transform" : {
 				String TRANSFORM = "transform";
 				for (DeclarationValue value : declarationValues) {
-					assignStylePropertyToValue(TRANSFORM, value, true);
+					if (value.getType() != ValueType.SEPARATOR)
+						assignStylePropertyToValue(TRANSFORM, value, true);
 				}
 				break;
 			}
@@ -394,17 +396,28 @@ public class MultiValuedDeclaration extends Declaration {
 			
 			case "content": {
 				for (DeclarationValue value : declarationValues) {
-					assignStylePropertyToValue("content", 1, value, true);
+					if (value.getType() != ValueType.SEPARATOR)
+						assignStylePropertyToValue("content", 1, value, true);
 				}
 				break;
 			}
 			
 			case "font-family": {
 				for (DeclarationValue value : declarationValues) {
-					assignStylePropertyToValue("font-family", 1, value, true);
+					if (value.getType() != ValueType.SEPARATOR)
+						assignStylePropertyToValue("font-family", 1, value, true);
 				}
 				break;
 			}
+			
+			case "transition-property": {
+				for (DeclarationValue value : declarationValues) {
+					if (value.getType() != ValueType.SEPARATOR)
+						assignStylePropertyToValue("transition-property", 1, value, false);
+				}
+				break;
+			}
+			
 			case "quotes": {
 				/*
 				 * http://www.w3schools.com/cssref/pr_gen_quotes.asp
@@ -467,7 +480,9 @@ public class MultiValuedDeclaration extends Declaration {
 		
 		value.setCorrespondingStyleProperty(styleProperty);
 		
-		Collection<DeclarationValue> values = stylePropertyToDeclarationValueMap.get(styleProperty);
+		PropertyAndLayer propertyAndLayer = new PropertyAndLayer(styleProperty, layer);
+		
+		Collection<DeclarationValue> values = stylePropertyToDeclarationValueMap.get(propertyAndLayer);
 		if (values == null) {
 			if (orderImportant)
 				values = new ArrayList<>();
@@ -476,7 +491,7 @@ public class MultiValuedDeclaration extends Declaration {
 		}
 		
 		values.add(value);
-		stylePropertyToDeclarationValueMap.put(new PropertyAndLayer(styleProperty, layer), values);
+		stylePropertyToDeclarationValueMap.put(propertyAndLayer, values);
 	}
 
 	/**
