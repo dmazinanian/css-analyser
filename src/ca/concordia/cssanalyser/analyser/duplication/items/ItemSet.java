@@ -318,7 +318,7 @@ public class ItemSet implements Set<Item>, Cloneable {
 	 *  the itemset cannot be used for the refactoring.
 	 *  It should be real in at least one of the selectors in the current itemset's support.
 	 */
-	public boolean isAppliable() {
+	public boolean isApplicable() {
 		boolean itemSetIsDoable = true;
 		for (Item currentItem : this) {
 			boolean declarationIsNotVirtualInAllSelectors = false;
