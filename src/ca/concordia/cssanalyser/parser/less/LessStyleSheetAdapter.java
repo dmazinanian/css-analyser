@@ -73,7 +73,6 @@ public class LessStyleSheetAdapter {
  		List<ASTCssNode> nodes = lessStyleSheet.getChilds();
 		addSelectorsToStyleSheetFromLessASTNodes(styleSheet, nodes);
 		
-		System.out.println(styleSheet.toString());
 		return styleSheet;
 	}
 
@@ -347,11 +346,15 @@ public class LessStyleSheetAdapter {
 	}
 
 	protected String getFunctionStringFromLessFunctionExpression(String property, FunctionExpression function) throws ParseException {
+				
 		StringBuilder functionString = new StringBuilder(function.getName());
 		functionString.append("(");
-		List<DeclarationValue> values = getListOfDeclarationValuesFromLessExpression(property, function.getParameter());
+		List<DeclarationValue> values = getListOfDeclarationValuesFromLessExpression(property, function.getParameter());		
 		for (Iterator<DeclarationValue> iterator = values.iterator(); iterator.hasNext(); ) {
 			DeclarationValue value = iterator.next();
+			if ("".equals(value.getValue()))
+					throw new ParseException(String.format("Could not parse one of the parameters for function %s at <%s:%s>", function.getName(), function.getSourceLine(), function.getSourceColumn()));
+			
 			if (value.getType() != ValueType.SEPARATOR && !functionString.toString().endsWith("(")) {
 				functionString.append(" ");
 			}
