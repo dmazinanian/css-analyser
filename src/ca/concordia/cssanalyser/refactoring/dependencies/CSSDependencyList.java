@@ -93,8 +93,10 @@ public abstract class CSSDependencyList<T extends CSSDependency<?>> implements L
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		for (CSSDependency<?> dependency : dependencies) {
-			builder.append(dependency + "\n");
+			builder.append(dependency + System.lineSeparator());
 		}
+		builder.append(System.lineSeparator());
+		builder.append("Total number of dependencies: ").append(dependencies.size());
 		return builder.toString();
 	}
 
