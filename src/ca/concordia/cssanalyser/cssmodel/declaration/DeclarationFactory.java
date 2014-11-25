@@ -45,7 +45,7 @@ public class DeclarationFactory {
 				for (DeclarationValue dv : values)
 					concatanated += dv.getValue();
 				declarationValue = new DeclarationValue(concatanated, ValueType.OTHER);
-				LOGGER.warn(String.format("Multiple values for single-valued property '%s' are given. All the values are concatanated to make a single value '%s'. Values are %s",
+				LOGGER.warn(String.format("Multiple values for single-valued property '%s' are given. All the values are concatenated to make a single value '%s'. Values are %s",
 						propertyName, concatanated, values.toString()));
 			}
 			return new SingleValuedDeclaration(propertyName, declarationValue, belongsTo, offset, length, important);
