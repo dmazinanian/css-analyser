@@ -19,10 +19,16 @@ public class LocationInfo {
 	}
 	
 	public LocationInfo(int fileLineNumber, int fileColNumber) {
-		this.lineNumber = fileLineNumber;
-		this.columnNumber = fileColNumber;
+		this(fileLineNumber, fileColNumber, -1, -1);
 	}
 	
+	public LocationInfo(int lineNumber, int columnNumber, int offset, int length) {
+		this.lineNumber = lineNumber;
+		this.columnNumber = columnNumber;
+		this.offset = offset;
+		this.lenghth = length;
+	}
+
 	public int getLineNumber() {
 		return lineNumber;
 	}
