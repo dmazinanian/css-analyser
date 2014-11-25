@@ -12,18 +12,18 @@ import ca.concordia.cssanalyser.analyser.duplication.items.PropertyItemSetList;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
-import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorRefactoringOpportunity;
+import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunity;
 
 public class LessRefactoringOpportunitiesDetector {
 	private StyleSheet styleSheet;
 	public LessRefactoringOpportunitiesDetector(StyleSheet styleSheet) {
 		this.styleSheet = styleSheet;
 	}
-	public List<PreprocessorRefactoringOpportunity> findMixinRefactoringOpportunities() {
+	public List<PreprocessorMigrationOpportunity> findMixinRefactoringOpportunities() {
 		
 		int minSupport = 2;
 
-		List<PreprocessorRefactoringOpportunity> opportunities = new ArrayList<>();
+		List<PreprocessorMigrationOpportunity> opportunities = new ArrayList<>();
 		
 		DuplicationDetector duplicationDetector = new DuplicationDetector(styleSheet);
 		//duplicationDetector.findTypeThreeDuplication();

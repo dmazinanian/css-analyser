@@ -10,11 +10,11 @@ import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
-public class PreprocessorRefactoringOpportunitiesDetector {
+public class PreprocessorMigrationOpportunitiesDetector {
 	
 	private final StyleSheet styleSheet;
 
-	public PreprocessorRefactoringOpportunitiesDetector(StyleSheet styleSheet) {
+	public PreprocessorMigrationOpportunitiesDetector(StyleSheet styleSheet) {
 		this.styleSheet = styleSheet;
 	}
 

@@ -1,6 +1,6 @@
 package ca.concordia.cssanalyser.migration.topreprocessors;
 
-public abstract class PreprocessorRefactoringOpportunity {
+public abstract class PreprocessorMigrationOpportunity {
 	private double rank;
 
 	public double getRank() {

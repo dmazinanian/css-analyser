@@ -5,7 +5,7 @@ import java.util.Iterator;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
-public class MixinRefactoringOpportunity extends PreprocessorRefactoringOpportunity {
+public class MixinRefactoringOpportunity extends PreprocessorMigrationOpportunity {
 	
 	private final Iterable<Declaration> duplicatedDeclarations;
 	private final Iterable<Selector> forSelectors;
