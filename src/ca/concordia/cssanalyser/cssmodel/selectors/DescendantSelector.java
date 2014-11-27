@@ -57,8 +57,7 @@ public class DescendantSelector extends Combinator {
 		if (!generalEquals(obj))
 			return false;;
 		DescendantSelector otherDesendantSelector = (DescendantSelector)obj;
-		return (lineNumber == otherDesendantSelector.lineNumber &&
-				columnNumber == otherDesendantSelector.columnNumber &&
+		return (getLocationInfo().equals(otherDesendantSelector.getLocationInfo()) &&
 				selectorEquals(otherDesendantSelector));
 	}
 
@@ -82,8 +81,7 @@ public class DescendantSelector extends Combinator {
 	@Override
 	public int hashCode() {
 		int result = 17;
-		result = 31 * result + lineNumber;
-		result = 31 * result + columnNumber;
+		result = 31 * result + getLocationInfo().hashCode();
 		result = 31 * result + (parentSelector == null ? 0 : parentSelector.hashCode());
 		result = 31 * result + (childSelector == null ? 0 : childSelector.hashCode());
 		return result;
@@ -92,8 +90,7 @@ public class DescendantSelector extends Combinator {
 	@Override
 	public DescendantSelector clone() {
 		DescendantSelector newOne = new DescendantSelector(this.parentSelector.clone(), this.childSelector.clone());
-		newOne.setLineNumber(lineNumber);
-		newOne.setColumnNumber(columnNumber);
+		newOne.setLocationInfo(getLocationInfo());
 		newOne.addMediaQueryLists(mediaQueryLists);
 		return newOne;
 	}

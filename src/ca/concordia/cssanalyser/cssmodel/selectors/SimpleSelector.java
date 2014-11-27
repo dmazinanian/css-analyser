@@ -12,6 +12,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 import ca.concordia.cssanalyser.app.FileLogger;
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
 import ca.concordia.cssanalyser.dom.DOMHelper;
@@ -39,15 +40,15 @@ public class SimpleSelector extends BaseSelector {
 	private static final Logger LOGGER = FileLogger.getLogger(SimpleSelector.class);
 
 	public SimpleSelector() {
-		this(null);
+		this(null, new LocationInfo());
 	}
 
 	public SimpleSelector(GroupingSelector parent) {
-		this(parent, -1, -1);
+		this(parent, new LocationInfo());
 	}
 
-	public SimpleSelector(int fileLineNumber, int fileColNumber) {
-		this(null, fileColNumber, fileLineNumber);
+	public SimpleSelector(LocationInfo locationInfo) {
+		this(null, locationInfo);
 	}
 
 	/**
@@ -61,10 +62,8 @@ public class SimpleSelector extends BaseSelector {
 	 * 			Column number of the source of container stylesheet.
 	 * 
 	 */
-	public SimpleSelector(GroupingSelector parent, 
-			int fileLineNumber,
-			int fileColumnNumber) {
-		super(parent, fileLineNumber, fileColumnNumber);
+	public SimpleSelector(GroupingSelector parent, LocationInfo locationInfo) {
+		super(parent, locationInfo);
 		conditions = new ArrayList<>();
 		pseudoClasses = new ArrayList<>();
 		selectedClasses = new ArrayList<>();
@@ -172,8 +171,7 @@ public class SimpleSelector extends BaseSelector {
 		
 		BaseSelector otherBaseSelector = (BaseSelector) obj;
 
-		if (lineNumber != otherBaseSelector.lineNumber ||
-				columnNumber != otherBaseSelector.columnNumber)
+		if (!getLocationInfo().equals(otherBaseSelector.getLocationInfo()))
 			return false;
 		
 		if (getParentGroupingSelector() == null) {
@@ -207,8 +205,7 @@ public class SimpleSelector extends BaseSelector {
 	@Override
 	public int hashCode() {
 		int result = 17;
-		result = 31 * result + lineNumber;
-		result = 31 * result + columnNumber;
+		result = 31 * result + getLocationInfo().hashCode();
 		if (selectedID != null)
 			result = 31 * result + selectedID.hashCode();
 		if (selectedElementName != null)
@@ -253,7 +250,8 @@ public class SimpleSelector extends BaseSelector {
 
 	@Override
 	public SimpleSelector clone() {
-		SimpleSelector newOne = new SimpleSelector(lineNumber, columnNumber);
+		SimpleSelector newOne = new SimpleSelector();
+		newOne.setLocationInfo(getLocationInfo());
 		if (mediaQueryLists != null)
 			newOne.addMediaQueryLists(mediaQueryLists);
 		newOne.selectedElementName = selectedElementName;

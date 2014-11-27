@@ -18,8 +18,7 @@ public class ChildSelector extends DescendantSelector {
 	@Override
 	public ChildSelector clone() {
 		ChildSelector newOne = new ChildSelector(getParentSelector().clone(), getChildSelector().clone());
-		newOne.setLineNumber(lineNumber);
-		newOne.setColumnNumber(columnNumber);
+		newOne.setLocationInfo(getLocationInfo());
 		newOne.addMediaQueryLists(mediaQueryLists);
 		return newOne;
 	}

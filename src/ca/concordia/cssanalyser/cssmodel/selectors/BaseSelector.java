@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.w3c.dom.Document;
 
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
 
 /**
@@ -19,19 +20,19 @@ public abstract class BaseSelector extends Selector {
 	private GroupingSelector parentGroupingSelector;
 
 	public BaseSelector() {
-		this(null, -1, -1);
+		this(null, new LocationInfo());
+	}
+	
+	public BaseSelector(LocationInfo locationInfo) {
+		this(null, locationInfo);
 	}
 
 	public BaseSelector(GroupingSelector parent) {
-		this(parent, -1, -1);
+		this(parent, new LocationInfo());
 	}
 
-	public BaseSelector(int line, int coloumn) {
-		this(null, line, coloumn);
-	}
-
-	public BaseSelector(GroupingSelector parent, int line, int coloumn) {
-		super(line, coloumn);
+	public BaseSelector(GroupingSelector parent, LocationInfo locationInfo) {
+		super(locationInfo);
 		parentGroupingSelector = parent;
 	}
 

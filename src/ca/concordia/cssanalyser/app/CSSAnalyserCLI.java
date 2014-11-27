@@ -26,6 +26,7 @@ import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
 import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
 import ca.concordia.cssanalyser.parser.ParseException;
+import ca.concordia.cssanalyser.parser.less.LessStyleSheetAdapter;
 
 public class CSSAnalyserCLI {
 	
@@ -36,7 +37,7 @@ public class CSSAnalyserCLI {
 		ParametersParser params = new ParametersParser(args);
 		
 		switch (params.getProgramMode()) {
-		case CRAWL:
+		case CRAWL: {
 			if (params.getOutputFolderPath() == null) {
 				LOGGER.error("Please provide an output folder using --outfolder:out/folder.");
 				return;
@@ -82,45 +83,43 @@ public class CSSAnalyserCLI {
 			}
 			
 			break;
-		case FOLDER:
+		}
+		case FOLDER: {
 
-			List<String> folders = new ArrayList<>();
-			
-			if (params.getInputFolderPath() != null)
-				folders.add(params.getInputFolderPath());
-			else if (params.getListOfFoldersPathsToBeAnayzedFile() != null) {
-				folders.addAll(params.getFoldersListToBeAnalyzed());
-			} else {
+			List<String> folders = getFolderPathsFromParameters(params);
+
+			if (folders.size() == 0) {
 				LOGGER.error("Please provide an input folder with --infolder:in/folder or list of folders using --foldersfile:path/to/file.");
-				return;
-			}
-			
-			for (String folder : folders) {
-				List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");	
-				if (allStatesFiles.size() == 0) {
-					LOGGER.warn("No HTML file found in " + folder + "crawljax/doms, skipping this folder");
-				} else {
-					for (File domStateHtml : allStatesFiles) {
-	
-						String stateName = domStateHtml.getName();
-						// Remove .html
-						String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
-						
-						try {
-	
-							CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), folder + "css/" + correspondingCSSFolderName);
-							cssAnalyser.analyse(params.getFPGrowthMinsup());
-						
-						} catch (FileNotFoundException fnfe) {
-							LOGGER.warn(fnfe.getMessage());
+			} else {
+
+				for (String folder : folders) {
+					List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");	
+					if (allStatesFiles.size() == 0) {
+						LOGGER.warn("No HTML file found in " + folder + "crawljax/doms, skipping this folder");
+					} else {
+						for (File domStateHtml : allStatesFiles) {
+
+							String stateName = domStateHtml.getName();
+							// Remove .html
+							String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
+
+							try {
+
+								CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), folder + "css/" + correspondingCSSFolderName);
+								cssAnalyser.analyse(params.getFPGrowthMinsup());
+
+							} catch (FileNotFoundException fnfe) {
+								LOGGER.warn(fnfe.getMessage());
+							}
+
 						}
-	
 					}
 				}
 			}
-			
 			break;
-		case NODOM:
+		}
+		case NODOM: {
+			
 			CSSAnalyser cssAnalyser = null;
 			if (params.getInputFolderPath() != null) {
 				try {
@@ -134,32 +133,85 @@ public class CSSAnalyserCLI {
 			}
 			cssAnalyser.analyse(params.getFPGrowthMinsup());
 			break;
-		case DIFF:
+			
+		}
+		case DIFF: {
 			throw new RuntimeException("Not yet implemented");
-		case PREP:
-			if (!"".equals(params.getFilePath())) {
+		}
+		case PREP: {
 
+				List<String> folders = getFolderPathsFromParameters(params);
+				
+				if (folders.size() > 0) {
 
-				try {
+					for (String folder : folders) {
+						List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");	
+						if (allStatesFiles.size() == 0) {
+							LOGGER.warn("No HTML file found in " + folder + "crawljax/doms, skipping this folder");
+						} else {
+							for (File domStateHtml : allStatesFiles) {
+
+								String stateName = domStateHtml.getName();
+								// Remove .html
+								String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
+
+								FileLogger.addFileAppender(folder + "css/log.log", false);
+
+								//							CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), folder + "css/" + correspondingCSSFolderName);
+								//							cssAnalyser.analyse(params.getFPGrowthMinsup());
+								List<File> cssFiles = IOHelper.searchForFiles(folder + "css/" + correspondingCSSFolderName, "css");
+
+								for (File f : cssFiles) {
+									try {
+										CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
+										StyleSheet styleSheet = parser.parseExternalCSS(f.getAbsolutePath());
+									}
+									catch (Exception e) {
+										LOGGER.warn("Parse exception in parsing " + f.getAbsolutePath());
+									}
+								}
+
+								//System.out.println(LessStyleSheetAdapter.Test.a);
+
+							}
+						}
+					}
 					
-
-					CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
-					StyleSheet styleSheet = parser.parseExternalCSS(params.getFilePath());
-//					PreprocessorRefactoringOpportunitiesDetector preprocessorOpportunities = new PreprocessorRefactoringOpportunitiesDetector(styleSheet);
-//					Iterable<MixinRefactoringOpportunity> refactoringOpportunities = preprocessorOpportunities.findMixinOpportunities();
-					
-
-				} catch (ParseException e) {
-//
-//					e.printStackTrace();
-//
+				} else if (null != params.getFilePath() && !"".equals(params.getFilePath())) {
+					try {
+						
+	
+						CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
+						StyleSheet styleSheet = parser.parseExternalCSS(params.getFilePath());
+	//					PreprocessorRefactoringOpportunitiesDetector preprocessorOpportunities = new PreprocessorRefactoringOpportunitiesDetector(styleSheet);
+	//					Iterable<MixinRefactoringOpportunity> refactoringOpportunities = preprocessorOpportunities.findMixinOpportunities();
+						
+	
+					} catch (ParseException e) {
+	//
+	//					e.printStackTrace();
+	//
+					}
 				}
+				else 
+					LOGGER.error("No CSS file is provided.");
+				break;
 			}
-			else 
-				LOGGER.error("No CSS file is provided.");
-			break;
-		default:
+			default:
 		}		
+	}
+
+	private static List<String> getFolderPathsFromParameters(ParametersParser params) {
+		List<String> folders = new ArrayList<>();
+		
+		if (params.getInputFolderPath() != null)
+			folders.add(params.getInputFolderPath());
+		else if (params.getListOfFoldersPathsToBeAnayzedFile() != null) {
+			folders.addAll(params.getFoldersListToBeAnalyzed());
+		} else {
+			return new ArrayList<>();
+		}
+		return folders;
 	}
 
 	

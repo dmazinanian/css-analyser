@@ -40,6 +40,7 @@ import org.w3c.flute.parser.selectors.PseudoElementCondition;
 import org.w3c.flute.parser.selectors.PseudoElementSelectorImpl;
 
 import ca.concordia.cssanalyser.app.FileLogger;
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.DeclarationFactory;
@@ -247,14 +248,16 @@ public class CSSDocumentHandler implements DocumentHandler {
 	 */
 	private Selector getSelector(SelectorList list, Locator locator) {
 		Selector s = null;
+		int line = -1, column = -1;
 		if (list.getLength() > 1) {
 			GroupingSelector groupedSelectors = new GroupingSelector();
-			groupedSelectors.setLineNumber(locator.getLineNumber());
 			for (int i = 0; i < list.getLength(); i++) {
 				try {
 					BaseSelector newAtomicSelector = SACSelectorToAtomicSelector(list.item(i));
-					newAtomicSelector.setLineNumber(locator.getLineNumber());
-					newAtomicSelector.setColumnNumber(locator.getColumnNumber() - newAtomicSelector.toString().length() + 1);
+					newAtomicSelector.setLocationInfo(
+							new LocationInfo(
+										locator.getLineNumber(), 
+										locator.getColumnNumber() - newAtomicSelector.toString().length() + 1));
 					if (currentMediaQueryLists.size() > 0)
 						newAtomicSelector.addMediaQueryLists(currentMediaQueryLists);
 					groupedSelectors.add(newAtomicSelector);
@@ -262,14 +265,15 @@ public class CSSDocumentHandler implements DocumentHandler {
 					LOGGER.warn(ex.toString());
 				}
 			}
-			groupedSelectors.setColumnNumber(locator.getColumnNumber() - groupedSelectors.toString().length() + 1);
+			line = locator.getLineNumber();
+			column = locator.getColumnNumber() - groupedSelectors.toString().length() + 1;
 			groupedSelectors.addMediaQueryLists(currentMediaQueryLists);
 			s = groupedSelectors;
 		} else {
 			try {
 				s = SACSelectorToAtomicSelector(list.item(0));
-				s.setLineNumber(locator.getLineNumber());
-				s.setColumnNumber(locator.getColumnNumber() - s.toString().length() + 1);
+				line = locator.getLineNumber();
+				column = locator.getColumnNumber() - s.toString().length() + 1;
 				if (currentMediaQueryLists.size() > 0)
 					s.addMediaQueryLists(currentMediaQueryLists);
 				// styleSheet.addSelector(currentSelector);
@@ -277,6 +281,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 				LOGGER.warn(ex.toString());
 			}
 		}
+		s.setLocationInfo(new LocationInfo(line, column));
 		return s;
 	}
 

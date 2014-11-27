@@ -35,8 +35,7 @@ public class SiblingSelector extends Combinator {
 		if (!generalEquals(obj))
 			return false;
 		SiblingSelector otherObj = (SiblingSelector)obj;
-		if (lineNumber == otherObj.lineNumber &&
-				columnNumber == otherObj.columnNumber &&
+		if (getLocationInfo().equals(otherObj.getLocationInfo()) &&
 				beforeMainSelector.equals(otherObj.beforeMainSelector) &&
 				mainSelector.equals(otherObj.mainSelector))
 			return true;
@@ -73,8 +72,7 @@ public class SiblingSelector extends Combinator {
 	@Override
 	public int hashCode() {
 		int result = 17;
-		result = 31 * result + lineNumber;
-		result = 31 * result + columnNumber;
+		result = 31 * result + getLocationInfo().hashCode();
 		result = 31 * result + (beforeMainSelector == null ? 0 : beforeMainSelector.hashCode());
 		result = 31 * result + (mainSelector == null ? 0 : mainSelector.hashCode());
 		return result;
@@ -83,8 +81,7 @@ public class SiblingSelector extends Combinator {
 	@Override
 	public SiblingSelector clone() {
 		SiblingSelector newOne = new SiblingSelector(beforeMainSelector.clone(), mainSelector.clone());
-		newOne.setLineNumber(lineNumber);
-		newOne.setColumnNumber(columnNumber);
+		newOne.setLocationInfo(getLocationInfo());
 		newOne.addMediaQueryLists(mediaQueryLists);
 		return newOne;
 	}
@@ -135,5 +132,7 @@ public class SiblingSelector extends Combinator {
 	public BaseSelector getLeftHandSideSelector() {
 		return beforeMainSelector;
 	}
+
+	
 
 }

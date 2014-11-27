@@ -5,9 +5,11 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.slf4j.Logger;
 
 import ca.concordia.cssanalyser.app.FileLogger;
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.DeclarationFactory;
@@ -16,8 +18,8 @@ import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValueFacto
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
 import ca.concordia.cssanalyser.cssmodel.media.MediaFeatureExpression;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQuery;
-import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQuery.MediaQueryPrefix;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.cssmodel.selectors.AdjacentSiblingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.ChildSelector;
@@ -47,14 +49,16 @@ import com.github.sommeri.less4j.core.ast.IdentifierExpression;
 import com.github.sommeri.less4j.core.ast.InterpolableName;
 import com.github.sommeri.less4j.core.ast.InterpolatedMediaExpression;
 import com.github.sommeri.less4j.core.ast.ListExpression;
-import com.github.sommeri.less4j.core.ast.MediaExpression;
 import com.github.sommeri.less4j.core.ast.ListExpressionOperator.Operator;
+import com.github.sommeri.less4j.core.ast.MediaExpression;
 import com.github.sommeri.less4j.core.ast.NamedColorExpression;
 import com.github.sommeri.less4j.core.ast.Nth;
 import com.github.sommeri.less4j.core.ast.NumberExpression;
 import com.github.sommeri.less4j.core.ast.RuleSet;
 import com.github.sommeri.less4j.core.ast.SelectorAttribute;
 import com.github.sommeri.less4j.core.ast.SelectorPart;
+import com.github.sommeri.less4j.core.parser.HiddenTokenAwareTree;
+import com.github.sommeri.less4j.core.parser.LessLexer;
 
 /**
  * Adapts a Less StyleSheet object to a CSSAnalyser StyleSheet object 
@@ -98,10 +102,56 @@ public class LessStyleSheetAdapter {
  				MediaQueryList mediaQueryList = getMediaQueryListFromLessMedia(lessMedia);
  				addSelectorsToStyleSheetFromLessASTNodes(styleSheet, lessMedia.getBody().getMembers(), mediaQueryList);
  				
+// 			} else if (node instanceof ReusableStructure) {
+// 				LOGGER.info(String.format("Reusable structure in %s: %s", styleSheet.getFilePath(), ((ReusableStructure)node).getNamesAsStrings()));
+// 				Test.a++;
  			}
  	
 		}
 		
+	}
+	
+//	public static class Test {
+//	public static int a;
+//}
+	
+	private LocationInfo getLocationInfoForLessASTCssNode(ASTCssNode node) {
+		
+		int line = node.getSourceLine();
+		int column = node.getSourceColumn();
+		
+		int offset = -1, length = -1;
+		
+		if (node.getUnderlyingStructure().getChildren().size() > 0) {
+			HiddenTokenAwareTree firstChild = node.getUnderlyingStructure().getChild(0);
+			while (firstChild.getChildCount() > 0) {
+				if (firstChild.getChild(0).getType() == LessLexer.EMPTY_COMBINATOR) {
+					if (firstChild.getChildCount() > 1)
+						firstChild = firstChild.getChild(1);
+					else
+						throw new RuntimeException("What To Do?");
+				} else {
+					firstChild = firstChild.getChild(0);	
+				}
+			}
+			try {
+				offset = (int)FieldUtils.readField(firstChild.getToken(), "start", true);
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+			
+			HiddenTokenAwareTree lastChild = node.getUnderlyingStructure().getChild(node.getChilds().size() - 1);
+			while (lastChild.getChildCount() > 0) {
+				lastChild = lastChild.getChild(lastChild.getChildCount() - 1);
+			}
+			try {
+				length = (int)FieldUtils.readField(lastChild.getToken(), "stop", true) - offset + 1;
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+		LocationInfo toReturn = new LocationInfo(line, column, offset, length);
+		return toReturn;
 	}
 
 	private MediaQueryList getMediaQueryListFromLessMedia(com.github.sommeri.less4j.core.ast.Media lessMedia) {
@@ -174,16 +224,10 @@ public class LessStyleSheetAdapter {
 				grouping.add(getBaseSelectorFromLessSelector(lessSelector));					
 			}
 			
-			com.github.sommeri.less4j.core.ast.Selector firstSelector = ruleSetNode.getSelectors().get(0);
-			com.github.sommeri.less4j.core.ast.Selector lastSelector = ruleSetNode.getSelectors().get(ruleSetNode.getSelectors().size() - 1);
-
-			grouping.setLineNumber(firstSelector.getSourceLine());
-			grouping.setColumnNumber(firstSelector.getSourceColumn());
-			grouping.setOffset(firstSelector.getUnderlyingStructure().getTokenStartIndex());
-			grouping.setLength(lastSelector.getUnderlyingStructure().getTokenStopIndex() - firstSelector.getUnderlyingStructure().getTokenStartIndex());
-			
 			selector = grouping;
 		}
+		
+		selector.setLocationInfo(getLocationInfoForLessASTCssNode(ruleSetNode));
 		
 		// Handle declarations
 		for (ASTCssNode declarationNode : ruleSetNode.getBody().getDeclarations()) {
@@ -196,18 +240,23 @@ public class LessStyleSheetAdapter {
 					String property = lessDeclaration.getNameAsString();
 					List<DeclarationValue> values;
 	
-					if (lessDeclaration.getExpression() != null) { // If a declaration does not have a value, happened in some cases
+					if (lessDeclaration.getExpression() != null) { 
 						values = getListOfDeclarationValuesFromLessExpression(property, lessDeclaration.getExpression());
-					} else {
+					} else { // If a declaration does not have a value, happened in some cases
 						values  = new ArrayList<>();
 						values.add(new DeclarationValue("", ValueType.OTHER));
 					}
+					
+					if (values.size() == 0) {
+						LOGGER.warn(String.format("No CSS values could be found for property %s at line %s, column %s", property, 
+								lessDeclaration.getSourceLine(), lessDeclaration.getSourceColumn()));
+					} else {
+						Declaration declaration = DeclarationFactory.getDeclaration(
+								property, values, selector, declarationNode.getSourceLine(), 
+								declarationNode.getSourceColumn(), lessDeclaration.isImportant(), true);
+						selector.addDeclaration(declaration);
+					}
 	
-					Declaration declaration = DeclarationFactory.getDeclaration(
-							property, values, selector, declarationNode.getSourceLine(), 
-							declarationNode.getSourceColumn(), lessDeclaration.isImportant(), true);
-	
-					selector.addDeclaration(declaration);
 				} catch (Exception ex) {
 					LOGGER.warn("Could not read " + declarationNode + "; " + ex);
 				}
@@ -400,7 +449,7 @@ public class LessStyleSheetAdapter {
 		SelectorPart lastPart = partsCopy.get(partsCopy.size() - 1);
 		SimpleSelector rightHandSelector = getSimpleSelectorFromLessSelectorPart(lastPart);
 		
-		BaseSelector toReturn = rightHandSelector;
+		BaseSelector baseSelectorToReturn = rightHandSelector;
 		
 		
 		partsCopy.remove(partsCopy.size() - 1);
@@ -412,16 +461,16 @@ public class LessStyleSheetAdapter {
 			switch (lastPart.getLeadingCombinator().getCombinator()) {
 				//ADJACENT_SIBLING("+"), CHILD(">"), DESCENDANT("' '"), GENERAL_SIBLING("~"), HAT("^"), CAT("^^");
 				case ADJACENT_SIBLING:
-					toReturn = new AdjacentSiblingSelector(leftHandSelector, rightHandSelector);
+					baseSelectorToReturn = new AdjacentSiblingSelector(leftHandSelector, rightHandSelector);
 					break;
 				case CHILD:
-					toReturn = new ChildSelector(leftHandSelector, rightHandSelector);
+					baseSelectorToReturn = new ChildSelector(leftHandSelector, rightHandSelector);
 					break;
 				case DESCENDANT:
-					toReturn = new DescendantSelector(leftHandSelector, rightHandSelector);
+					baseSelectorToReturn = new DescendantSelector(leftHandSelector, rightHandSelector);
 					break;
 				case GENERAL_SIBLING:
-					toReturn = new SiblingSelector(leftHandSelector, rightHandSelector);
+					baseSelectorToReturn = new SiblingSelector(leftHandSelector, rightHandSelector);
 					break;
 				case HAT:
 				case CAT:
@@ -431,14 +480,14 @@ public class LessStyleSheetAdapter {
 			}
 			
 			SelectorPart firstPart = parts.get(0);
-			toReturn.setLineNumber(firstPart.getSourceLine());
-			toReturn.setColumnNumber(firstPart.getSourceColumn());
+//			toReturn.setLineNumber(firstPart.getSourceLine());
+//			toReturn.setColumnNumber(firstPart.getSourceColumn());
 			int startIndex = firstPart.getUnderlyingStructure().getTokenStartIndex();
-			toReturn.setOffset(startIndex);
-			toReturn.setLength(lastPart.getUnderlyingStructure().getTokenStopIndex() - startIndex);
+//			toReturn.setOffset(startIndex);
+//			toReturn.setLength(lastPart.getUnderlyingStructure().getTokenStopIndex() - startIndex);
 		} 
 		
-		return toReturn;
+		return baseSelectorToReturn;
 		
 	}
 
@@ -523,10 +572,10 @@ public class LessStyleSheetAdapter {
 				simpleSelector.addPseudoElement(adaptedPseudoElement);
 			}
 		}
-		simpleSelector.setLineNumber(selectorPart.getSourceLine());
-		simpleSelector.setColumnNumber(selectorPart.getSourceColumn());
-		simpleSelector.setOffset(selectorPart.getUnderlyingStructure().getTokenStartIndex());
-		simpleSelector.setLength(selectorPart.getUnderlyingStructure().getTokenStopIndex() - selectorPart.getUnderlyingStructure().getTokenStartIndex());
+//		simpleSelector.setLineNumber(selectorPart.getSourceLine());
+//		simpleSelector.setColumnNumber(selectorPart.getSourceColumn());
+//		simpleSelector.setOffset(selectorPart.getUnderlyingStructure().getTokenStartIndex());
+//		simpleSelector.setLength(selectorPart.getUnderlyingStructure().getTokenStopIndex() - selectorPart.getUnderlyingStructure().getTokenStartIndex());
 		return simpleSelector;
 	}
 

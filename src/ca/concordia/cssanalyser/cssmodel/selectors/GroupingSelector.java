@@ -7,6 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 
 
@@ -15,11 +16,11 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 	private Set<BaseSelector> listOfBaseSelectors;
 	
 	public GroupingSelector() {
-		this(-1, -1);
+		this(new LocationInfo());
 	}
 
-	public GroupingSelector(int line, int col) {
-		super(line, col);
+	public GroupingSelector(LocationInfo locationInfo) {
+		super(locationInfo);
 		// To preserve the order of selectors as in the CSS file, we
 		// use LinkedHashSet
 		listOfBaseSelectors = new LinkedHashSet<>();
@@ -123,8 +124,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 			return false;
 		GroupingSelector otherGroupedSelector = (GroupingSelector)obj;
 
-		return lineNumber == otherGroupedSelector.lineNumber &&
-				columnNumber == otherGroupedSelector.columnNumber &&
+		return getLocationInfo().equals(otherGroupedSelector.getLocationInfo()) &&
 				//otherGroupedSelector.listOfBaseSelectors.equals(listOfBaseSelectors);
 				otherGroupedSelector.listOfBaseSelectors.size() == listOfBaseSelectors.size() &&
 				otherGroupedSelector.listOfBaseSelectors.containsAll(listOfBaseSelectors);
@@ -133,8 +133,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 	@Override
 	public int hashCode() {
 		int result = 17;
-		result = result * 31 + lineNumber;
-		result = result * 31 + columnNumber;
+		result = result * 31 + getLocationInfo().hashCode();
 		result = result * 31 + listOfBaseSelectors.hashCode();
 		return result;
 	}
@@ -201,7 +200,8 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 	
 	@Override
 	public Selector clone() {
-		GroupingSelector newOne = new GroupingSelector(lineNumber, columnNumber);
+		GroupingSelector newOne = new GroupingSelector();
+		newOne.setLocationInfo(getLocationInfo());
 		newOne.listOfBaseSelectors = new LinkedHashSet<>();
 		for (BaseSelector s : this.listOfBaseSelectors)
 			newOne.add(s.clone());

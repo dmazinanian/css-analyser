@@ -19,8 +19,7 @@ public class AdjacentSiblingSelector extends SiblingSelector {
 	@Override
 	public AdjacentSiblingSelector clone() {
 		AdjacentSiblingSelector newOne = new AdjacentSiblingSelector(getFirstSelector().clone(), getSecondSelector().clone());
-		newOne.setLineNumber(lineNumber);
-		newOne.setColumnNumber(columnNumber);
+		newOne.setLocationInfo(getLocationInfo());
 		newOne.addMediaQueryLists(mediaQueryLists);
 		return newOne;
 	}

@@ -25,7 +25,7 @@ public abstract class TypeFourDuplicationInstance implements DuplicationInstance
 		for (Selector selector : identicalSelectors) {
 			sb.append(selector);
 			sb.append(": (");
-			sb.append(selector.getLineNumber() + ", " + selector.getColumnNumber());
+			sb.append(selector.getLocationInfo());
 			sb.append(")\n");
 		}
 		return sb.toString();

@@ -14,6 +14,7 @@ import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
  *
  */
 public abstract class Combinator extends BaseSelector {
+	
 	public abstract SimpleSelector getRightHandSideSelector();
 	public abstract BaseSelector getLeftHandSideSelector(); 
 	

@@ -12,6 +12,7 @@ import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
 import ca.concordia.cssanalyser.cssmodel.CSSSource;
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
@@ -21,10 +22,7 @@ import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 
 public abstract class Selector  {
 	
-	protected int lineNumber;
-	protected int columnNumber;
-	protected int offset;
-	protected int lenghth;
+	private LocationInfo locationInfo;
 	protected StyleSheet parentStyleSheet;
 	protected Set<MediaQueryList> mediaQueryLists;
 	protected Map<Declaration, Integer> declarations;
@@ -32,12 +30,11 @@ public abstract class Selector  {
 	protected CSSOrigin origin = CSSOrigin.AUTHOR;
 	
 	public Selector() {
-		this(-1, -1);
+		this(new LocationInfo());
 	}
 	
-	public Selector(int fileLineNumber, int fileColNumber) {
-		lineNumber = fileLineNumber;
-		columnNumber = fileColNumber;
+	public Selector(LocationInfo locationInfo) {
+		this.locationInfo = locationInfo;
 		declarations = new LinkedHashMap<>();
 		mediaQueryLists = new LinkedHashSet<>();
 		
@@ -63,6 +60,10 @@ public abstract class Selector  {
 			parentStyleSheet.addSelector(this);
 	}
 	
+	public LocationInfo getLocationInfo() {
+		return locationInfo;
+	}
+	
 	public void addDeclaration(Declaration declaration) {
 		if (!declarations.containsKey(declaration))
 			declarations.put(declaration, declarations.size() + 1);
@@ -72,22 +73,6 @@ public abstract class Selector  {
 	public int getNumberOfDeclarations() {
 		return declarations.size();
 	}
-
-	public int getOffset() {
-		return this.offset;
-	}
-	
-	public void setOffset(int offset) {
-		this.offset = offset;
-	}
-	
-	public int getLength() {
-		return this.lenghth;
-	}
-	
-	public void setLength(int length) {
-		this.lenghth = length;
-	}
 		
 	public Iterable<Declaration> getDeclarations() {
 		return declarations.keySet();
@@ -95,24 +80,7 @@ public abstract class Selector  {
 	
 	public boolean containsDeclaration(Declaration declaration) {
 		return this.declarations.containsKey(declaration);
-	}
-	
-
-	public int getLineNumber() {
-		return lineNumber;
-	}
-
-	public void setLineNumber(int linNumber) {
-		lineNumber = linNumber;
-	}
-
-	public int getColumnNumber() {
-		return columnNumber;
-	}
-
-	public void setColumnNumber(int fileColumnNumber) {
-		columnNumber = fileColumnNumber;
-	}
+	}	
 	
 	public int getDeclarationNumber(Declaration declaration) {
 		return declarations.get(declaration);
@@ -258,6 +226,10 @@ public abstract class Selector  {
 			
 		}
 		return virtualShorthands;
+	}
+	
+	public void setLocationInfo(LocationInfo locationInfo) {
+		this.locationInfo = locationInfo;
 	}
 	
 }

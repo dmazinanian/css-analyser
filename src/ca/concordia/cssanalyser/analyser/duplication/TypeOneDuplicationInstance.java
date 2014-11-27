@@ -79,8 +79,8 @@ public class TypeOneDuplicationInstance implements DuplicationInstance {
 		String s = "";
 		for (Selector selector : forSelectors) {
 			s += selector;
-			if (selector.getLineNumber() >= 0)
-				s += String.format(" (%s : %s)", selector.getLineNumber(), selector.getColumnNumber());
+			if (selector.getLocationInfo().getLineNumber() >= 0)
+				s += String.format("(%s)", selector.getLocationInfo());
 			s += ", ";
 		}
 		s = s.substring(0, s.length() - 2); // Remove the last comma and space
