@@ -10,7 +10,7 @@ import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
 
 /**
  * Represents the selectors which are not grouped
- * (not combined using any combinator)
+ * (could be combined)
  * 
  * @author Davood Mazinanian
  * 
