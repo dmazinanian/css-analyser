@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.apache.commons.lang.NotImplementedException;
 
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationEquivalentValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
@@ -100,8 +101,8 @@ public class MultiValuedDeclaration extends Declaration {
 		initializeMultiValuedProperties();
 	}
 
-	public MultiValuedDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int offset, int length, boolean important, boolean addMissingValues) {
-		super(propertyName, belongsTo, offset, length, important);
+	public MultiValuedDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, boolean important, boolean addMissingValues, LocationInfo location) {
+		super(propertyName, belongsTo, important, location);
 		this.declarationValues = values;
 		this.stylePropertyToDeclarationValueMap = new HashMap<>();
 		
@@ -431,12 +432,17 @@ public class MultiValuedDeclaration extends Declaration {
 				final String LEFTQ = "leftq";
 				final String RIGHTQ = "rightq";
 				
-				if (declarationValues.size() % 2 != 0) {
-					throw new RuntimeException("'quotes' property should have even number of variables");
+				if (declarationValues.size() == 1 && "none".equals(declarationValues.get(0).getValue())) {
+					assignStylePropertyToValue(LEFTQ, 1, declarationValues.get(0), true);
+					assignStylePropertyToValue(RIGHTQ, 1, declarationValues.get(0), true);
+				} else if (declarationValues.size() % 2 == 0) {
+					for (int i = 0; i < declarationValues.size(); i += 2) {
+						assignStylePropertyToValue(LEFTQ, (i / 2) + 1, declarationValues.get(i), true);
+						assignStylePropertyToValue(RIGHTQ, (i / 2) + 1, declarationValues.get(i + 1), true);
+					}
 				}
-				for (int i = 0; i < declarationValues.size(); i += 2) {
-					assignStylePropertyToValue(LEFTQ, (i / 2) + 1, declarationValues.get(i), true);
-					assignStylePropertyToValue(RIGHTQ, (i / 2) + 1, declarationValues.get(i + 1), true);
+				else {
+					throw new RuntimeException("'quotes' property should have even number of variables");
 				}
 				break;
 			}
@@ -616,14 +622,13 @@ public class MultiValuedDeclaration extends Declaration {
 		if (hashCode == -1) {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + length;
+			result = prime * result + locationInfo.hashCode();
 			result = prime
 					* result
 					+ ((declarationValues == null) ? 0 : declarationValues
 							.hashCode());
 			result = prime * result + (isCommaSeparatedListOfValues ? 1231 : 1237);
 			result = prime * result + (isImportant ? 1231 : 1237);
-			result = prime * result + offset;
 			result = prime * result + numberOfMissingValues;
 			result = prime * result
 					+ ((parentSelector == null) ? 0 : parentSelector.hashCode());
@@ -644,10 +649,6 @@ public class MultiValuedDeclaration extends Declaration {
 		if (getClass() != obj.getClass())
 			return false;
 		MultiValuedDeclaration other = (MultiValuedDeclaration) obj;
-		if (length != other.length)
-			return false;
-		if (offset != other.offset)
-			return false;
 		if (isCommaSeparatedListOfValues != other.isCommaSeparatedListOfValues)
 			return false;
 		if (isImportant != other.isImportant)
@@ -658,6 +659,11 @@ public class MultiValuedDeclaration extends Declaration {
 			if (other.property != null)
 				return false;
 		} else if (!property.equals(other.property))
+			return false;
+		if (locationInfo == null) {
+			if (other.locationInfo != null)
+				return false;
+		} else if (!locationInfo.equals(other.locationInfo))
 			return false;
 		if (parentSelector == null) {
 			if (other.parentSelector != null)
@@ -682,7 +688,7 @@ public class MultiValuedDeclaration extends Declaration {
 		}
 		//return DeclarationFactory.getDeclaration(property, values, parentSelector, offset, length, isImportant, false);
 		//return new Declaration(property, values, parentSelector, lineNumber, colNumber, isImportant, false);
-		return new MultiValuedDeclaration(property, values, parentSelector, offset, length, isImportant, true);
+		return new MultiValuedDeclaration(property, values, parentSelector, isImportant, true, locationInfo);
 	}
 
 	@Override
