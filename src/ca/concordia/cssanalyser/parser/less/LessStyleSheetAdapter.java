@@ -102,28 +102,18 @@ public class LessStyleSheetAdapter {
  				MediaQueryList mediaQueryList = getMediaQueryListFromLessMedia(lessMedia);
  				addSelectorsToStyleSheetFromLessASTNodes(styleSheet, lessMedia.getBody().getMembers(), mediaQueryList);
  				
-// 			} else if (node instanceof ReusableStructure) {
-// 				LOGGER.info(String.format("Reusable structure in %s: %s", styleSheet.getFilePath(), ((ReusableStructure)node).getNamesAsStrings()));
-// 				Test.a++;
  			}
  	
 		}
 		
 	}
-	
-//	public static class Test {
-//	public static int a;
-//}
-	
+		
 	private LocationInfo getLocationInfoForLessASTCssNode(ASTCssNode node) {
-		
-		int line = node.getSourceLine();
-		int column = node.getSourceColumn();
-		
-		int offset = -1, length = -1;
-		
-		if (node.getUnderlyingStructure().getChildren().size() > 0) {
-			HiddenTokenAwareTree firstChild = node.getUnderlyingStructure().getChild(0);
+		HiddenTokenAwareTree firstChild, lastChild;
+		if (node.getUnderlyingStructure().getChildren().size() == 0) {
+			firstChild = lastChild = node.getUnderlyingStructure();
+		} else {
+			firstChild = node.getUnderlyingStructure().getChild(0);
 			while (firstChild.getChildCount() > 0) {
 				if (firstChild.getChild(0).getType() == LessLexer.EMPTY_COMBINATOR) {
 					if (firstChild.getChildCount() > 1)
@@ -134,27 +124,32 @@ public class LessStyleSheetAdapter {
 					firstChild = firstChild.getChild(0);	
 				}
 			}
-			try {
-				offset = (int)FieldUtils.readField(firstChild.getToken(), "start", true);
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
 			
-			HiddenTokenAwareTree lastChild = node.getUnderlyingStructure().getChild(node.getChilds().size() - 1);
+			lastChild = node.getUnderlyingStructure().getChild(node.getUnderlyingStructure().getChildCount() - 1);
 			while (lastChild.getChildCount() > 0) {
 				lastChild = lastChild.getChild(lastChild.getChildCount() - 1);
 			}
-			try {
-				length = (int)FieldUtils.readField(lastChild.getToken(), "stop", true) - offset + 1;
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
+
 		}
+		
+		int line = node.getSourceLine();
+		int column = node.getSourceColumn();
+		
+		int offset = -1, length = -1;
+		
+		try {
+			offset = (int)FieldUtils.readField(firstChild.getToken(), "start", true);
+			length = (int)FieldUtils.readField(lastChild.getToken(), "stop", true) - offset + 1;
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+				
 		LocationInfo toReturn = new LocationInfo(line, column, offset, length);
 		return toReturn;
 	}
 
 	private MediaQueryList getMediaQueryListFromLessMedia(com.github.sommeri.less4j.core.ast.Media lessMedia) {
+		
 		// x and y, z and t is a list of media queries containing two media queries
 		MediaQueryList mediaQueryList = new MediaQueryList();
 		
@@ -287,8 +282,11 @@ public class LessStyleSheetAdapter {
 				if (listExpression.getOperator() != null) {
 					
 					if (listExpression.getOperator().getOperator() ==  Operator.COMMA) {
-						if (iterator.hasNext())
-							values.add(DeclarationValueFactory.getDeclarationValue(property, ",", ValueType.SEPARATOR));
+						if (iterator.hasNext()) {
+							DeclarationValue value = DeclarationValueFactory.getDeclarationValue(property, ",", ValueType.SEPARATOR);
+							value.setLocationInfo(getLocationInfoForLessASTCssNode(listExpression.getOperator()));
+							values.add(value);
+						}
 					} else if (listExpression.getOperator().getOperator() ==  Operator.EMPTY_OPERATOR) {
 						// Do nothing
 					} else {
@@ -300,28 +298,61 @@ public class LessStyleSheetAdapter {
 				}
 			}
 				
-		}  else if (expression instanceof NumberExpression) {
+		} else if (expression instanceof BinaryExpression) {
+			
+			BinaryExpression binary = (BinaryExpression)expression;
+			
+			values.addAll(getListOfDeclarationValuesFromLessExpression(property, binary.getLeft()));
+			
+			// Operator
+			DeclarationValueFactory.getDeclarationValue(property, binary.getOperator().toString(), ValueType.OPERATOR);
+			DeclarationValue operator = DeclarationValueFactory.getDeclarationValue(property, binary.getOperator().toString(), ValueType.OPERATOR);
+			operator.setLocationInfo(getLocationInfoForLessASTCssNode(binary.getOperator()));
+			values.add(operator);
+			
+			values.addAll(getListOfDeclarationValuesFromLessExpression(property, binary.getRight()));
+			
+		} else {
+			
+			values.add(getSingleValueFromLessValueExpression(property, expression));
+			
+		}
+		
+		return values;
+	}
+
+	private DeclarationValue getSingleValueFromLessValueExpression(String property, Expression expression) throws ParseException {
+		
+		DeclarationValue value = null; 
+		
+		if (expression instanceof NumberExpression) {
 
 			NumberExpression numberExpression = (NumberExpression)expression;
-
-			DeclarationValue value = getDeclarationValueFromLessNumberExpression(property, numberExpression);
-			values.add(value);
+			value = getDeclarationValueFromLessNumberExpression(property, numberExpression);
 
 		} else if (expression instanceof NamedColorExpression) {
+
 			NamedColorExpression  namedExpression = (NamedColorExpression)expression;
-			values.add(DeclarationValueFactory.getDeclarationValue(property, namedExpression.getColorName(), ValueType.IDENT));
+			value = DeclarationValueFactory.getDeclarationValue(property, namedExpression.getColorName(), ValueType.IDENT);
+
 		} else if (expression instanceof ColorWithAlphaExpression) {
+
 			ColorWithAlphaExpression colorWithAlpha = (ColorWithAlphaExpression)expression;
 			throw new RuntimeException(colorWithAlpha.toString());
+
 		} else if (expression instanceof IdentifierExpression) {
+
 			IdentifierExpression identifier = (IdentifierExpression)expression; 
-			String value = identifier.getValue();
-			if (value == null)
-				value = "";
-			values.add(DeclarationValueFactory.getDeclarationValue(property, value, ValueType.IDENT));
+			String valueString = identifier.getValue();
+			if (valueString == null)
+				valueString = "";
+			value = DeclarationValueFactory.getDeclarationValue(property, valueString, ValueType.IDENT);
+
 		} else if (expression instanceof ColorExpression) {
+
 			ColorExpression colorExpression = (ColorExpression) expression;
-			values.add(DeclarationValueFactory.getDeclarationValue(property, colorExpression.getValue(), ValueType.COLOR)); 
+			value = DeclarationValueFactory.getDeclarationValue(property, colorExpression.getValue(), ValueType.COLOR);
+
 		} else if (expression instanceof FunctionExpression) {
 
 			FunctionExpression function =  (FunctionExpression)expression;
@@ -329,31 +360,34 @@ public class LessStyleSheetAdapter {
 			if ("rgb".equals(functionName) || "hsl".equals(functionName) || "rgba".equals(functionName) || "hsla".equals(functionName)) {
 
 				String functionString = getFunctionStringFromLessFunctionExpression(property, function);
-				values.add(DeclarationValueFactory.getDeclarationValue(property, functionString, ValueType.COLOR));
+				value = DeclarationValueFactory.getDeclarationValue(property, functionString, ValueType.COLOR);
 
 			} else if(functionName.equals("url")) {
-				
+
 				if (function.getParameter().getChilds().get(1) instanceof CssString) {
 					String url = "url('" + ((CssString)function.getParameter().getChilds().get(1)).getValue() + "')"; 
-					values.add(DeclarationValueFactory.getDeclarationValue(property, url, ValueType.URL));
+					value = DeclarationValueFactory.getDeclarationValue(property, url, ValueType.URL);
 				} else {
 					throw new RuntimeException("What is that?" + expression);
 				}
-				
+
 			} else {
+				
 				String functionString = getFunctionStringFromLessFunctionExpression(property, function);
-				values.add(DeclarationValueFactory.getDeclarationValue(property, functionString, ValueType.FUNCTION));
+				value = DeclarationValueFactory.getDeclarationValue(property, functionString, ValueType.FUNCTION);
+
 			}
 		} else if (expression instanceof CssString) {
-			values.add(DeclarationValueFactory.getDeclarationValue(property, "'" + ((CssString)expression).getValue() + "'", ValueType.STRING));
-		} else if (expression instanceof BinaryExpression) {
-			BinaryExpression binary = (BinaryExpression)expression;
-			values.addAll(getListOfDeclarationValuesFromLessExpression(property, binary.getLeft()));
-			values.add(DeclarationValueFactory.getDeclarationValue(property, binary.getOperator().toString(), ValueType.OPERATOR));
-			values.addAll(getListOfDeclarationValuesFromLessExpression(property, binary.getRight()));
+			
+			value = DeclarationValueFactory.getDeclarationValue(property, "'" + ((CssString)expression).getValue() + "'", ValueType.STRING);
+			
+		} else {
+			throw new RuntimeException("What is that?" + expression);
 		}
 		
-		return values;
+		value.setLocationInfo(getLocationInfoForLessASTCssNode(expression));
+		
+		return value;
 	}
 
 	private DeclarationValue getDeclarationValueFromLessNumberExpression(String property, NumberExpression numberExpression) throws ParseException {
@@ -395,10 +429,12 @@ public class LessStyleSheetAdapter {
 			default:
 				break;
 		}
+		
+		value.setLocationInfo(getLocationInfoForLessASTCssNode(numberExpression));
 		return value;
 	}
 
-	protected String getFunctionStringFromLessFunctionExpression(String property, FunctionExpression function) throws ParseException {
+	private String getFunctionStringFromLessFunctionExpression(String property, FunctionExpression function) throws ParseException {
 				
 		StringBuilder functionString = new StringBuilder(function.getName());
 		functionString.append("(");
@@ -483,12 +519,13 @@ public class LessStyleSheetAdapter {
 
 			}
 			
-			SelectorPart firstPart = parts.get(0);
-//			toReturn.setLineNumber(firstPart.getSourceLine());
-//			toReturn.setColumnNumber(firstPart.getSourceColumn());
-			int startIndex = firstPart.getUnderlyingStructure().getTokenStartIndex();
-//			toReturn.setOffset(startIndex);
-//			toReturn.setLength(lastPart.getUnderlyingStructure().getTokenStopIndex() - startIndex);
+			int lineNumber = leftHandSelector.getSelectorNameLocationInfo().getLineNumber();
+			int colNumber = leftHandSelector.getSelectorNameLocationInfo().getColumnNumber();
+			int offset = leftHandSelector.getSelectorNameLocationInfo().getOffset();
+			int length = rightHandSelector.getSelectorNameLocationInfo().getOffset() + rightHandSelector.getSelectorNameLocationInfo().getLenghth() - offset;
+			
+			LocationInfo selectorNameLocationInfo = new LocationInfo(lineNumber, colNumber, offset, length);
+			baseSelectorToReturn.setSelectorNameLocationInfo(selectorNameLocationInfo);
 		} 
 		
 		return baseSelectorToReturn;
@@ -576,10 +613,9 @@ public class LessStyleSheetAdapter {
 				simpleSelector.addPseudoElement(adaptedPseudoElement);
 			}
 		}
-//		simpleSelector.setLineNumber(selectorPart.getSourceLine());
-//		simpleSelector.setColumnNumber(selectorPart.getSourceColumn());
-//		simpleSelector.setOffset(selectorPart.getUnderlyingStructure().getTokenStartIndex());
-//		simpleSelector.setLength(selectorPart.getUnderlyingStructure().getTokenStopIndex() - selectorPart.getUnderlyingStructure().getTokenStartIndex());
+			
+		simpleSelector.setSelectorNameLocationInfo(getLocationInfoForLessASTCssNode(selectorPart));
+		
 		return simpleSelector;
 	}
 
