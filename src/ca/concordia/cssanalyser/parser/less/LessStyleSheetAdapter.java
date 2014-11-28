@@ -175,7 +175,7 @@ public class LessStyleSheetAdapter {
 				if (lessMediaQuery.getMedium().getMediumType() != null)
 					mediumType = lessMediaQuery.getMedium().getMediumType().getName();
 			}
-			MediaQuery query = new MediaQuery(prefix, mediumType, lessMediaQuery.getSourceLine(), lessMediaQuery.getSourceColumn());
+			MediaQuery query = new MediaQuery(prefix, mediumType);
 			for (MediaExpression lessMediaExpression : lessMediaQuery.getExpressions()) {
 				try {
 					String feature = "";
@@ -193,14 +193,17 @@ public class LessStyleSheetAdapter {
 						throw new RuntimeException("What is " + lessMediaExpression);
 					}
 					MediaFeatureExpression featureExpression = new MediaFeatureExpression(feature, expression);
+					featureExpression.setLocationInfo(getLocationInfoForLessASTCssNode(lessMediaExpression));
 					query.addMediaFeatureExpression(featureExpression);
 				} catch (ParseException ex) {
 					LOGGER.warn(String.format("Ignored media expression %s", lessMediaExpression.toString()));
 				}
 			}
-			
+			query.setLocationInfo(getLocationInfoForLessASTCssNode(lessMediaQuery));
 			mediaQueryList.addMediaQuery(query);
 		}
+		
+		mediaQueryList.setLocationInfo(getLocationInfoForLessASTCssNode(lessMedia));
 		
 		return mediaQueryList;
 	}
