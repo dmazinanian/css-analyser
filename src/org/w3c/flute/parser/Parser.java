@@ -713,7 +713,7 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
       }
                if (ml.size() == 0) {
                    // see section 6.3 of the CSS2 recommandation.
-                   ml.addMediaQuery(new MediaQuery("all", -1, -1));
+                   ml.addMediaQuery(new MediaQuery("all"));
                }
                ((CSSDocumentHandler)documentHandler).importStyle(uri, ml, null);
     } catch (ParseException e) {
@@ -947,7 +947,7 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
         }
         jj_consume_token(S);
       }
-                                                           toReturn = new MediaQuery(prefix, mediaType, -1, -1);
+                                                           toReturn = new MediaQuery(prefix, mediaType);
       label_21:
       while (true) {
         if (jj_2_2(1)) {
@@ -981,7 +981,7 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case LPARAN:
         expression = media_expression();
-                                                          toReturn = new MediaQuery(prefix, mediaType, -1, -1); toReturn.addMediaFeatureExpression(expression);
+                                                          toReturn = new MediaQuery(prefix, mediaType); toReturn.addMediaFeatureExpression(expression);
         label_23:
         while (true) {
           if (jj_2_3(1)) {
