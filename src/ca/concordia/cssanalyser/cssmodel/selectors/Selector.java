@@ -23,6 +23,7 @@ import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 public abstract class Selector  {
 	
 	private LocationInfo locationInfo;
+	private LocationInfo selectorNameLocationInfo;
 	protected StyleSheet parentStyleSheet;
 	protected Set<MediaQueryList> mediaQueryLists;
 	protected Map<Declaration, Integer> declarations;
@@ -62,6 +63,18 @@ public abstract class Selector  {
 	
 	public LocationInfo getLocationInfo() {
 		return locationInfo;
+	}
+	
+	public void setLocationInfo(LocationInfo locationInfo) {
+		this.locationInfo = locationInfo;
+	}
+	
+	public LocationInfo getSelectorNameLocationInfo() {
+		return this.selectorNameLocationInfo;
+	}
+	
+	public void setSelectorNameLocationInfo(LocationInfo locationInfo) {
+		this.selectorNameLocationInfo = locationInfo;
 	}
 	
 	public void addDeclaration(Declaration declaration) {
@@ -226,10 +239,5 @@ public abstract class Selector  {
 			
 		}
 		return virtualShorthands;
-	}
-	
-	public void setLocationInfo(LocationInfo locationInfo) {
-		this.locationInfo = locationInfo;
-	}
-	
+	}	
 }
