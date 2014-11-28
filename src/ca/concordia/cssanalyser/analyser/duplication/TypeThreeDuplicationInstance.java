@@ -49,12 +49,10 @@ public class TypeThreeDuplicationInstance implements DuplicationInstance {
 
 		StringBuilder individualString = new StringBuilder();
 		for (Declaration dec : individualDeclarations)
-			individualString.append(String.format("%s (%s, %s); ", dec,
-					dec.getOffset(), dec.getLength()));
+			individualString.append(String.format("%s %s; ", dec, dec.getLocationInfo().toString()));
 
-		return String.format("%s (%s, %s) = %s", shorthandDeclaration,
-				shorthandDeclaration.getOffset(),
-				shorthandDeclaration.getLength(),
+		return String.format("%s %s = %s", shorthandDeclaration,
+				shorthandDeclaration.getLocationInfo(),
 				individualString.substring(0, individualString.length() - 2));
 
 	}

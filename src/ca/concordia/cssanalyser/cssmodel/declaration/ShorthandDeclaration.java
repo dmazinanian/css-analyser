@@ -13,11 +13,9 @@ import java.util.Set;
 import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
 
-import com.fasterxml.jackson.databind.node.ShortNode;
-
-import ca.concordia.cssanalyser.app.CSSAnalyserCLI;
 import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.csshelper.ListStyleHelper;
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationEquivalentValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
@@ -43,8 +41,8 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 		initializeShorthandsMap();
 	}
 
-	public ShorthandDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int offset, int length, boolean important, boolean addMissingValues) {
-		super(propertyName, values, belongsTo, offset, length, important, addMissingValues);
+	public ShorthandDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, boolean important, boolean addMissingValues, LocationInfo location) {
+		super(propertyName, values, belongsTo, important, addMissingValues, location);
 		if (individualDeclarations == null)
 			individualDeclarations =  new HashMap<>();
 	}
@@ -1158,7 +1156,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				multiValuedInvividual.getValues().add(v);
 			}
 		} else {
-			individual = DeclarationFactory.getDeclaration(propertyName, values, parentSelector, offset, length, isImportant, true);
+			individual = DeclarationFactory.getDeclaration(propertyName, values, parentSelector, isImportant, true, locationInfo);
 		}
 
 		addIndividualDeclaration(individual);	
@@ -1266,7 +1264,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 		for (DeclarationValue v : declarationValues) {
 			values.add(v.clone());
 		}
-		ShorthandDeclaration sd = new ShorthandDeclaration(property, values, parentSelector, offset, length, isImportant, true);
+		ShorthandDeclaration sd = new ShorthandDeclaration(property, values, parentSelector, isImportant, true, locationInfo);
 		sd.isVirtual(isVirtual);
 		return sd;
 	}

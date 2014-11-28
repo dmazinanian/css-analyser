@@ -228,8 +228,14 @@ public class LessStyleSheetAdapter {
 		}
 		
 		selector.setLocationInfo(getLocationInfoForLessASTCssNode(ruleSetNode));
-		
+
 		// Handle declarations
+		addDeclarationsToSelectorFromLessRuleSetNode(ruleSetNode, selector);
+		return selector;
+	}
+
+	private void addDeclarationsToSelectorFromLessRuleSetNode(RuleSet ruleSetNode, Selector selector) {
+
 		for (ASTCssNode declarationNode : ruleSetNode.getBody().getDeclarations()) {
 						
 			if (declarationNode instanceof com.github.sommeri.less4j.core.ast.Declaration) {
@@ -252,8 +258,7 @@ public class LessStyleSheetAdapter {
 								lessDeclaration.getSourceLine(), lessDeclaration.getSourceColumn()));
 					} else {
 						Declaration declaration = DeclarationFactory.getDeclaration(
-								property, values, selector, declarationNode.getSourceLine(), 
-								declarationNode.getSourceColumn(), lessDeclaration.isImportant(), true);
+								property, values, selector, lessDeclaration.isImportant(), true, getLocationInfoForLessASTCssNode(declarationNode));
 						selector.addDeclaration(declaration);
 					}
 	
@@ -265,7 +270,6 @@ public class LessStyleSheetAdapter {
 				throw new RuntimeException("What is that?" + declarationNode);
 			}
 		}
-		return selector;
 	}
 
 	private List<DeclarationValue> getListOfDeclarationValuesFromLessExpression(String property, Expression expression) throws ParseException {

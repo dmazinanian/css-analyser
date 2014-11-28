@@ -5,6 +5,7 @@ import java.util.List;
 import org.slf4j.Logger;
 
 import ca.concordia.cssanalyser.app.FileLogger;
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
@@ -33,11 +34,11 @@ public class DeclarationFactory {
 	 * @param important
 	 * @return
 	 */
-	public static Declaration getDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, int offset, int length, boolean important, boolean addMissingValues) {
+	public static Declaration getDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, boolean important, boolean addMissingValues, LocationInfo locationInfo) {
 		if (MultiValuedDeclaration.isMultiValuedProperty(propertyName)) 
-			return new MultiValuedDeclaration(propertyName, values, belongsTo, offset, length, important, addMissingValues);
+			return new MultiValuedDeclaration(propertyName, values, belongsTo, important, addMissingValues, locationInfo);
 		if (ShorthandDeclaration.isShorthandProperty(propertyName))
-			return new ShorthandDeclaration(propertyName, values, belongsTo, offset, length, important, addMissingValues);
+			return new ShorthandDeclaration(propertyName, values, belongsTo, important, addMissingValues, locationInfo);
 		else {
 			DeclarationValue declarationValue = values.get(0);
 			if (values.size() > 1) {
@@ -48,7 +49,7 @@ public class DeclarationFactory {
 				LOGGER.warn(String.format("Multiple values for single-valued property '%s' are given. All the values are concatenated to make a single value '%s'. Values are %s",
 						propertyName, concatanated, values.toString()));
 			}
-			return new SingleValuedDeclaration(propertyName, declarationValue, belongsTo, offset, length, important);
+			return new SingleValuedDeclaration(propertyName, declarationValue, belongsTo, important, locationInfo);
 		}
 	}
 	

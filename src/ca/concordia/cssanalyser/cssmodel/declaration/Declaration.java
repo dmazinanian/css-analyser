@@ -7,6 +7,7 @@ import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
 import ca.concordia.cssanalyser.cssmodel.CSSSource;
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
@@ -22,8 +23,7 @@ public abstract class Declaration implements Cloneable {
 
 	protected final String property;
 	protected Selector parentSelector;
-	protected final int offset;
-	protected final int length;
+	protected LocationInfo locationInfo;
 	protected final boolean isImportant;
 	protected final boolean isCommaSeparatedListOfValues;
 	protected CSSOrigin origin = CSSOrigin.AUTHOR;
@@ -38,13 +38,12 @@ public abstract class Declaration implements Cloneable {
 	 * @param length
 	 * @param important
 	 */
-	public Declaration(String propertyName, Selector belongsTo, int offset, int length, boolean important) {
+	public Declaration(String propertyName, Selector belongsTo, boolean important, LocationInfo location) {
 		property = propertyName.toLowerCase().trim();
 		parentSelector = belongsTo;
-		this.offset = offset;
-		this.length = length;
 		isImportant = important;
 		isCommaSeparatedListOfValues = isCommaSeparated(property);
+		locationInfo = location;
 	}
 	
 	/**
@@ -234,20 +233,8 @@ public abstract class Declaration implements Cloneable {
 			return valuesEqual(otherDeclaration);
 	}
 	
-	/**
-	 * Returns the offset in the source CSS file
-	 * @return
-	 */
-	public int getOffset() {
-		return offset;
-	}
-
-	/**
-	 * Returns the length of the declaration in the source CSS file
-	 * @return
-	 */
-	public int getLength() {
-		return length;
+	public LocationInfo getLocationInfo() {
+		return this.locationInfo;
 	}
 	
 	@Override
@@ -256,8 +243,7 @@ public abstract class Declaration implements Cloneable {
 		int result = 1;
 		result = prime * result + (isCommaSeparatedListOfValues ? 1231 : 1237);
 		result = prime * result + (isImportant ? 1231 : 1237);
-		result = prime * result + length;
-		result = prime * result + offset;
+		result = prime * locationInfo.hashCode();
 		result = prime * result + ((origin == null) ? 0 : origin.hashCode());
 		result = prime * result
 				+ ((parentSelector == null) ? 0 : parentSelector.hashCode());
@@ -280,16 +266,17 @@ public abstract class Declaration implements Cloneable {
 			return false;
 		if (isImportant != other.isImportant)
 			return false;
-		if (length != other.length)
-			return false;
-		if (offset != other.offset)
-			return false;
 		if (origin != other.origin)
 			return false;
 		if (parentSelector == null) {
 			if (other.parentSelector != null)
 				return false;
 		} else if (!parentSelector.equals(other.parentSelector))
+			return false;
+		if (locationInfo == null) {
+			if (other.locationInfo != null)
+				return false;
+		} else if (!locationInfo.equals(other.locationInfo))
 			return false;
 		if (property == null) {
 			if (other.property != null)

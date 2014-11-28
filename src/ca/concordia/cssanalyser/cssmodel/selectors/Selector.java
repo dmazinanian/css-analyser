@@ -215,7 +215,7 @@ public abstract class Selector  {
 		for (Entry<String, Set<Declaration>> entry : shorthandedDeclarations.entrySet()) {
 	
 			// Create a shorthand
-			ShorthandDeclaration virtualShorthand = new ShorthandDeclaration(entry.getKey(), new ArrayList<DeclarationValue>(), this, -1, -1, false, false);
+			ShorthandDeclaration virtualShorthand = new ShorthandDeclaration(entry.getKey(), new ArrayList<DeclarationValue>(), this, false, false, new LocationInfo(-1, -1));
 			// Important, important
 			virtualShorthand.isVirtual(true);
 			for (Declaration dec : entry.getValue()) {

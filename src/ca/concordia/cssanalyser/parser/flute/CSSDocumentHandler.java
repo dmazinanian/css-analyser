@@ -229,7 +229,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 	
 			Declaration newDeclaration = null;
 	
-			newDeclaration = DeclarationFactory.getDeclaration(propertyName, valuesList, currentSelector, locator.getLineNumber(), locator.getColumnNumber(), isImportant, true);
+			newDeclaration = DeclarationFactory.getDeclaration(propertyName, valuesList, currentSelector, isImportant, true, new LocationInfo(locator.getLineNumber(), locator.getColumnNumber()));
 		
 			if (currentSelector != null)
 				currentSelector.addDeclaration(newDeclaration);
