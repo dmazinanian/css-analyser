@@ -1,11 +1,13 @@
 package ca.concordia.cssanalyser.cssmodel.media;
 
+import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
+
 /**
  * A media feature of the form feature: expression (e.g. min-width: 100px)
  * @author Davood Mazinanian
  *
  */
-public class MediaFeatureExpression {
+public class MediaFeatureExpression extends CSSModelObject {
 	
 	private final String feature;
 	private String expression;
@@ -68,6 +70,5 @@ public class MediaFeatureExpression {
 	
 	public MediaFeatureExpression clone() {
 		return new MediaFeatureExpression(feature, expression);
-	}
-	
+	}	
 }

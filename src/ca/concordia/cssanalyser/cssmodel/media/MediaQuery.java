@@ -3,7 +3,9 @@ package ca.concordia.cssanalyser.cssmodel.media;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class MediaQuery {
+import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
+
+public class MediaQuery extends CSSModelObject {
 
 	private final int definedInLine;
 	private final int definedInColumn;

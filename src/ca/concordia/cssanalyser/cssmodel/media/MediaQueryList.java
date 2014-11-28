@@ -4,7 +4,9 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class MediaQueryList implements Iterable<MediaQuery> {
+import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
+
+public class MediaQueryList extends CSSModelObject implements Iterable<MediaQuery> {
 
 	private final Set<MediaQuery> listOfMediaQueries;
 

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
 import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
 import ca.concordia.cssanalyser.cssmodel.CSSSource;
 import ca.concordia.cssanalyser.cssmodel.LocationInfo;
@@ -20,9 +21,8 @@ import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 
 
-public abstract class Selector  {
-	
-	private LocationInfo locationInfo;
+public abstract class Selector extends CSSModelObject  {
+
 	private LocationInfo selectorNameLocationInfo;
 	protected StyleSheet parentStyleSheet;
 	protected Set<MediaQueryList> mediaQueryLists;
@@ -60,15 +60,7 @@ public abstract class Selector  {
 		if (!parentStyleSheet.containsSelector(this))
 			parentStyleSheet.addSelector(this);
 	}
-	
-	public LocationInfo getLocationInfo() {
-		return locationInfo;
-	}
-	
-	public void setLocationInfo(LocationInfo locationInfo) {
-		this.locationInfo = locationInfo;
-	}
-	
+		
 	public LocationInfo getSelectorNameLocationInfo() {
 		return this.selectorNameLocationInfo;
 	}

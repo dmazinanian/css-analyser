@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
 import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
 import ca.concordia.cssanalyser.cssmodel.CSSSource;
 import ca.concordia.cssanalyser.cssmodel.LocationInfo;
@@ -19,11 +20,10 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
  * @author Davood Mazinanian
  *
  */
-public abstract class Declaration implements Cloneable {
+public abstract class Declaration extends CSSModelObject implements Cloneable {
 
 	protected final String property;
 	protected Selector parentSelector;
-	protected LocationInfo locationInfo;
 	protected final boolean isImportant;
 	protected final boolean isCommaSeparatedListOfValues;
 	protected CSSOrigin origin = CSSOrigin.AUTHOR;

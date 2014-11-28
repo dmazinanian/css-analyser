@@ -1,6 +1,6 @@
 package ca.concordia.cssanalyser.cssmodel.declaration.value;
 
-import ca.concordia.cssanalyser.cssmodel.LocationInfo;
+import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
 
 
 /**
@@ -12,13 +12,12 @@ import ca.concordia.cssanalyser.cssmodel.LocationInfo;
  * @author Davood Mazinanian
  *
  */
-public class DeclarationValue implements Cloneable {
+public class DeclarationValue extends CSSModelObject implements Cloneable {
 	
 	protected final String realInFileValue;
 	protected boolean isAMissingValue;
 	protected final ValueType valueType;
 	protected String correspondingStyleProperty;
-	protected LocationInfo locationInfo;
 	
 	private final boolean isKeyword;
 	
@@ -49,15 +48,7 @@ public class DeclarationValue implements Cloneable {
 		// only alphabets or dashes
 		isKeyword = realInFileValue.matches("[a-zA-Z\\-]+");
 	}
-	
-	public LocationInfo getLocationInfo() {
-		return this.getLocationInfo();
-	}
-	
-	public void setLocationInfo(LocationInfo locationInfo) {
-		this.locationInfo = locationInfo;
-	}
-	
+		
 	/**
 	 * Always returns the real value of 
 	 * this declaration value

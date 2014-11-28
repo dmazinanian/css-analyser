@@ -28,7 +28,7 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDepen
  * 
  * @author Davood Mazinanian
  */
-public class StyleSheet {
+public class StyleSheet extends CSSModelObject {
 
 	private Map<Selector, Integer> selectors;
 	private String cssFilePath;
