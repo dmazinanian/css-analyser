@@ -65,6 +65,13 @@ public class MediaFeatureExpression extends CSSModelObject {
 				return false;
 		} else if (!feature.equals(other.feature))
 			return false;
+		if (locationInfo == null) {
+			if (other.locationInfo != null)
+				return false;
+		} else {
+			if (!locationInfo.equals(other.locationInfo))
+				return false;
+		}
 		return true;
 	}
 	

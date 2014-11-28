@@ -7,9 +7,6 @@ import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
 
 public class MediaQuery extends CSSModelObject {
 
-	private final int definedInLine;
-	private final int definedInColumn;
-	
 	public enum MediaQueryPrefix {
 		NOT,
 		ONLY;
@@ -23,17 +20,11 @@ public class MediaQuery extends CSSModelObject {
 	private final Set<MediaFeatureExpression> mediaFeatureExpresions;
 	
 
-	public MediaQuery(String mediaType) {
-		this(mediaType, -1, -1);
+	public MediaQuery(String mediaTypeName) {
+		this(null, mediaTypeName);
 	}
 
-	public MediaQuery(String mediaTypeName, int line, int col) {
-		this(null, mediaTypeName, line, col);
-	}
-
-	public MediaQuery(MediaQueryPrefix prefix, String mediaTypeName, int line, int coloumn) {
-		definedInLine = line;
-		definedInColumn = coloumn;
+	public MediaQuery(MediaQueryPrefix prefix, String mediaTypeName) {
 		mediaType = mediaTypeName;
 		mediaFeatureExpresions = new LinkedHashSet<>();
 		this.prefix = prefix;
@@ -63,26 +54,18 @@ public class MediaQuery extends CSSModelObject {
 
 	@Override
 	public MediaQuery clone() {
-		MediaQuery toReturn =  new MediaQuery(prefix, mediaType, getLine(), getColumn());
+		MediaQuery toReturn =  new MediaQuery(prefix, mediaType);
+		toReturn.locationInfo = locationInfo;
 		for (MediaFeatureExpression mfe : mediaFeatureExpresions)
 			toReturn.mediaFeatureExpresions.add(mfe.clone());
 		return toReturn;
-	}
-
-	public int getLine() {
-		return definedInLine;
-	}
-
-	public int getColumn() {
-		return definedInColumn;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + definedInColumn;
-		result = prime * result + definedInLine;
+		result = prime * result + locationInfo.hashCode();
 		result = prime
 				* result
 				+ ((mediaFeatureExpresions == null) ? 0
@@ -102,10 +85,13 @@ public class MediaQuery extends CSSModelObject {
 		if (getClass() != obj.getClass())
 			return false;
 		MediaQuery other = (MediaQuery) obj;
-		if (definedInColumn != other.definedInColumn)
-			return false;
-		if (definedInLine != other.definedInLine)
-			return false;
+		if (locationInfo == null) {
+			if (other.locationInfo != null)
+				return false;
+		} else {
+			if (!locationInfo.equals(other.locationInfo))
+				return false;
+		}
 		if (mediaType == null) {
 			if (other.mediaType != null)
 				return false;
