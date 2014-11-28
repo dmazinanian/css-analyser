@@ -21,8 +21,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 
 	public GroupingSelector(LocationInfo locationInfo) {
 		super(locationInfo);
-		// To preserve the order of selectors as in the CSS file, we
-		// use LinkedHashSet
+		// To preserve the order of selectors as in the CSS file, we use LinkedHashSet
 		listOfBaseSelectors = new LinkedHashSet<>();
 	}
 
@@ -125,7 +124,6 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		GroupingSelector otherGroupedSelector = (GroupingSelector)obj;
 
 		return getLocationInfo().equals(otherGroupedSelector.getLocationInfo()) &&
-				//otherGroupedSelector.listOfBaseSelectors.equals(listOfBaseSelectors);
 				otherGroupedSelector.listOfBaseSelectors.size() == listOfBaseSelectors.size() &&
 				otherGroupedSelector.listOfBaseSelectors.containsAll(listOfBaseSelectors);
 	}
