@@ -1,5 +1,6 @@
 package ca.concordia.cssanalyser.analyser.duplication;
 
+import java.util.Iterator;
 import java.util.List;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
@@ -14,23 +15,28 @@ public class TypeTwoDuplicationInstance extends TypeOneDuplicationInstance {
 		
 	@Override
 	public String toString() {
-		String s = "";
-		for (Selector selector : forSelectors) {
-			s += selector;
+		StringBuilder s = new StringBuilder();
+		for (Iterator<Selector> iterator = forSelectors.iterator(); iterator.hasNext();) {
+			Selector selector = iterator.next();
+			s.append(selector);
 			if (selector.getLocationInfo().getLineNumber() >= 0)
-				s += String.format("(%s)", selector.getLocationInfo());
-			s += ", ";
+				s.append(String.format("(%s)", selector.getLocationInfo()));
+			if (iterator.hasNext())
+				s.append(", ");
 		}
-		s = s.substring(0, s.length() - 2); // Remove the last comma and space
-		String string = "For selectors " + s + ": \n";
+		StringBuilder string = new StringBuilder();
+		string.append("For selectors ").append(s).append(": ");
+		string.append(System.lineSeparator());
 		for (List<Declaration> list : forDeclarations) {
 			if (list == null || list.get(0) == null) 
 				continue;
-			string += "\t[" + list.get(0) + "]  (or its equivalences) in the following places: \n";
+			string.append("\t[").append(list.get(0)).append("]  (or its equivalences) in the following places: ");
+			string.append(System.lineSeparator());
 			for (Declaration declaration : list)
-				string += "\t\t" + declaration.getLocationInfo() + " :" + declaration + "\n"; 
+				string.append("\t\t").append(declaration.getLocationInfo()).append(" :").append(declaration);
+			string.append(System.lineSeparator()); 
 		}
-		return string;
+		return string.toString();
 	}
 
 }

@@ -2,6 +2,7 @@ package ca.concordia.cssanalyser.analyser.duplication;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -76,23 +77,29 @@ public class TypeOneDuplicationInstance implements DuplicationInstance {
 	
 	@Override
 	public String toString() {
-		String s = "";
-		for (Selector selector : forSelectors) {
-			s += selector;
+		StringBuilder s = new StringBuilder();
+		for (Iterator<Selector> iterator = forSelectors.iterator(); iterator.hasNext();) {
+			Selector selector = iterator.next();
+			s.append(selector);
 			if (selector.getLocationInfo().getLineNumber() >= 0)
-				s += String.format("(%s)", selector.getLocationInfo());
-			s += ", ";
+				s.append(String.format("(%s)", selector.getLocationInfo()));
+			if (iterator.hasNext())
+				s.append(", ");
 		}
-		s = s.substring(0, s.length() - 2); // Remove the last comma and space
-		String string = "For selectors " + s + ", the following declarations are the same: \n";
+		StringBuilder string = new StringBuilder();
+		string.append("For selectors ").append(s).append(", the following declarations are the same:");
+		string.append(System.lineSeparator());
 		for (List<Declaration> list : forDeclarations) {
 			if (list == null || list.get(0) == null) 
 				continue;
-			string += "\t[" + list.get(0) + "] in the following places: \n";
-			for (Declaration declaration : list)
-				string += "\t\t" + declaration.getLocationInfo() + " \n"; 
+			string.append("\t[").append(list.get(0)).append("] in the following places:");
+			string.append(System.lineSeparator());
+			for (Declaration declaration : list) {
+				string.append("\t\t").append(declaration.getLocationInfo());
+				string.append(System.lineSeparator());
+			}
 		}
-		return string;
+		return string.toString();
 	}
 	
 	@Override
