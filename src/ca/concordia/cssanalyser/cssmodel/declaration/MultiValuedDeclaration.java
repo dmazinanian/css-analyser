@@ -699,7 +699,7 @@ public class MultiValuedDeclaration extends Declaration {
 		
 		MultiValuedDeclaration otherMultiValuedDeclaration = (MultiValuedDeclaration)otherDeclaration;
 		
-		if (otherMultiValuedDeclaration.getValues().size() != getValues().size())
+		if (((Collection<DeclarationValue>)otherMultiValuedDeclaration.getRealValues()).size() != ((Collection<DeclarationValue>)getRealValues()).size())
 			return false;
 		
 		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet()) {
