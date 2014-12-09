@@ -678,7 +678,6 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 							fontVarient = currentValue;
 							fontVarianFound = true;
 							break;
-						case "bold":
 						case "bolder":
 						case "lighter":
 							fontWeight = currentValue;
@@ -728,17 +727,23 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 						}
 						break;
 					case INTEGER:
-						if (currentValueIndex > 0 && "/".equals(declarationValues.get(currentValueIndex - 1).getValue())) {
-							lineHeight = currentValue;
-							lineHeightFound = true;
-						}
-						else {
-							for (int weight = 100; weight <= 900; weight += 100) {
-								if (String.valueOf(weight).equals(currentValue.getValue()))
-								{
-									fontWeight = currentValue;
-									fontWeightFound = true;
-									break;
+						// Bold is Ingeter = 700
+						if ("bold".equals(currentValue.getValue())) {
+							fontWeight = currentValue;
+							fontWeightFound = true;
+						} else {
+							if (currentValueIndex > 0 && "/".equals(declarationValues.get(currentValueIndex - 1).getValue())) {
+								lineHeight = currentValue;
+								lineHeightFound = true;
+							}
+							else {
+								for (int weight = 100; weight <= 900; weight += 100) {
+									if (String.valueOf(weight).equals(currentValue.getValue()))
+									{
+										fontWeight = currentValue;
+										fontWeightFound = true;
+										break;
+									}
 								}
 							}
 						}
