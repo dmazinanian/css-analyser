@@ -1,8 +1,10 @@
 package ca.concordia.cssanalyser.cssmodel.declaration;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,7 +21,7 @@ public class SingleValuedDeclaration extends Declaration {
 		this.declarationValue = declrationValue;
 		// For single-valued declarations, the style property is set to the declaration property
 		// See doc for DeclarationValue#setCorrespondingStyleProperty
-		declarationValue.setCorrespondingStyleProperty(this.getProperty());
+		declarationValue.setCorrespondingStyleProperty(this.getProperty(), 1);
 	}
 
 	@Override
@@ -69,7 +71,6 @@ public class SingleValuedDeclaration extends Declaration {
 			int result = 1;
 			result = prime * result + locationInfo.hashCode();
 			result = prime * result +  prime * declarationValue.hashCode();
-			result = prime * result + (isCommaSeparatedListOfValues ? 1231 : 1237);
 			result = prime * result + (isImportant ? 1231 : 1237);
 			result = prime * result + 0;
 			result = prime * result
@@ -91,8 +92,6 @@ public class SingleValuedDeclaration extends Declaration {
 		if (getClass() != obj.getClass())
 			return false;
 		SingleValuedDeclaration other = (SingleValuedDeclaration) obj;
-		if (isCommaSeparatedListOfValues != other.isCommaSeparatedListOfValues)
-			return false;
 		if (isImportant != other.isImportant)
 			return false;
 		if (property == null) {
@@ -130,6 +129,34 @@ public class SingleValuedDeclaration extends Declaration {
 		Set<String> toReturn = new HashSet<>();
 		toReturn.add(property);
 		return toReturn;
+	}
+
+	@Override
+	public Iterable<DeclarationValue> getDeclarationValues() {
+		List<DeclarationValue> toReturn = new ArrayList<>();
+		toReturn.add(declarationValue);
+		return toReturn;
+	}
+
+	@Override
+	public int getNumberOfValueLayers() {
+		return 1;
+	}
+
+	@Override
+	public Collection<DeclarationValue> getDeclarationValuesForStyleProperty(String styleProperty, int forLayer) {
+		List<DeclarationValue> values = new ArrayList<>();
+		if (property.equals(styleProperty)) {
+			values.add(declarationValue);
+		}
+		return values;
+	}
+	
+	@Override
+	public Set<PropertyAndLayer> getAllSetPropertyAndLayers() {
+		Set<PropertyAndLayer> allSetPropertyAndLayers = new HashSet<>();
+		allSetPropertyAndLayers.add(new PropertyAndLayer(this.property, 1));
+		return allSetPropertyAndLayers;
 	}
 	 
 }

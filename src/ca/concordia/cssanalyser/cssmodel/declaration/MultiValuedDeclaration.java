@@ -23,6 +23,8 @@ import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
  */
 
 public class MultiValuedDeclaration extends Declaration {
+	
+	protected final boolean isCommaSeparatedListOfValues;
 
 	protected final List<DeclarationValue> declarationValues;
 	/**
@@ -35,66 +37,6 @@ public class MultiValuedDeclaration extends Declaration {
 	 */
 	protected final Map<PropertyAndLayer, Collection<DeclarationValue>> stylePropertyToDeclarationValueMap;
 	protected int numberOfMissingValues;
-	
-	/**
-	 * Represents a style property name, 
-	 * and the layer to which it belongs.
-	 * The layer is for multi-layered, comma-separated values,
-	 * such as in the background declaration. 
-	 * @author Davood Mazinanian
-	 *
-	 */
-	protected static class PropertyAndLayer {
-		private final String propertyName;
-		private final int propertyLayer;
-		
-		public PropertyAndLayer(String propertyName) {
-			this(propertyName, 1);
-		}
-		
-		public PropertyAndLayer(String propertyName, int propertyLayer) {
-			this.propertyName = propertyName;
-			this.propertyLayer = propertyLayer;
-		}
-		
-		public String getPropertyName() { return this.propertyName; }
-		public int getPropertyLayer() { return this.propertyLayer; }
-
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + propertyLayer;
-			result = prime * result	+ ((propertyName == null) ? 0 : propertyName.hashCode());
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			PropertyAndLayer other = (PropertyAndLayer) obj;
-			if (propertyLayer != other.propertyLayer)
-				return false;
-			if (propertyName == null) {
-				if (other.propertyName != null)
-					return false;
-			} else if (!propertyName.equals(other.propertyName))
-				return false;
-			return true;
-		}
-		
-		@Override
-		public String toString() {
-			return String.format("%s (layer %s)", propertyName, propertyLayer);
-		}
-		
-	}
-	
 	private static final Set<String> muliValuedProperties = new HashSet<>();
 	
 	static {
@@ -105,7 +47,7 @@ public class MultiValuedDeclaration extends Declaration {
 		super(propertyName, belongsTo, important, location);
 		this.declarationValues = values;
 		this.stylePropertyToDeclarationValueMap = new HashMap<>();
-		
+		this.isCommaSeparatedListOfValues = isCommaSeparated(property);
 		if (addMissingValues)
 			addMissingValues();
 	}
@@ -133,6 +75,39 @@ public class MultiValuedDeclaration extends Declaration {
 			muliValuedProperties.add(property);
 	}
 
+	/**
+	 * Gets a property name (as String) and 
+	 * determines whether the property can have a list of 
+	 * comma-separated values (like CSS3 background, font, etc.)
+	 * @param property
+	 * @return
+	 */
+	public static boolean isCommaSeparated(String property) {
+		switch (property) {
+			case "font-family":
+			case "font": // ?
+			case "background":
+			case "background-clip":
+			case "background-origin":
+			case "background-position":
+			case "background-image":
+			case "background-repeat":
+			case "background-attachment":
+			case "box-shadow":
+			case "text-shadow":
+			case "transition":
+			case "transition-delay":
+			case "transition-duration":
+			case "transition-property":
+			case "transition-timing-function":
+			case "overflow-style":
+			case "animation":
+			case "src": // for @font-face
+				return true;
+		}
+		return false;
+	}
+	
 	public static boolean isMultiValuedProperty(String propertyName) {
 		return muliValuedProperties.contains(getNonVendorProperty(getNonHackedProperty(propertyName)));
 	}
@@ -489,7 +464,7 @@ public class MultiValuedDeclaration extends Declaration {
 	
 	protected void assignStylePropertyToValue(String styleProperty, int layer, DeclarationValue value, boolean orderImportant) {
 		
-		value.setCorrespondingStyleProperty(styleProperty);
+		value.setCorrespondingStyleProperty(styleProperty, layer);
 		
 		PropertyAndLayer propertyAndLayer = new PropertyAndLayer(styleProperty, layer);
 		
@@ -822,15 +797,14 @@ public class MultiValuedDeclaration extends Declaration {
 	 * @param styleProperty
 	 * @return
 	 */
+	@Override
 	public Collection<DeclarationValue> getDeclarationValuesForStyleProperty(String styleProperty, int forLayer) {
 		return stylePropertyToDeclarationValueMap.get(new PropertyAndLayer(styleProperty, forLayer));
 	}
 
 	@Override
 	public Map<String, List<Collection<DeclarationValue>>> getPropertyToValuesMap() {
-		
-		//Map<Integer, List<PropertyAndLayer>> layerToPropertyMapper = getLayerToPropertyAndLayerMap();
-		
+			
 		Map<String, List<Collection<DeclarationValue>>> toReturn = new HashMap<>();
 		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet()) {
 			Collection<DeclarationValue> values = stylePropertyToDeclarationValueMap.get(propertyAndLayer);
@@ -839,7 +813,7 @@ public class MultiValuedDeclaration extends Declaration {
 				declarationValues = new ArrayList<Collection<DeclarationValue>>();
 				toReturn.put(propertyAndLayer.getPropertyName(), declarationValues);
 			}
-			declarationValues.set(propertyAndLayer.propertyLayer - 1, values);
+			declarationValues.set(propertyAndLayer.getPropertyLayer() - 1, values);
 		}
 		return toReturn;
 		
@@ -857,6 +831,29 @@ public class MultiValuedDeclaration extends Declaration {
 			currentList.add(propertyAndLayer);
 		}
 		return layerToPropertyMapper;
+	}
+
+	@Override
+	public Iterable<DeclarationValue> getDeclarationValues() {
+		return declarationValues;
+	}
+
+	@Override
+	public int getNumberOfValueLayers() {
+		Set<Integer> layer = new HashSet<>();
+		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet()) {
+			layer.add(propertyAndLayer.getPropertyLayer());
+		}
+		return layer.size();
+	}
+	
+	@Override
+	public Set<PropertyAndLayer> getAllSetPropertyAndLayers() {
+		Set<PropertyAndLayer> allSetPropertyAndLayers = new HashSet<>();
+		for (DeclarationValue value : declarationValues) {
+			allSetPropertyAndLayers.add(new PropertyAndLayer(value.getCorrespondingStyleProperty(), value.getCorrespondingStyleLayer()));
+		}
+		return allSetPropertyAndLayers;
 	}
 	 
 }

@@ -9,6 +9,7 @@ import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
 import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
 import ca.concordia.cssanalyser.cssmodel.CSSSource;
 import ca.concordia.cssanalyser.cssmodel.LocationInfo;
+import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
@@ -25,7 +26,6 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	protected final String property;
 	protected Selector parentSelector;
 	protected final boolean isImportant;
-	protected final boolean isCommaSeparatedListOfValues;
 	protected CSSOrigin origin = CSSOrigin.AUTHOR;
 	protected CSSSource source = CSSSource.EXTERNAL;
 
@@ -42,44 +42,8 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 		property = propertyName.toLowerCase().trim();
 		parentSelector = belongsTo;
 		isImportant = important;
-		isCommaSeparatedListOfValues = isCommaSeparated(property);
 		locationInfo = location;
 	}
-	
-	/**
-	 * Gets a property name (as String) and 
-	 * determines whether the property can have a list of 
-	 * comma-separated values (like CSS3 background, font, etc.)
-	 * @param property
-	 * @return
-	 */
-	public static boolean isCommaSeparated(String property) {
-		switch (property) {
-		case "font-family":
-		case "font": // ?
-		case "background":
-		case "background-clip":
-		case "background-origin":
-		case "background-position":
-		case "background-image":
-		case "background-repeat":
-		case "background-attachment":
-		case "box-shadow":
-		case "text-shadow":
-		case "transition":
-		case "transition-delay":
-		case "transition-duration":
-		case "transition-property":
-		case "transition-timing-function":
-		case "overflow-style":
-		case "animation":
-		case "src": // for @font-face
-			return true;
-		}
-		return false;
-	}
-
-
 	
 	/**
 	 * For properties which have vendor prefixes
@@ -150,7 +114,6 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	public String getProperty() {
 		return property;
 	}
-
 	
 	/**
 	 * Compares two declarations based only on their values to see if they are Equal.
@@ -165,8 +128,6 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	 * @return
 	 */
 	protected abstract boolean valuesEquivalent(Declaration otherDeclaration);
-
-	
 
 	/**
 	 * Return true if the given declarations is equivalent
@@ -241,7 +202,6 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (isCommaSeparatedListOfValues ? 1231 : 1237);
 		result = prime * result + (isImportant ? 1231 : 1237);
 		result = prime * locationInfo.hashCode();
 		result = prime * result + ((origin == null) ? 0 : origin.hashCode());
@@ -262,8 +222,6 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 		if (getClass() != obj.getClass())
 			return false;
 		Declaration other = (Declaration) obj;
-		if (isCommaSeparatedListOfValues != other.isCommaSeparatedListOfValues)
-			return false;
 		if (isImportant != other.isImportant)
 			return false;
 		if (origin != other.origin)
@@ -295,7 +253,7 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	/**
 	 * Returns a map which maps every style property to a list of declaration values.
 	 * In the case of single-valued declarations, it returns a map with one mapping: property -> the only value.
-	 * In the case of multi-values declarations, it maps every style property to a list.
+	 * In the case of multi-valued declarations, it maps every style property to a list.
 	 * Each member of the list represents one layer (in multi-layered, comma-separated values).
 	 * This list will have one item, if the property is not comma-separated.
 	 * Each of the items of this list will be a collection of values, corresponding to the
@@ -305,12 +263,24 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	 * return a list with one item, which is a collection containing "Tahoma" and "Arial".
 	 * @return
 	 */
-	public abstract Map<String, ?> getPropertyToValuesMap();
+	protected abstract Map<String, ?> getPropertyToValuesMap();
 
 	public abstract Collection<String> getStyleProperties();
 	
 	public int getDeclarationNumber() {
 		return this.parentSelector.getDeclarationNumber(this);
 	}
+
+	public abstract Iterable<DeclarationValue> getDeclarationValues();
 	
+	public abstract int getNumberOfValueLayers();
+
+	public abstract Collection<DeclarationValue> getDeclarationValuesForStyleProperty(String styleProperty, int forLayer);
+	
+	public Collection<DeclarationValue> getDeclarationValuesForStyleProperty(PropertyAndLayer propertyAndLayer) {
+		return getDeclarationValuesForStyleProperty(propertyAndLayer.getPropertyName(), propertyAndLayer.getPropertyLayer());
+	}
+	
+	public abstract Set<PropertyAndLayer> getAllSetPropertyAndLayers();
+		
 }
