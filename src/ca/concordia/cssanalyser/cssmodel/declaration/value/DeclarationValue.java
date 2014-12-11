@@ -1,8 +1,8 @@
 package ca.concordia.cssanalyser.cssmodel.declaration.value;
 
 import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
-
-
+import ca.concordia.cssanalyser.cssmodel.declaration.PropertyAndLayer;
+ 
 /**
  * Represents the values of declarations.
  * Note that we keep values such as colors which have a equivalent value
@@ -17,7 +17,7 @@ public class DeclarationValue extends CSSModelObject implements Cloneable {
 	protected final String realInFileValue;
 	protected boolean isAMissingValue;
 	protected final ValueType valueType;
-	protected String correspondingStyleProperty;
+	protected PropertyAndLayer correspondingStylePropertyAndLayer;
 	
 	private final boolean isKeyword;
 	
@@ -100,16 +100,28 @@ public class DeclarationValue extends CSSModelObject implements Cloneable {
 	 * @return
 	 */
 	public String getCorrespondingStyleProperty() {
-		return correspondingStyleProperty;
+		if (correspondingStylePropertyAndLayer != null)
+			return correspondingStylePropertyAndLayer.getPropertyName();
+		return null;
+	}
+	
+	/**
+	 * Returns to which style property layer this value belongs.
+	 * @return
+	 */
+	public int getCorrespondingStyleLayer() {
+		if (correspondingStylePropertyAndLayer != null)
+			return correspondingStylePropertyAndLayer.getPropertyLayer();
+		return -1;
 	}
 
 	/**
-	 * Sets the style property to which this value belongs.
+	 * Sets the style property and the layer to which this value belongs.
 	 * @see #getCorrespondingStyleProperty()
 	 * @param styleProperty
 	 */
-	public void setCorrespondingStyleProperty(String styleProperty) {
-		this.correspondingStyleProperty = styleProperty;
+	public void setCorrespondingStyleProperty(String styleProperty, int layer) {
+		this.correspondingStylePropertyAndLayer = new PropertyAndLayer(styleProperty, layer);
 	}
 	
 	/**
@@ -172,6 +184,10 @@ public class DeclarationValue extends CSSModelObject implements Cloneable {
 	@Override
 	public DeclarationValue clone() {
 		return new DeclarationValue(realInFileValue, isAMissingValue, valueType);
+	}
+
+	public PropertyAndLayer getCorrespondingStylePropertyAndLayer() {
+		return this.correspondingStylePropertyAndLayer;
 	}
 	
 	
