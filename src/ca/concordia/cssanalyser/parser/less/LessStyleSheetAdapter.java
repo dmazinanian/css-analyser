@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.slf4j.Logger;
 
 import ca.concordia.cssanalyser.app.FileLogger;
@@ -33,6 +32,7 @@ import ca.concordia.cssanalyser.cssmodel.selectors.SiblingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.SimpleSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorConditionType;
+import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPreprocessorNodeFinder;
 import ca.concordia.cssanalyser.parser.ParseException;
 
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
@@ -57,8 +57,6 @@ import com.github.sommeri.less4j.core.ast.NumberExpression;
 import com.github.sommeri.less4j.core.ast.RuleSet;
 import com.github.sommeri.less4j.core.ast.SelectorAttribute;
 import com.github.sommeri.less4j.core.ast.SelectorPart;
-import com.github.sommeri.less4j.core.parser.HiddenTokenAwareTree;
-import com.github.sommeri.less4j.core.parser.LessLexer;
 
 /**
  * Adapts a Less StyleSheet object to a CSSAnalyser StyleSheet object 
@@ -108,46 +106,6 @@ public class LessStyleSheetAdapter {
 		
 	}
 		
-	private LocationInfo getLocationInfoForLessASTCssNode(ASTCssNode node) {
-		HiddenTokenAwareTree firstChild, lastChild;
-		if (node.getUnderlyingStructure().getChildren().size() == 0) {
-			firstChild = lastChild = node.getUnderlyingStructure();
-		} else {
-			firstChild = node.getUnderlyingStructure().getChild(0);
-			while (firstChild.getChildCount() > 0) {
-				if (firstChild.getChild(0).getType() == LessLexer.EMPTY_COMBINATOR) {
-					if (firstChild.getChildCount() > 1)
-						firstChild = firstChild.getChild(1);
-					else
-						throw new RuntimeException("What To Do?");
-				} else {
-					firstChild = firstChild.getChild(0);	
-				}
-			}
-			
-			lastChild = node.getUnderlyingStructure().getChild(node.getUnderlyingStructure().getChildCount() - 1);
-			while (lastChild.getChildCount() > 0) {
-				lastChild = lastChild.getChild(lastChild.getChildCount() - 1);
-			}
-
-		}
-		
-		int line = node.getSourceLine();
-		int column = node.getSourceColumn();
-		
-		int offset = -1, length = -1;
-		
-		try {
-			offset = (int)FieldUtils.readField(firstChild.getToken(), "start", true);
-			length = (int)FieldUtils.readField(lastChild.getToken(), "stop", true) - offset + 1;
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
-				
-		LocationInfo toReturn = new LocationInfo(line, column, offset, length);
-		return toReturn;
-	}
-
 	private MediaQueryList getMediaQueryListFromLessMedia(com.github.sommeri.less4j.core.ast.Media lessMedia) {
 		
 		// x and y, z and t is a list of media queries containing two media queries
@@ -193,17 +151,17 @@ public class LessStyleSheetAdapter {
 						throw new RuntimeException("What is " + lessMediaExpression);
 					}
 					MediaFeatureExpression featureExpression = new MediaFeatureExpression(feature, expression);
-					featureExpression.setLocationInfo(getLocationInfoForLessASTCssNode(lessMediaExpression));
+					featureExpression.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(lessMediaExpression));
 					query.addMediaFeatureExpression(featureExpression);
 				} catch (ParseException ex) {
 					LOGGER.warn(String.format("Ignored media expression %s", lessMediaExpression.toString()));
 				}
 			}
-			query.setLocationInfo(getLocationInfoForLessASTCssNode(lessMediaQuery));
+			query.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(lessMediaQuery));
 			mediaQueryList.addMediaQuery(query);
 		}
 		
-		mediaQueryList.setLocationInfo(getLocationInfoForLessASTCssNode(lessMedia));
+		mediaQueryList.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(lessMedia));
 		
 		return mediaQueryList;
 	}
@@ -225,7 +183,7 @@ public class LessStyleSheetAdapter {
 			selector = grouping;
 		}
 		
-		selector.setLocationInfo(getLocationInfoForLessASTCssNode(ruleSetNode));
+		selector.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(ruleSetNode));
 
 		// Handle declarations
 		addDeclarationsToSelectorFromLessRuleSetNode(ruleSetNode, selector);
@@ -256,7 +214,7 @@ public class LessStyleSheetAdapter {
 								lessDeclaration.getSourceLine(), lessDeclaration.getSourceColumn()));
 					} else {
 						Declaration declaration = DeclarationFactory.getDeclaration(
-								property, values, selector, lessDeclaration.isImportant(), true, getLocationInfoForLessASTCssNode(declarationNode));
+								property, values, selector, lessDeclaration.isImportant(), true, LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(declarationNode));
 						selector.addDeclaration(declaration);
 					}
 	
@@ -287,7 +245,7 @@ public class LessStyleSheetAdapter {
 					if (listExpression.getOperator().getOperator() ==  Operator.COMMA) {
 						if (iterator.hasNext()) {
 							DeclarationValue value = DeclarationValueFactory.getDeclarationValue(property, ",", ValueType.SEPARATOR);
-							value.setLocationInfo(getLocationInfoForLessASTCssNode(listExpression.getOperator()));
+							value.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(listExpression.getOperator()));
 							values.add(value);
 						}
 					} else if (listExpression.getOperator().getOperator() ==  Operator.EMPTY_OPERATOR) {
@@ -310,7 +268,7 @@ public class LessStyleSheetAdapter {
 			// Operator
 			DeclarationValueFactory.getDeclarationValue(property, binary.getOperator().toString(), ValueType.OPERATOR);
 			DeclarationValue operator = DeclarationValueFactory.getDeclarationValue(property, binary.getOperator().toString(), ValueType.OPERATOR);
-			operator.setLocationInfo(getLocationInfoForLessASTCssNode(binary.getOperator()));
+			operator.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(binary.getOperator()));
 			values.add(operator);
 			
 			values.addAll(getListOfDeclarationValuesFromLessExpression(property, binary.getRight()));
@@ -388,7 +346,7 @@ public class LessStyleSheetAdapter {
 			throw new RuntimeException("What is that?" + expression);
 		}
 		
-		value.setLocationInfo(getLocationInfoForLessASTCssNode(expression));
+		value.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(expression));
 		
 		return value;
 	}
@@ -433,7 +391,7 @@ public class LessStyleSheetAdapter {
 				break;
 		}
 		
-		value.setLocationInfo(getLocationInfoForLessASTCssNode(numberExpression));
+		value.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(numberExpression));
 		return value;
 	}
 
@@ -617,7 +575,7 @@ public class LessStyleSheetAdapter {
 			}
 		}
 			
-		simpleSelector.setSelectorNameLocationInfo(getLocationInfoForLessASTCssNode(selectorPart));
+		simpleSelector.setSelectorNameLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(selectorPart));
 		
 		return simpleSelector;
 	}
