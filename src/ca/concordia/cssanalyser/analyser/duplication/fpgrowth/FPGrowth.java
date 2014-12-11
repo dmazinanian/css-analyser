@@ -22,6 +22,7 @@ public class FPGrowth {
 	private final Map<Integer, ItemSetList> resultItemSetLists;
 	private final boolean removeSubsets;
 	private final ItemSetList returningDummyObject;
+	private int maxItemSetSize = -1;
 	
 	public FPGrowth(boolean removeSubSets) { 
 		this(removeSubSets, new ItemSetList());
@@ -203,8 +204,8 @@ public class FPGrowth {
 		ItemSet newItemSet = new ItemSet();
 		newItemSet.addAll(is);
 		if (removeSubsets) {
-			// Remove super sets
-			for (int i = newItemSet.size() + 1; i <= resultItemSetLists.keySet().size(); i++) {
+			// If this itemset is already in a superset, don't add it
+			for (int i = newItemSet.size() + 1; i <= maxItemSetSize ; i++) {
 				ItemSetList isl = resultItemSetLists.get(i);
 				if (isl != null && isl.containsSuperSet(newItemSet)) {
 					return;
@@ -222,6 +223,8 @@ public class FPGrowth {
 			resultItemSetLists.put(newItemSet.size(), correspondingItemSetList);
 		}
 		correspondingItemSetList.add(newItemSet);
+		if (newItemSet.size() > maxItemSetSize)
+			maxItemSetSize = newItemSet.size();
 		if (removeSubsets) {
 			// Remove sub sets
 			for (int i = 1; i < newItemSet.size(); i++) {
