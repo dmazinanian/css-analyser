@@ -16,7 +16,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 	
 	private final StyleSheet styleSheet;
 	
-	public abstract MixinMigrationOpportunity getNewPreprocessorSpecificOpportunity();
+	protected abstract MixinMigrationOpportunity getNewPreprocessorSpecificOpportunity();
 
 	public PreprocessorMigrationOpportunitiesDetector(StyleSheet styleSheet) {
 		this.styleSheet = styleSheet;
