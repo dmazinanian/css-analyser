@@ -13,6 +13,7 @@ import java.util.Set;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.PropertyAndLayer;
+import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunity;
@@ -357,8 +358,24 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 		}
 		for (Item item : equivalentDelcarations.values()) {
 			for (Declaration declaration : item) {
-				if (declaration.getSelector().equals(selector))
-					toReturn.add(declaration);
+				if (declaration.getSelector().equals(selector)) {
+					/*
+					 * Handle virtual shorthand declarations.
+					 * Instead of returning the virtual shorthand declaration, return the corresponding declarations 
+					 */
+					if (declaration instanceof ShorthandDeclaration && ((ShorthandDeclaration) declaration).isVirtual()) {
+						for (Declaration individual : ((ShorthandDeclaration) declaration).getIndividualDeclarations()) {
+							for (Declaration declarationInTheSelector : selector.getDeclarations()) {
+								if (individual.getProperty().equals(declarationInTheSelector.getProperty())) {
+									toReturn.add(declarationInTheSelector);
+									break;
+								}
+							}
+						}
+					} else {
+						toReturn.add(declaration);
+					}
+				}
 			}
 		}
 		return toReturn;
