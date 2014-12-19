@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,9 +35,6 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 	// Declarations having differences in their values are stored here. 
 	private Map<String, List<Declaration>> declarationsWithDifferences = new LinkedHashMap<>();
 
-	// Involved selectors in this mixin
-	private Map<Selector, Collection<Declaration>> selectors = new HashMap<>();
-
 	// List of parameters for this mixin
 	private List<MixinParameter> parameters = new ArrayList<>(); 
 
@@ -46,7 +42,13 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 	// Set of real declarations will be replaced by a call using mixinName and corresponding parameters
 	private Map<Declaration, Set<MixinParameterizedValue>> parameterizedValues = new LinkedHashMap<>();
 	
+	private final Iterable<Selector> involvedSelectors; 
+	
 	private boolean shouldCalculateParameters = false;
+	
+	public MixinMigrationOpportunity(Iterable<Selector> forSelectors) {
+		this.involvedSelectors = forSelectors;
+	}
 
 	// The list of properties and MixinValues. The real mixin will be created based on this
 	private Map<String, MixinDeclaration> mixinDeclarations = new LinkedHashMap<>();
@@ -72,27 +74,10 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 	public void setMixinName(String mixinName) {
 		this.mixinName = mixinName;
 	}
-
-	public Iterable<Declaration> getDeclarationsForProperty(String property) {
-		if (declarationsWithDifferences.containsKey(property))
-			return declarationsWithDifferences.get(property);
-		else if (equivalentDelcarations.containsKey(property))
-			return equivalentDelcarations.get(property);
-		else
-			return new ArrayList<>();
-	}
 	
 	public void addEquivalentDeclarations(Item item) {
 		String propertyName = item.getFirstDeclaration().getProperty();
 		equivalentDelcarations.put(propertyName, item);
-		for (Selector s : item.getSupport()) {
-			Collection<Declaration> declarationsForThisSelector = selectors.get(s);
-			if (declarationsForThisSelector == null) {
-				declarationsForThisSelector = new ArrayList<>();
-				selectors.put(s, declarationsForThisSelector);
-			}
-			declarationsForThisSelector.addAll(item);
-		}
 				
 		MixinDeclaration declaration = new MixinDeclaration(propertyName, item.getFirstDeclaration());
 		Declaration declarationWithMinChars = item.getDeclarationWithMinimumChars();
@@ -109,11 +94,6 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 		List<Declaration> declarationsToBeAdded = new ArrayList<>();
 		for (Declaration d : declarations) {
 			declarationsToBeAdded.add(d);
-			Collection<Declaration> declarationForThisDeclarationSelector = selectors.get(d.getSelector());
-			if (declarationForThisDeclarationSelector == null)
-				declarationForThisDeclarationSelector = new ArrayList<>();
-			declarationForThisDeclarationSelector.add(d);
-			selectors.put(d.getSelector(), declarationForThisDeclarationSelector);
 		}
 		declarationsWithDifferences.put(forProperty, declarationsToBeAdded);	
 		shouldCalculateParameters = true;
@@ -126,7 +106,6 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 		
 		List<MixinParameter> initialParameters = new ArrayList<>();
 		parameterizedValues.clear();
-		mixinDeclarations.clear();
 		
 		/*
 		 * If a value (or a set of values) for a style property is different in at least on of the declarations
@@ -316,20 +295,38 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 		return visitedPropertyAndLayers;
 	}
 
+	/**
+	 * Get all the mixin declarations (real declarations plus parameterized ones)
+	 * @return
+	 */
 	public Iterable<MixinDeclaration> getAllMixinDeclarations() {
 		calculateParameters();
 		return mixinDeclarations.values();
 	}
 	
+	/**
+	 * Returns all the selectors involved in this migration opportunity
+	 * @return
+	 */
 	public Iterable<Selector> getInvolvedSelectors() {
-		return selectors.keySet();
+		return involvedSelectors;
 	}
 	
+	/**
+	 * Returns all the parameters for the mixin being created using this opportunity
+	 * @return
+	 */
 	public Iterable<MixinParameter> getParameters() {
 		calculateParameters();
 		return parameters;
 	}
 	
+	/**
+	 * Returns a map, which maps MixinParameters to MixinParameterizedValues for the given selector.
+	 * This information can be used in making mixin calls
+	 * @param forSelector
+	 * @return
+	 */
 	public Map<MixinParameter, MixinParameterizedValue> getParameterizedValues(Selector forSelector) {
 		calculateParameters();
 		Map<MixinParameter, MixinParameterizedValue> toReturn = new LinkedHashMap<>();
@@ -339,6 +336,29 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 				for (MixinParameterizedValue pv : pramsVals) {
 					toReturn.put(pv.getMixinParameter(), pv);
 				}
+			}
+		}
+		return toReturn;
+	}
+
+	/**
+	 * Returns a set, containing all the declarations of a selector being parameterized using this opportunity
+	 * or declarations that are equal among all involved selectors
+	 * @param selector
+	 * @return
+	 */
+	public Set<Declaration> getDeclarationsInvolved(Selector selector) {
+		calculateParameters();
+		Set<Declaration> toReturn = new HashSet<>();
+		for (Declaration declaration : parameterizedValues.keySet()) {
+			if (declaration.getSelector().equals(selector)) {
+				toReturn.add(declaration);
+			}
+		}
+		for (Item item : equivalentDelcarations.values()) {
+			for (Declaration declaration : item) {
+				if (declaration.getSelector().equals(selector))
+					toReturn.add(declaration);
 			}
 		}
 		return toReturn;

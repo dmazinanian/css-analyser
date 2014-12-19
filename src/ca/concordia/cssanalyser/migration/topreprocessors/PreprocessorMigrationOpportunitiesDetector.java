@@ -16,7 +16,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 	
 	private final StyleSheet styleSheet;
 	
-	protected abstract MixinMigrationOpportunity getNewPreprocessorSpecificOpportunity();
+	protected abstract MixinMigrationOpportunity getNewPreprocessorSpecificOpportunity(Iterable<Selector> forSelectors);
 
 	public PreprocessorMigrationOpportunitiesDetector(StyleSheet styleSheet) {
 		this.styleSheet = styleSheet;
@@ -40,11 +40,11 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 			
 			for (ItemSet itemSet : itemSetList) {
 				
-				MixinMigrationOpportunity opportunity = getNewPreprocessorSpecificOpportunity();
+				MixinMigrationOpportunity opportunity = getNewPreprocessorSpecificOpportunity(itemSet.getSupport());
 				mixinRefactoringOpportunities.add(opportunity);
 				
 				// First, add all the equal or equivalent declarations to this opportunity
-				List<Declaration> declarations = itemSet.getRepresentativeDeclarations();
+				List<Declaration> declarationsInTheItemset = itemSet.getRepresentativeDeclarations();
 				
 				for (Item item : itemSet)
 					opportunity.addEquivalentDeclarations(item);
@@ -58,7 +58,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 				Selector firstSelector = itemSetSelectors.get(0);
 				for (Declaration declarationInTheFirstSelector : firstSelector.getDeclarations()) {
 					// We only care about remaining declarations, which are not equal or equivalent
-					if (declarations.contains(declarationInTheFirstSelector))
+					if (declarationsInTheItemset.contains(declarationInTheFirstSelector))
 						continue;
 					
 					List<Declaration> declarationsToAdd = new ArrayList<>();
@@ -70,7 +70,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 						for (Declaration declarationInTheSecondSelector : itemSetSelectors.get(i).getDeclarations()) {
 							
 							// Again we only care about remaining declarations, which are not equal or equivalent
-							if (declarations.contains(declarationInTheSecondSelector))
+							if (declarationsInTheItemset.contains(declarationInTheSecondSelector))
 								continue;
 
 							if (declarationInTheFirstSelector.getProperty().equals(declarationInTheSecondSelector.getProperty())) {

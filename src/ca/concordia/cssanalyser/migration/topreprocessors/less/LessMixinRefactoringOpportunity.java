@@ -7,6 +7,7 @@ import java.util.List;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
+import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinDeclaration;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameter;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
@@ -14,6 +15,10 @@ import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinValue;
 
 public class LessMixinRefactoringOpportunity extends MixinMigrationOpportunity {
 	
+	public LessMixinRefactoringOpportunity(Iterable<Selector> forSelectors) {
+		super(forSelectors);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder toReturn = new StringBuilder();
