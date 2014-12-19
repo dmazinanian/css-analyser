@@ -5,28 +5,26 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ca.concordia.cssanalyser.analyser.CSSAnalyser;
 import ca.concordia.cssanalyser.crawler.Crawler;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
-import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
-import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.io.IOHelper;
-import ca.concordia.cssanalyser.migration.topreprocessors.MixinRefactoringOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunitiesDetector;
-import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunity;
-import ca.concordia.cssanalyser.migration.topreprocessors.less.LessRefactoringOpportunitiesDetector;
+import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMigrationOpportunitiesDetector;
+import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMixinOpportunityApplier;
+import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPrinter;
+import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunityApplier;
+import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
 import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
 import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
 import ca.concordia.cssanalyser.parser.ParseException;
-import ca.concordia.cssanalyser.parser.less.LessStyleSheetAdapter;
 
 public class CSSAnalyserCLI {
 	
@@ -156,22 +154,37 @@ public class CSSAnalyserCLI {
 								String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
 
 								FileLogger.addFileAppender(folder + "css/log.log", false);
-
-								//							CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), folder + "css/" + correspondingCSSFolderName);
-								//							cssAnalyser.analyse(params.getFPGrowthMinsup());
 								List<File> cssFiles = IOHelper.searchForFiles(folder + "css/" + correspondingCSSFolderName, "css");
 
 								for (File f : cssFiles) {
 									try {
 										CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
 										StyleSheet styleSheet = parser.parseExternalCSS(f.getAbsolutePath());
+										PreprocessorMigrationOpportunitiesDetector preprocessorOpportunities = new LessMigrationOpportunitiesDetector(styleSheet);
+										List<MixinMigrationOpportunity> migrationOpportunities = preprocessorOpportunities.findMixinOpportunities();
+										Collections.sort(migrationOpportunities, new Comparator<MixinMigrationOpportunity>() {
+											@Override
+											public int compare(MixinMigrationOpportunity o1, MixinMigrationOpportunity o2) {
+												if (o1.getRank() == o2.getRank()) {
+													return 1;
+												}
+												return Double.compare(o1.getRank(), o2.getRank());
+											}
+										});
+										LessMixinOpportunityApplier applier = new LessMixinOpportunityApplier();
+										for (MixinMigrationOpportunity migrationOpportunity : migrationOpportunities) {
+											com.github.sommeri.less4j.core.ast.StyleSheet resultingLESSStyleSheet = applier.apply(migrationOpportunity, styleSheet);
+
+											LessPrinter lessPrinter = new LessPrinter();										
+											System.out.println(lessPrinter.getString(resultingLESSStyleSheet));
+										}
+										
 									}
-									catch (Exception e) {
+									catch (ParseException e) {
 										LOGGER.warn("Parse exception in parsing " + f.getAbsolutePath());
 									}
+									
 								}
-
-								//System.out.println(LessStyleSheetAdapter.Test.a);
 
 							}
 						}
@@ -183,8 +196,9 @@ public class CSSAnalyserCLI {
 	
 						CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
 						StyleSheet styleSheet = parser.parseExternalCSS(params.getFilePath());
-	//					PreprocessorRefactoringOpportunitiesDetector preprocessorOpportunities = new PreprocessorRefactoringOpportunitiesDetector(styleSheet);
-	//					Iterable<MixinRefactoringOpportunity> refactoringOpportunities = preprocessorOpportunities.findMixinOpportunities();
+						PreprocessorMigrationOpportunitiesDetector preprocessorOpportunities = new LessMigrationOpportunitiesDetector(styleSheet);
+						Iterable<MixinMigrationOpportunity> refactoringOpportunities = preprocessorOpportunities.findMixinOpportunities();
+						System.out.println(refactoringOpportunities);
 						
 	
 					} catch (ParseException e) {

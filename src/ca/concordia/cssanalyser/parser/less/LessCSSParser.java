@@ -4,16 +4,16 @@ import java.io.File;
 
 import org.apache.commons.lang.NotImplementedException;
 
+import ca.concordia.cssanalyser.cssmodel.StyleSheet;
+import ca.concordia.cssanalyser.parser.CSSParser;
+import ca.concordia.cssanalyser.parser.ParseException;
+
 import com.github.sommeri.less4j.LessSource;
 import com.github.sommeri.less4j.LessSource.CannotReadFile;
 import com.github.sommeri.less4j.LessSource.FileNotFound;
 import com.github.sommeri.less4j.core.parser.ANTLRParser;
 import com.github.sommeri.less4j.core.parser.ASTBuilder;
 import com.github.sommeri.less4j.core.problems.ProblemsHandler;
-
-import ca.concordia.cssanalyser.cssmodel.StyleSheet;
-import ca.concordia.cssanalyser.parser.CSSParser;
-import ca.concordia.cssanalyser.parser.ParseException;
 
 public class LessCSSParser implements CSSParser {
 
@@ -24,7 +24,24 @@ public class LessCSSParser implements CSSParser {
 
 	@Override
 	public StyleSheet parseExternalCSS(String path) throws ParseException {
-		LessSource source = new LessSource.FileSource(new File(path));
+		
+		com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet = getLessStyleSheet(new LessSource.FileSource(new File(path)));
+		
+		try {
+			
+			LessStyleSheetAdapter adapter = new LessStyleSheetAdapter(lessStyleSheet);
+			//adapter.writeMixinCallsCountToFile("C:/Users/Davood/Desktop/1.txt", true);
+			return adapter.getAdaptedStyleSheet();
+			
+		} catch (RuntimeException ex) {
+			throw new ParseException(ex);
+		}
+		
+
+	}
+
+	public static com.github.sommeri.less4j.core.ast.StyleSheet getLessStyleSheet(LessSource source) throws ParseException {
+		
 		ANTLRParser parser = new ANTLRParser();
 		
 		ANTLRParser.ParseResult result;
@@ -34,16 +51,22 @@ public class LessCSSParser implements CSSParser {
 		try {
 			
 			result = parser.parseStyleSheet(source.getContent(), source);
-			lessStyleSheet = astBuilder.parse(result.getTree());
-			
-			LessStyleSheetAdapter adapter = new LessStyleSheetAdapter();
-			return adapter.adapt(lessStyleSheet);
-			
+			lessStyleSheet = astBuilder.parse(result.getTree());			
 
 		} catch (FileNotFound | CannotReadFile ex) {
 			throw new ParseException(ex);
 		}
+		return lessStyleSheet;
+	}
+	
+	public static com.github.sommeri.less4j.core.ast.StyleSheet getLessParserFromStyleSheet(StyleSheet styleSheet) throws ParseException {
 
+		if (styleSheet.getFilePath() == null) {
+			return getLessStyleSheet(new LessSource.StringSource(styleSheet.toString()));
+		} else {
+			return getLessStyleSheet(new LessSource.FileSource(new File(styleSheet.getFilePath())));
+		}
+		
 	}
 
 }
