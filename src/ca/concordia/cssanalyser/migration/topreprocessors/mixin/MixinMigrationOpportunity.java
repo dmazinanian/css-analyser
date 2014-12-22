@@ -26,7 +26,7 @@ import ca.concordia.cssanalyser.migration.topreprocessors.differences.StylePrope
  * @author Davood Mazinanian
  *
  */
-public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity {
+public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity {
 	
 	private String mixinName;
 	
@@ -418,5 +418,7 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 		}
 		return toReturn;
 	}
+
+	public abstract String getMixinReferenceString(Selector selector);	
 	
 }

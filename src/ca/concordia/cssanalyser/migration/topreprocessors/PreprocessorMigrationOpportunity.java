@@ -10,4 +10,5 @@ public abstract class PreprocessorMigrationOpportunity {
 	public void setRank(double rank) {
 		this.rank = rank;
 	}
+	
 }

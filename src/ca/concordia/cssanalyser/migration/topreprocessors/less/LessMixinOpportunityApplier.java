@@ -1,17 +1,11 @@
 package ca.concordia.cssanalyser.migration.topreprocessors.less;
 
-import java.util.Iterator;
-import java.util.Map;
-
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorNode;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunityApplier;
-import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameter;
-import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameterizedValue;
 import ca.concordia.cssanalyser.parser.ParseException;
 import ca.concordia.cssanalyser.parser.less.LessCSSParser;
 
@@ -45,26 +39,9 @@ public class LessMixinOpportunityApplier implements MixinMigrationOpportunityApp
 						node.getParent().deleteChild(node);
 				}
 				
-				Map<MixinParameter, MixinParameterizedValue> paramToValMap = opportunity.getParameterizedValues(involvedSelector);			
-					
 				// 3- Add the mixin call to the corresponding selectors
-				StringBuilder mixinReferenceStringBuilder = new StringBuilder(opportunity.getMixinName());
-				mixinReferenceStringBuilder.append("(");
-				// Preserve the order of parameters
-				for (Iterator<MixinParameter> paramterIterator = opportunity.getParameters().iterator(); paramterIterator.hasNext(); ) {
-					MixinParameter parameter = paramterIterator.next();
-					MixinParameterizedValue value = paramToValMap.get(parameter);
-					//mixinReferenceStringBuilder.append(parameter.toString()).append(": ");
-					for (Iterator<DeclarationValue> declarationValueIterator = value.getForValues().iterator(); declarationValueIterator.hasNext(); ) {
-						mixinReferenceStringBuilder.append(declarationValueIterator.next().getValue());
-						if (declarationValueIterator.hasNext())
-							mixinReferenceStringBuilder.append(", ");
-					}
-					if (paramterIterator.hasNext())
-						mixinReferenceStringBuilder.append("; ");
-				}
-				mixinReferenceStringBuilder.append(");");
-				String mixinReferenceString = ".fake { " + mixinReferenceStringBuilder.toString() + "}" ;
+				
+				String mixinReferenceString = ".fake { " + opportunity.getMixinReferenceString(involvedSelector) + "}" ;
 				root = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(mixinReferenceString));
 				ASTCssNode mixinReference = root.getChilds().get(0).getChilds().get(1).getChilds().get(1); // :)
 				PreprocessorNode<ASTCssNode> node = nodeFinder.perform(involvedSelector.getLocationInfo().getOffset(), involvedSelector.getLocationInfo().getLenghth()); 

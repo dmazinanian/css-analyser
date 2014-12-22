@@ -3,19 +3,21 @@ package ca.concordia.cssanalyser.migration.topreprocessors.less;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinDeclaration;
-import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameter;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
+import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameter;
+import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameterizedValue;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinValue;
 
-public class LessMixinRefactoringOpportunity extends MixinMigrationOpportunity {
+public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity {
 	
-	public LessMixinRefactoringOpportunity(Iterable<Selector> forSelectors) {
+	public LessMixinMigrationOpportunity(Iterable<Selector> forSelectors) {
 		super(forSelectors);
 	}
 
@@ -81,5 +83,27 @@ public class LessMixinRefactoringOpportunity extends MixinMigrationOpportunity {
 		toReturn.append("}");
 		return toReturn.toString();
 	}
-	
+
+	@Override
+	public String getMixinReferenceString(Selector selector) {
+		Map<MixinParameter, MixinParameterizedValue> paramToValMap = getParameterizedValues(selector);
+		StringBuilder mixinReferenceStringBuilder = new StringBuilder(getMixinName());
+		mixinReferenceStringBuilder.append("(");
+		// Preserve the order of parameters
+		for (Iterator<MixinParameter> paramterIterator = getParameters().iterator(); paramterIterator.hasNext(); ) {
+			MixinParameter parameter = paramterIterator.next();
+			MixinParameterizedValue value = paramToValMap.get(parameter);
+			//mixinReferenceStringBuilder.append(parameter.toString()).append(": ");
+			for (Iterator<DeclarationValue> declarationValueIterator = value.getForValues().iterator(); declarationValueIterator.hasNext(); ) {
+				mixinReferenceStringBuilder.append(declarationValueIterator.next().getValue());
+				if (declarationValueIterator.hasNext())
+					mixinReferenceStringBuilder.append(", ");
+			}
+			if (paramterIterator.hasNext())
+				mixinReferenceStringBuilder.append("; ");
+		}
+		mixinReferenceStringBuilder.append(");");
+		return mixinReferenceStringBuilder.toString();
+	}
+		
 }
