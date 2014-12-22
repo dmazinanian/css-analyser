@@ -145,7 +145,7 @@ public class SingleValuedDeclaration extends Declaration {
 
 	@Override
 	public Collection<DeclarationValue> getDeclarationValuesForStyleProperty(String styleProperty, int forLayer) {
-		List<DeclarationValue> values = new ArrayList<>();
+		Set<DeclarationValue> values = new HashSet<>();
 		if (property.equals(styleProperty)) {
 			values.add(declarationValue);
 		}

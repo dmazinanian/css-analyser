@@ -31,7 +31,7 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 	private String mixinName;
 	
 	// Equivalent declarations only appear in the mixin's body
-	private Map<String, Item> equivalentDelcarations = new LinkedHashMap<>();
+	private Map<String, Collection<Declaration>> equivalentDelcarations = new LinkedHashMap<>();
 	
 	// Declarations having differences in their values are stored here. 
 	private Map<String, List<Declaration>> declarationsWithDifferences = new LinkedHashMap<>();
@@ -76,22 +76,56 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 		this.mixinName = mixinName;
 	}
 	
-	public void addEquivalentDeclarations(Item item) {
-		String propertyName = item.getFirstDeclaration().getProperty();
-		equivalentDelcarations.put(propertyName, item);
-				
-		MixinDeclaration declaration = new MixinDeclaration(propertyName, item.getFirstDeclaration());
-		Declaration declarationWithMinChars = item.getDeclarationWithMinimumChars();
+	public void addEquivalentDeclarations(String forProperty, Collection<Declaration> declarations) {
+		equivalentDelcarations.put(forProperty, declarations);
+		
+		MixinDeclaration declaration = new MixinDeclaration(forProperty, getFirstNonVirtualDeclaration(declarations));
+		Declaration declarationWithMinChars = getDeclarationWithMinimumChars(declarations);
 		for (PropertyAndLayer propertyAndLayer : declarationWithMinChars.getAllSetPropertyAndLayers()) {
 			Collection<DeclarationValue> declarationValuesForStyleProperty = 
 					declarationWithMinChars.getDeclarationValuesForStyleProperty(propertyAndLayer);
 			declaration.addMixinValue(propertyAndLayer, new MixinLiteral(declarationValuesForStyleProperty, propertyAndLayer));
 		}
-		mixinDeclarations.put(propertyName, declaration);
+		mixinDeclarations.put(forProperty, declaration);
+	}
+	
+	private Declaration getDeclarationWithMinimumChars(Collection<Declaration> declarations) {
+		if (declarations instanceof Item)
+			return ((Item) declarations).getDeclarationWithMinimumChars();
+		else {
+			return Collections.min(declarations, new Comparator<Declaration>() {
+				@Override
+				public int compare(Declaration o1, Declaration o2) {
+					if (o1.toString().length() == o2.toString().length())
+						return 1;
+					return Integer.compare(o1.toString().length(), o2.toString().length());
+				}
+				
+			});
+		}
 	}
 
-	public void addDeclarationsWithDifferences(Iterable<Declaration> declarations) {
-		String forProperty = declarations.iterator().next().getProperty();
+
+	private Declaration getFirstNonVirtualDeclaration(Collection<Declaration> declarations) {
+		if (declarations instanceof Item)
+			return ((Item) declarations).getFirstDeclaration();
+		else {
+			for (Declaration declaration : declarations) {
+				if (declaration instanceof ShorthandDeclaration && ((ShorthandDeclaration)declaration).isVirtual())
+					continue;
+				return declaration;
+			}
+		}
+		return declarations.iterator().next();
+	}
+
+
+	public void addEquivalentDeclarations(Item item) {
+		String propertyName = item.getFirstDeclaration().getProperty();
+		addEquivalentDeclarations(propertyName, item);
+	}
+
+	public void addDeclarationsWithDifferences(String forProperty, Iterable<Declaration> declarations) {
 		List<Declaration> declarationsToBeAdded = new ArrayList<>();
 		for (Declaration d : declarations) {
 			declarationsToBeAdded.add(d);
@@ -120,9 +154,10 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 		// Make a parameter for every difference, a literal for every value which is the same, and add the corresponding parameterized values for call sites
 		for (String propertyName : declarationsWithDifferences.keySet()) {
 			List<StylePropertyValuesDifferenceInValues> differencesForThisProperty = propertyNameToDifferencesMap.get(propertyName);
-			Set<PropertyAndLayer> allSetPropertyAndLayers = getAllSetPropertyAndLayersForDeclarations(declarationsWithDifferences.get(propertyName));
+			List<Declaration> declarationsWithDifferencesHavingTheSameProperty = declarationsWithDifferences.get(propertyName);
+			Set<PropertyAndLayer> allSetPropertyAndLayers = getAllSetPropertyAndLayersForDeclarations(declarationsWithDifferencesHavingTheSameProperty);
 			
-			Declaration declarationWithMaxLayers = Collections.max(declarationsWithDifferences.get(propertyName), new Comparator<Declaration>() {
+			Declaration declarationWithMaxLayers = Collections.max(declarationsWithDifferencesHavingTheSameProperty, new Comparator<Declaration>() {
 				@Override
 				public int compare(Declaration o1, Declaration o2) {
 					if (o1.getNumberOfValueLayers() == o2.getNumberOfValueLayers())
@@ -136,39 +171,41 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 			
 			// For each possible property and layer we will have a parameter or a literal
 			for (PropertyAndLayer propertyAndLayer : allSetPropertyAndLayers) {
-				
+
 				MixinValue value = null;
-				
+
 				// If the property and layer is in the difference list, add a parameter. otherwise, add a literal value
 				boolean differenceFoundForThisPropertyValueAndLayer = false;
-				for (StylePropertyValuesDifferenceInValues difference : differencesForThisProperty) {
-					if (difference.getForStylePropertyAndLayer().equals(propertyAndLayer)) {
-						// Found, add a parameter
-						differenceFoundForThisPropertyValueAndLayer = true;
-						// Parameter name will be style property
-						String parameterName = propertyAndLayer.getPropertyName().replace("-", "_");
-						// In the case of multiple layers, add layer number to the parameter name
-						if (declarationWithMaxLayers.getNumberOfValueLayers() > 1)
-							parameterName += "_" + propertyAndLayer.getPropertyLayer();
-						MixinParameter parameter = new MixinParameter(parameterName, propertyAndLayer);
-						initialParameters.add(parameter);
-						value = parameter;
-						
-						// Add parameterized values for real declarations
-						for (Declaration declaration : declarationsWithDifferences.get(propertyName)) {
-							Set<MixinParameterizedValue> setOfParameterizedValues = parameterizedValues.get(declaration);
-							if (setOfParameterizedValues == null) {
-								setOfParameterizedValues = new HashSet<>();
-								parameterizedValues.put(declaration, setOfParameterizedValues);	
+				if (differencesForThisProperty != null) {
+					for (StylePropertyValuesDifferenceInValues difference : differencesForThisProperty) {
+						if (difference.getForStylePropertyAndLayer().equals(propertyAndLayer)) {
+							// Found, add a parameter
+							differenceFoundForThisPropertyValueAndLayer = true;
+							// Parameter name will be style property
+							String parameterName = propertyAndLayer.getPropertyName().replace("-", "_");
+							// In the case of multiple layers, add layer number to the parameter name
+							if (declarationWithMaxLayers.getNumberOfValueLayers() > 1)
+								parameterName += "_" + propertyAndLayer.getPropertyLayer();
+							MixinParameter parameter = new MixinParameter(parameterName, propertyAndLayer);
+							initialParameters.add(parameter);
+							value = parameter;
+
+							// Add parameterized values for real declarations
+							for (Declaration declaration : declarationsWithDifferencesHavingTheSameProperty) {
+								Set<MixinParameterizedValue> setOfParameterizedValues = parameterizedValues.get(declaration);
+								if (setOfParameterizedValues == null) {
+									setOfParameterizedValues = new HashSet<>();
+									parameterizedValues.put(declaration, setOfParameterizedValues);	
+								}
+
+								Collection<DeclarationValue> declarationValuesForThisPropertyAndLayer = 
+										declaration.getDeclarationValuesForStyleProperty(propertyAndLayer);
+								MixinParameterizedValue parameterizedValue = new MixinParameterizedValue(declaration, declarationValuesForThisPropertyAndLayer , parameter);
+								setOfParameterizedValues.add(parameterizedValue);
 							}
-							
-							Collection<DeclarationValue> declarationValuesForThisPropertyAndLayer = 
-									declaration.getDeclarationValuesForStyleProperty(propertyAndLayer);
-							MixinParameterizedValue parameterizedValue = new MixinParameterizedValue(declaration, declarationValuesForThisPropertyAndLayer , parameter);
-							setOfParameterizedValues.add(parameterizedValue);
+
+							break;
 						}
-						
-						break;
 					}
 				}
 				if (!differenceFoundForThisPropertyValueAndLayer) {
@@ -176,7 +213,7 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 					// But if all values in all declarations are missing, ignore
 					
 					boolean allMissing = true;
-					for (Declaration declaration : declarationsWithDifferences.get(propertyName)) {
+					for (Declaration declaration : declarationsWithDifferencesHavingTheSameProperty) {
 						for (DeclarationValue v : declaration.getDeclarationValuesForStyleProperty(propertyAndLayer)) {
 							if (!v.isAMissingValue()) {
 								allMissing = false;
@@ -189,7 +226,7 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 					
 					if (!allMissing) {
 						Collection<DeclarationValue> declarationValuesForStyleProperty =
-								declarationsWithDifferences.get(propertyName).get(0).
+								declarationsWithDifferencesHavingTheSameProperty.get(0).
 								getDeclarationValuesForStyleProperty(propertyAndLayer.getPropertyName(), propertyAndLayer.getPropertyLayer());
 						value = new MixinLiteral(declarationValuesForStyleProperty, propertyAndLayer);
 					} else {
@@ -210,6 +247,7 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 
 
 	private Map<String, List<StylePropertyValuesDifferenceInValues>> getDifferences() {
+		
 		Map<String, List<StylePropertyValuesDifferenceInValues>> propertyNameToDifferencesMap = new LinkedHashMap<>();
 		
 		for (String declarationProperty : declarationsWithDifferences.keySet()) {
@@ -288,7 +326,7 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 				
 		for (Declaration declaration : declarations) {
 			 for (PropertyAndLayer propertyAndLayer : declaration.getAllSetPropertyAndLayers()) {
-				 if (propertyAndLayer.getPropertyName() == null || visitedPropertyAndLayers.contains(propertyAndLayer))
+				 if (propertyAndLayer.getPropertyName() == null)
 					 continue;
 				 visitedPropertyAndLayers.add(propertyAndLayer);
 			 }
@@ -356,8 +394,8 @@ public class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity 
 				toReturn.add(declaration);
 			}
 		}
-		for (Item item : equivalentDelcarations.values()) {
-			for (Declaration declaration : item) {
+		for (Collection<Declaration> declarations : equivalentDelcarations.values()) {
+			for (Declaration declaration : declarations) {
 				if (declaration.getSelector().equals(selector)) {
 					/*
 					 * Handle virtual shorthand declarations.

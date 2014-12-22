@@ -35,15 +35,14 @@ public class LessMixinOpportunityApplier implements MixinMigrationOpportunityApp
 			ASTCssNode mixin = root.getChilds().get(0);
 			
 			lessStyleSheet.getMembers().add(0, mixin);
-			
-			
-			// Where to add the new mixin call?
+
 			for (Selector involvedSelector : opportunity.getInvolvedSelectors()) {
 				
 				// 2- Remove the declarations being parameterized
 				for (Declaration declaration : opportunity.getDeclarationsInvolved(involvedSelector)) {
 					PreprocessorNode<ASTCssNode> node = nodeFinder.perform(declaration.getLocationInfo().getOffset(), declaration.getLocationInfo().getLenghth()); 
-					node.getParent().deleteChild(node);
+					if (!node.isNull())
+						node.getParent().deleteChild(node);
 				}
 				
 				Map<MixinParameter, MixinParameterizedValue> paramToValMap = opportunity.getParameterizedValues(involvedSelector);			

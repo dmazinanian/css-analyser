@@ -24,4 +24,8 @@ public abstract class PreprocessorNode<T> {
 			return "PreprocessorNode: " + realNode.toString();
 		return "Null PreprocessorNode";
 	}
+
+	public boolean isNull() {
+		return realNode == null;
+	}
 }

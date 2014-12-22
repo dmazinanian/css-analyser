@@ -677,10 +677,10 @@ public class MultiValuedDeclaration extends Declaration {
 		if (((Collection<DeclarationValue>)otherMultiValuedDeclaration.getRealValues()).size() != ((Collection<DeclarationValue>)getRealValues()).size())
 			return false;
 		
-		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet()) {
-			Collection<DeclarationValue> valuesForThisStyleProperty = stylePropertyToDeclarationValueMap.get(propertyAndLayer);
+		for (PropertyAndLayer propertyAndLayer : getAllSetPropertyAndLayers()) {
+			Collection<DeclarationValue> valuesForThisStyleProperty = getDeclarationValuesForStyleProperty(propertyAndLayer);
 			if (valuesForThisStyleProperty != null) {
-				if (!valuesForThisStyleProperty.equals(otherMultiValuedDeclaration.stylePropertyToDeclarationValueMap.get(propertyAndLayer)))
+				if (!valuesForThisStyleProperty.equals(otherMultiValuedDeclaration.getDeclarationValuesForStyleProperty(propertyAndLayer)))
 					return false;
 			} else {
 				return false;
@@ -704,10 +704,10 @@ public class MultiValuedDeclaration extends Declaration {
 		
 		
 		
-		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet()) {
+		for (PropertyAndLayer propertyAndLayer : getAllSetPropertyAndLayers()) {
 			
-			Collection<DeclarationValue> valuesForThisStyleProperty = stylePropertyToDeclarationValueMap.get(propertyAndLayer);
-			Collection<DeclarationValue> valuesForOtherStyleProperty = otherMultiValuedDeclaration.stylePropertyToDeclarationValueMap.get(propertyAndLayer);
+			Collection<DeclarationValue> valuesForThisStyleProperty = getDeclarationValuesForStyleProperty(propertyAndLayer);
+			Collection<DeclarationValue> valuesForOtherStyleProperty = otherMultiValuedDeclaration.getDeclarationValuesForStyleProperty(propertyAndLayer);
 			
 			if (valuesForThisStyleProperty != null && valuesForOtherStyleProperty != null) {
 				
@@ -775,7 +775,7 @@ public class MultiValuedDeclaration extends Declaration {
 	@Override
 	public Collection<String> getStyleProperties() {
 		Set<String> toReturn = new HashSet<>();
-		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet())
+		for (PropertyAndLayer propertyAndLayer : getAllSetPropertyAndLayers())
 			toReturn.add(propertyAndLayer.getPropertyName());
 		return toReturn;
 	}
@@ -806,8 +806,8 @@ public class MultiValuedDeclaration extends Declaration {
 	public Map<String, List<Collection<DeclarationValue>>> getPropertyToValuesMap() {
 			
 		Map<String, List<Collection<DeclarationValue>>> toReturn = new HashMap<>();
-		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet()) {
-			Collection<DeclarationValue> values = stylePropertyToDeclarationValueMap.get(propertyAndLayer);
+		for (PropertyAndLayer propertyAndLayer : getAllSetPropertyAndLayers()) {
+			Collection<DeclarationValue> values = getDeclarationValuesForStyleProperty(propertyAndLayer);
 			List<Collection<DeclarationValue>> declarationValues = toReturn.get(propertyAndLayer.getPropertyName());
 			if (declarationValues == null) {
 				declarationValues = new ArrayList<Collection<DeclarationValue>>();
@@ -821,7 +821,7 @@ public class MultiValuedDeclaration extends Declaration {
 
 	protected Map<Integer, List<PropertyAndLayer>> getLayerToPropertyAndLayerMap() {
 		Map<Integer, List<PropertyAndLayer>> layerToPropertyMapper = new HashMap<>();
-		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet()) {
+		for (PropertyAndLayer propertyAndLayer : getAllSetPropertyAndLayers()) {
 			List<PropertyAndLayer> currentList = layerToPropertyMapper.get(propertyAndLayer.getPropertyLayer());
 			if (currentList == null) {
 				currentList = new ArrayList<>();	
@@ -841,7 +841,7 @@ public class MultiValuedDeclaration extends Declaration {
 	@Override
 	public int getNumberOfValueLayers() {
 		Set<Integer> layer = new HashSet<>();
-		for (PropertyAndLayer propertyAndLayer : stylePropertyToDeclarationValueMap.keySet()) {
+		for (PropertyAndLayer propertyAndLayer : getAllSetPropertyAndLayers()) {
 			layer.add(propertyAndLayer.getPropertyLayer());
 		}
 		return layer.size();

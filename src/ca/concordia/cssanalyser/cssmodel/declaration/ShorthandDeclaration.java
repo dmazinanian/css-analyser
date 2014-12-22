@@ -1263,6 +1263,11 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 		return true;
 	}
 	
+	/**
+	 * Get the individual declaration corresponding to the given property
+	 * @param property
+	 * @return
+	 */
 	public Declaration getIndividualDeclarationForProperty(String property) {
 		return individualDeclarations.get(property);
 	}
@@ -1298,6 +1303,39 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 			return (int)Math.floor((float)sum / this.individualDeclarations.values().size());
 		}
 		return super.getDeclarationNumber();
+	}
+	
+	@Override
+	public Set<PropertyAndLayer> getAllSetPropertyAndLayers() {
+		if (!isVirtual()) {
+			return super.getAllSetPropertyAndLayers();
+		} else {
+			Set<PropertyAndLayer> allSetPropertyAndLayers = new HashSet<>();
+			for (Declaration individual : getIndividualDeclarations()) {
+				allSetPropertyAndLayers.addAll(individual.getAllSetPropertyAndLayers());
+			}
+			return allSetPropertyAndLayers;
+		}
+	}
+	
+	@Override
+	public Collection<DeclarationValue> getDeclarationValuesForStyleProperty(PropertyAndLayer propertyAndLayer) {
+		if (!isVirtual()) {
+			return super.getDeclarationValuesForStyleProperty(propertyAndLayer);
+		} else {
+			Collection<DeclarationValue> toReturn = null;
+			for (Declaration individual : getIndividualDeclarations()) {
+				Collection<DeclarationValue> valuesForThisProperty = individual.getDeclarationValuesForStyleProperty(propertyAndLayer);
+				if (toReturn == null) {
+					if (valuesForThisProperty instanceof Set) 
+						toReturn = new HashSet<>();
+					else if (valuesForThisProperty instanceof List) 
+						toReturn = new ArrayList<>();
+				}
+				toReturn.addAll(valuesForThisProperty);
+			}
+			return toReturn;
+		}
 	}
 
 }
