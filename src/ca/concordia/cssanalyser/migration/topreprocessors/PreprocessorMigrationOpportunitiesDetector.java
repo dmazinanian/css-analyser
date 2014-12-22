@@ -36,7 +36,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 		List<MixinMigrationOpportunity> mixinRefactoringOpportunities = new ArrayList<>();
 		
 		/*
-		 * Each of the duplications will be a opportunity.
+		 * Each of the duplications can be a opportunity.
 		 * We will add declarations with differences as well.
 		 */
 		for (ItemSetList itemSetList : itemSetLists) {
