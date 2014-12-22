@@ -232,4 +232,19 @@ public abstract class Selector extends CSSModelObject  {
 		}
 		return virtualShorthands;
 	}	
+	
+	/**
+	 * Returns all the declarations for this selector including virtual shorthand ones
+	 * @return
+	 */
+	public Iterable<Declaration> getAllDeclarationsIncludingVirtualShorthandDeclarations() {
+		List<Declaration> toReturn = new ArrayList<>();
+		for (Declaration d : getDeclarations()) {
+			toReturn.add(d);
+		}
+		for (Declaration d : getVirtualShorthandDeclarations()) {
+			toReturn.add(d);
+		}
+		return toReturn;
+	}
 }
