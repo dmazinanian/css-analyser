@@ -1262,6 +1262,10 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 
 		return true;
 	}
+	
+	public Declaration getIndividualDeclarationForProperty(String property) {
+		return individualDeclarations.get(property);
+	}
 
 	@Override
 	public ShorthandDeclaration clone() {
