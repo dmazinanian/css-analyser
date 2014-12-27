@@ -88,6 +88,8 @@ public abstract class Selector extends CSSModelObject  {
 	}	
 	
 	public int getDeclarationNumber(Declaration declaration) {
+		if (!containsDeclaration(declaration))
+			return -1;
 		return declarations.get(declaration);
 	}
 	
