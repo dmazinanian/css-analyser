@@ -23,15 +23,14 @@ public class DeclarationFactory {
 	private static final Logger LOGGER = FileLogger.getLogger(DeclarationFactory.class);
 
 	/**
-	 * Returns {@link Declaration} or {@link ShorthandDeclaration}, based on the 
-	 * property name.
+	 * Returns {@link Declaration}, {@link ShorthandDeclaration} or {@link ShorthandDeclaration}, based on the property name.
 	 * 
 	 * @param propertyName
 	 * @param values
 	 * @param belongsTo
-	 * @param offset
-	 * @param fileColNumber
 	 * @param important
+	 * @param addMissingValues
+	 * @param locationInfo
 	 * @return
 	 */
 	public static Declaration getDeclaration(String propertyName, List<DeclarationValue> values, Selector belongsTo, boolean important, boolean addMissingValues, LocationInfo locationInfo) {
