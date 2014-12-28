@@ -1,5 +1,8 @@
 package ca.concordia.cssanalyser.migration.topreprocessors.less;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
@@ -23,22 +26,29 @@ public class LessMixinOpportunityApplier implements MixinMigrationOpportunityApp
 			
 			LessPreprocessorNodeFinder nodeFinder = new LessPreprocessorNodeFinder(lessStyleSheet);
 
-	
-			// 1- Add the mixin node
-			com.github.sommeri.less4j.core.ast.StyleSheet root = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(opportunity.toString()));
-			ASTCssNode mixin = root.getChilds().get(0);
-			
-			lessStyleSheet.getMembers().add(0, mixin);
-
 			for (Selector involvedSelector : opportunity.getInvolvedSelectors()) {
 				
-				// 2- Remove the declarations being parameterized
+				List<PreprocessorNode<ASTCssNode>> nodesToBeRemoved = new ArrayList<>();
+				// 1- Remove the declarations being parameterized
 				for (Declaration declaration : opportunity.getDeclarationsInvolved(involvedSelector)) {
 					PreprocessorNode<ASTCssNode> node = nodeFinder.perform(declaration.getLocationInfo().getOffset(), declaration.getLocationInfo().getLenghth()); 
 					if (!node.isNull())
-						node.getParent().deleteChild(node);
+						nodesToBeRemoved.add(node);
 				}
 				
+				for (PreprocessorNode<ASTCssNode> node : nodesToBeRemoved) {
+					node.getParent().deleteChild(node);
+				}
+				
+			}
+			
+			// 2- Add the mixin node
+			com.github.sommeri.less4j.core.ast.StyleSheet root = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(opportunity.toString()));
+			ASTCssNode mixin = root.getChilds().get(0);
+
+			lessStyleSheet.getMembers().add(0, mixin);
+				
+			for (Selector involvedSelector : opportunity.getInvolvedSelectors()) {						
 				// 3- Add the mixin call to the corresponding selectors
 				
 				String mixinReferenceString = ".fake { " + opportunity.getMixinReferenceString(involvedSelector) + "}" ;

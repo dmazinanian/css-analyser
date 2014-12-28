@@ -12,23 +12,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import solver.Solver;
-import solver.constraints.IntConstraintFactory;
-import solver.variables.IntVar;
-import solver.variables.VariableFactory;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.PropertyAndLayer;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
-import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
-import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.differences.StylePropertyValuesDifferenceInValues;
-import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
-import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependency;
-import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 /**
  * Represents a Mixin refactoring opportunity in the preprocessor.
@@ -58,25 +49,25 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 	
 	private boolean shouldCalculateParameters = false;
 	
-	// Maps each selector to a list of value overriding dependencies inside the selector
-	private Map<Selector, CSSValueOverridingDependencyList> overridingDependencies = new HashMap<>();
-	
 	// Map every Declaration to a MixinDeclaration
 	private Map<Declaration, MixinDeclaration> declarationToMixinDeclarationMapper = new HashMap<>();
 	
+	// Maps each selector to a list of value overriding dependencies inside the selector
+	//private Map<Selector, CSSValueOverridingDependencyList> overridingDependencies = new HashMap<>();
+	
 	public MixinMigrationOpportunity(Iterable<Selector> forSelectors) {
 		this.involvedSelectors = forSelectors;
-		calculateOverridingDependnecies();
+//		calculateOverridingDependnecies();
 	}
 
-	private void calculateOverridingDependnecies() {
+	/*private void calculateOverridingDependnecies() {
 		for (Selector selector : involvedSelectors) {
 			if (selector instanceof BaseSelector)
 				overridingDependencies.put(selector, CSSDependencyDetector.getValueOverridingDependenciesForSelector((BaseSelector) selector));
 			else if (selector instanceof GroupingSelector)
 				overridingDependencies.put(selector, CSSDependencyDetector.getValueOverridingDependenciesForSelector(((GroupingSelector) selector).getBaseSelectors().iterator().next()));
 		}
-	}
+	}*/
 
 	// The list of properties and MixinValues. The real mixin will be created based on this
 	private Map<String, MixinDeclaration> mixinDeclarations = new LinkedHashMap<>();
@@ -241,6 +232,8 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 						}
 					}
 				}
+				if (mixinDeclaration.getPropertyName().equals("font") && propertyAndLayer.toString().contains("font-style"))
+					System.out.println();
 				if (!differenceFoundForThisPropertyValueAndLayer) {
 					// Need to add a literal
 					// But if all values in all declarations are missing, ignore
@@ -271,101 +264,11 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 					mixinDeclaration.addMixinValue(propertyAndLayer, value);
 			}
 		}
-		
-		//reorderMixinDeclarationsToPreserveOrderDependencies();
-		
+				
 		// We have to minimize the parameters
 		this.parameters = initialParameters;
 		
 		shouldCalculateParameters = false;
-		
-	}
-
-
-	private void reorderMixinDeclarationsToPreserveOrderDependencies() {
-		
-		// 1. Create a Solver 
-		Solver solver = new Solver("Mixin Delarations Reordering Problem");
-		
-		// We create one variable for each mixin declaration
-		Map<MixinDeclaration, IntVar> mixinDeclarationToVariableMapper = new HashMap<>();
-		Set<MixinDeclaration> involvedMixinDeclarations = new HashSet<>();
-		
-		List<MixinDeclaration> mixinDeclarationsList = new ArrayList<>(mixinDeclarations.values());
-		for (int i = 0; i < mixinDeclarationsList.size(); i++) {
-			MixinDeclaration mixinDeclaration = mixinDeclarationsList.get(i);
-			IntVar x = VariableFactory.bounded(i + ": " + mixinDeclaration.toString(), 1, mixinDeclarationsList.size(), solver);
-			mixinDeclarationToVariableMapper.put(mixinDeclaration, x);
-		}
-		
-		
-		// We create one constraint for every dependency in the list of dependencies
-		for (Selector selector : involvedSelectors) {
-			CSSValueOverridingDependencyList cssValueOverridingDependencyList = overridingDependencies.get(selector);
-			if (cssValueOverridingDependencyList != null) {
-				for (CSSValueOverridingDependency dependency : cssValueOverridingDependencyList) {
-					
-					MixinDeclaration mixinDeclaration1 = declarationToMixinDeclarationMapper.get(dependency.getDeclaration1());
-					MixinDeclaration mixinDeclaration2 = declarationToMixinDeclarationMapper.get(dependency.getDeclaration2());
-					if (mixinDeclaration1 != null && mixinDeclaration2 != null) {
-						IntVar x = mixinDeclarationToVariableMapper.get(mixinDeclaration1);
-						IntVar y = mixinDeclarationToVariableMapper.get(mixinDeclaration2);
-						solver.post(IntConstraintFactory.arithm(x, "<", y));
-						involvedMixinDeclarations.add(mixinDeclaration1);
-						involvedMixinDeclarations.add(mixinDeclaration2);
-					}
-				}
-			}
-		}
-		
-		IntVar[] allVars = new IntVar[mixinDeclarationToVariableMapper.size()];
-		allVars = mixinDeclarationToVariableMapper.values().toArray(allVars);
-		// "BC" = bound-consistency
-		solver.post(IntConstraintFactory.alldifferent(allVars, "BC"));
-	 
-		// 4. Define the search strategy (?)
-		//solver.set(IntStrategyFactory.inputOrder_InDomainMin(test));
-		
-		// 5. Launch the resolution process
-		boolean result = solver.findSolution();
-		
-		if (result) {
-			// Assign numbers 1 to size - number of reordered mixin declarations
-			// to mixin declarations that have not been reordered
-			Set<MixinDeclaration> treeSet = new TreeSet<>(new Comparator<MixinDeclaration>() {
-				@Override
-				public int compare(MixinDeclaration o1, MixinDeclaration o2) {
-					int result = Double.compare(o1.getAverageOfDeclarationsNumbers(), o2.getAverageOfDeclarationsNumbers());
-					if (result == 0 && !o1.equals(o2)) {
-						return o1.getPropertyName().compareTo(o2.getPropertyName());
-					}
-					return result;
-				}
-			});
-			
-			for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
-				if (involvedMixinDeclarations.contains(mixinDeclaration))
-					continue;
-				treeSet.add(mixinDeclaration);
-			}
-			int newMixinDeclarationNumber = 0;
-			for (MixinDeclaration mixinDeclaration : treeSet) {
-				mixinDeclaration.setMixinDeclarationNumber(++newMixinDeclarationNumber);
-			}
-			Map<Integer, MixinDeclaration> solverNumbersToMixinDeclarationMapper = new HashMap<>();
-			List<Integer> numbers = new ArrayList<>();
-			for (MixinDeclaration mixinDeclaration : involvedMixinDeclarations) {
-				int value = mixinDeclarationToVariableMapper.get(mixinDeclaration).getValue();
-				solverNumbersToMixinDeclarationMapper.put(value, mixinDeclaration);
-				numbers.add(value);
-			}
-			Collections.sort(numbers);
-			for (int i : numbers) {
-				solverNumbersToMixinDeclarationMapper.get(i).setMixinDeclarationNumber(++newMixinDeclarationNumber);
-			}
-		} else {
-			
-		}
 		
 	}
 

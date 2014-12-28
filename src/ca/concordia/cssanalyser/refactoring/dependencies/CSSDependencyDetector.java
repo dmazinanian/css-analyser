@@ -44,25 +44,25 @@ public class CSSDependencyDetector {
 	 */
 	public CSSValueOverridingDependencyList findOverridingDependancies() {
 	
-		CSSValueOverridingDependencyList dependencies = new CSSValueOverridingDependencyList();
-		
-		Map<Integer, CSSValueOverridingDependency> dependenciesSpecialHashMapper = new HashMap<>();		
+		CSSValueOverridingDependencyList dependencies;
 
 		// Finding overriding dependencies across selectors 
 		if (this.document == null) {
 			// Find property overriding dependencies inside selectors
-			findIntraSelectorDependencies(dependencies, dependenciesSpecialHashMapper);
+			dependencies = findIntraSelectorDependencies();
 		} else {
-			findInterSelectorDependencies(dependencies, dependenciesSpecialHashMapper);
+			dependencies = findInterSelectorDependencies();
 
 		}
 		
 		return dependencies;
 	}
 
-	private void findInterSelectorDependencies(
-			CSSValueOverridingDependencyList dependencies,
-			Map<Integer, CSSValueOverridingDependency> dependenciesSpecialHashMapper) {
+	private CSSValueOverridingDependencyList findInterSelectorDependencies() {
+		
+		CSSValueOverridingDependencyList dependencies = new CSSValueOverridingDependencyList();
+		Map<Integer, CSSValueOverridingDependency> dependenciesSpecialHashMapper = new HashMap<>();		
+		
 		// For each node, we find all the classes that select that node.
 		Map<DOMNodeWrapper, List<BaseSelector>> nodeToSelectorsMapping = styleSheet.getCSSClassesForDOMNodes(document);
 
@@ -167,45 +167,55 @@ public class CSSDependencyDetector {
 
 			//}
 		}
+		return dependencies;
 	}
 
-	private void findIntraSelectorDependencies(CSSValueOverridingDependencyList dependencies, Map<Integer, CSSValueOverridingDependency> dependenciesSpecialHashMapper) {
+	private CSSValueOverridingDependencyList findIntraSelectorDependencies() {
+		CSSValueOverridingDependencyList dependencies = new CSSValueOverridingDependencyList();
 		for (BaseSelector selector : this.styleSheet.getAllBaseSelectors()) {
-			Map<String, Set<Declaration>> propertyToDeclarationMapping = new HashMap<>();
-			for (Declaration declaration : selector.getDeclarations()) {
-				Set<String> possiblyStyledProperties;
-				if (declaration instanceof ShorthandDeclaration) {
-					possiblyStyledProperties = ShorthandDeclaration.getIndividualPropertiesForAShorthand(declaration.getProperty());
+			dependencies.addAll(getValueOverridingDependenciesForSelector(selector));
+		}
+		return dependencies;
+	}
+
+	public static CSSValueOverridingDependencyList getValueOverridingDependenciesForSelector(BaseSelector selector) {
+		CSSValueOverridingDependencyList dependencies;
+		dependencies = new CSSValueOverridingDependencyList();
+		Map<Integer, CSSValueOverridingDependency> dependenciesSpecialHashMapper = new HashMap<>();		
+		Map<String, Set<Declaration>> propertyToDeclarationMapping = new HashMap<>();
+		for (Declaration declaration : selector.getDeclarations()) {
+			Set<String> possiblyStyledProperties;
+			if (declaration instanceof ShorthandDeclaration) {
+				possiblyStyledProperties = ShorthandDeclaration.getIndividualPropertiesForAShorthand(declaration.getProperty());
+			} else {
+				possiblyStyledProperties = new HashSet<>();
+			}
+			possiblyStyledProperties.add(declaration.getProperty());
+			
+			for (String possibleIndividualProperty : possiblyStyledProperties) {
+				Set<Declaration> correspondingDeclarations = propertyToDeclarationMapping.get(possibleIndividualProperty);
+				if (correspondingDeclarations == null) {
+					correspondingDeclarations = new HashSet<>();
 				} else {
-					possiblyStyledProperties = new HashSet<>();
-				}
-				possiblyStyledProperties.add(declaration.getProperty());
-				
-				for (String possibleIndividualProperty : possiblyStyledProperties) {
-					Set<Declaration> correspondingDeclarations = propertyToDeclarationMapping.get(possibleIndividualProperty);
-					if (correspondingDeclarations == null) {
-						correspondingDeclarations = new HashSet<>();
-					} else {
-						for (Declaration d : correspondingDeclarations) {
-							if (!d.declarationEquals(declaration)) {
-								CSSValueOverridingDependency newDependency = 
-										dependenciesSpecialHashMapper.get(
-												CSSValueOverridingDependency.getSpecialHashCode(selector, d, selector, declaration));
-								if (newDependency != null) {
-									newDependency.addDependencyLabel(possibleIndividualProperty);
-								} else {
-									newDependency = new CSSIntraSelectorValueOverridingDependency(selector, d, declaration, possibleIndividualProperty);
-									dependencies.add(newDependency);
-									dependenciesSpecialHashMapper.put(newDependency.getSpecialHashCode(), newDependency);
-								}
-								
+					for (Declaration d : correspondingDeclarations) {
+						if (!d.declarationEquals(declaration)) {
+							CSSValueOverridingDependency newDependency = 
+									dependenciesSpecialHashMapper.get(CSSValueOverridingDependency.getSpecialHashCode(selector, d, selector, declaration));
+							if (newDependency != null) {
+								newDependency.addDependencyLabel(possibleIndividualProperty);
+							} else {
+								newDependency = new CSSIntraSelectorValueOverridingDependency(selector, d, declaration, possibleIndividualProperty);
+								dependencies.add(newDependency);
+								dependenciesSpecialHashMapper.put(newDependency.getSpecialHashCode(), newDependency);
 							}
+							
 						}
 					}
-					correspondingDeclarations.add(declaration);
-					propertyToDeclarationMapping.put(possibleIndividualProperty, correspondingDeclarations);
 				}
+				correspondingDeclarations.add(declaration);
+				propertyToDeclarationMapping.put(possibleIndividualProperty, correspondingDeclarations);
 			}
 		}
+		return dependencies;
 	}
 }

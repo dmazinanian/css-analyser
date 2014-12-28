@@ -11,12 +11,20 @@ import ca.concordia.cssanalyser.analyser.duplication.DuplicationDetector;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.DeclarationFactory;
+import ca.concordia.cssanalyser.cssmodel.declaration.PropertyAndLayer;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependency;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 public abstract class PreprocessorMigrationOpportunitiesDetector {
 	
@@ -64,31 +72,41 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 				for (Item item : itemSet)
 					for (Declaration declaration : item)
 						declarationsInTheItemset.add(declaration);
-			
+				
+				// Make intra-selector overriding dependencies similar
+				similarizeDependencies(itemSetSelectors);
+				
+				Map<Selector, List<Declaration>> selectorToDeclarationsMap = new HashMap<>();
+				Map<Selector, Set<Integer>> checkedSelectors = new HashMap<>();
+				for (Selector s : itemSetSelectors) {
+					List<Declaration> l = new ArrayList<>();
+					for (Declaration declaration : s.getAllDeclarationsIncludingVirtualShorthandDeclarations()) {
+						l.add(declaration);
+					}
+					selectorToDeclarationsMap.put(s, l);
+					checkedSelectors.put(s, new HashSet<Integer>());
+				}
+				
 				// Try to add declarations with differences
 				Selector firstSelector = itemSetSelectors.get(0);
-				List<Declaration> declarationsInTheFirstSlector = new ArrayList<>();
-				for (Declaration d : firstSelector.getAllDeclarationsIncludingVirtualShorthandDeclarations())
-					declarationsInTheFirstSlector.add(d);
-				Set<Integer> checkedDeclarationsInTheFirstSelector = new HashSet<>();
-				for (int declarationIndex = 0; declarationIndex < declarationsInTheFirstSlector.size(); declarationIndex++) {
-					Declaration declarationInTheFirstSelector = declarationsInTheFirstSlector.get(declarationIndex);
+				for (int declarationIndex = 0; declarationIndex < selectorToDeclarationsMap.get(firstSelector).size(); declarationIndex++) {
+					Declaration declarationInTheFirstSelector = selectorToDeclarationsMap.get(firstSelector).get(declarationIndex);
 					
 					// We only care about remaining declarations, which are not equal or equivalent
-					if (checkedDeclarationsInTheFirstSelector.contains(declarationIndex) || declarationsInTheItemset.contains(declarationInTheFirstSelector))
+					if (checkedSelectors.get(firstSelector).contains(declarationIndex) || declarationsInTheItemset.contains(declarationInTheFirstSelector))
 						continue;
 					
 					// Find out if another (real) declaration is overriding this one
-					checkedDeclarationsInTheFirstSelector.add(declarationIndex);
-					for (int k = declarationIndex + 1; k < declarationsInTheFirstSlector.size(); k++) {
-						Declaration checkingDeclarationForOverriding = declarationsInTheFirstSlector.get(k);
-						if (!checkedDeclarationsInTheFirstSelector.contains(k) &&
+					checkedSelectors.get(firstSelector).add(declarationIndex);
+					for (int k = declarationIndex + 1; k < selectorToDeclarationsMap.get(firstSelector).size(); k++) {
+						Declaration checkingDeclarationForOverriding = selectorToDeclarationsMap.get(firstSelector).get(k);
+						if (!checkedSelectors.get(firstSelector).contains(k) &&
 								checkingDeclarationForOverriding.getProperty().equals(declarationInTheFirstSelector.getProperty())) {
 							if (checkingDeclarationForOverriding instanceof ShorthandDeclaration && ((ShorthandDeclaration) checkingDeclarationForOverriding).isVirtual()) {
 								continue;
 							} 
 							declarationInTheFirstSelector = checkingDeclarationForOverriding;
-							checkedDeclarationsInTheFirstSelector.add(k);
+							checkedSelectors.get(firstSelector).add(k);
 						}
 					}
 					
@@ -96,24 +114,31 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 					declarationsToAdd.add(declarationInTheFirstSelector);
 					
 					// Compare all other declarations in other selectors with the current declaration in the first selector
-					for (int i = 1; i < itemSetSelectors.size(); i++) {
+					for (int selectorIndex = 1; selectorIndex < itemSetSelectors.size(); selectorIndex++) {
 						
-						Declaration declarationToBeAdded = null;
-						for (Declaration declarationInTheSecondSelector : itemSetSelectors.get(i).getAllDeclarationsIncludingVirtualShorthandDeclarations()) {
+						int declarationToBeAddedIndex = -1;
+						Selector secondSelector = itemSetSelectors.get(selectorIndex);
+						List<Declaration> declarationsForTheSecondSelector = selectorToDeclarationsMap.get(secondSelector);
+						for (int declaration2Index = 0; declaration2Index < declarationsForTheSecondSelector.size(); declaration2Index++) {
+							
+							Declaration declarationInTheSecondSelector = declarationsForTheSecondSelector.get(declaration2Index);
 							
 							// Again we only care about remaining declarations, which are not equal or equivalent
-							if (declarationsInTheItemset.contains(declarationInTheSecondSelector))
+							Set<Integer> checkedDeclarationsInTheSecondSelector = checkedSelectors.get(secondSelector);
+							if (checkedDeclarationsInTheSecondSelector.contains(declaration2Index) || declarationsInTheItemset.contains(declarationInTheSecondSelector))
 								continue;
 
 							if (declarationInTheFirstSelector.getProperty().equals(declarationInTheSecondSelector.getProperty())) {
 								// Here we go: a difference in values should be there
 								if (declarationInTheSecondSelector instanceof ShorthandDeclaration && ((ShorthandDeclaration) declarationInTheSecondSelector).isVirtual())
 									continue;
-								declarationToBeAdded = declarationInTheSecondSelector; 
+								declarationToBeAddedIndex = declaration2Index;
+								checkedDeclarationsInTheSecondSelector.add(declaration2Index);
 							} 
 						} 
 						// This approach lets us mimic overriding declarations with the same property
-						declarationsToAdd.add(declarationToBeAdded);
+						if (declarationToBeAddedIndex >= 0)
+							declarationsToAdd.add(declarationsForTheSecondSelector.get(declarationToBeAddedIndex));
 					}
 					
 					// If the current declaration is present in all selectors
@@ -185,6 +210,82 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 		
 		return mixinRefactoringOpportunities;
 		
+	}
+
+	/**
+	 * Making dependencies similar by adding new declarations to the selectors 
+	 * @param itemSetSelectors 
+	 */
+	private void similarizeDependencies(List<Selector> itemSetSelectors) {
+		//  This holds all value overriding dependencies across all selectors
+		List<CSSValueOverridingDependency> allValueOverridingDependencies = new CSSValueOverridingDependencyList();
+		
+		// Maps each selector to the indices of the value overriding dependencies in allValueOverridingDependencies
+		Map<Selector, Set<Integer>> overridingDependencies = new HashMap<>();
+		
+		for (Selector selector : itemSetSelectors) {
+			CSSValueOverridingDependencyList valueOverridingDependenciesForSelector = null;
+			if (selector instanceof BaseSelector) {
+				valueOverridingDependenciesForSelector = CSSDependencyDetector.getValueOverridingDependenciesForSelector((BaseSelector) selector);
+				
+			} else if (selector instanceof GroupingSelector) {
+				valueOverridingDependenciesForSelector = CSSDependencyDetector.getValueOverridingDependenciesForSelector(((GroupingSelector) selector).getBaseSelectors().iterator().next());
+			}
+			int startFromIndex = allValueOverridingDependencies.size();
+			for (CSSValueOverridingDependency dependency : valueOverridingDependenciesForSelector) {
+				allValueOverridingDependencies.add(dependency);
+			}
+			int endToIndex = allValueOverridingDependencies.size() - 1;
+			Set<Integer> valueOverridingDependenciesIndicesForSelector = new HashSet<>();
+			for (int i = startFromIndex; i <= endToIndex; i++)
+				valueOverridingDependenciesIndicesForSelector.add(i);
+			overridingDependencies.put(selector, valueOverridingDependenciesIndicesForSelector);
+		}
+		Set<Integer> visitedDependencies = new HashSet<>();
+		for (int i = 0; i < allValueOverridingDependencies.size(); i++) {
+			CSSValueOverridingDependency dependency = allValueOverridingDependencies.get(i);
+			if (visitedDependencies.contains(i))
+				continue;
+			for (Selector selector : itemSetSelectors) {
+				// if the dependency belongs to this selector, ignore it
+				if (dependency.getSelector1().equals(selector)) { //intra, only one selector is enough
+					continue;
+				}
+				// See if such a dependency exist in this selector
+				boolean dependencyFound = false;
+				for (int j : overridingDependencies.get(selector)) {
+					CSSValueOverridingDependency dependencyInThisSelector = allValueOverridingDependencies.get(j);
+					if (dependencyInThisSelector.getDeclaration1().getProperty().equals(dependency.getDeclaration1().getProperty()) && 
+							dependencyInThisSelector.getDeclaration2().getProperty().equals(dependency.getDeclaration2().getProperty())) {
+						dependencyFound = true;
+						visitedDependencies.add(j);
+						break;
+					}
+				}
+				if (!dependencyFound) {
+					Declaration startingDeclaration = null;
+					// Make a declaration to satisfy the dependency, if needed!
+					for (Declaration d : selector.getDeclarations()) {
+						if (d.getProperty().equals(dependency.getDeclaration1().getProperty())) {
+							startingDeclaration = d;
+							break;
+						}
+					}
+					if (startingDeclaration != null) {
+						Declaration declaration2 = dependency.getDeclaration2();
+						List<DeclarationValue> values = new ArrayList<>();
+						for (PropertyAndLayer propertyAndLayer : declaration2.getAllSetPropertyAndLayers()) {
+							for (DeclarationValue declarationValue : startingDeclaration.getDeclarationValuesForStyleProperty(propertyAndLayer)) {
+								values.add(declarationValue);
+							}
+						}
+						Declaration newVirtualDeclaration = DeclarationFactory.getDeclaration(declaration2.getProperty(), 
+								values, selector, declaration2.isImportant(), false, new LocationInfo());
+						selector.addDeclaration(newVirtualDeclaration);
+					}
+				}
+			}
+		}		
 	}
 
 }
