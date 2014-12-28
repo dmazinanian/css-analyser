@@ -244,14 +244,11 @@ public abstract class Selector extends CSSModelObject  {
 	 */
 	public Iterable<Declaration> getAllDeclarationsIncludingVirtualShorthandDeclarations() {
 		List<Declaration> toReturn = new ArrayList<>();
-		Set<String> alreadyAddedProperties = new HashSet<>();
 		for (Declaration d : getDeclarations()) {
 			toReturn.add(d);
-			alreadyAddedProperties.add(d.getProperty());
 		}
 		for (Declaration d : getVirtualShorthandDeclarations()) {
-			if (!alreadyAddedProperties.contains(d.getProperty()))
-				toReturn.add(d);
+			toReturn.add(d);
 		}
 		return toReturn;
 	}
