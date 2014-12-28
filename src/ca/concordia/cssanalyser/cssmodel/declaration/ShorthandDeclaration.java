@@ -644,7 +644,8 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 								 fontWeight = new DeclarationValue("normal", ValueType.IDENT),
 								 fontStretch = new DeclarationValue("normal", ValueType.IDENT),
 								 fontSize = new DeclarationValue("medium", ValueType.IDENT),
-								 lineHeight = new DeclarationValue("normal", ValueType.IDENT);
+								 lineHeight = new DeclarationValue("normal", ValueType.IDENT),
+								 slash = new DeclarationValue("/", ValueType.OPERATOR);
 				
 				boolean fontStyleFound = false,
 						fontVarianFound = false,
@@ -724,6 +725,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 							slashPosition = currentValueIndex;
 							slashFound = true;
 							lineHeightFound = true;
+							slash = currentValue;
 						}
 						break;
 					case INTEGER:
@@ -792,7 +794,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				}
 				
 				if (!slashFound) {
-					addMissingValue(new DeclarationValue("/", ValueType.OPERATOR), 5);
+					addMissingValue(slash, 5);
 					slashPosition = 5;
 					if (!lineHeightFound) {
 						addMissingValue(lineHeight, slashPosition + 1);
@@ -812,6 +814,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				final String SIZE = "font-size";
 				final String HEIGHT = "line-height";
 				final String FAMILY = "font-family";
+				final String SLASH = "/";
 				
 				addIndividualDeclaration(STYLE, fontStyle);
 				addIndividualDeclaration(VARIANT, fontVarient);
@@ -827,6 +830,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				assignStylePropertyToValue(STRETCH, fontStretch);		
 				assignStylePropertyToValue(SIZE, fontSize);
 				assignStylePropertyToValue(HEIGHT, lineHeight);
+				assignStylePropertyToValue(SLASH, slash);
 				for (DeclarationValue fontFamily : fontFamilies)
 					assignStylePropertyToValue(FAMILY, fontFamily, true); // the order is important
 				
@@ -1320,10 +1324,8 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 	
 	@Override
 	public Collection<DeclarationValue> getDeclarationValuesForStyleProperty(PropertyAndLayer propertyAndLayer) {
-		if (!isVirtual()) {
-			return super.getDeclarationValuesForStyleProperty(propertyAndLayer);
-		} else {
-			Collection<DeclarationValue> toReturn = null;
+		Collection<DeclarationValue> toReturn = super.getDeclarationValuesForStyleProperty(propertyAndLayer);
+		if (toReturn == null || toReturn.size() == 0) {
 			for (Declaration individual : getIndividualDeclarations()) {
 				Collection<DeclarationValue> valuesForThisProperty = individual.getDeclarationValuesForStyleProperty(propertyAndLayer);
 				if (toReturn == null) {
@@ -1332,10 +1334,12 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 					else if (valuesForThisProperty instanceof List) 
 						toReturn = new ArrayList<>();
 				}
-				toReturn.addAll(valuesForThisProperty);
+				if (valuesForThisProperty != null)
+					toReturn.addAll(valuesForThisProperty);
 			}
-			return toReturn;
+			
 		}
+		return toReturn;
 	}
 
 }
