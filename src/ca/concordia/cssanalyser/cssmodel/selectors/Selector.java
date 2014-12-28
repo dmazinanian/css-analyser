@@ -223,11 +223,14 @@ public abstract class Selector extends CSSModelObject  {
 	
 			// Create a shorthand
 			ShorthandDeclaration virtualShorthand = new ShorthandDeclaration(entry.getKey(), new ArrayList<DeclarationValue>(), this, false, false, new LocationInfo(-1, -1));
-			// Important, important
+
 			virtualShorthand.isVirtual(true);
+			boolean isImportant = true;
 			for (Declaration dec : entry.getValue()) {
 				virtualShorthand.addIndividualDeclaration(dec);
+				isImportant &= dec.isImportant();
 			}
+			virtualShorthand.isImportant(isImportant);
 			
 			virtualShorthands.add(virtualShorthand);
 			
@@ -241,11 +244,14 @@ public abstract class Selector extends CSSModelObject  {
 	 */
 	public Iterable<Declaration> getAllDeclarationsIncludingVirtualShorthandDeclarations() {
 		List<Declaration> toReturn = new ArrayList<>();
+		Set<String> alreadyAddedProperties = new HashSet<>();
 		for (Declaration d : getDeclarations()) {
 			toReturn.add(d);
+			alreadyAddedProperties.add(d.getProperty());
 		}
 		for (Declaration d : getVirtualShorthandDeclarations()) {
-			toReturn.add(d);
+			if (!alreadyAddedProperties.contains(d.getProperty()))
+				toReturn.add(d);
 		}
 		return toReturn;
 	}
