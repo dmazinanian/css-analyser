@@ -14,6 +14,7 @@ import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
 
@@ -66,12 +67,30 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 			
 				// Try to add declarations with differences
 				Selector firstSelector = itemSetSelectors.get(0);
-				Iterable<Declaration> declarationsInTheFirstSlector = firstSelector.getAllDeclarationsIncludingVirtualShorthandDeclarations();
-				
-				for (Declaration declarationInTheFirstSelector : declarationsInTheFirstSlector) {
+				List<Declaration> declarationsInTheFirstSlector = new ArrayList<>();
+				for (Declaration d : firstSelector.getAllDeclarationsIncludingVirtualShorthandDeclarations())
+					declarationsInTheFirstSlector.add(d);
+				Set<Integer> checkedDeclarationsInTheFirstSelector = new HashSet<>();
+				for (int declarationIndex = 0; declarationIndex < declarationsInTheFirstSlector.size(); declarationIndex++) {
+					Declaration declarationInTheFirstSelector = declarationsInTheFirstSlector.get(declarationIndex);
+					
 					// We only care about remaining declarations, which are not equal or equivalent
-					if (declarationsInTheItemset.contains(declarationInTheFirstSelector))
+					if (checkedDeclarationsInTheFirstSelector.contains(declarationIndex) || declarationsInTheItemset.contains(declarationInTheFirstSelector))
 						continue;
+					
+					// Find out if another (real) declaration is overriding this one
+					checkedDeclarationsInTheFirstSelector.add(declarationIndex);
+					for (int k = declarationIndex + 1; k < declarationsInTheFirstSlector.size(); k++) {
+						Declaration checkingDeclarationForOverriding = declarationsInTheFirstSlector.get(k);
+						if (!checkedDeclarationsInTheFirstSelector.contains(k) &&
+								checkingDeclarationForOverriding.getProperty().equals(declarationInTheFirstSelector.getProperty())) {
+							if (checkingDeclarationForOverriding instanceof ShorthandDeclaration && ((ShorthandDeclaration) checkingDeclarationForOverriding).isVirtual()) {
+								continue;
+							} 
+							declarationInTheFirstSelector = checkingDeclarationForOverriding;
+							checkedDeclarationsInTheFirstSelector.add(k);
+						}
+					}
 					
 					List<Declaration> declarationsToAdd = new ArrayList<>();
 					declarationsToAdd.add(declarationInTheFirstSelector);
@@ -88,13 +107,16 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 
 							if (declarationInTheFirstSelector.getProperty().equals(declarationInTheSecondSelector.getProperty())) {
 								// Here we go: a difference in values should be there
+								if (declarationInTheSecondSelector instanceof ShorthandDeclaration && ((ShorthandDeclaration) declarationInTheSecondSelector).isVirtual())
+									continue;
 								declarationToBeAdded = declarationInTheSecondSelector; 
 							} 
 						} 
 						// This approach lets us mimic overriding declarations with the same property
 						declarationsToAdd.add(declarationToBeAdded);
 					}
-					// If declarations are present in all selectors
+					
+					// If the current declaration is present in all selectors
 					if (declarationsToAdd.size() == itemSetSelectors.size()) {
 						/*
 						 * Check if one of the declarations is a virtual shorthand,
@@ -126,16 +148,27 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 								for (String individualProperty : propertyToIndividualsMap.keySet()) {
 									// Should add as different or equivalent?
 									boolean allEquivalent = true;
+									// If all the values are missing (having default values) for all the declarations, the declarations should not be added!
+									boolean allValuesMissing = true;
 									List<Declaration> declarations = propertyToIndividualsMap.get(individualProperty);
+									// Compare everything with the declaration in the first selector
 									Declaration groundTruth = declarations.get(0);
+									for (DeclarationValue dv : groundTruth.getDeclarationValues()) {
+										allValuesMissing &= dv.isAMissingValue();
+									}
 									for (int i = 1; i < declarations.size(); i++) {
 										if (!groundTruth.declarationIsEquivalent(declarations.get(i))) {
 											allEquivalent = false;
 											break;
+										} else {
+											for (DeclarationValue dv : declarations.get(i).getDeclarationValues()) {
+												allValuesMissing &= dv.isAMissingValue();
+											}
 										}
 									}
 									if (allEquivalent) {
-										opportunity.addEquivalentDeclarations(individualProperty, declarations);
+										if (!allValuesMissing)
+											opportunity.addEquivalentDeclarations(individualProperty, declarations);
 									} else { 
 										opportunity.addDeclarationsWithDifferences(individualProperty, declarations);
 									}
