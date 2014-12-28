@@ -2,8 +2,10 @@ package ca.concordia.cssanalyser.migration.topreprocessors;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ca.concordia.cssanalyser.analyser.duplication.DuplicationDetector;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
@@ -46,9 +48,8 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 				MixinMigrationOpportunity opportunity = getNewPreprocessorSpecificOpportunity(itemSet.getSupport());
 				mixinRefactoringOpportunities.add(opportunity);
 				
+
 				// First, add all the equal or equivalent declarations to this opportunity
-				List<Declaration> declarationsInTheItemset = itemSet.getRepresentativeDeclarations();
-				
 				for (Item item : itemSet)
 					opportunity.addEquivalentDeclarations(item);
 				
@@ -56,6 +57,12 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 				List<Selector> itemSetSelectors = new ArrayList<>();
 				for (Selector s : itemSet.getSupport())
 					itemSetSelectors.add(s);
+				
+				// We want to skip the declarations in the ItemSet (equivalent ones)
+				Set<Declaration> declarationsInTheItemset = new HashSet<>();
+				for (Item item : itemSet)
+					for (Declaration declaration : item)
+						declarationsInTheItemset.add(declaration);
 			
 				// Try to add declarations with differences
 				Selector firstSelector = itemSetSelectors.get(0);
@@ -80,7 +87,8 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 
 							if (declarationInTheFirstSelector.getProperty().equals(declarationInTheSecondSelector.getProperty())) {
 								// Here we go: a difference in values should be there
-								declarationsToAdd.add(declarationInTheSecondSelector);								
+								declarationsToAdd.add(declarationInTheSecondSelector);
+								break;
 							} 
 						} 
 						
