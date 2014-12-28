@@ -25,7 +25,7 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 
 	protected final String property;
 	protected Selector parentSelector;
-	protected final boolean isImportant;
+	protected boolean isImportant;
 	protected CSSOrigin origin = CSSOrigin.AUTHOR;
 	protected CSSSource source = CSSSource.EXTERNAL;
 
@@ -87,6 +87,14 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	 */
 	public boolean isImportant() {
 		return isImportant;
+	}
+	
+	/**
+	 * Sets the !important value
+	 * @param isImportant
+	 */
+	public void isImportan(boolean isImportant) {
+		this.isImportant = isImportant;
 	}
 
 	/**
