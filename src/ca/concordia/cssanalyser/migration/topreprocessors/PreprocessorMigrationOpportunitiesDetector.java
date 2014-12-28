@@ -79,6 +79,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 					// Compare all other declarations in other selectors with the current declaration in the first selector
 					for (int i = 1; i < itemSetSelectors.size(); i++) {
 						
+						Declaration declarationToBeAdded = null;
 						for (Declaration declarationInTheSecondSelector : itemSetSelectors.get(i).getAllDeclarationsIncludingVirtualShorthandDeclarations()) {
 							
 							// Again we only care about remaining declarations, which are not equal or equivalent
@@ -87,11 +88,11 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 
 							if (declarationInTheFirstSelector.getProperty().equals(declarationInTheSecondSelector.getProperty())) {
 								// Here we go: a difference in values should be there
-								declarationsToAdd.add(declarationInTheSecondSelector);
-								break;
+								declarationToBeAdded = declarationInTheSecondSelector; 
 							} 
 						} 
-						
+						// This approach lets us mimic overriding declarations with the same property
+						declarationsToAdd.add(declarationToBeAdded);
 					}
 					// If declarations are present in all selectors
 					if (declarationsToAdd.size() == itemSetSelectors.size()) {
