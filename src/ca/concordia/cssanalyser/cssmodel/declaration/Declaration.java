@@ -93,7 +93,7 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	 * Sets the !important value
 	 * @param isImportant
 	 */
-	public void isImportan(boolean isImportant) {
+	public void isImportant(boolean isImportant) {
 		this.isImportant = isImportant;
 	}
 
