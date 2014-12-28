@@ -842,7 +842,8 @@ public class MultiValuedDeclaration extends Declaration {
 	public int getNumberOfValueLayers() {
 		Set<Integer> layer = new HashSet<>();
 		for (PropertyAndLayer propertyAndLayer : getAllSetPropertyAndLayers()) {
-			layer.add(propertyAndLayer.getPropertyLayer());
+			if (propertyAndLayer.getPropertyLayer() > -1)
+				layer.add(propertyAndLayer.getPropertyLayer());
 		}
 		return layer.size();
 	}
