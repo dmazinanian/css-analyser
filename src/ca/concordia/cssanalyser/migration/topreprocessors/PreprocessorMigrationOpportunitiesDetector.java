@@ -118,31 +118,47 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 					// Compare all other declarations in other selectors with the current declaration in the first selector
 					for (int selectorIndex = 1; selectorIndex < itemSetSelectors.size(); selectorIndex++) {
 						
-						int declarationToBeAddedIndex = -1;
 						Selector secondSelector = itemSetSelectors.get(selectorIndex);
 						List<Declaration> declarationsInTheSecondSelector = selectorToDeclarationsMap.get(secondSelector);
+						List<Integer> declarationsWithTheSameProperty = new ArrayList<>();
+						// First collect all the declarations with the same property in this selector, preserving the order
 						for (int declaration2Index = 0; declaration2Index < declarationsInTheSecondSelector.size(); declaration2Index++) {
 							
 							Declaration declarationInTheSecondSelector = declarationsInTheSecondSelector.get(declaration2Index);
 							
 							// Again we only care about remaining declarations, which are not equal or equivalent
+							// Also don't match a declaration two times. Will it happen?!
 							Set<Integer> checkedDeclarationsInTheSecondSelector = checkedSelectors.get(secondSelector);
 							if (checkedDeclarationsInTheSecondSelector.contains(declaration2Index) || declarationsInTheItemset.contains(declarationInTheSecondSelector))
 								continue;
 
 							if (declarationInTheFirstSelector.getProperty().equals(declarationInTheSecondSelector.getProperty())) {
 								// Here we go: a difference in values should be there
-								if (declarationInTheSecondSelector instanceof ShorthandDeclaration && ((ShorthandDeclaration) declarationInTheSecondSelector).isVirtual())
-									continue;
-								declarationToBeAddedIndex = declaration2Index;
-								checkedDeclarationsInTheSecondSelector.add(declaration2Index);
-							} 
-						} 
+								checkedDeclarationsInTheSecondSelector.add(declaration2Index);	
+								declarationsWithTheSameProperty.add(declaration2Index);
+							} 	
+						}
+						// Get the last real declaration. If not exists, get the last declaration whatever it is.
+						int declarationToBeAddedIndex = -1;
+						if (declarationsWithTheSameProperty.size() > 0) {
+						int index = declarationsWithTheSameProperty.size() - 1;
+						do {
+							if (index >= 0) {
+								declarationToBeAddedIndex = declarationsWithTheSameProperty.get(index);
+								index--;
+							} else {
+								declarationToBeAddedIndex = declarationsWithTheSameProperty.get(declarationsWithTheSameProperty.size() - 1);
+								break;
+							}
+						} while (declarationsInTheSecondSelector.get(declarationToBeAddedIndex) instanceof ShorthandDeclaration && 
+								((ShorthandDeclaration) declarationsInTheSecondSelector.get(declarationToBeAddedIndex)).isVirtual());
+						}
+
+ 
 						// This approach lets us mimic overriding declarations with the same property
 						if (declarationToBeAddedIndex >= 0)
 							declarationsToAdd.add(declarationsInTheSecondSelector.get(declarationToBeAddedIndex));
-					}
-					
+					}	
 					// If the current declaration is present in all selectors
 					if (declarationsToAdd.size() == itemSetSelectors.size()) {
 						/*
