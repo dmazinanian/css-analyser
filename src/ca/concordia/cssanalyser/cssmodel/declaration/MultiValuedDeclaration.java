@@ -859,40 +859,4 @@ public class MultiValuedDeclaration extends Declaration {
 		return allSetPropertyAndLayers;
 	}
 
-	public void setValue(PropertyAndLayer propertyAndLayer, Collection<DeclarationValue> declarationValuesForStyleProperty) {
-		int firstIndex = -1, lastIndex = -1;
-		DeclarationValue separator = null;
-		for (int i = 0; i < declarationValues.size(); i++) {
-			DeclarationValue declarationValue = declarationValues.get(i);
-			if (propertyAndLayer.equals(declarationValue.getCorrespondingStylePropertyAndLayer())) {
-				if (firstIndex == -1) {// found the first one
-					firstIndex = i;
-					lastIndex = i;
-					if (i < declarationValues.size() - 2 && 
-							declarationValues.get(i + 1).getType() == ValueType.SEPARATOR &&
-							propertyAndLayer.equals(declarationValues.get(i + 2).getCorrespondingStylePropertyAndLayer())) {
-						separator = declarationValues.get(i + 1);
-					}
-				}
-				else {
-					lastIndex = i;
-				}
-			}
-		}
-		for (int i = firstIndex; i <= lastIndex; i++) {
-			declarationValues.remove(i);
-		}
-		int index = firstIndex;
-		for (Iterator<DeclarationValue> valueIterator = declarationValuesForStyleProperty.iterator(); valueIterator.hasNext(); ) {
-			DeclarationValue newValue = valueIterator.next();
-			declarationValues.add(index, newValue);
-			index++;
-			if (valueIterator.hasNext()) {
-				declarationValues.add(index, separator);
-				index++;
-			}
-		}
-		stylePropertyToDeclarationValueMap.put(propertyAndLayer, declarationValuesForStyleProperty);
-	}
-	 
 }
