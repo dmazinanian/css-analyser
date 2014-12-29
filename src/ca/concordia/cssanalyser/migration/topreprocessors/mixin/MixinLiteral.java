@@ -24,6 +24,13 @@ public class MixinLiteral extends MixinValue {
 		return forValues;
 	}
 	
+	public boolean allValuesMissing() {
+		for (DeclarationValue value : forValues)
+			if (!value.isAMissingValue())
+				return false;
+		return true;
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder toReturn = new StringBuilder();

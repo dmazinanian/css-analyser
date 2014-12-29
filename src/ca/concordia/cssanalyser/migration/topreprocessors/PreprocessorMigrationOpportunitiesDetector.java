@@ -57,15 +57,17 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 				MixinMigrationOpportunity opportunity = getNewPreprocessorSpecificOpportunity(itemSet.getSupport());
 				mixinRefactoringOpportunities.add(opportunity);
 				
-
-				// First, add all the equal or equivalent declarations to this opportunity
-				for (Item item : itemSet)
-					opportunity.addEquivalentDeclarations(item);
-				
 				// A Mixin refactoring opportunity also needs the selectors involved in the duplication
 				List<Selector> itemSetSelectors = new ArrayList<>();
 				for (Selector s : itemSet.getSupport())
 					itemSetSelectors.add(s);
+				
+				// Make intra-selector overriding dependencies similar
+				similarizeDependencies(itemSetSelectors);
+				
+				// First, add all the equal or equivalent declarations to this opportunity
+				for (Item item : itemSet)
+					opportunity.addEquivalentDeclarations(item);
 				
 				// We want to skip the declarations in the ItemSet (equivalent ones)
 				Set<Declaration> declarationsInTheItemset = new HashSet<>();
@@ -73,8 +75,6 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 					for (Declaration declaration : item)
 						declarationsInTheItemset.add(declaration);
 				
-				// Make intra-selector overriding dependencies similar
-				similarizeDependencies(itemSetSelectors);
 				
 				Map<Selector, List<Declaration>> selectorToDeclarationsMap = new HashMap<>();
 				Map<Selector, Set<Integer>> checkedSelectors = new HashMap<>();
@@ -89,24 +89,26 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 				
 				// Try to add declarations with differences
 				Selector firstSelector = itemSetSelectors.get(0);
-				for (int declarationIndex = 0; declarationIndex < selectorToDeclarationsMap.get(firstSelector).size(); declarationIndex++) {
-					Declaration declarationInTheFirstSelector = selectorToDeclarationsMap.get(firstSelector).get(declarationIndex);
+				List<Declaration> declarationsInTheFirstSelector = selectorToDeclarationsMap.get(firstSelector);
+				for (int declarationIndex = 0; declarationIndex < declarationsInTheFirstSelector.size(); declarationIndex++) {
+					Declaration declarationInTheFirstSelector = declarationsInTheFirstSelector.get(declarationIndex);
 					
 					// We only care about remaining declarations, which are not equal or equivalent
-					if (checkedSelectors.get(firstSelector).contains(declarationIndex) || declarationsInTheItemset.contains(declarationInTheFirstSelector))
+					Set<Integer> checkedDeclarationsInTheFirstSelector = checkedSelectors.get(firstSelector);
+					if (checkedDeclarationsInTheFirstSelector.contains(declarationIndex) || declarationsInTheItemset.contains(declarationInTheFirstSelector))
 						continue;
 					
 					// Find out if another (real) declaration is overriding this one
-					checkedSelectors.get(firstSelector).add(declarationIndex);
-					for (int k = declarationIndex + 1; k < selectorToDeclarationsMap.get(firstSelector).size(); k++) {
-						Declaration checkingDeclarationForOverriding = selectorToDeclarationsMap.get(firstSelector).get(k);
-						if (!checkedSelectors.get(firstSelector).contains(k) &&
+					checkedDeclarationsInTheFirstSelector.add(declarationIndex);
+					for (int k = declarationIndex + 1; k < declarationsInTheFirstSelector.size(); k++) {
+						Declaration checkingDeclarationForOverriding = declarationsInTheFirstSelector.get(k);
+						if (!checkedDeclarationsInTheFirstSelector.contains(k) &&
 								checkingDeclarationForOverriding.getProperty().equals(declarationInTheFirstSelector.getProperty())) {
 							if (checkingDeclarationForOverriding instanceof ShorthandDeclaration && ((ShorthandDeclaration) checkingDeclarationForOverriding).isVirtual()) {
 								continue;
 							} 
 							declarationInTheFirstSelector = checkingDeclarationForOverriding;
-							checkedSelectors.get(firstSelector).add(k);
+							checkedDeclarationsInTheFirstSelector.add(k);
 						}
 					}
 					
@@ -118,10 +120,10 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 						
 						int declarationToBeAddedIndex = -1;
 						Selector secondSelector = itemSetSelectors.get(selectorIndex);
-						List<Declaration> declarationsForTheSecondSelector = selectorToDeclarationsMap.get(secondSelector);
-						for (int declaration2Index = 0; declaration2Index < declarationsForTheSecondSelector.size(); declaration2Index++) {
+						List<Declaration> declarationsInTheSecondSelector = selectorToDeclarationsMap.get(secondSelector);
+						for (int declaration2Index = 0; declaration2Index < declarationsInTheSecondSelector.size(); declaration2Index++) {
 							
-							Declaration declarationInTheSecondSelector = declarationsForTheSecondSelector.get(declaration2Index);
+							Declaration declarationInTheSecondSelector = declarationsInTheSecondSelector.get(declaration2Index);
 							
 							// Again we only care about remaining declarations, which are not equal or equivalent
 							Set<Integer> checkedDeclarationsInTheSecondSelector = checkedSelectors.get(secondSelector);
@@ -138,7 +140,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 						} 
 						// This approach lets us mimic overriding declarations with the same property
 						if (declarationToBeAddedIndex >= 0)
-							declarationsToAdd.add(declarationsForTheSecondSelector.get(declarationToBeAddedIndex));
+							declarationsToAdd.add(declarationsInTheSecondSelector.get(declarationToBeAddedIndex));
 					}
 					
 					// If the current declaration is present in all selectors
@@ -275,9 +277,11 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 						Declaration declaration2 = dependency.getDeclaration2();
 						List<DeclarationValue> values = new ArrayList<>();
 						for (PropertyAndLayer propertyAndLayer : declaration2.getAllSetPropertyAndLayers()) {
+
 							for (DeclarationValue declarationValue : startingDeclaration.getDeclarationValuesForStyleProperty(propertyAndLayer)) {
 								values.add(declarationValue);
-							}
+							}								
+
 						}
 						Declaration newVirtualDeclaration = DeclarationFactory.getDeclaration(declaration2.getProperty(), 
 								values, selector, declaration2.isImportant(), false, new LocationInfo());
