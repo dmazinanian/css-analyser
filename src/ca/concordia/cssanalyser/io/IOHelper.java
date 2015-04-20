@@ -130,7 +130,7 @@ public final class IOHelper {
 	}
 	
 	public static void writeStringToFile(String string, String path) {
-		writeStringToFile(string, path, false);
+		IOHelper.writeStringToFile(string, path, false);
 	}
 	
 	public static void writeStringToFile(String string, String path, boolean append) {

@@ -23,5 +23,6 @@ enum ProgramMode {
 	 */
 	DIFF,
 	/** Find preprocessor refactoring opportunities */
-	PREP
+	PREP, 
+	EMPIRICAL_STUDY
 }

@@ -712,7 +712,7 @@ public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
         jj_consume_token(S);
       }
                if (ml.size() == 0) {
-                   // see section 6.3 of the CSS2 recommandation.
+                   // see section 6.3 of the CSS2 recommendation.
                    ml.addMediaQuery(new MediaQuery("all"));
                }
                ((CSSDocumentHandler)documentHandler).importStyle(uri, ml, null);

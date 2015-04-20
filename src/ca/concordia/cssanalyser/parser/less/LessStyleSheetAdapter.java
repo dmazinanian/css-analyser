@@ -1,10 +1,8 @@
 package ca.concordia.cssanalyser.parser.less;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
@@ -34,7 +32,6 @@ import ca.concordia.cssanalyser.cssmodel.selectors.SiblingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.SimpleSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorConditionType;
-import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPreprocessorNodeFinder;
 import ca.concordia.cssanalyser.parser.ParseException;
 
@@ -54,7 +51,6 @@ import com.github.sommeri.less4j.core.ast.InterpolatedMediaExpression;
 import com.github.sommeri.less4j.core.ast.ListExpression;
 import com.github.sommeri.less4j.core.ast.ListExpressionOperator.Operator;
 import com.github.sommeri.less4j.core.ast.MediaExpression;
-import com.github.sommeri.less4j.core.ast.MixinReference;
 import com.github.sommeri.less4j.core.ast.NamedColorExpression;
 import com.github.sommeri.less4j.core.ast.Nth;
 import com.github.sommeri.less4j.core.ast.NumberExpression;
@@ -72,16 +68,12 @@ public class LessStyleSheetAdapter {
 	private static Logger LOGGER = FileLogger.getLogger(LessStyleSheetAdapter.class);
 	
 	private final com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet;
-	private final StyleSheet ourStyleSheet;
 	
 	public LessStyleSheetAdapter(com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet) {
 		this.lessStyleSheet = lessStyleSheet;
-		ourStyleSheet = new StyleSheet(); 
-		ourStyleSheet.setPath(lessStyleSheet.getSource().toString());
-		adapt();
 	}
 
-	private void adapt() {
+	private void adapt(StyleSheet ourStyleSheet) {
 		
  		List<ASTCssNode> nodes = lessStyleSheet.getChilds();
 		addSelectorsToStyleSheetFromLessASTNodes(ourStyleSheet, nodes);
@@ -176,7 +168,7 @@ public class LessStyleSheetAdapter {
 		return mediaQueryList;
 	}
 
-	private Selector getSelectorFromLessRuleSet(RuleSet ruleSetNode) {
+	public Selector getSelectorFromLessRuleSet(RuleSet ruleSetNode) {
 		Selector selector = null;
 		
 		if (ruleSetNode.getSelectors().size() == 1) { // One selector, this is a base selector
@@ -613,6 +605,9 @@ public class LessStyleSheetAdapter {
 	}
 
 	public StyleSheet getAdaptedStyleSheet() {
+		StyleSheet ourStyleSheet = new StyleSheet(); 
+		ourStyleSheet.setPath(lessStyleSheet.getSource().toString());
+		adapt(ourStyleSheet);
 		return ourStyleSheet;
 	}
 	
@@ -621,31 +616,5 @@ public class LessStyleSheetAdapter {
 	}
 	
 	
-	public void writeMixinCallsCountToFile(String path, boolean append) {
-		
-		Map<String, Integer> calls = new HashMap<>();
-		for (ASTCssNode node : lessStyleSheet.getChilds()) {
- 			
- 			if (node instanceof RuleSet) {
- 				
- 				RuleSet ruleSetNode = (RuleSet)node;
- 				 
- 				for (ASTCssNode child : ruleSetNode.getBody().getChilds()) {
- 					if (child instanceof MixinReference) {
- 						MixinReference ref = (MixinReference)child;
- 						int numberOfCalls = 0;
- 						if (calls.containsKey(ref.getFinalNameAsString()))
- 							numberOfCalls = calls.get(ref.getFinalNameAsString());
- 							
- 						calls.put(ref.getFinalNameAsString(), ++numberOfCalls);
- 					}
- 				}
- 			}
-		}
-		
-		for (String mixinName : calls.keySet()) {
-			IOHelper.writeStringToFile(String.format("%s,%s,%s%s", this.ourStyleSheet.getFilePath(), 
-					mixinName, calls.get(mixinName), System.lineSeparator()), path, append);
-		}
-	}
+	
 }

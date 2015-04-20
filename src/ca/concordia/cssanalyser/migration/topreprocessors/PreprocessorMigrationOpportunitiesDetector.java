@@ -40,7 +40,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 		
 		// Apply FP-Growth on normal duplications
 		DuplicationDetector duplicationDetector = new DuplicationDetector(this.styleSheet);
-		duplicationDetector.findDuplications();
+		duplicationDetector.findPropertyDuplications();
 		// Subsets will not be there
 		List<ItemSetList> itemSetLists = duplicationDetector.fpGrowth(2, true);
 		
@@ -66,14 +66,14 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 				similarizeDependencies(itemSetSelectors);
 				
 				// First, add all the equal or equivalent declarations to this opportunity
-				for (Item item : itemSet)
-					opportunity.addEquivalentDeclarations(item);
+//				for (Item item : itemSet)
+//					opportunity.addEquivalentDeclarations(item);
 				
 				// We want to skip the declarations in the ItemSet (equivalent ones)
-				Set<Declaration> declarationsInTheItemset = new HashSet<>();
-				for (Item item : itemSet)
-					for (Declaration declaration : item)
-						declarationsInTheItemset.add(declaration);
+//				Set<Declaration> declarationsInTheItemset = new HashSet<>();
+//				for (Item item : itemSet)
+//					for (Declaration declaration : item)
+//						declarationsInTheItemset.add(declaration);
 				
 				
 				Map<Selector, List<Declaration>> selectorToDeclarationsMap = new HashMap<>();
@@ -87,15 +87,14 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 					checkedSelectors.put(s, new HashSet<Integer>());
 				}
 				
-				// Try to add declarations with differences
+				// Try to add declarations having the same property
 				Selector firstSelector = itemSetSelectors.get(0);
 				List<Declaration> declarationsInTheFirstSelector = selectorToDeclarationsMap.get(firstSelector);
 				for (int declarationIndex = 0; declarationIndex < declarationsInTheFirstSelector.size(); declarationIndex++) {
 					Declaration declarationInTheFirstSelector = declarationsInTheFirstSelector.get(declarationIndex);
 					
-					// We only care about remaining declarations, which are not equal or equivalent
 					Set<Integer> checkedDeclarationsInTheFirstSelector = checkedSelectors.get(firstSelector);
-					if (checkedDeclarationsInTheFirstSelector.contains(declarationIndex) || declarationsInTheItemset.contains(declarationInTheFirstSelector))
+					if (checkedDeclarationsInTheFirstSelector.contains(declarationIndex))
 						continue;
 					
 					// Find out if another (real) declaration is overriding this one
@@ -129,7 +128,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 							// Again we only care about remaining declarations, which are not equal or equivalent
 							// Also don't match a declaration two times. Will it happen?!
 							Set<Integer> checkedDeclarationsInTheSecondSelector = checkedSelectors.get(secondSelector);
-							if (checkedDeclarationsInTheSecondSelector.contains(declaration2Index) || declarationsInTheItemset.contains(declarationInTheSecondSelector))
+							if (checkedDeclarationsInTheSecondSelector.contains(declaration2Index))
 								continue;
 
 							if (declarationInTheFirstSelector.getProperty().equals(declarationInTheSecondSelector.getProperty())) {
@@ -141,20 +140,20 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 						// Get the last real declaration. If not exists, get the last declaration whatever it is.
 						int declarationToBeAddedIndex = -1;
 						if (declarationsWithTheSameProperty.size() > 0) {
-						int index = declarationsWithTheSameProperty.size() - 1;
-						do {
-							if (index >= 0) {
-								declarationToBeAddedIndex = declarationsWithTheSameProperty.get(index);
-								index--;
-							} else {
-								declarationToBeAddedIndex = declarationsWithTheSameProperty.get(declarationsWithTheSameProperty.size() - 1);
-								break;
-							}
-						} while (declarationsInTheSecondSelector.get(declarationToBeAddedIndex) instanceof ShorthandDeclaration && 
-								((ShorthandDeclaration) declarationsInTheSecondSelector.get(declarationToBeAddedIndex)).isVirtual());
+							int index = declarationsWithTheSameProperty.size() - 1;
+							do {
+								if (index >= 0) {
+									declarationToBeAddedIndex = declarationsWithTheSameProperty.get(index);
+									index--;
+								} else {
+									declarationToBeAddedIndex = declarationsWithTheSameProperty.get(declarationsWithTheSameProperty.size() - 1);
+									break;
+								}
+							} while (declarationsInTheSecondSelector.get(declarationToBeAddedIndex) instanceof ShorthandDeclaration && 
+									((ShorthandDeclaration) declarationsInTheSecondSelector.get(declarationToBeAddedIndex)).isVirtual());
 						}
 
- 
+
 						// This approach lets us mimic overriding declarations with the same property
 						if (declarationToBeAddedIndex >= 0)
 							declarationsToAdd.add(declarationsInTheSecondSelector.get(declarationToBeAddedIndex));
@@ -185,41 +184,16 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 							
 							if (!shouldAddIndividuals) {
 								// Add the declarations themselves
-								opportunity.addDeclarationsWithDifferences(declarationInTheFirstSelector.getProperty(), declarationsToAdd);
+								opportunity.addDeclarations(declarationInTheFirstSelector.getProperty(), declarationsToAdd);
 							} else {
 								// Add the individuals
 								for (String individualProperty : propertyToIndividualsMap.keySet()) {
-									// Should add as different or equivalent?
-									boolean allEquivalent = true;
-									// If all the values are missing (having default values) for all the declarations, the declarations should not be added!
-									boolean allValuesMissing = true;
-									List<Declaration> declarations = propertyToIndividualsMap.get(individualProperty);
-									// Compare everything with the declaration in the first selector
-									Declaration groundTruth = declarations.get(0);
-									for (DeclarationValue dv : groundTruth.getDeclarationValues()) {
-										allValuesMissing &= dv.isAMissingValue();
-									}
-									for (int i = 1; i < declarations.size(); i++) {
-										if (!groundTruth.declarationIsEquivalent(declarations.get(i))) {
-											allEquivalent = false;
-											break;
-										} else {
-											for (DeclarationValue dv : declarations.get(i).getDeclarationValues()) {
-												allValuesMissing &= dv.isAMissingValue();
-											}
-										}
-									}
-									if (allEquivalent) {
-										if (!allValuesMissing)
-											opportunity.addEquivalentDeclarations(individualProperty, declarations);
-									} else { 
-										opportunity.addDeclarationsWithDifferences(individualProperty, declarations);
-									}
+									opportunity.addDeclarations(individualProperty, propertyToIndividualsMap.get(individualProperty));
 								}
 							}
 								
 						} else {
-							opportunity.addDeclarationsWithDifferences(declarationInTheFirstSelector.getProperty(), declarationsToAdd);	
+							opportunity.addDeclarations(declarationInTheFirstSelector.getProperty(), declarationsToAdd);
 						}
 					}
 				}

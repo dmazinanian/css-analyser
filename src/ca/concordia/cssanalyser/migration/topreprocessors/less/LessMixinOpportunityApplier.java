@@ -30,7 +30,7 @@ public class LessMixinOpportunityApplier implements MixinMigrationOpportunityApp
 				
 				List<PreprocessorNode<ASTCssNode>> nodesToBeRemoved = new ArrayList<>();
 				// 1- Remove the declarations being parameterized
-				for (Declaration declaration : opportunity.getDeclarationsInvolved(involvedSelector)) {
+				for (Declaration declaration : opportunity.getDeclarationsToBeRemoved(involvedSelector)) {
 					PreprocessorNode<ASTCssNode> node = nodeFinder.perform(declaration.getLocationInfo().getOffset(), declaration.getLocationInfo().getLenghth()); 
 					if (!node.isNull())
 						nodesToBeRemoved.add(node);

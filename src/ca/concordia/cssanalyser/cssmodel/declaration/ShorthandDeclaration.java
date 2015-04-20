@@ -814,7 +814,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				final String SIZE = "font-size";
 				final String HEIGHT = "line-height";
 				final String FAMILY = "font-family";
-				final String SLASH = "/";
+				final String SLASH = "slash";
 				
 				addIndividualDeclaration(STYLE, fontStyle);
 				addIndividualDeclaration(VARIANT, fontVarient);

@@ -7,7 +7,7 @@ package ca.concordia.cssanalyser.cssmodel;
  */
 public abstract class CSSModelObject {
 	
-	protected LocationInfo locationInfo;
+	protected LocationInfo locationInfo = new LocationInfo();
 	
 	public LocationInfo getLocationInfo() {
 		return locationInfo;

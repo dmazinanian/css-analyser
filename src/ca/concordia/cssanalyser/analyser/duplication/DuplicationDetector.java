@@ -84,9 +84,14 @@ public class DuplicationDetector {
 	 * stylesheet which has been given through constructor.
 	 */
 	public void findDuplications() {
-		findTypeOneAndTwoDuplications();
-		findTypeThreeDuplication();
+		findTypeOneAndTwoDuplications(false);
+		findTypeThreeDuplication(false);
 		findTypeFourADuplication();
+	}
+	
+	public void findPropertyDuplications() {
+		findTypeOneAndTwoDuplications(true);
+		findTypeThreeDuplication(true);
 	}
 
 	/**
@@ -95,7 +100,7 @@ public class DuplicationDetector {
 	 * 
 	 * @return An object of {@link DuplicationIncstanceList}
 	 */
-	private void findTypeOneAndTwoDuplications() {
+	private void findTypeOneAndTwoDuplications(boolean onlyCheckProperties) {
 
 		typeOneDuplicationsList = new DuplicationIncstanceList();
 		typeTwoDuplicationsList = new DuplicationIncstanceList();
@@ -160,7 +165,11 @@ public class DuplicationDetector {
 
 				Declaration checkingDeclaration = allDeclarations.get(checkingDecIndex);
 
-				boolean equals = currentDeclaration.declarationEquals(checkingDeclaration);
+				boolean equals;
+				if (onlyCheckProperties)
+					equals = currentDeclaration.getProperty().equals(checkingDeclaration.getProperty());
+				else
+					equals = currentDeclaration.declarationEquals(checkingDeclaration);
 
 				if (equals && !visitedIdenticalDeclarations.contains(currentDeclarationIndex)
 						&& !visitedIdenticalDeclarations.contains(checkingDecIndex)) {
@@ -229,7 +238,7 @@ public class DuplicationDetector {
 	/**
 	 * Finds typeIII duplications
 	 */
-	public void findTypeThreeDuplication() {
+	public void findTypeThreeDuplication(boolean onlyCheckProperties) {
 
 		typeThreeDuplicationsList = new DuplicationIncstanceList();
 
@@ -243,30 +252,40 @@ public class DuplicationDetector {
 					if (checkingDeclaration.getSelector() != selector && checkingDeclaration instanceof ShorthandDeclaration) {
 					
 						ShorthandDeclaration checkingShorthandDeclaration = (ShorthandDeclaration) checkingDeclaration;
-						
-						if(!checkingShorthandDeclaration.isVirtual() && virtualShorthand.individualDeclarationsEquivalent(checkingShorthandDeclaration)) {
+
+						if(!checkingShorthandDeclaration.isVirtual()) {
+
+							boolean equivalentCondition = false;
+							if (onlyCheckProperties)
+								equivalentCondition = virtualShorthand.getProperty().equals(checkingDeclaration.getProperty());
+							else
+								equivalentCondition = virtualShorthand.individualDeclarationsEquivalent(checkingShorthandDeclaration);
 							
-							TypeThreeDuplicationInstance duplication =  new TypeThreeDuplicationInstance(checkingShorthandDeclaration, virtualShorthand.getIndividualDeclarations());
-							typeThreeDuplicationsList.addDuplication(duplication);
-							
+							if (equivalentCondition) {
 
-							/*
-							 * Well, well, when we add individual declarations to a virtual shorthand, it does not add the real values to the
-							 * virtual shorthand declaration itself. Indeed it is difficult to get values from individual shorthand declarations.
-							 */
-													
-							//for (DeclarationValue v : checkingShorthandDeclaration.getValues())
-							//	virtualShorthand.getValues().add(v.clone());
+								TypeThreeDuplicationInstance duplication =  new TypeThreeDuplicationInstance(checkingShorthandDeclaration, virtualShorthand.getIndividualDeclarations());
+								typeThreeDuplicationsList.addDuplication(duplication);
 
-							// For apriori and FP-Growth
-							Item item = declarationItemMap.get(checkingDeclaration);
 
-							item.add(virtualShorthand);
+								/*
+								 * Well, well, when we add individual declarations to a virtual shorthand, it does not add the real values to the
+								 * virtual shorthand declaration itself. Indeed it is difficult to get values from individual shorthand declarations.
+								 */
 
-							item.addDuplicationType(3);
+								//for (DeclarationValue v : checkingShorthandDeclaration.getValues())
+								//	virtualShorthand.getValues().add(v.clone());
 
-							selector.addDeclaration(virtualShorthand);
-							declarationItemMap.put(virtualShorthand, item);
+								// For apriori and FP-Growth
+								Item item = declarationItemMap.get(checkingDeclaration);
+
+								item.add(virtualShorthand);
+
+								item.addDuplicationType(3);
+
+								selector.addDeclaration(virtualShorthand);
+								declarationItemMap.put(virtualShorthand, item);
+
+							}
 						}
 					}
 				}

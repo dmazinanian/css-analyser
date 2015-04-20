@@ -27,6 +27,7 @@ import com.github.sommeri.less4j.core.ast.EmbeddedScript;
 import com.github.sommeri.less4j.core.ast.EmptyExpression;
 import com.github.sommeri.less4j.core.ast.EscapedValue;
 import com.github.sommeri.less4j.core.ast.Expression;
+import com.github.sommeri.less4j.core.ast.Extend;
 import com.github.sommeri.less4j.core.ast.FaultyExpression;
 import com.github.sommeri.less4j.core.ast.FaultyNode;
 import com.github.sommeri.less4j.core.ast.FixedMediaExpression;
@@ -49,6 +50,8 @@ import com.github.sommeri.less4j.core.ast.MediaExpressionFeature;
 import com.github.sommeri.less4j.core.ast.MediaQuery;
 import com.github.sommeri.less4j.core.ast.Medium;
 import com.github.sommeri.less4j.core.ast.MediumModifier;
+import com.github.sommeri.less4j.core.ast.NestedSelectorAppender;
+import com.github.sommeri.less4j.core.ast.SignedExpression;
 import com.github.sommeri.less4j.core.ast.MediumModifier.Modifier;
 import com.github.sommeri.less4j.core.ast.MediumType;
 import com.github.sommeri.less4j.core.ast.MixinReference;
@@ -59,6 +62,7 @@ import com.github.sommeri.less4j.core.ast.Nth;
 import com.github.sommeri.less4j.core.ast.NumberExpression;
 import com.github.sommeri.less4j.core.ast.Page;
 import com.github.sommeri.less4j.core.ast.PageMarginBox;
+import com.github.sommeri.less4j.core.ast.ParenthesesExpression;
 import com.github.sommeri.less4j.core.ast.PseudoClass;
 import com.github.sommeri.less4j.core.ast.PseudoElement;
 import com.github.sommeri.less4j.core.ast.ReusableStructure;
@@ -82,6 +86,7 @@ import com.github.sommeri.less4j.core.ast.SyntaxOnlyElement;
 import com.github.sommeri.less4j.core.ast.UnicodeRangeExpression;
 import com.github.sommeri.less4j.core.ast.UnknownAtRule;
 import com.github.sommeri.less4j.core.ast.Variable;
+import com.github.sommeri.less4j.core.ast.VariableDeclaration;
 import com.github.sommeri.less4j.core.ast.Viewport;
 import com.github.sommeri.less4j.core.output.ExtendedStringBuilder;
 import com.github.sommeri.less4j.utils.LastOfKindSet;
@@ -96,6 +101,12 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 	public String getString(StyleSheet styleSheet) {
 		builder = new ExtendedStringBuilder();
 		append(styleSheet);
+		return builder.toString();
+	}
+	
+	public String getStringForNode(ASTCssNode node) {
+		builder = new ExtendedStringBuilder();
+		append(node);
 		return builder.toString();
 	}
 
@@ -119,9 +130,9 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 		if (node == null || node.isSilent())
 			return false;
 
-		appendComments(node.getOpeningComments(), true);
+		//appendComments(node.getOpeningComments(), true);
 		boolean result = switchOnType(node);
-		appendComments(node.getTrailingComments(), false);
+		//appendComments(node.getTrailingComments(), false);
 		return result;
 	}
 
@@ -315,18 +326,67 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 			
 		case MIXIN_REFERENCE:
 			return appendMixinReference((MixinReference) node);
+			
+		case NESTED_SELECTOR_APPENDER:
+			return appendNestedSelesctorAppender((NestedSelectorAppender)node);
+			
+		case VARIABLE_DECLARATION:
+			return appendVariableDeclaration((VariableDeclaration)node);
 
-		case ESCAPED_SELECTOR:
 		case PARENTHESES_EXPRESSION:
+			return appendParentheses((ParenthesesExpression)node);
+			
+		case EXTEND:
+			return appendExtend((Extend) node);
+			
 		case SIGNED_EXPRESSION:
+			return appendSignedExpression((SignedExpression) node);
+			
+		case ESCAPED_SELECTOR:
 		case DETACHED_RULESET_REFERENCE:
 		case INDIRECT_VARIABLE:
-		case VARIABLE_DECLARATION:
 			throw new NotACssException(node);
 
 		default:
 			throw new IllegalStateException("Unknown: " + node.getType() + " " + node.getSourceLine() + ":" + node.getSourceColumn());
 		}
+	}
+
+	private boolean appendSignedExpression(SignedExpression node) {
+		builder.append(node.getSign().toSymbol());
+		append(node.getExpression());
+		return true;
+	}
+
+	private boolean appendExtend(Extend node) {
+		builder.append("&:extend(");
+		append(node.getTarget());
+		if (node.isAll()) {
+			builder.ensureSeparator();
+			builder.append("all");
+		}
+		builder.append(");");
+		return true;
+	}
+
+	private boolean appendParentheses(ParenthesesExpression node) {
+		builder.append("(");
+		append(node.getEnclosedExpression());
+		builder.append(")");
+		return true;
+	}
+
+	private boolean appendVariableDeclaration(VariableDeclaration node) {
+		append(node.getVariable());
+		builder.append(":");
+		builder.ensureSeparator();
+		append(node.getValue());
+		return true;
+	}
+
+	private boolean appendNestedSelesctorAppender(NestedSelectorAppender node) {
+		builder.append("&");
+		return true;
 	}
 
 	private boolean appendMixinReference(MixinReference node) {
@@ -653,8 +713,8 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 	}
 
 	public boolean appendRuleset(RuleSet ruleSet) {
-		if (ruleSet.hasEmptyBody())
-			return false;
+		//if (ruleSet.hasEmptyBody())
+		//	return false;
 
 		appendSelectors(ruleSet.getSelectors());
 		append(ruleSet.getBody());
