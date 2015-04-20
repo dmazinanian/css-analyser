@@ -8,10 +8,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ca.concordia.cssanalyser.app.CSSAnalyserCLI;
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPrinter;
+import ca.concordia.cssanalyser.parser.ParseException;
+import ca.concordia.cssanalyser.parser.less.LessCSSParser;
 
+import com.github.sommeri.less4j.LessSource.FileSource;
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
 import com.github.sommeri.less4j.core.ast.ArgumentDeclaration;
 import com.github.sommeri.less4j.core.ast.ColorExpression;
@@ -548,5 +553,40 @@ public class EmpiricalStudy {
 				return true;
 		}
 		return false;
+	}
+
+	public static void doEmpiricalStudy(List<String> folders, String outfolder) {
+
+		if (folders.size() > 0) {
+	
+			for (String folder : folders) {
+				
+				FileLogger.addFileAppender(outfolder + "/log.log", false);
+				List<File> lessFiles = IOHelper.searchForFiles(folder, "less");
+	
+				boolean header = true;
+				for (int i = 0; i < lessFiles.size(); i++) {
+					File f = lessFiles.get(i);
+					CSSAnalyserCLI.LOGGER.info(String.format("%3s%%: %s", (float)i / lessFiles.size() * 100, f.getAbsolutePath()));
+					EmpiricalStudy empiricalStudy;
+					try {
+						empiricalStudy = new EmpiricalStudy(LessCSSParser.getLessStyleSheet(new FileSource(f)));
+						empiricalStudy.writeVariableInformation(outfolder + "/less-variableDeclarationsInfo.txt", header);
+						empiricalStudy.writeMixinDeclarationsInfoToFile(outfolder + "/less-mixinDeclarationInfo.txt", header);
+						empiricalStudy.writeExtendInfo(outfolder + "/less-extendInfo.txt", header);
+						empiricalStudy.writeMixinCallsInfoToFile(outfolder + "/less-mixinCallsInfo.txt", header);
+						empiricalStudy.writeFileSizeInfoToFile(outfolder + "/less-fileSizes.txt", header);
+						empiricalStudy.writeSelectorsInfoToFile(outfolder + "/less-selectorsInfo.txt", header);
+						header = false;
+					} catch (ParseException e) {
+						e.printStackTrace();
+					}
+	
+				}
+	
+			}
+		} else {
+			CSSAnalyserCLI.LOGGER.warn("No input folder is provided.");
+		}
 	}
 }

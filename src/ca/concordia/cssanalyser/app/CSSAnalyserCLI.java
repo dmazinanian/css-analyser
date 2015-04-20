@@ -24,14 +24,11 @@ import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
 import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
 import ca.concordia.cssanalyser.parser.ParseException;
-import ca.concordia.cssanalyser.parser.less.LessCSSParser;
 import ca.concordia.cssanalyser.preprocessors.empiricalstudy.EmpiricalStudy;
-
-import com.github.sommeri.less4j.LessSource.FileSource;
 
 public class CSSAnalyserCLI {
 	
-	private static Logger LOGGER = FileLogger.getLogger(CSSAnalyserCLI.class);
+	public static Logger LOGGER = FileLogger.getLogger(CSSAnalyserCLI.class);
 
 	public static void main(String[] args) throws IOException {
 		
@@ -215,39 +212,9 @@ public class CSSAnalyserCLI {
 				break;
 			}
 			case EMPIRICAL_STUDY: {
-				List<String> folders = getFolderPathsFromParameters(params);
+				List<String> folders = CSSAnalyserCLI.getFolderPathsFromParameters(params);
 				String outfolder = params.getOutputFolderPath();
-				if (folders.size() > 0) {
-
-					for (String folder : folders) {
-						
-						FileLogger.addFileAppender(outfolder + "/log.log", false);
-						List<File> lessFiles = IOHelper.searchForFiles(folder, "less");
-
-						boolean header = true;
-						for (int i = 0; i < lessFiles.size(); i++) {
-							File f = lessFiles.get(i);
-							LOGGER.info(String.format("%3s%%: %s", (float)i / lessFiles.size() * 100, f.getAbsolutePath()));
-							EmpiricalStudy empiricalStudy;
-							try {
-								empiricalStudy = new EmpiricalStudy(LessCSSParser.getLessStyleSheet(new FileSource(f)));
-								empiricalStudy.writeVariableInformation(outfolder + "/less-variableDeclarationsInfo.txt", header);
-								empiricalStudy.writeMixinDeclarationsInfoToFile(outfolder + "/less-mixinDeclarationInfo.txt", header);
-								empiricalStudy.writeExtendInfo(outfolder + "/less-extendInfo.txt", header);
-								empiricalStudy.writeMixinCallsInfoToFile(outfolder + "/less-mixinCallsInfo.txt", header);
-								empiricalStudy.writeFileSizeInfoToFile(outfolder + "/less-fileSizes.txt", header);
-								empiricalStudy.writeSelectorsInfoToFile(outfolder + "/less-selectorsInfo.txt", header);
-								header = false;
-							} catch (ParseException e) {
-								e.printStackTrace();
-							}
-
-						}
-
-					}
-				} else {
-					LOGGER.warn("No input folder is provided.");
-				}
+				EmpiricalStudy.doEmpiricalStudy(folders, outfolder);
 			}
 			default:
 		}		
