@@ -42,9 +42,9 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 		DuplicationDetector duplicationDetector = new DuplicationDetector(this.styleSheet);
 		duplicationDetector.findPropertyDuplications();
 		// Subsets will not be there
-		List<ItemSetList> itemSetLists = duplicationDetector.fpGrowth(2, true);
+		List<ItemSetList> itemSetLists = duplicationDetector.fpGrowth(2, false);
 		
-		List<MixinMigrationOpportunity> mixinRefactoringOpportunities = new ArrayList<>();
+		List<MixinMigrationOpportunity> mixinMigrationOpportunities = new ArrayList<>();
 		
 		/*
 		 * Each of the duplications can be a opportunity.
@@ -55,7 +55,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 			for (ItemSet itemSet : itemSetList) {
 				
 				MixinMigrationOpportunity opportunity = getNewPreprocessorSpecificOpportunity(itemSet.getSupport());
-				mixinRefactoringOpportunities.add(opportunity);
+				mixinMigrationOpportunities.add(opportunity);
 				
 				// A Mixin refactoring opportunity also needs the selectors involved in the duplication
 				List<Selector> itemSetSelectors = new ArrayList<>();
@@ -200,7 +200,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 			}
 		}
 		
-		return mixinRefactoringOpportunities;
+		return mixinMigrationOpportunities;
 		
 	}
 

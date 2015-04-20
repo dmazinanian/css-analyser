@@ -138,74 +138,74 @@ public class CSSAnalyserCLI {
 		}
 		case PREP: {
 
-				List<String> folders = getFolderPathsFromParameters(params);
-				
-				if (folders.size() > 0) {
+			List<String> folders = getFolderPathsFromParameters(params);
 
-					for (String folder : folders) {
-						List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");	
-						if (allStatesFiles.size() == 0) {
-							LOGGER.warn("No HTML file found in " + folder + "crawljax/doms, skipping this folder");
-						} else {
-							for (File domStateHtml : allStatesFiles) {
+			if (folders.size() > 0) {
 
-								String stateName = domStateHtml.getName();
-								// Remove .html
-								String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
+				for (String folder : folders) {
+					List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");	
+					if (allStatesFiles.size() == 0) {
+						LOGGER.warn("No HTML file found in " + folder + "crawljax/doms, skipping this folder");
+					} else {
+						for (File domStateHtml : allStatesFiles) {
 
-								FileLogger.addFileAppender(folder + "css/log.log", false);
-								List<File> cssFiles = IOHelper.searchForFiles(folder + "css/" + correspondingCSSFolderName, "css");
+							String stateName = domStateHtml.getName();
+							// Remove .html
+							String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
 
-								for (File f : cssFiles) {
-									try {
-										CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
-										StyleSheet styleSheet = parser.parseExternalCSS(f.getAbsolutePath());
-										PreprocessorMigrationOpportunitiesDetector preprocessorOpportunities = new LessMigrationOpportunitiesDetector(styleSheet);
-										List<MixinMigrationOpportunity> migrationOpportunities = preprocessorOpportunities.findMixinOpportunities();
-										Collections.sort(migrationOpportunities, new Comparator<MixinMigrationOpportunity>() {
-											@Override
-											public int compare(MixinMigrationOpportunity o1, MixinMigrationOpportunity o2) {
-												if (o1.getRank() == o2.getRank()) {
-													return 1;
-												}
-												return Double.compare(o1.getRank(), o2.getRank());
+							FileLogger.addFileAppender(folder + "css/log.log", false);
+							List<File> cssFiles = IOHelper.searchForFiles(folder + "css/" + correspondingCSSFolderName, "css");
+
+							for (File f : cssFiles) {
+								try {
+									CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
+									StyleSheet styleSheet = parser.parseExternalCSS(f.getAbsolutePath());
+									PreprocessorMigrationOpportunitiesDetector preprocessorOpportunities = new LessMigrationOpportunitiesDetector(styleSheet);
+									List<MixinMigrationOpportunity> migrationOpportunities = preprocessorOpportunities.findMixinOpportunities();
+									Collections.sort(migrationOpportunities, new Comparator<MixinMigrationOpportunity>() {
+										@Override
+										public int compare(MixinMigrationOpportunity o1, MixinMigrationOpportunity o2) {
+											if (o1.getRank() == o2.getRank()) {
+												return 1;
 											}
-										});
-										LessMixinOpportunityApplier applier = new LessMixinOpportunityApplier();
-										for (MixinMigrationOpportunity migrationOpportunity : migrationOpportunities) {
-											com.github.sommeri.less4j.core.ast.StyleSheet resultingLESSStyleSheet = applier.apply(migrationOpportunity, styleSheet);
-
-											LessPrinter lessPrinter = new LessPrinter();										
-											System.out.println(lessPrinter.getString(resultingLESSStyleSheet));
+											return Double.compare(o1.getRank(), o2.getRank());
 										}
-										
+									});
+									LessMixinOpportunityApplier applier = new LessMixinOpportunityApplier();
+									for (MixinMigrationOpportunity migrationOpportunity : migrationOpportunities) {
+										com.github.sommeri.less4j.core.ast.StyleSheet resultingLESSStyleSheet = applier.apply(migrationOpportunity, styleSheet);
+
+										LessPrinter lessPrinter = new LessPrinter();										
+										System.out.println(lessPrinter.getString(resultingLESSStyleSheet));
 									}
-									catch (ParseException e) {
-										LOGGER.warn("Parse exception in parsing " + f.getAbsolutePath());
-									}
-									
+
+								}
+								catch (ParseException e) {
+									LOGGER.warn("Parse exception in parsing " + f.getAbsolutePath());
 								}
 
 							}
+
 						}
 					}
-					
-				} else if (null != params.getFilePath() && !"".equals(params.getFilePath())) {
-					try {
-						
-	
-						CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
-						StyleSheet styleSheet = parser.parseExternalCSS(params.getFilePath());
-						PreprocessorMigrationOpportunitiesDetector preprocessorOpportunities = new LessMigrationOpportunitiesDetector(styleSheet);
-						Iterable<MixinMigrationOpportunity> refactoringOpportunities = preprocessorOpportunities.findMixinOpportunities();
-						System.out.println(refactoringOpportunities);
-						
-	
-					} catch (ParseException e) {
-	//
-	//					e.printStackTrace();
-	//
-					}
+				}
+
+			} else if (null != params.getFilePath() && !"".equals(params.getFilePath())) {
+				try {
+
+
+					CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
+					StyleSheet styleSheet = parser.parseExternalCSS(params.getFilePath());
+					PreprocessorMigrationOpportunitiesDetector preprocessorOpportunities = new LessMigrationOpportunitiesDetector(styleSheet);
+					Iterable<MixinMigrationOpportunity> refactoringOpportunities = preprocessorOpportunities.findMixinOpportunities();
+					System.out.println(refactoringOpportunities);
+
+
+				} catch (ParseException e) {
+					//
+					//					e.printStackTrace();
+					//
+				}
 				}
 				else 
 					LOGGER.error("No CSS file is provided.");
