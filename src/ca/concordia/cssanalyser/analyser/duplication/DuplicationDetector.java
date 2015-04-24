@@ -282,7 +282,7 @@ public class DuplicationDetector {
 
 								item.addDuplicationType(3);
 
-								selector.addDeclaration(virtualShorthand);
+								//selector.addDeclaration(virtualShorthand);
 								declarationItemMap.put(virtualShorthand, item);
 
 							}
