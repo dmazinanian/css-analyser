@@ -252,4 +252,36 @@ public abstract class Selector extends CSSModelObject  {
 		}
 		return toReturn;
 	}
+	
+	/**
+	 * Returns all individual declarations which are styled in this selector.
+	 * First, we convert all shorthand declarations to their individual ones (as individual as possible!)
+	 * Then, in case of intra-selector dependencies, we remove the redundant declarations.
+	 */
+	public Iterable<Declaration> getIndividualDeclarations() {
+		List<Declaration> allIndividualDeclarations = new ArrayList<>();
+		for (Declaration declaration : getDeclarations()) {
+			if (declaration instanceof ShorthandDeclaration) {
+				ShorthandDeclaration shorthandDeclaration = (ShorthandDeclaration) declaration;
+				for (Declaration d : shorthandDeclaration.getIndividualDeclarationsAtTheDeepestLevel())
+					allIndividualDeclarations.add(d);
+			} else {
+				allIndividualDeclarations.add(declaration);
+			}
+		}
+		
+		// Handle overrides
+		Set<String> visitedProperties = new HashSet<>();
+		List<Declaration> toReturn = new ArrayList<>();
+		
+		for (int i = allIndividualDeclarations.size() - 1; i >= 0; i--) {
+			Declaration currentIndividualDeclaration = allIndividualDeclarations.get(i);
+			if (visitedProperties.contains(currentIndividualDeclaration.getProperty()))
+				continue;
+			toReturn.add(0, currentIndividualDeclaration);;
+			visitedProperties.add(currentIndividualDeclaration.getProperty());
+		}
+		
+		return toReturn;
+	}
 }
