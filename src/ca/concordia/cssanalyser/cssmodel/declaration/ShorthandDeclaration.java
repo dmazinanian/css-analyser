@@ -1158,7 +1158,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 
 		Declaration individual = individualDeclarations.get(propertyName);
 
-		if (isCommaSeparatedListOfValues && individual != null) {
+		if (isCommaSeparated(propertyName) && individual != null) {
 			MultiValuedDeclaration multiValuedInvividual = (MultiValuedDeclaration)individual;
 			multiValuedInvividual.getValues().add(new DeclarationValue(",", ValueType.SEPARATOR));
 			for (DeclarationValue v : values) {
@@ -1340,6 +1340,23 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 			
 		}
 		return toReturn;
+	}
+
+	/**
+	 * Returns a list of all individual declarations at the deepest level for this shorthand.
+	 * For instance, for <code>border</code>, it returns all the individual style properties that
+	 * it styles, such as border-left-style, border-left-color, etc. 
+	 * @return
+	 */
+	public Iterable<Declaration> getIndividualDeclarationsAtTheDeepestLevel() {
+		List<Declaration> allDeepestIndividuals = new ArrayList<>();
+		for (Declaration d : getIndividualDeclarations()) {
+			if (d instanceof ShorthandDeclaration)
+				allDeepestIndividuals.addAll((List<Declaration>)((ShorthandDeclaration) d).getIndividualDeclarationsAtTheDeepestLevel());
+			else
+				allDeepestIndividuals.add(d);
+		}
+		return allDeepestIndividuals;
 	}
 
 }
