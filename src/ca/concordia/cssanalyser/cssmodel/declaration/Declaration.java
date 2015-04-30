@@ -28,7 +28,13 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	protected boolean isImportant;
 	protected CSSOrigin origin = CSSOrigin.AUTHOR;
 	protected CSSSource source = CSSSource.EXTERNAL;
-
+	
+	/**
+	 * Declarations can be the building blocks of a shorthand declaration.
+	 * (for instance, margin-left for a margin).
+	 * In this case, this reference will keep track of that.
+	 */
+	protected ShorthandDeclaration parentShorthand;
 	
 	/**
 	 * @param propertyName
@@ -290,5 +296,19 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	}
 	
 	public abstract Set<PropertyAndLayer> getAllSetPropertyAndLayers();
+	
+	public boolean isVirtualDeclarationOfAShorthand() {
+		return parentShorthand != null;
+	}
+
+	public ShorthandDeclaration getParentShorthand() {
+		return parentShorthand;
+	}
+
+	public void setParentShorthand(ShorthandDeclaration parentShorthand) {
+		this.parentShorthand = parentShorthand;
+	}
+	
+	
 		
 }
