@@ -2,6 +2,7 @@ package ca.concordia.cssanalyser.analyser.duplication.fpgrowth;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,12 +55,15 @@ public class FPGrowth {
 		fpGrowth(tree, new HashSet<Item>(), minSupport);
 		
 		tree = null;
-		
-		// Deliver results in order. Could we use TreeMap?!
+
+		// Deliver results in order.
+		List<Integer> keys = new ArrayList<>(resultItemSetLists.keySet());
+		Collections.sort(keys);
 		List<T> results = new ArrayList<>();
-		for (int i = 1; i <= resultItemSetLists.size(); i++) {
-			if (resultItemSetLists.get(i) != null) {
-				results.add((T)resultItemSetLists.get(i));
+		for (int i : keys) {
+			ItemSetList itemSetList = resultItemSetLists.get(i);
+			if (itemSetList != null) {
+				results.add((T)itemSetList);
 			}
 		}
 
@@ -229,8 +233,11 @@ public class FPGrowth {
 			// Remove sub sets
 			for (int i = 1; i < newItemSet.size(); i++) {
 				ItemSetList isl = resultItemSetLists.get(i);
-				if (isl != null)
+				if (isl != null) {
 					isl.removeSubset(newItemSet);
+					if (isl.isEmpty())
+						resultItemSetLists.remove(i);
+				}
 			}
 		}
 	}
