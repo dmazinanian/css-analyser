@@ -19,6 +19,8 @@ import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependency;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 
 public abstract class Selector extends CSSModelObject  {
@@ -226,9 +228,10 @@ public abstract class Selector extends CSSModelObject  {
 
 			virtualShorthand.isVirtual(true);
 			boolean isImportant = true;
-			for (Declaration dec : entry.getValue()) {
-				virtualShorthand.addIndividualDeclaration(dec);
-				isImportant &= dec.isImportant();
+			for (Declaration individual : entry.getValue()) {
+				virtualShorthand.addIndividualDeclaration(individual);
+				isImportant &= individual.isImportant();
+				individual.setParentShorthand(virtualShorthand);
 			}
 			virtualShorthand.isImportant(isImportant);
 			
@@ -242,7 +245,7 @@ public abstract class Selector extends CSSModelObject  {
 	 * Returns all the declarations for this selector including virtual shorthand ones
 	 * @return
 	 */
-	public Iterable<Declaration> getAllDeclarationsIncludingVirtualShorthandDeclarations() {
+	public Iterable<Declaration> getAllDeclarationsIncludingVirtualShorthands() {
 		List<Declaration> toReturn = new ArrayList<>();
 		for (Declaration d : getDeclarations()) {
 			toReturn.add(d);
@@ -284,4 +287,42 @@ public abstract class Selector extends CSSModelObject  {
 		
 		return toReturn;
 	}
+	
+	/**
+	 * Returns all the declarations of this selector normally, except when we have an intra-selector dependency.
+	 * In this case, this method removes the redundant declarations.
+	 * If one of the participating declarations is a shorthand, the method will break it down to the individual ones.
+	 * 
+	 */
+	public Iterable<Declaration> getDeclarationsWithIntraSelectorDependenciesRemoved() {
+		Map<String, Declaration> toReturn = new LinkedHashMap<>();
+		
+		Set<Declaration> toExpand = new HashSet<>();
+		CSSValueOverridingDependencyList intraSelectorOverridingDependencies = getIntraSelectorOverridingDependencies();
+		for (CSSValueOverridingDependency dependency : intraSelectorOverridingDependencies) {
+			Declaration d1 = dependency.getDeclaration1();
+			Declaration d2 = dependency.getDeclaration2();
+			if (d1 instanceof ShorthandDeclaration) {
+				toExpand.add(d1);
+			}
+			if (d2 instanceof ShorthandDeclaration) {
+				toExpand.add(d2);
+			}
+		}
+		
+		for (Declaration declaration : getDeclarations()) {
+			if (toExpand.contains(declaration)) {
+				for (Declaration individual : ((ShorthandDeclaration)declaration).getIndividualDeclarationsAtTheDeepestLevel()) {
+					toReturn.put(individual.getProperty(), individual);
+				}
+			} else {
+				toReturn.put(declaration.getProperty(), declaration);
+			}
+		}
+		
+		return new ArrayList<>(toReturn.values());
+	}
+
+	public abstract CSSValueOverridingDependencyList getIntraSelectorOverridingDependencies();
+	
 }
