@@ -7,6 +7,8 @@ import org.w3c.dom.Document;
 
 import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 /**
  * Represents the selectors which are not grouped
@@ -137,5 +139,10 @@ public abstract class BaseSelector extends Selector {
 	public abstract BaseSelector clone();
 	
 	public abstract DOMNodeWrapperList getSelectedNodes(Document document);
+	
+	@Override
+	public CSSValueOverridingDependencyList getIntraSelectorOverridingDependencies() {
+		return CSSDependencyDetector.getValueOverridingDependenciesForSelector(this);
+	}
 
 }

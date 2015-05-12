@@ -9,6 +9,8 @@ import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 
 public class GroupingSelector extends Selector implements Collection<BaseSelector> {
@@ -218,6 +220,11 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		if (xPath.length() > 3)
 			xPath.delete(xPath.length() - 3, xPath.length());
 		return xPath.toString();
+	}
+
+	@Override
+	public CSSValueOverridingDependencyList getIntraSelectorOverridingDependencies() {
+		return CSSDependencyDetector.getValueOverridingDependenciesForSelector(this.listOfBaseSelectors.iterator().next());
 	}
 	
 }
