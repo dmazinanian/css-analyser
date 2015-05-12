@@ -286,4 +286,17 @@ public class StyleSheet extends CSSModelObject {
 		return selectors.containsKey(selector);
 	}
 
+	public StyleSheet getStyleSheetWithIntraSelectorDependenciesRemoved() {
+		StyleSheet styleSheetToReturn = new StyleSheet();
+		styleSheetToReturn.cssFilePath = this.cssFilePath;
+		for (Selector selector : getAllSelectors()) {
+			Selector newSelector = selector.copyEmptySelector();
+			for (Declaration declaration : selector.getDeclarationsWithIntraSelectorDependenciesRemoved()) {
+				newSelector.addDeclaration(declaration);
+				styleSheetToReturn.addSelector(newSelector);
+			}
+		}
+		return styleSheetToReturn;
+	}
+
 }
