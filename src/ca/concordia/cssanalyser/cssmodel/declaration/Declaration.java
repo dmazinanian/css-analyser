@@ -297,7 +297,7 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	
 	public abstract Set<PropertyAndLayer> getAllSetPropertyAndLayers();
 	
-	public boolean isVirtualDeclarationOfAShorthand() {
+	public boolean isVirtualIndividualDeclarationOfAShorthand() {
 		return parentShorthand != null;
 	}
 
