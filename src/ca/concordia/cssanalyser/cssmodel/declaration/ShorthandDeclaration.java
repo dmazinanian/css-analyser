@@ -1328,14 +1328,15 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 		if (toReturn == null || toReturn.size() == 0) {
 			for (Declaration individual : getIndividualDeclarations()) {
 				Collection<DeclarationValue> valuesForThisProperty = individual.getDeclarationValuesForStyleProperty(propertyAndLayer);
-				if (toReturn == null) {
-					if (valuesForThisProperty instanceof Set) 
-						toReturn = new HashSet<>();
-					else if (valuesForThisProperty instanceof List) 
-						toReturn = new ArrayList<>();
-				}
-				if (valuesForThisProperty != null)
+				if (valuesForThisProperty != null && valuesForThisProperty.size() > 0) {
+					if (toReturn == null) {
+						if (valuesForThisProperty instanceof Set) 
+							toReturn = new HashSet<>();
+						else if (valuesForThisProperty instanceof List) 
+							toReturn = new ArrayList<>();
+					}
 					toReturn.addAll(valuesForThisProperty);
+				}
 			}
 			
 		}

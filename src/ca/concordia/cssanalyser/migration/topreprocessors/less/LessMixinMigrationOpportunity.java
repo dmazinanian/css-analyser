@@ -12,7 +12,6 @@ import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinDeclaration;
-import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinLiteral;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameter;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameterizedValue;
@@ -52,9 +51,7 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity {
 				if (value.getCorrespondingStyleProperty() != null) {
 					MixinValue mixinValue = mixinDeclaration.getMixinValueForPropertyandLayer(value.getCorrespondingStylePropertyAndLayer());
 					if (mixinValue != null) {
-						if (!(mixinValue instanceof MixinLiteral && ((MixinLiteral) mixinValue).allValuesMissing())) {
-							toReturn.append(mixinValue);
-						} 
+						toReturn.append(mixinValue);
 						// Check all the values related to this style property, so we skip them in other runs
 						for (int j = 0; j < values.size(); j++) {
 							if (!checkedValuesIndices.contains(j) &&

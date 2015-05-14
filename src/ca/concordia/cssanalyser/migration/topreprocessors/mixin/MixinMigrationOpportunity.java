@@ -10,9 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
-import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.PropertyAndLayer;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
@@ -49,22 +47,9 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 	// Map every Declaration to a MixinDeclaration
 	private Map<Declaration, MixinDeclaration> declarationToMixinDeclarationMapper = new HashMap<>();
 	
-	// Maps each selector to a list of value overriding dependencies inside the selector
-	//private Map<Selector, CSSValueOverridingDependencyList> overridingDependencies = new HashMap<>();
-	
 	public MixinMigrationOpportunity(Iterable<Selector> forSelectors) {
 		this.involvedSelectors = forSelectors;
-//		calculateOverridingDependnecies();
 	}
-
-	/*private void calculateOverridingDependnecies() {
-		for (Selector selector : involvedSelectors) {
-			if (selector instanceof BaseSelector)
-				overridingDependencies.put(selector, CSSDependencyDetector.getValueOverridingDependenciesForSelector((BaseSelector) selector));
-			else if (selector instanceof GroupingSelector)
-				overridingDependencies.put(selector, CSSDependencyDetector.getValueOverridingDependenciesForSelector(((GroupingSelector) selector).getBaseSelectors().iterator().next()));
-		}
-	}*/
 
 	// The list of properties and MixinValues. The real mixin will be created based on this
 	private Map<String, MixinDeclaration> mixinDeclarations = new LinkedHashMap<>();
@@ -76,7 +61,6 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 		return toReturn;
 	}
 	
-		
 	public String getMixinName() {
 		if (mixinName == null)
 			return ".newMixin";
@@ -90,7 +74,8 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 	}
 	
 	
-	public void addDeclarations(String forProperty, List<Declaration> declarations) {
+	public void addDeclarationsWithTheSameProperty(List<Declaration> declarations) {
+		String forProperty = declarations.get(0).getProperty();
 		List<Declaration> declarationsToBeAdded = new ArrayList<>();
 		for (Declaration d : declarations) {
 			declarationsToBeAdded.add(d);
@@ -125,6 +110,12 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 			Declaration declarationWithMaxLayers = Collections.max(declarationsHavingTheSameProperty, new Comparator<Declaration>() {
 				@Override
 				public int compare(Declaration o1, Declaration o2) {
+					
+					if (o1 instanceof ShorthandDeclaration && ((ShorthandDeclaration) o1).isVirtual())
+						return -1;
+					else if (o2 instanceof ShorthandDeclaration && ((ShorthandDeclaration)o2).isVirtual())
+						return 1;
+					
 					if (o1.getNumberOfValueLayers() == o2.getNumberOfValueLayers())
 						return 1;
 					return Integer.compare(o1.getNumberOfValueLayers(), o2.getNumberOfValueLayers());
@@ -132,10 +123,6 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 			});
 			
 			MixinDeclaration mixinDeclaration = new MixinDeclaration(propertyName, declarationWithMaxLayers, declarationsHavingTheSameProperty);
-			mixinDeclarations.put(propertyName, mixinDeclaration);
-			for (Declaration declaration : declarationsHavingTheSameProperty) {
-				declarationToMixinDeclarationMapper.put(declaration, mixinDeclaration);
-			}
 			
 			// For each possible property and layer we will have a parameter or a literal
 			for (PropertyAndLayer propertyAndLayer : allSetPropertyAndLayers) {
@@ -175,28 +162,37 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 							break;
 						}
 					}
+				} else { // Difference does not exist at all!
+					differenceFoundForThisPropertyValueAndLayer = false;
 				}
 
 				if (!differenceFoundForThisPropertyValueAndLayer) {
 					// Need to add a literal
-					// But if all values in all declarations are missing, ignore
+					// But if all values in all declarations are missing, ignore,
+					// Except if the values we are adding are the only values of this declaration!
+					
+					boolean theOnlyValuesOfThisDeclaration = 
+							declarationsHavingTheSameProperty.get(0).getAllSetPropertyAndLayers().size() == 1;
 					
 					boolean allMissing = true;
 					for (Declaration declaration : declarationsHavingTheSameProperty) {
-						for (DeclarationValue v : declaration.getDeclarationValuesForStyleProperty(propertyAndLayer)) {
-							if (!v.isAMissingValue()) {
-								allMissing = false;
-								break;
+						Collection<DeclarationValue> declarationValuesForStyleProperty = declaration.getDeclarationValuesForStyleProperty(propertyAndLayer);
+						if (declarationValuesForStyleProperty != null) {
+							for (DeclarationValue v : declarationValuesForStyleProperty) {
+								if (!v.isAMissingValue()) {
+									allMissing = false;
+									break;
+								}
 							}
+							if (!allMissing)
+								break;
 						}
-						if (!allMissing)
-							break;
 					}
 					
-					if (!allMissing) {
+					if (theOnlyValuesOfThisDeclaration || !allMissing) {
 						Collection<DeclarationValue> declarationValuesForStyleProperty =
 								declarationsHavingTheSameProperty.get(0).
-								getDeclarationValuesForStyleProperty(propertyAndLayer.getPropertyName(), propertyAndLayer.getPropertyLayer());
+								getDeclarationValuesForStyleProperty(propertyAndLayer);
 						value = new MixinLiteral(declarationValuesForStyleProperty, propertyAndLayer);
 					} else {
 						value = null;
@@ -206,6 +202,12 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 				if (value != null)
 					mixinDeclaration.addMixinValue(propertyAndLayer, value);
 			}
+			
+			mixinDeclarations.put(propertyName, mixinDeclaration);
+			for (Declaration declaration : declarationsHavingTheSameProperty) {
+				declarationToMixinDeclarationMapper.put(declaration, mixinDeclaration);
+			}
+
 		}
 				
 		// We have to minimize the parameters
@@ -224,9 +226,9 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 			// "declarations" includes all the declarations having the same property with different values
 			List<Declaration> declarations = realDeclarations.get(declarationProperty);
 			
-			Set<PropertyAndLayer> visitedPropertyAndLayers = getAllSetPropertyAndLayersForDeclarations(declarations);
+			Set<PropertyAndLayer> allSetPropertyAndLayers = getAllSetPropertyAndLayersForDeclarations(declarations);
 			
-			for (PropertyAndLayer propertyAndLayer : visitedPropertyAndLayers) {
+			for (PropertyAndLayer propertyAndLayer : allSetPropertyAndLayers) {
 				StylePropertyValuesDifferenceInValues difference = new StylePropertyValuesDifferenceInValues(propertyAndLayer);
 				// If the values are the same across are declarations, no need to add them
 				boolean shouldAddDifference = false;
@@ -235,7 +237,7 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 					Collection<DeclarationValue> declarationValuesForThisDeclaration = 
 							declaration.getDeclarationValuesForStyleProperty(propertyAndLayer);
 					if (declarationValuesForThisDeclaration == null) {
-						shouldAddDifference = true; 
+						//shouldAddDifference = true; 
 					} else {
 						if (groundTruth == null) {
 							groundTruth = declarationValuesForThisDeclaration;
@@ -310,17 +312,6 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 	 */
 	public Iterable<MixinDeclaration> getAllMixinDeclarations() {
 		calculateParameters();
-//		Set<MixinDeclaration> toReturn = new TreeSet<>(new Comparator<MixinDeclaration>() {
-//			@Override
-//			public int compare(MixinDeclaration o1, MixinDeclaration o2) {
-//				int result = Integer.compare(o1.getMixinDeclarationNumber(), o2.getMixinDeclarationNumber());
-//				if (result == 0)
-//					return 1;
-//				return result;
-//			}
-//		});
-//		for (MixinDeclaration md : mixinDeclarations.values())
-//			toReturn.add(md);
 		return mixinDeclarations.values();
 	}
 	
@@ -360,23 +351,13 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 		}
 		return toReturn;
 	}
-
-	/**
-	 * Returns a set, containing all the declarations of a selector being parameterized using this opportunity
-	 * or declarations that are equal among all involved selectors
-	 * @param selector
-	 * @return
-	 */
-	public Set<Declaration> getDeclarationsToBeRemoved(Selector selector) {
+	
+	public Iterable<Declaration> getDeclarationsToBeRemoved() {
 		calculateParameters();
-		Set<Declaration> toReturn = new HashSet<>();
-		for (String property : getProperties())
-		for (Declaration d : selector.getDeclarations()) {
-			if (d.getProperty().equals(property)) {
-				toReturn.add(d);
-			}
-		}
-		return toReturn;
+		Set<Declaration> allDeclarations = new HashSet<>();
+		for (String property : realDeclarations.keySet())
+			allDeclarations.addAll(realDeclarations.get(property));
+		return allDeclarations;
 	}
 
 	public abstract String getMixinReferenceString(Selector selector);
