@@ -41,7 +41,7 @@ public class LocationInfo {
 		return offset;
 	}
 	
-	public int getLenghth() {
+	public int getLength() {
 		return lenghth;
 	}
 	
