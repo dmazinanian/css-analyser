@@ -67,24 +67,24 @@ public class LessStyleSheetAdapter {
 	
 	private static Logger LOGGER = FileLogger.getLogger(LessStyleSheetAdapter.class);
 	
-	private final com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet;
+	private final ASTCssNode lessStyleSheet;
 	
-	public LessStyleSheetAdapter(com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet) {
+	public LessStyleSheetAdapter(ASTCssNode lessStyleSheet) {
 		this.lessStyleSheet = lessStyleSheet;
 	}
 
 	private void adapt(StyleSheet ourStyleSheet) {
 		
- 		List<ASTCssNode> nodes = lessStyleSheet.getChilds();
+ 		List<? extends ASTCssNode> nodes = lessStyleSheet.getChilds();
 		addSelectorsToStyleSheetFromLessASTNodes(ourStyleSheet, nodes);
 		
 	}
 
-	private void addSelectorsToStyleSheetFromLessASTNodes(StyleSheet styleSheet, List<ASTCssNode> nodes) {
+	private void addSelectorsToStyleSheetFromLessASTNodes(StyleSheet styleSheet, List<? extends ASTCssNode> nodes) {
 		addSelectorsToStyleSheetFromLessASTNodes(styleSheet, nodes, null);
 	}
 	
-	private void addSelectorsToStyleSheetFromLessASTNodes(StyleSheet styleSheet, List<ASTCssNode> nodes, MediaQueryList mediaQueries) {
+	private void addSelectorsToStyleSheetFromLessASTNodes(StyleSheet styleSheet, List<? extends ASTCssNode> nodes, MediaQueryList mediaQueries) {
 		
 		for (ASTCssNode node : nodes) {
  			
@@ -488,7 +488,7 @@ public class LessStyleSheetAdapter {
 			int lineNumber = leftHandSelector.getSelectorNameLocationInfo().getLineNumber();
 			int colNumber = leftHandSelector.getSelectorNameLocationInfo().getColumnNumber();
 			int offset = leftHandSelector.getSelectorNameLocationInfo().getOffset();
-			int length = rightHandSelector.getSelectorNameLocationInfo().getOffset() + rightHandSelector.getSelectorNameLocationInfo().getLenghth() - offset;
+			int length = rightHandSelector.getSelectorNameLocationInfo().getOffset() + rightHandSelector.getSelectorNameLocationInfo().getLength() - offset;
 			
 			LocationInfo selectorNameLocationInfo = new LocationInfo(lineNumber, colNumber, offset, length);
 			baseSelectorToReturn.setSelectorNameLocationInfo(selectorNameLocationInfo);
@@ -611,7 +611,7 @@ public class LessStyleSheetAdapter {
 		return ourStyleSheet;
 	}
 	
-	public com.github.sommeri.less4j.core.ast.StyleSheet getLessStyleSheet() {
+	public ASTCssNode getLessStyleSheet() {
 		return lessStyleSheet;
 	}
 	
