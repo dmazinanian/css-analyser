@@ -1,12 +1,15 @@
 package ca.concordia.cssanalyser.migration.topreprocessors.less;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ca.concordia.cssanalyser.app.FileLogger;
+import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
@@ -17,10 +20,12 @@ import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameter;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameterizedValue;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinValue;
 
+import com.github.sommeri.less4j.Less4jException;
+
 public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity {
 	
-	public LessMixinMigrationOpportunity(Iterable<Selector> forSelectors) {
-		super(forSelectors);
+	public LessMixinMigrationOpportunity(Iterable<Selector> forSelectors, StyleSheet forStyleSheet) {
+		super(forSelectors, forStyleSheet);
 	}
 
 	@Override
@@ -106,5 +111,61 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity {
 		}
 		mixinReferenceStringBuilder.append(");");
 		return mixinReferenceStringBuilder.toString();
-	}	
+	}
+	
+	@Override
+	public boolean preservesPresentation() {
+		
+		LessMixinOpportunityApplier applier = new LessMixinOpportunityApplier();
+		com.github.sommeri.less4j.core.ast.StyleSheet resultingLESSStyleSheet = applier.apply(this, getStyleSheet());
+		StyleSheet afterMigration;
+		try {
+			afterMigration = LessHelper.compileLESSStyleSheet(resultingLESSStyleSheet);
+		} catch (Less4jException e) {
+			String message = "Error in parsing compiling mixin opportunity." + System.lineSeparator() + e.getMessage();
+			FileLogger.getLogger(this.getClass()).warn(message);
+			return false;
+		}
+		/*
+		 * Find each selector in the second StyleSheet,
+		 * then see if the corresponding selectors style the same properties
+		 * with the same values.
+		 * We follow the simplistic way of finding the corresponding 
+		 * selectors because a Mixin migration opportunity
+		 * does not change the selector names and relative positions of them. 
+		 */
+		Set<Selector> checkedSelectorsIn2 = new HashSet<>(); // Don't map one selector two times. 
+		for (Selector selector1 : getStyleSheet().getAllSelectors()) {
+			boolean selectorFound = false;
+			for (Selector selector2 : afterMigration.getAllSelectors()) {
+				if (checkedSelectorsIn2.contains(selector2))
+					continue;
+				if (selector1.selectorEquals(selector2)) { // Selector names should be the same (including class names, ID, Pseudos, etc).
+					checkedSelectorsIn2.add(selector2);
+					// Now check if they style similarly
+					Map<String, Declaration> individualDeclarations1 = new HashMap<>();
+					for (Declaration declaration : selector1.getFinalStylingIndividualDeclarations()) {
+						individualDeclarations1.put(declaration.getProperty(), declaration);
+					}
+					
+					Map<String, Declaration> individualDeclarations2 = new HashMap<>();
+					for (Declaration declaration : selector2.getFinalStylingIndividualDeclarations()) {
+						individualDeclarations2.put(declaration.getProperty(), declaration);
+					}
+					
+					for (String property : individualDeclarations1.keySet()) {
+						if (!individualDeclarations2.containsKey(property) ||
+								!individualDeclarations2.get(property).declarationEquals(individualDeclarations1.get(property)))
+							return false;
+					}
+					selectorFound = true;
+					break;
+				}
+			}
+			if (!selectorFound)
+				return false;
+		}
+		
+		return true;
+	}
 }

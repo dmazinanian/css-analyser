@@ -1,7 +1,11 @@
 package ca.concordia.cssanalyser.migration.topreprocessors.less;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
@@ -37,6 +41,44 @@ public class LessMixinOpportunityApplier implements MixinMigrationOpportunityApp
 				node.getParent().deleteChild(node);
 			}
 			
+			/*
+			 * If you are removing a shorthand because of a virtual individual,
+			 * add the remaining individuals to the selector 
+			 */
+			Map<ShorthandDeclaration, Set<Declaration>> parentShortandsToIndividualsMap = new HashMap<>();
+			for (Declaration declaration : opportunity.getDeclarationsToBeRemoved()) {
+				if (declaration.isVirtualIndividualDeclarationOfAShorthand()) {
+					ShorthandDeclaration parentShorthand = declaration.getParentShorthand();
+					//if (!parentShorthand.isVirtual()) {
+						Set<Declaration> individualsOfTheSameParent = parentShortandsToIndividualsMap.get(parentShorthand);
+						if (individualsOfTheSameParent == null) {
+							individualsOfTheSameParent = new HashSet<Declaration>();
+							parentShortandsToIndividualsMap.put(parentShorthand, individualsOfTheSameParent);
+						}
+						individualsOfTheSameParent.add(declaration);
+					//}
+				}
+			}
+			
+			List<Declaration> declarationsToBeAdded = new ArrayList<>();
+			for (ShorthandDeclaration parentShorthand : parentShortandsToIndividualsMap.keySet()) {
+				Set<Declaration> individualsToBeRemoved = parentShortandsToIndividualsMap.get(parentShorthand);
+				for (Declaration individual : parentShorthand.getIndividualDeclarations()) {
+					if (!individualsToBeRemoved.contains(individual) &&
+							!parentShorthand.getSelector().getOriginalSelector().containsDeclaration(individual)) {
+						declarationsToBeAdded.add(individual);
+					}
+				}
+			}
+			
+			for (Declaration declaration : declarationsToBeAdded) {
+				Selector selector = declaration.getSelector().getOriginalSelector();
+				PreprocessorNode<ASTCssNode> selectorNode = nodeFinder.perform(selector.getLocationInfo().getOffset(), selector.getLocationInfo().getLength());
+				String nodeString = declaration.toString();
+				ASTCssNode resultingNode = LessHelper.getLessNodeFromLessString(nodeString);
+				selectorNode.addChild(new LessPreprocessorNode(resultingNode));
+			}
+			
 			// 2- Add the Mixin node
 			com.github.sommeri.less4j.core.ast.StyleSheet root = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(opportunity.toString()));
 			ASTCssNode mixin = root.getChilds().get(0);
@@ -45,11 +87,10 @@ public class LessMixinOpportunityApplier implements MixinMigrationOpportunityApp
 				
 			// 3- Add the Mixin call to the corresponding selectors
 			for (Selector involvedSelector : opportunity.getInvolvedSelectors()) {									
-				String mixinReferenceString = ".fake { " + opportunity.getMixinReferenceString(involvedSelector) + "}" ;
-				root = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(mixinReferenceString));
-				ASTCssNode mixinReference = root.getChilds().get(0).getChilds().get(1).getChilds().get(1); // :)
-				PreprocessorNode<ASTCssNode> node = nodeFinder.perform(involvedSelector.getLocationInfo().getOffset(), involvedSelector.getLocationInfo().getLenghth()); 
-				node.addChild(new LessPreprocessorNode(mixinReference));
+				String nodeString = opportunity.getMixinReferenceString(involvedSelector);
+				ASTCssNode resultingNode = LessHelper.getLessNodeFromLessString(nodeString);
+				PreprocessorNode<ASTCssNode> node = nodeFinder.perform(involvedSelector.getLocationInfo().getOffset(), involvedSelector.getLocationInfo().getLength()); 
+				node.addChild(new LessPreprocessorNode(resultingNode));
 			}
 
 			
@@ -70,7 +111,7 @@ public class LessMixinOpportunityApplier implements MixinMigrationOpportunityApp
 			if (!(parentShorthand.isVirtual()))
 				declaration = parentShorthand;
 		} 
-		PreprocessorNode<ASTCssNode> node = nodeFinder.perform(declaration.getLocationInfo().getOffset(), declaration.getLocationInfo().getLenghth()); 
+		PreprocessorNode<ASTCssNode> node = nodeFinder.perform(declaration.getLocationInfo().getOffset(), declaration.getLocationInfo().getLength()); 
 		if (!node.isNull())
 			nodesToBeRemoved.add(node);
 

@@ -1,7 +1,8 @@
-package ca.concordia.cssanalyser.migration.topreprocessors;
+package ca.concordia.cssanalyser.migration.topreprocessors.less;
 
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
-import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPrinter;
+import ca.concordia.cssanalyser.parser.ParseException;
+import ca.concordia.cssanalyser.parser.less.LessCSSParser;
 import ca.concordia.cssanalyser.parser.less.LessStyleSheetAdapter;
 
 import com.github.sommeri.less4j.Less4jException;
@@ -23,7 +24,7 @@ import com.github.sommeri.less4j.core.problems.ProblemsHandler;
  * @author Davood Mazinanian
  *
  */
-public class PreprocessorHelper {
+public class LessHelper {
 	
 	/**
 	 * Compiles a given less style sheet to a {@link StyleSheet} object
@@ -72,6 +73,13 @@ public class PreprocessorHelper {
 		StyleSheet resultingStyleSheet = adapter.getAdaptedStyleSheet();
 		
 		return resultingStyleSheet;
+	}
+
+	public static ASTCssNode getLessNodeFromLessString(String nodeString) throws ParseException {
+		String fakeSelectorString = ".fake { " + nodeString + "}" ;
+		com.github.sommeri.less4j.core.ast.StyleSheet root = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(fakeSelectorString));
+		ASTCssNode resultingNode = root.getChilds().get(0).getChilds().get(1).getChilds().get(1); // :)
+		return resultingNode;
 	}
 	
 	

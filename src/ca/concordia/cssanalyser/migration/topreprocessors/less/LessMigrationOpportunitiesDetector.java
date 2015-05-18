@@ -14,7 +14,7 @@ public class LessMigrationOpportunitiesDetector extends PreprocessorMigrationOpp
 
 	@Override
 	public MixinMigrationOpportunity getNewPreprocessorSpecificOpportunity(Iterable<Selector> forSelectors) {
-		return new LessMixinMigrationOpportunity(forSelectors);
+		return new LessMixinMigrationOpportunity(forSelectors, getStyleSheet());
 	}
 	
 }

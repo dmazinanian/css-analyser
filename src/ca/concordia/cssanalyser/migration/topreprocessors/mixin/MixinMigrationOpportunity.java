@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.PropertyAndLayer;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
@@ -47,7 +48,8 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 	// Map every Declaration to a MixinDeclaration
 	private Map<Declaration, MixinDeclaration> declarationToMixinDeclarationMapper = new HashMap<>();
 	
-	public MixinMigrationOpportunity(Iterable<Selector> forSelectors) {
+	public MixinMigrationOpportunity(Iterable<Selector> forSelectors, StyleSheet forStyleSheet) {
+		super(forStyleSheet);
 		this.involvedSelectors = forSelectors;
 	}
 
@@ -361,5 +363,7 @@ public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpp
 	}
 
 	public abstract String getMixinReferenceString(Selector selector);
+
+	public abstract boolean preservesPresentation();
 	
 }

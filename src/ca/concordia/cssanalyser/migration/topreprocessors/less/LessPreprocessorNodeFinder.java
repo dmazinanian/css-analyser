@@ -30,7 +30,7 @@ public class LessPreprocessorNodeFinder extends PreprocessorNodeFinder<StyleShee
 		ASTCssNode foundNode = null;
 		for (ASTCssNode node : childs) {
 			LocationInfo locationInfo = getLocationInfoForLessASTCssNode(node);
-			if (locationInfo.getOffset() == start && locationInfo.getLenghth() == length) {
+			if (locationInfo.getOffset() == start && locationInfo.getLength() == length) {
 				foundNode = node; 
 				break;
 			}

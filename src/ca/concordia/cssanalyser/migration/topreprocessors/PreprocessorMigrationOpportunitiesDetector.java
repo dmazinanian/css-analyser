@@ -22,9 +22,14 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 	public PreprocessorMigrationOpportunitiesDetector(StyleSheet styleSheet) {
 		this.styleSheet = styleSheet;
 	}
+	
+	public StyleSheet getStyleSheet() {
+		return this.styleSheet;
+	};
 
 	public List<MixinMigrationOpportunity> findMixinOpportunities() {
 		
+		// Remove intra-selector dependencies!
 		StyleSheet styleSheetWithRemovedDependencies = this.styleSheet.getStyleSheetWithIntraSelectorDependenciesRemoved();
 		
 		// Apply FP-Growth on property duplications
