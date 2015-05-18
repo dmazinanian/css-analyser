@@ -31,6 +31,7 @@ public abstract class Selector extends CSSModelObject  {
 	protected Map<Declaration, Integer> declarations;
 	protected CSSSource source = CSSSource.EXTERNAL;
 	protected CSSOrigin origin = CSSOrigin.AUTHOR;
+	private Selector originalSelector;
 	
 	public Selector() {
 		this(new LocationInfo());
@@ -261,7 +262,7 @@ public abstract class Selector extends CSSModelObject  {
 	 * First, we convert all shorthand declarations to their individual ones (as individual as possible!)
 	 * Then, in case of intra-selector dependencies, we remove the redundant declarations.
 	 */
-	public Iterable<Declaration> getIndividualDeclarations() {
+	public Iterable<Declaration> getFinalStylingIndividualDeclarations() {
 		List<Declaration> allIndividualDeclarations = new ArrayList<>();
 		for (Declaration declaration : getDeclarations()) {
 			if (declaration instanceof ShorthandDeclaration) {
@@ -324,5 +325,27 @@ public abstract class Selector extends CSSModelObject  {
 	}
 
 	public abstract CSSValueOverridingDependencyList getIntraSelectorOverridingDependencies();
+
+	/**
+	 * If you are making any changes to a selector, you can keep track of the
+	 * original one.
+	 * Use {@link #setOriginalSelector(Selector)} to set the original selector that
+	 * you are changing and {@link #getOriginalSelector()} to get it.
+	 * @return
+	 */
+	public Selector getOriginalSelector() {
+		return originalSelector;
+	}
+
+	/**
+	 * If you are making any changes to a selector, you can keep track of the
+	 * original one.
+	 * Use {@link #setOriginalSelector(Selector)} to set the original selector that
+	 * you are changing and {@link #getOriginalSelector()} to get it.
+	 * @return
+	 */
+	public void setOriginalSelector(Selector originalSelector) {
+		this.originalSelector = originalSelector;
+	}
 	
 }
