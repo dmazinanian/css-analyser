@@ -291,6 +291,7 @@ public class StyleSheet extends CSSModelObject {
 		styleSheetToReturn.cssFilePath = this.cssFilePath;
 		for (Selector selector : getAllSelectors()) {
 			Selector newSelector = selector.copyEmptySelector();
+			newSelector.setOriginalSelector(selector);
 			for (Declaration declaration : selector.getDeclarationsWithIntraSelectorDependenciesRemoved()) {
 				newSelector.addDeclaration(declaration);
 				styleSheetToReturn.addSelector(newSelector);
