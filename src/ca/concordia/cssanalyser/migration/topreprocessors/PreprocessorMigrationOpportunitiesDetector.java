@@ -13,11 +13,11 @@ import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
 
-public abstract class PreprocessorMigrationOpportunitiesDetector {
+public abstract class PreprocessorMigrationOpportunitiesDetector<T> {
 	
 	private final StyleSheet styleSheet;
 	
-	protected abstract MixinMigrationOpportunity getNewPreprocessorSpecificOpportunity(Iterable<Selector> forSelectors);
+	protected abstract MixinMigrationOpportunity<T> getNewPreprocessorSpecificOpportunity(Iterable<Selector> forSelectors);
 
 	public PreprocessorMigrationOpportunitiesDetector(StyleSheet styleSheet) {
 		this.styleSheet = styleSheet;
@@ -25,9 +25,9 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 	
 	public StyleSheet getStyleSheet() {
 		return this.styleSheet;
-	};
+	}
 
-	public List<MixinMigrationOpportunity> findMixinOpportunities() {
+	public List<? extends MixinMigrationOpportunity<T>> findMixinOpportunities() {
 		
 		// Remove intra-selector dependencies!
 		StyleSheet styleSheetWithRemovedDependencies = this.styleSheet.getStyleSheetWithIntraSelectorDependenciesRemoved();
@@ -38,7 +38,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 	
 		List<ItemSetList> itemSetLists = duplicationDetector.fpGrowth(2, false);
 			
-		List<MixinMigrationOpportunity> mixinMigrationOpportunities = new ArrayList<>();
+		List<MixinMigrationOpportunity<T>> mixinMigrationOpportunities = new ArrayList<>();
 			
 		/*
 		 * Each of the item sets is an opportunity.
@@ -48,7 +48,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector {
 			
 			for (ItemSet itemSet : itemSetList) {
 				
-				MixinMigrationOpportunity opportunity = getNewPreprocessorSpecificOpportunity(itemSet.getSupport());
+				MixinMigrationOpportunity<T> opportunity = getNewPreprocessorSpecificOpportunity(itemSet.getSupport());
 				mixinMigrationOpportunities.add(opportunity);
 				
 				// Declarations in a item have the same property

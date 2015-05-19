@@ -2,7 +2,7 @@ package ca.concordia.cssanalyser.migration.topreprocessors;
 
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 
-public abstract class PreprocessorMigrationOpportunity {
+public abstract class PreprocessorMigrationOpportunity<T> {
 	
 	private double rank;
 	private final StyleSheet styleSheet;
@@ -22,5 +22,7 @@ public abstract class PreprocessorMigrationOpportunity {
 	public StyleSheet getStyleSheet() {
 		return this.styleSheet;
 	}
+	
+	public abstract T apply();
 	
 }

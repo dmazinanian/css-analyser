@@ -27,7 +27,7 @@ import ca.concordia.cssanalyser.migration.topreprocessors.differences.StylePrope
  * @author Davood Mazinanian
  *
  */
-public abstract class MixinMigrationOpportunity extends PreprocessorMigrationOpportunity {
+public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigrationOpportunity<T> {
 	
 	private String mixinName;
 	
