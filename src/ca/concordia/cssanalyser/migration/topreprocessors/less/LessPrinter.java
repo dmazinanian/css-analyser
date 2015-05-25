@@ -413,8 +413,10 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 
 	private boolean appendArgumentDeclaration(ArgumentDeclaration node) {
 		builder.append(node.getVariable());
-		if (node.hasDefaultValue())
-			builder.append(":").ensureSeparator().append(node.getValue());
+		if (node.hasDefaultValue()) {
+			builder.append(":").ensureSeparator();
+			append(node.getValue());
+		}
 		return true;
 	}
 
