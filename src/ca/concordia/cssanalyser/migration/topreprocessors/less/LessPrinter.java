@@ -381,6 +381,7 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 		builder.append(":");
 		builder.ensureSeparator();
 		append(node.getValue());
+		builder.append(";");
 		return true;
 	}
 
