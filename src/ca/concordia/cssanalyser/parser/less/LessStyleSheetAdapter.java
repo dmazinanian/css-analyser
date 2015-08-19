@@ -196,39 +196,45 @@ public class LessStyleSheetAdapter {
 	private void addDeclarationsToSelectorFromLessRuleSetNode(RuleSet ruleSetNode, Selector selector) {
 		
 		for (ASTCssNode declarationNode : ruleSetNode.getBody().getDeclarations()) {
-						
-			if (declarationNode instanceof com.github.sommeri.less4j.core.ast.Declaration) {
-				
-				try {
-					com.github.sommeri.less4j.core.ast.Declaration lessDeclaration = (com.github.sommeri.less4j.core.ast.Declaration)declarationNode;  
-					
-					String property = lessDeclaration.getNameAsString();
-					List<DeclarationValue> values;
-	
-					if (lessDeclaration.getExpression() != null) { 
-						values = getListOfDeclarationValuesFromLessExpression(property, lessDeclaration.getExpression());
-					} else { // If a declaration does not have a value, happened in some cases
-						values  = new ArrayList<>();
-						values.add(new DeclarationValue("", ValueType.OTHER));
-					}
-					
-					if (values.size() == 0) {
-						LOGGER.warn(String.format("No CSS values could be found for property %s at line %s, column %s", property, 
-								lessDeclaration.getSourceLine(), lessDeclaration.getSourceColumn()));
-					} else {
-						Declaration declaration = DeclarationFactory.getDeclaration(
-								property, values, selector, lessDeclaration.isImportant(), true, LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(declarationNode));
-						selector.addDeclaration(declaration);
-					}
-	
-				} catch (Exception ex) {
-					LOGGER.warn("Could not read " + declarationNode + "; " + ex);
-				}
-					
-			} else {
-				throw new RuntimeException("What is that?" + declarationNode);
-			}
+			Declaration declaration = getDeclarationFromLessDeclaration(declarationNode);
+			if (declaration != null)
+				selector.addDeclaration(declaration);
 		}
+	}
+
+	public Declaration getDeclarationFromLessDeclaration(ASTCssNode declarationNode) {
+		Declaration declaration = null;		
+		if (declarationNode instanceof com.github.sommeri.less4j.core.ast.Declaration) {
+			
+			try {
+				com.github.sommeri.less4j.core.ast.Declaration lessDeclaration = (com.github.sommeri.less4j.core.ast.Declaration)declarationNode;  
+				
+				String property = lessDeclaration.getNameAsString();
+				List<DeclarationValue> values;
+
+				if (lessDeclaration.getExpression() != null) { 
+					values = getListOfDeclarationValuesFromLessExpression(property, lessDeclaration.getExpression());
+				} else { // If a declaration does not have a value, happened in some cases
+					values  = new ArrayList<>();
+					values.add(new DeclarationValue("", ValueType.OTHER));
+				}
+				
+				if (values.size() == 0) {
+					LOGGER.warn(String.format("No CSS values could be found for property %s at line %s, column %s", property, 
+							lessDeclaration.getSourceLine(), lessDeclaration.getSourceColumn()));
+				} else {
+					declaration = DeclarationFactory.getDeclaration(
+							property, values, null, lessDeclaration.isImportant(), true, LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(declarationNode));
+				}
+
+			} catch (Exception ex) {
+				LOGGER.warn("Could not read " + declarationNode + "; " + ex);
+			}
+				
+		} else {
+			throw new RuntimeException("What is that?" + declarationNode);
+		}
+		return declaration;
 	}
 
 	private List<DeclarationValue> getListOfDeclarationValuesFromLessExpression(String property, Expression expression) throws ParseException {
