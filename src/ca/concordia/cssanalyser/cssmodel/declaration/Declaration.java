@@ -191,15 +191,17 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 			return false;
 		if (!p1.equals(p2))
 			return false;
-		
-		if (parentSelector.getMediaQueryLists() == null) {
-			if (otherDeclaration.parentSelector.getMediaQueryLists() != null) {
-				if (otherDeclaration.parentSelector.getMediaQueryLists().size() != 0)
+
+		if (parentSelector != null && otherDeclaration.parentSelector != null) {
+			if (parentSelector.getMediaQueryLists() == null) {
+				if (otherDeclaration.parentSelector.getMediaQueryLists() != null) {
+					if (otherDeclaration.parentSelector.getMediaQueryLists().size() != 0)
+						return false;
+				}
+			} else {				
+				if (!parentSelector.getMediaQueryLists().equals(otherDeclaration.parentSelector.getMediaQueryLists()))
 					return false;
 			}
-		} else {				
-			if (!parentSelector.getMediaQueryLists().equals(otherDeclaration.parentSelector.getMediaQueryLists()))
-				return false;
 		}
 		// Template method design pattern
 		if (equivalent)
