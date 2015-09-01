@@ -1,5 +1,6 @@
 package ca.concordia.cssanalyser.migration.topreprocessors.less;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -31,6 +32,7 @@ import com.github.sommeri.less4j.core.ast.Extend;
 import com.github.sommeri.less4j.core.ast.FaultyExpression;
 import com.github.sommeri.less4j.core.ast.FaultyNode;
 import com.github.sommeri.less4j.core.ast.FixedMediaExpression;
+import com.github.sommeri.less4j.core.ast.FixedNamePart;
 import com.github.sommeri.less4j.core.ast.FontFace;
 import com.github.sommeri.less4j.core.ast.FunctionExpression;
 import com.github.sommeri.less4j.core.ast.GeneralBody;
@@ -39,6 +41,7 @@ import com.github.sommeri.less4j.core.ast.IdentifierExpression;
 import com.github.sommeri.less4j.core.ast.Import;
 import com.github.sommeri.less4j.core.ast.InlineContent;
 import com.github.sommeri.less4j.core.ast.InterpolableName;
+import com.github.sommeri.less4j.core.ast.InterpolableNamePart;
 import com.github.sommeri.less4j.core.ast.InterpolatedMediaExpression;
 import com.github.sommeri.less4j.core.ast.Keyframes;
 import com.github.sommeri.less4j.core.ast.KeyframesName;
@@ -87,6 +90,7 @@ import com.github.sommeri.less4j.core.ast.UnicodeRangeExpression;
 import com.github.sommeri.less4j.core.ast.UnknownAtRule;
 import com.github.sommeri.less4j.core.ast.Variable;
 import com.github.sommeri.less4j.core.ast.VariableDeclaration;
+import com.github.sommeri.less4j.core.ast.VariableNamePart;
 import com.github.sommeri.less4j.core.ast.Viewport;
 import com.github.sommeri.less4j.core.output.ExtendedStringBuilder;
 import com.github.sommeri.less4j.utils.LastOfKindSet;
@@ -342,6 +346,9 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 		case SIGNED_EXPRESSION:
 			return appendSignedExpression((SignedExpression) node);
 			
+		case INTERPOLABLE_NAME:
+			return appendInterpolableName((InterpolableName) node);
+			
 		case ESCAPED_SELECTOR:
 		case DETACHED_RULESET_REFERENCE:
 		case INDIRECT_VARIABLE:
@@ -350,6 +357,19 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 		default:
 			throw new IllegalStateException("Unknown: " + node.getType() + " " + node.getSourceLine() + ":" + node.getSourceColumn());
 		}
+	}
+
+	private boolean appendInterpolableName(InterpolableName interpolableName) {
+		for (InterpolableNamePart interpolableNamePart : interpolableName.getParts()) {
+			if (interpolableNamePart instanceof FixedNamePart) {
+				FixedNamePart fixedNamePart = (FixedNamePart) interpolableNamePart;
+				builder.append(fixedNamePart.getName());
+			} else if (interpolableNamePart instanceof VariableNamePart) {
+				VariableNamePart variableNamePart = (VariableNamePart) interpolableNamePart;
+				builder.append("@{" + variableNamePart.getName().substring(1) + "}");
+			}
+		}
+		return true;
 	}
 
 	private boolean appendSignedExpression(SignedExpression node) {
@@ -952,9 +972,9 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 		// "we do not parse fonts and less.js does" lack of feature
 		// left here intentionally, so we can have correct unit test and can come
 		// back to it later
-		case MINUS:
-			builder.ensureSeparator().append('-');
-			break;
+//		case MINUS:
+//			builder.ensureSeparator().append('-');
+//			break;
 
 		default:
 			builder.append(realOperator.getSymbol());
@@ -994,13 +1014,13 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 	}
 
 	public boolean appendEscapedValue(EscapedValue escaped) {
-		builder.append(escaped.getValue());
+		builder.append("~\"" + escaped.getValue() + "\"");
 
 		return true;
 	}
 
 	public boolean appendEmbeddedScript(EmbeddedScript escaped) {
-		builder.append(escaped.getValue());
+		builder.append("~`" + escaped.getValue() + "`");
 
 		return true;
 	}
@@ -1124,7 +1144,19 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 	}
 
 	private boolean appendCssClass(CssClass cssClass) {
-		builder.append(cssClass.getFullName());
+		builder.append(".");
+		if (!cssClass.isInterpolated()) {
+			builder.append(cssClass.getName());
+		} else {
+			try {
+				Field f = cssClass.getClass().getDeclaredField("name"); //NoSuchFieldException
+				f.setAccessible(true);
+				InterpolableName interpolableName = (InterpolableName) f.get(cssClass); //IllegalAccessException
+				append(interpolableName);
+			} catch (NoSuchFieldException | IllegalAccessException ex) {
+				
+			}
+		}
 		return true;
 	}
 
