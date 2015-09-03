@@ -30,7 +30,6 @@ public class LessCSSParser implements CSSParser {
 		try {
 			
 			LessStyleSheetAdapter adapter = new LessStyleSheetAdapter(lessStyleSheet);
-			//adapter.writeMixinCallsCountToFile("C:/Users/Davood/Desktop/1.txt", true);
 			return adapter.getAdaptedStyleSheet();
 			
 		} catch (RuntimeException ex) {
@@ -51,6 +50,7 @@ public class LessCSSParser implements CSSParser {
 		try {
 			
 			result = parser.parseStyleSheet(source.getContent(), source);
+
 			lessStyleSheet = astBuilder.parse(result.getTree());			
 
 		} catch (FileNotFound | CannotReadFile ex) {
