@@ -22,7 +22,10 @@ enum ProgramMode {
 	 * DIFF two given CSS files
 	 */
 	DIFF,
-	/** Find preprocessor refactoring opportunities */
+	/** Find preprocessor migration opportunities */
 	PREP, 
-	EMPIRICAL_STUDY
+	/** Perform empirical study */
+	EMPIRICAL_STUDY, 
+	/** Inline imports in the given less files */
+	INLINE_IMPORTS
 }
