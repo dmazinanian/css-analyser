@@ -7,7 +7,9 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 
@@ -18,25 +20,52 @@ public final class IOHelper {
 	
 	private static final Logger LOGGER = FileLogger.getLogger(IOHelper.class);
 
-	public static List<File> searchForFiles(String folderPath,
-			String withExtension) {
-
-		if (!withExtension.startsWith("."))
-			withExtension = "." + withExtension;
-
-		final String ext = withExtension;
-
-		File f = new File(folderPath);
-		File[] files = f.listFiles(new FilenameFilter() {
-			public boolean accept(File dir, String name) {
-				return name.endsWith(ext);
-			}
-		});
+	public static List<File> searchForFiles(String path, final String suffix) {
 		
-		if (files == null || files.length == 0)
-			return new ArrayList<File>();
-		else
-			return Arrays.asList(files);
+		File currentDirectoryFile = new File(path);
+		final Set<String> fileNamesToIgnore = getIgnoredFiles(path);
+		if (fileNamesToIgnore.contains("*")) // ignore the folder
+			return new ArrayList<>();
+	
+		List<File> toReturn = new ArrayList<>(Arrays.asList(currentDirectoryFile.listFiles(new FilenameFilter() {
+			public boolean accept(File dir, String name) {
+				if (fileNamesToIgnore.contains(name))
+					return false;
+				return name.endsWith(suffix);
+			}
+		})));
+	
+		File[] directories = currentDirectoryFile.listFiles(new FilenameFilter() {
+			  @Override
+			  public boolean accept(File current, String name) {
+			    return new File(current, name).isDirectory();
+			  }
+			});
+		for (File directory : directories) {
+			if (!fileNamesToIgnore.contains(directory.getName() + "/"))
+				toReturn.addAll(searchForFiles(directory.getAbsolutePath(), suffix));
+		}
+		
+		return toReturn;
+	}
+	
+	public static Set<String> getIgnoredFiles(String path) {
+		String ignoreFileName = path + "/ignore.txt";
+		if ((new File(ignoreFileName)).exists()) {
+			String[] ignoreFileLines;
+			try {
+				ignoreFileLines = readFileToString(ignoreFileName).split("\n|\r|\r\n");
+				Set<String> fileNamesToIgnore = new HashSet<>();
+				for (String ignoreFile : ignoreFileLines) {
+					if (!"".equals(ignoreFile.trim()))
+						fileNamesToIgnore.add(ignoreFile);
+				}
+				return fileNamesToIgnore;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return new HashSet<>();
 	}
 
 	/**
@@ -165,7 +194,5 @@ public final class IOHelper {
 		File f = new File(path);
 		return f.getParent();
 	}
-	
-	
 	
 }
