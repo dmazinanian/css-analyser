@@ -51,34 +51,13 @@ public class LessImportInliner {
 	private static String replaceImports(File lessFile) throws IOException {
 		try {
 			StyleSheet lessStyleSheet = LessCSSParser.getLessStyleSheet(new LessSource.FileSource(lessFile));
-			List<ASTCssNode> allChilds = getAllChilds(lessStyleSheet);
+			List<Import> allImports = getAllImports(lessStyleSheet);
 			String toReturn = IOHelper.readFileToString(lessFile.getAbsolutePath());
-			for(ASTCssNode child : allChilds) {
-				if (child instanceof Import) {
-					Import importNode = (Import) child;
-					Expression urlExpression = importNode.getUrlExpression();
-					String url = "";
-					if (urlExpression instanceof CssString) {
-						CssString cssString = (CssString) urlExpression;
-						url = cssString.getValue();
-					} else if (urlExpression instanceof FunctionExpression) {
-							FunctionExpression functionExpression = (FunctionExpression) urlExpression;
-							if ("url".equals(functionExpression.getName())) {
-								url = (new LessPrinter()).getStringForNode(functionExpression.getParameter());
-								if (url.startsWith("'")) // Remove quotes
-									url = url.substring(1, url.length() - 1);
-							} else {
-								System.out.println("Function: " + functionExpression.getName());
-						}
-					} else {
-						System.out.println(
-								String.format("In %s (line %s) URL expression is of type %s",
-										lessFile.getAbsolutePath(),
-										child.getSourceLine(),
-										urlExpression.getClass().getName())
-								);
-					}	
-					
+			for(Import importNode : allImports) {
+				try {
+
+					String url = getURLFromImportStatement(importNode);	
+
 					if (!"".equals(url)) {
 						if (url.startsWith("\"") && url.endsWith("\"")) {
 							url = url.substring(1, url.length() - 1);
@@ -86,11 +65,11 @@ public class LessImportInliner {
 						if (url.endsWith(".css"))
 							continue;
 						if (url.contains("@{")) {
-							System.out.println(
+							LOGGER.warn(
 									String.format(
 											"In %s (line %s) URL expression has to be evaluated because it needs string interpolation",
 											lessFile.getAbsolutePath(),
-											child.getSourceLine())
+											importNode.getSourceLine())
 									);
 						} else {
 							// Inline!
@@ -106,23 +85,26 @@ public class LessImportInliner {
 									StyleSheet replacedImportsImportedStyleSheet = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(importedFileText));
 									lessStyleSheet.addMemberAfter(replacedImportsImportedStyleSheet, importNode);
 								} catch (RuntimeException rte) {
-									System.out.println(lessFile.getAbsolutePath());
+									LOGGER.warn(lessFile.getAbsolutePath());
 									rte.printStackTrace();
 								}
 								lessStyleSheet.removeMember(importNode);
 								toReturn = (new LessPrinter()).getString(lessStyleSheet);
 								//?
 							} else {
-								System.out.println(
+								LOGGER.warn(
 										String.format(
 												"In %s (line %s), imported file %s does not exist",
 												lessFile.getAbsolutePath(),
-												child.getSourceLine(),
+												importNode.getSourceLine(),
 												url)
 										);
 							}
 						}
 					}
+
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			}
 			return toReturn;
@@ -131,12 +113,44 @@ public class LessImportInliner {
 		}
 		return "";
 	}
+
+	public static String getURLFromImportStatement(Import importNode) throws Exception {
+		Expression urlExpression = importNode.getUrlExpression();
+		String url = "";
+		if (urlExpression instanceof CssString) {
+			CssString cssString = (CssString) urlExpression;
+			url = cssString.getValue();
+		} else if (urlExpression instanceof FunctionExpression) {
+				FunctionExpression functionExpression = (FunctionExpression) urlExpression;
+				if ("url".equals(functionExpression.getName())) {
+					url = (new LessPrinter()).getStringForNode(functionExpression.getParameter());
+					if (url.startsWith("'")) // Remove quotes
+						url = url.substring(1, url.length() - 1);
+				} else {
+					throw new Exception(
+							String.format(
+								"Cannot handle function %s when importing at line %s: ",
+								functionExpression.getSourceLine(),
+								functionExpression.getName()
+							));
+			}
+		} else {
+			throw new Exception(
+					String.format("In line %s, the URL expression is of type %s",
+							urlExpression.getSourceLine(),
+							urlExpression.getClass().getName()));
+		}
+		return url;
+	}
 	
-	private static List<ASTCssNode> getAllChilds(ASTCssNode child) {
-		List<ASTCssNode> toReturn = new ArrayList<>();
-		toReturn.add(child);
-		for (ASTCssNode c : child.getChilds())
-			toReturn.addAll(getAllChilds(c));
+	public static List<Import> getAllImports(ASTCssNode child) {
+		List<Import> toReturn = new ArrayList<>();
+		if (child instanceof Import)
+			toReturn.add((Import)child);
+		else {
+			for (ASTCssNode c : child.getChilds())
+				toReturn.addAll(getAllImports(c));
+		}
 		return toReturn;
 	}
 	
