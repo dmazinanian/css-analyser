@@ -7,7 +7,7 @@ I am developing this tool as an infrastructure for my research on CSS during my 
 
 ##License
 
-This project is licensed under the ["Apache License, Version 2.0"](https://github.com/crawljax/crawljax/blob/master/LICENSE).
+This project is licensed under the MIT License.
 
 ##Usage
 
