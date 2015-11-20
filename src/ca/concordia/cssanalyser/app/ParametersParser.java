@@ -126,7 +126,7 @@ class ParametersParser {
 	}
 	
 	public String getInputFolderPath() {
-		return params.get("infolder");
+		return formatPath(params.get("infolder"));
 	}
 	
 	/**
