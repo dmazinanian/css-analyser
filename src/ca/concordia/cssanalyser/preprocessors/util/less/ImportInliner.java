@@ -20,35 +20,33 @@ import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPrinter;
 import ca.concordia.cssanalyser.parser.less.LessCSSParser;
 
-public class LessImportInliner {
+public class ImportInliner {
 	
-	private static final Logger LOGGER = FileLogger.getLogger(LessImportInliner.class);
+	private static final Logger LOGGER = FileLogger.getLogger(ImportInliner.class);
 	
-	public static void inlineImportsAll(String inputPath) {
+	public static void inlineImportsAll(String inputPath, boolean onlyReplaceLess) {
 		List<File> files = IOHelper.searchForFiles(inputPath, ".less");
-		inlineImportsAll(files);
+		inlineImportsAll(files, onlyReplaceLess);
 	}
 
-	public static void inlineImportsAll(List<File> filesList) {
+	public static void inlineImportsAll(List<File> filesList, boolean onlyImportLessFiles) {
 		for (File lessFile : filesList) {
-			LOGGER.info("Inlining imports in " + lessFile.getAbsolutePath());
-			String outputPath = 
-					lessFile.getParentFile().getAbsolutePath() + File.separator + lessFile.getName().replace(".less", ".importsInlined.less");
-			replaceImports(lessFile.getAbsolutePath(), outputPath);
+			LOGGER.info("Inlining imports in {}", lessFile.getAbsolutePath());
+			replaceImports(lessFile.getAbsolutePath(), onlyImportLessFiles);
 		}
 	}
 	
-	public static void replaceImports(String lessFilePath, String outputPath) {
+	public static void replaceImports(String lessFilePath, boolean onlyImportLessFiles) {
 		try {
-			String replacedImports = replaceImports(new File(lessFilePath));
+			String replacedImports = replaceImports(new File(lessFilePath), onlyImportLessFiles);
 			if (!"".equals(replacedImports))
-				IOHelper.writeStringToFile(replacedImports, outputPath);
+				IOHelper.writeStringToFile(replacedImports, getOutputFilePath(lessFilePath));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	private static String replaceImports(File lessFile) throws IOException {
+	private static String replaceImports(File lessFile, boolean onlyImportLessFiles) throws IOException {
 		try {
 			StyleSheet lessStyleSheet = LessCSSParser.getLessStyleSheet(new LessSource.FileSource(lessFile));
 			List<Import> allImports = getAllImports(lessStyleSheet);
@@ -62,25 +60,33 @@ public class LessImportInliner {
 						if (url.startsWith("\"") && url.endsWith("\"")) {
 							url = url.substring(1, url.length() - 1);
 						}
-						if (url.endsWith(".css"))
+						if (!onlyImportLessFiles && url.endsWith(".css"))
 							continue;
 						if (url.contains("@{")) {
-							LOGGER.warn(
-									String.format(
-											"In %s (line %s) URL expression has to be evaluated because it needs string interpolation",
+							LOGGER.warn("In {} (line {}) URL expression has to be evaluated because it needs string interpolation",
 											lessFile.getAbsolutePath(),
-											importNode.getSourceLine())
-									);
+											importNode.getSourceLine());
 						} else {
 							// Inline!
-							if (url.lastIndexOf(".less") != url.length() - 5) {
-								url += ".less";
-							}
 							File importedFile = new File(url);
-							if (!importedFile.isAbsolute())
-								importedFile = new File(lessFile.getParentFile().getAbsolutePath() + File.separator + url);
+							if (!importedFile.isAbsolute()) {
+								importedFile = new File(url);
+								url = lessFile.getParentFile().getAbsolutePath() + File.separator + url;
+							}
+							
+							if (!importedFile.exists()) {
+								if (url.toLowerCase().lastIndexOf(".less") != url.length() - 5) {
+									importedFile = new File(url + ".less");
+								}
+								if (!onlyImportLessFiles && !importedFile.exists()) {
+									if (url.toLowerCase().lastIndexOf(".css") != url.length() - 4) {
+										importedFile = new File(url + ".css");
+									}
+								}
+							}
+
 							if (importedFile.exists()) {
-								String importedFileText = replaceImports(importedFile);
+								String importedFileText = replaceImports(importedFile, onlyImportLessFiles);
 								try {
 									StyleSheet replacedImportsImportedStyleSheet = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(importedFileText));
 									lessStyleSheet.addMemberAfter(replacedImportsImportedStyleSheet, importNode);
@@ -90,15 +96,11 @@ public class LessImportInliner {
 								}
 								lessStyleSheet.removeMember(importNode);
 								toReturn = (new LessPrinter()).getString(lessStyleSheet);
-								//?
 							} else {
-								LOGGER.warn(
-										String.format(
-												"In %s (line %s), imported file %s does not exist",
+								LOGGER.warn("In {} (line {}), imported file {} does not exist",
 												lessFile.getAbsolutePath(),
 												importNode.getSourceLine(),
-												url)
-										);
+												url);
 							}
 						}
 					}
@@ -152,6 +154,19 @@ public class LessImportInliner {
 				toReturn.addAll(getAllImports(c));
 		}
 		return toReturn;
+	}
+	
+	private static String getOutputFilePath(String inputFilePath) {
+		File inputFile = new File(inputFilePath);
+		int dotPosition = inputFile.getName().lastIndexOf(".");
+		String outputFileName = inputFile.getName();
+		String extension = "";
+		if (dotPosition >= 0) {
+			extension = inputFile.getName().substring(dotPosition + 1);
+			outputFileName = outputFileName.replace(extension, "");
+		}
+		outputFileName += "importsInlined." + extension;
+		return inputFile.getParentFile().getAbsolutePath() + File.separator + outputFileName;
 	}
 	
 }

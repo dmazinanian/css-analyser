@@ -15,25 +15,23 @@ import ca.concordia.cssanalyser.analyser.CSSAnalyser;
 import ca.concordia.cssanalyser.crawler.Crawler;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.io.IOHelper;
-import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunitiesDetector;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMigrationOpportunitiesDetector;
-import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMixinOpportunityApplier;
-import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPrinter;
-import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
+import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMixinMigrationOpportunity;
 import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
 import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
 import ca.concordia.cssanalyser.parser.ParseException;
 import ca.concordia.cssanalyser.preprocessors.empiricalstudy.EmpiricalStudy;
+import ca.concordia.cssanalyser.preprocessors.util.less.ImportInliner;
 
 public class CSSAnalyserCLI {
-	
+
 	public static Logger LOGGER = FileLogger.getLogger(CSSAnalyserCLI.class);
 
 	public static void main(String[] args) throws IOException {
-		
+
 		ParametersParser params = new ParametersParser(args);
-		
+
 		switch (params.getProgramMode()) {
 		case CRAWL: {
 			if (params.getOutputFolderPath() == null) {
@@ -43,17 +41,17 @@ public class CSSAnalyserCLI {
 				LOGGER.error("Please provide a url using --url:http://url/to/site or the file containing list of urls using --urlfile:path/to/url");
 				return;
 			}
-			
+
 			List<String> urls = new ArrayList<>();
-			
+
 			if (params.getListOfURLsToAnalyzeFilePath() != null) {
 				urls.addAll(params.getURLs());
 			} else {
 				urls.add(params.getUrl());
 			}
-			
+
 			for (String currentUrl : urls) {
-			
+
 				String outputFolderPath = params.getOutputFolderPath() + currentUrl.replaceFirst("http[s]?://", "").replaceFirst("file://", "").replace("/", "_").replace(":", "_") + "/";
 				// Make sure to configure ca.concordia.cssanalyser.crawler in Crawler class
 				Crawler crawler = new Crawler(currentUrl, outputFolderPath);
@@ -66,20 +64,20 @@ public class CSSAnalyserCLI {
 					String stateName = domStateHtml.getName();
 					// Remove .html
 					String correspondingCSSFolderName = stateName.substring(0, stateName.length() - 5);
-					
+
 					try {
 
 						CSSAnalyser cssAnalyser = new CSSAnalyser(domStateHtml.getAbsolutePath(), outputFolderPath + "css/" + correspondingCSSFolderName);
 						cssAnalyser.analyse(params.getFPGrowthMinsup());
-					
+
 					} catch (FileNotFoundException fnfe) {
 						LOGGER.warn(fnfe.getMessage());
 					}
 
 				}
-				
+
 			}
-			
+
 			break;
 		}
 		case FOLDER: {
@@ -117,7 +115,7 @@ public class CSSAnalyserCLI {
 			break;
 		}
 		case NODOM: {
-			
+
 			CSSAnalyser cssAnalyser = null;
 			if (params.getInputFolderPath() != null) {
 				try {
@@ -131,7 +129,7 @@ public class CSSAnalyserCLI {
 			}
 			cssAnalyser.analyse(params.getFPGrowthMinsup());
 			break;
-			
+
 		}
 		case DIFF: {
 			throw new RuntimeException("Not yet implemented");
@@ -160,23 +158,22 @@ public class CSSAnalyserCLI {
 								try {
 									CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
 									StyleSheet styleSheet = parser.parseExternalCSS(f.getAbsolutePath());
-									PreprocessorMigrationOpportunitiesDetector preprocessorOpportunities = new LessMigrationOpportunitiesDetector(styleSheet);
-									List<MixinMigrationOpportunity> migrationOpportunities = preprocessorOpportunities.findMixinOpportunities();
-									Collections.sort(migrationOpportunities, new Comparator<MixinMigrationOpportunity>() {
+									LessMigrationOpportunitiesDetector preprocessorOpportunities = new LessMigrationOpportunitiesDetector(styleSheet);
+									List<LessMixinMigrationOpportunity> migrationOpportunities = preprocessorOpportunities.findMixinOpportunities();
+									Collections.sort(migrationOpportunities, new Comparator<LessMixinMigrationOpportunity>() {
 										@Override
-										public int compare(MixinMigrationOpportunity o1, MixinMigrationOpportunity o2) {
+										public int compare(LessMixinMigrationOpportunity o1, LessMixinMigrationOpportunity o2) {
 											if (o1.getRank() == o2.getRank()) {
 												return 1;
 											}
 											return Double.compare(o1.getRank(), o2.getRank());
 										}
 									});
-									LessMixinOpportunityApplier applier = new LessMixinOpportunityApplier();
-									for (MixinMigrationOpportunity migrationOpportunity : migrationOpportunities) {
-										com.github.sommeri.less4j.core.ast.StyleSheet resultingLESSStyleSheet = applier.apply(migrationOpportunity, styleSheet);
+									for (LessMixinMigrationOpportunity migrationOpportunity : migrationOpportunities) {
 
-										LessPrinter lessPrinter = new LessPrinter();										
-										System.out.println(lessPrinter.getString(resultingLESSStyleSheet));
+										boolean preservesPresentation = migrationOpportunity.preservesPresentation();
+										if (!preservesPresentation)
+											System.out.println(migrationOpportunity);
 									}
 
 								}
@@ -193,36 +190,45 @@ public class CSSAnalyserCLI {
 			} else if (null != params.getFilePath() && !"".equals(params.getFilePath())) {
 				try {
 
-
 					CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
 					StyleSheet styleSheet = parser.parseExternalCSS(params.getFilePath());
-					PreprocessorMigrationOpportunitiesDetector preprocessorOpportunities = new LessMigrationOpportunitiesDetector(styleSheet);
-					Iterable<MixinMigrationOpportunity> refactoringOpportunities = preprocessorOpportunities.findMixinOpportunities();
+					LessMigrationOpportunitiesDetector preprocessorOpportunities = new LessMigrationOpportunitiesDetector(styleSheet);
+					Iterable<LessMixinMigrationOpportunity> refactoringOpportunities = preprocessorOpportunities.findMixinOpportunities();
 					System.out.println(refactoringOpportunities);
 
-
 				} catch (ParseException e) {
-					//
-					//					e.printStackTrace();
-					//
+					e.printStackTrace();
 				}
-				}
-				else 
-					LOGGER.error("No CSS file is provided.");
-				break;
 			}
-			case EMPIRICAL_STUDY: {
-				List<String> folders = CSSAnalyserCLI.getFolderPathsFromParameters(params);
-				String outfolder = params.getOutputFolderPath();
-				EmpiricalStudy.doEmpiricalStudy(folders, outfolder);
+			else 
+				LOGGER.error("No CSS file is provided.");
+			break;
+		}
+		case EMPIRICAL_STUDY: {
+			List<String> folders = CSSAnalyserCLI.getFolderPathsFromParameters(params);
+			String outfolder = params.getOutputFolderPath();
+			EmpiricalStudy.doEmpiricalStudy(folders, outfolder);
+			break;
+		}
+		case INLINE_IMPORTS: {
+			String inputFile = params.getFilePath();
+			File file = new File(inputFile);
+			if (file.exists()) {
+				ImportInliner.replaceImports(inputFile, false);
+			} else {
+				LOGGER.error("File %s not found.", file.getCanonicalPath());
 			}
-			default:
+			break;
+		}
+		default:
 		}		
 	}
 
+
+
 	private static List<String> getFolderPathsFromParameters(ParametersParser params) {
 		List<String> folders = new ArrayList<>();
-		
+
 		if (params.getInputFolderPath() != null)
 			folders.add(params.getInputFolderPath());
 		else if (params.getListOfFoldersPathsToBeAnayzedFile() != null) {
@@ -233,6 +239,7 @@ public class CSSAnalyserCLI {
 		return folders;
 	}
 
-	
-	
+
+
+
 }
