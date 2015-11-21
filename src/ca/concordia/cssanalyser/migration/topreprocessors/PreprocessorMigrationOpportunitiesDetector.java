@@ -2,7 +2,6 @@ package ca.concordia.cssanalyser.migration.topreprocessors;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import ca.concordia.cssanalyser.analyser.duplication.DuplicationDetector;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
