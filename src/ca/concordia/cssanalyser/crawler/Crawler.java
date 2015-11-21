@@ -10,15 +10,14 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
-import ca.concordia.cssanalyser.crawler.plugin.CSSCatcher;
-import ca.concordia.cssanalyser.crawler.plugin.LoginPlugin;
-
 import com.crawljax.browser.EmbeddedBrowser.BrowserType;
 import com.crawljax.core.CrawljaxRunner;
 import com.crawljax.core.configuration.BrowserConfiguration;
 import com.crawljax.core.configuration.CrawljaxConfiguration;
 import com.crawljax.core.configuration.CrawljaxConfiguration.CrawljaxConfigurationBuilder;
 import com.crawljax.plugins.crawloverview.CrawlOverview;
+
+import ca.concordia.cssanalyser.crawler.plugin.CSSCatcher;
 
 
 /**
