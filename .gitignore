@@ -1,4 +1,9 @@
 /Ignore
+/build
 desktop.ini
 /bin
 *.*~
+.gradle
+.settings
+.project
+.classpath

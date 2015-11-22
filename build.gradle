@@ -1,0 +1,33 @@
+/*
+	Created by Davood Mazinanian 21 Nov 2015
+*/
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'application'
+
+version = '0.1'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+mainClassName = 'ca.concordia.cssanalyser.app.CSSAnalyserCLI'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	compile 'org.choco-solver:choco-solver:3.3.2-j7'
+	compile 'com.crawljax:crawljax-core:3.6'
+	compile 'com.crawljax.plugins:crawloverview-plugin:3.6'
+	compile 'com.github.sommeri:less4j:1.8.2'
+	compile 'org.w3c.css:sac:1.3'
+}
+
+jar {
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
+
+    manifest {
+        attributes 'Main-Class': mainClassName,
+                   "Class-Path": configurations.compile.collect { it.getName() }.join(' ')
+    }
+}
