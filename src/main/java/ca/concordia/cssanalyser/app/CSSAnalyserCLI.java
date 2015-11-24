@@ -17,6 +17,7 @@ import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMigrationOpportunitiesDetector;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMixinMigrationOpportunity;
+import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPrinter;
 import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
 import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
@@ -137,6 +138,8 @@ public class CSSAnalyserCLI {
 		case PREP: {
 
 			List<String> folders = getFolderPathsFromParameters(params);
+			LessPrinter lessPrinter = new LessPrinter();
+			String outFolder = params.getOutputFolderPath();
 
 			if (folders.size() > 0) {
 
@@ -169,18 +172,22 @@ public class CSSAnalyserCLI {
 											return Double.compare(o1.getRank(), o2.getRank());
 										}
 									});
+									int i = 0;
 									for (LessMixinMigrationOpportunity migrationOpportunity : migrationOpportunities) {
 
 										boolean preservesPresentation = migrationOpportunity.preservesPresentation();
-										if (!preservesPresentation)
-											System.out.println(migrationOpportunity);
+										if (!preservesPresentation) {
+											LOGGER.warn("The following migration opportunity do not preserve the presentation:");
+										}
+										String path = outFolder + f.getName() + "migrated" + ++i + ".less";
+										IOHelper.writeStringToFile(lessPrinter.getString(migrationOpportunity.apply()), path);
+										LOGGER.info("Created Mixin {}, new file has been written to {}", migrationOpportunity.getMixinName(), path);
 									}
 
 								}
 								catch (ParseException e) {
 									LOGGER.warn("Parse exception in parsing " + f.getAbsolutePath());
 								}
-
 							}
 
 						}
