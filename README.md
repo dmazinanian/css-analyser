@@ -11,7 +11,7 @@ This project is licensed under the MIT License.
 
 ## Usage
 
-## Building 
+### Building 
 You will need Java 8 installed on your machine for running this tool.
 We use [Gradle](http://gradle.org/) as build system.
 After installing Gradle, run `gradle build` in the root of the project.
@@ -20,7 +20,7 @@ inside the zip or tar archives (either of the archives may be used).
 For convenience, Gradle generates scripts (inside the `bin` folder in the zip and tar archives) for running the tool
 under windows (named `css-analyzer.bat`) or other operating systems (named `css-analyser`).
 
-## Generating project files for Eclipse
+### Generating project files for Eclipse
 You can run `gradle eclipse` to download the dependencies,
 generate the Eclipse project files (including `classpath`, `.project`, etc).
 
