@@ -44,7 +44,6 @@ public abstract class PreprocessorMigrationOpportunitiesDetector<T> {
 		 * Each of the item sets is an opportunity.
 		 * Because each of them consist of a list of selectors having declarations with the same properties 
 		 */
-		System.out.println(itemSetLists);
 		for (ItemSetList itemSetList : itemSetLists) {
 
 			for (ItemSet itemSet : itemSetList) {
