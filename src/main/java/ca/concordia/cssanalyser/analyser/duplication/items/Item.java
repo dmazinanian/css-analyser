@@ -23,8 +23,8 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	private final Set<Declaration> declarations;
 	/*
 	 * When finding type III clones, we always create a new shorthand declaration
-	 * from some individual declarations inside a selector. Those declarations are
-	 * not exists in the real stylesheet, but they are used in the duplication 
+	 * from some individual declarations inside a selector. Those declarations do
+	 * not exist in the real stylesheet, but they are used in the duplication 
 	 * finding analysis. So we have to distinguish them with real declarations.
 	 */
 	private final Set<Declaration> virtualDeclarations = new HashSet<>();
