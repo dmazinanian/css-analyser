@@ -2,14 +2,19 @@ package ca.concordia.cssanalyser.analyser.duplication.items;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 
@@ -341,5 +346,85 @@ public class ItemSet implements Set<Item>, Cloneable {
 			}
 		}
 		return itemSetIsDoable;
+	}
+
+	/**
+	* Returns the new grouping selector which has to be created
+	* from the given itemset for removing duplication
+	* @return
+	*/
+	public GroupingSelector getGroupingSelector() {
+	
+		GroupingSelector newGroupingSelector = new GroupingSelector();
+		
+		// Sort selectors in this new grouping selector based on their appearance in their original file
+		SortedSet<Selector> sortedSet = new TreeSet<>(new Comparator<Selector>() {
+	
+			@Override
+			public int compare(Selector o1, Selector o2) {
+				if (o1.getSelectorNumber() >= o2.getSelectorNumber())
+					return 1;
+				return -1;
+			}
+			
+		});
+		
+		for (Selector s : getSupport())
+				sortedSet.add(s);
+		
+		for (Selector selector : sortedSet) {
+			if (selector instanceof GroupingSelector) {
+				GroupingSelector grouping = (GroupingSelector)selector;
+				for (BaseSelector baseSelector : grouping.getBaseSelectors()) {
+					newGroupingSelector.add((BaseSelector)baseSelector.copyEmptySelector());
+				}
+			} else {
+				newGroupingSelector.add((BaseSelector)selector.copyEmptySelector());
+			}
+		}
+		// Add the media queries to the new grouping selector
+		newGroupingSelector.addMediaQueryLists(getMediaQueryLists());
+		
+		// Add declarations to this new grouping selector
+		// We want to add declarations based on their appearance in the original file
+		SortedSet<Declaration> sortedDeclarations = new TreeSet<>(new Comparator<Declaration>() {
+			@Override
+			public int compare(Declaration o1, Declaration o2) {
+				if (o1.getDeclarationNumber() >= o2.getDeclarationNumber())
+					return 1;
+				return -1;
+			}
+		});
+		
+		for (Item currentItem : ItemSet.this) {
+			sortedDeclarations.add(currentItem.getDeclarationWithMinimumChars());
+		}
+		
+		for (Declaration declaration : sortedDeclarations)
+			newGroupingSelector.addDeclaration(declaration.clone());
+		
+		return newGroupingSelector;
+	}
+
+	/**
+	 * Returns declarations that have to be removed from style sheet 
+	 * @return
+	 */
+	public Set<Declaration> getDeclarationsToBeRemoved() {
+		Set<Declaration> declarationsToBeRemoved = new HashSet<>();
+		for (Item currentItem : this) {
+			//Mark declarations to be deleted from the original StyleSheet
+			for (Declaration currentDeclaration : currentItem) {
+				if (supportContains(currentDeclaration.getSelector())) {
+					if (currentDeclaration instanceof ShorthandDeclaration && ((ShorthandDeclaration)currentDeclaration).isVirtual()) {
+						for (Declaration individual : ((ShorthandDeclaration)currentDeclaration).getIndividualDeclarations())
+							declarationsToBeRemoved.add(individual);
+					} else {
+						declarationsToBeRemoved.add(currentDeclaration);
+					}
+				}
+			}
+		}
+		return declarationsToBeRemoved;
 	}
 }
