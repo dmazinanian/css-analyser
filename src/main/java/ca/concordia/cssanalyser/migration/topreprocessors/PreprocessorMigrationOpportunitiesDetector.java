@@ -47,49 +47,55 @@ public abstract class PreprocessorMigrationOpportunitiesDetector<T> {
 		for (ItemSetList itemSetList : itemSetLists) {
 
 			for (ItemSet itemSet : itemSetList) {
-
-				MixinMigrationOpportunity<T> opportunity = getNewPreprocessorSpecificOpportunity(itemSet.getSupport());
+				
+				MixinMigrationOpportunity<T> opportunity = getMixinOpportunityFromItemSet(itemSet);
 				mixinMigrationOpportunities.add(opportunity);
-
-				// Declarations in a item have the same property
-				for (Item item : itemSet) {
-					List<Declaration> declarationsToAdd = new ArrayList<>();
-					/*
-					 * Check if all of the declarations are virtual shorthand,
-					 * in this case, we add individual declarations instead 
-					 */
-					boolean allVirtual = true;
-					// This loop does two things!
-					for (Declaration d : item) {
-						if (d instanceof ShorthandDeclaration && !((ShorthandDeclaration)d).isVirtual()) {
-							allVirtual = false;
-						}
-						if (itemSet.supportContains(d.getSelector()))
-							declarationsToAdd.add(d);
-					}
-					// What if all of them are single or multi-valued? you need an extra check
-					if (ShorthandDeclaration.isShorthandProperty(declarationsToAdd.get(0).getProperty()) && allVirtual) {
-						ShorthandDeclaration referenceVirtualShorthand = (ShorthandDeclaration)declarationsToAdd.get(0);
-						for (Declaration referenceIndividual : referenceVirtualShorthand.getIndividualDeclarations()) {
-							List<Declaration> individualDeclarationsToAdd = new ArrayList<>();
-							individualDeclarationsToAdd.add(referenceIndividual);
-							String referenceVirtualShorthandProperty = referenceIndividual.getProperty();
-							for (int i = 1; i < declarationsToAdd.size(); i++) {
-								ShorthandDeclaration virtualShorthand = (ShorthandDeclaration)declarationsToAdd.get(i);
-								Declaration individualForThisProperty =
-										virtualShorthand.getIndividualDeclarationForProperty(referenceVirtualShorthandProperty);
-								individualDeclarationsToAdd.add(individualForThisProperty);
-							}
-							opportunity.addDeclarationsWithTheSameProperty(individualDeclarationsToAdd);
-						}
-					} else { // If not all the declarations are virtual shorthands
-						opportunity.addDeclarationsWithTheSameProperty(declarationsToAdd);
-					}
-				}
+				
 			}
 		}
 
 		return mixinMigrationOpportunities;
 
+	}
+
+	public MixinMigrationOpportunity<T> getMixinOpportunityFromItemSet(ItemSet itemSet) {
+		MixinMigrationOpportunity<T> opportunity = getNewPreprocessorSpecificOpportunity(itemSet.getSupport());
+
+		// Declarations in a item have the same property
+		for (Item item : itemSet) {
+			List<Declaration> declarationsToAdd = new ArrayList<>();
+			/*
+			 * Check if all of the declarations are virtual shorthand,
+			 * in this case, we add individual declarations instead 
+			 */
+			boolean allVirtual = true;
+			// This loop does two things!
+			for (Declaration d : item) {
+				if (d instanceof ShorthandDeclaration && !((ShorthandDeclaration)d).isVirtual()) {
+					allVirtual = false;
+				}
+				if (itemSet.supportContains(d.getSelector()))
+					declarationsToAdd.add(d);
+			}
+			// What if all of them are single or multi-valued? you need an extra check
+			if (ShorthandDeclaration.isShorthandProperty(declarationsToAdd.get(0).getProperty()) && allVirtual) {
+				ShorthandDeclaration referenceVirtualShorthand = (ShorthandDeclaration)declarationsToAdd.get(0);
+				for (Declaration referenceIndividual : referenceVirtualShorthand.getIndividualDeclarations()) {
+					List<Declaration> individualDeclarationsToAdd = new ArrayList<>();
+					individualDeclarationsToAdd.add(referenceIndividual);
+					String referenceVirtualShorthandProperty = referenceIndividual.getProperty();
+					for (int i = 1; i < declarationsToAdd.size(); i++) {
+						ShorthandDeclaration virtualShorthand = (ShorthandDeclaration)declarationsToAdd.get(i);
+						Declaration individualForThisProperty =
+								virtualShorthand.getIndividualDeclarationForProperty(referenceVirtualShorthandProperty);
+						individualDeclarationsToAdd.add(individualForThisProperty);
+					}
+					opportunity.addDeclarationsWithTheSameProperty(individualDeclarationsToAdd);
+				}
+			} else { // If not all the declarations are virtual shorthands
+				opportunity.addDeclarationsWithTheSameProperty(declarationsToAdd);
+			}
+		}
+		return opportunity;
 	}
 }
