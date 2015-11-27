@@ -19,8 +19,12 @@ import ca.concordia.cssanalyser.app.FileLogger;
 public final class IOHelper {
 	
 	private static final Logger LOGGER = FileLogger.getLogger(IOHelper.class);
-
+	
 	public static List<File> searchForFiles(String path, final String suffix) {
+		return searchForFiles(path, suffix, false);
+	}
+
+	public static List<File> searchForFiles(String path, final String suffix, boolean recursive) {
 		
 		File currentDirectoryFile = new File(path);
 		final Set<String> fileNamesToIgnore = getIgnoredFiles(path);
@@ -34,16 +38,18 @@ public final class IOHelper {
 				return name.endsWith(suffix);
 			}
 		})));
-	
-		File[] directories = currentDirectoryFile.listFiles(new FilenameFilter() {
-			  @Override
-			  public boolean accept(File current, String name) {
-			    return new File(current, name).isDirectory();
-			  }
-			});
-		for (File directory : directories) {
-			if (!fileNamesToIgnore.contains(directory.getName() + "/"))
-				toReturn.addAll(searchForFiles(directory.getAbsolutePath(), suffix));
+		
+		if (recursive) {
+			File[] directories = currentDirectoryFile.listFiles(new FilenameFilter() {
+				  @Override
+				  public boolean accept(File current, String name) {
+				    return new File(current, name).isDirectory();
+				  }
+				});
+			for (File directory : directories) {
+				if (!fileNamesToIgnore.contains(directory.getName() + "/"))
+					toReturn.addAll(searchForFiles(directory.getAbsolutePath(), suffix));
+			}
 		}
 		
 		return toReturn;

@@ -433,7 +433,7 @@ public class EmpiricalStudy {
 			for (String folder : folders) {
 				
 				FileLogger.addFileAppender(outfolder + "/log.log", false);
-				List<File> listOfFilesContainingMainFiles = IOHelper.searchForFiles(folder, "mainfiles.txt");
+				List<File> listOfFilesContainingMainFiles = IOHelper.searchForFiles(folder, "mainfiles.txt", true);
 	
 				boolean header = true;
 				for (int i = 0; i < listOfFilesContainingMainFiles.size(); i++) {
