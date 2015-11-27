@@ -699,12 +699,13 @@ public class MultiValuedDeclaration extends Declaration {
 		
 		MultiValuedDeclaration otherMultiValuedDeclaration = (MultiValuedDeclaration)otherDeclaration;
 		
-		if (otherMultiValuedDeclaration.getValues().size() != getValues().size())
+		Set<PropertyAndLayer> allSetPropertyAndLayers = getAllSetPropertyAndLayers();
+		Set<PropertyAndLayer> otherAllSetPropertyAndLayers = otherMultiValuedDeclaration.getAllSetPropertyAndLayers();
+		
+		if (allSetPropertyAndLayers.size() != otherAllSetPropertyAndLayers.size())
 			return false;
 		
-		
-		
-		for (PropertyAndLayer propertyAndLayer : getAllSetPropertyAndLayers()) {
+		for (PropertyAndLayer propertyAndLayer : allSetPropertyAndLayers) {
 			
 			Collection<DeclarationValue> valuesForThisStyleProperty = getDeclarationValuesForStyleProperty(propertyAndLayer);
 			Collection<DeclarationValue> valuesForOtherStyleProperty = otherMultiValuedDeclaration.getDeclarationValuesForStyleProperty(propertyAndLayer);
