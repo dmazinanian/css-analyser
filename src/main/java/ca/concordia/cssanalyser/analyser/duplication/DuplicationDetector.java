@@ -428,9 +428,9 @@ public class DuplicationDetector {
 
 		for (Selector s : stylesheet.getAllSelectors()) {
 			TreeSet<Item> currentItems = new TreeSet<>();
-			for (Declaration d : s.getDeclarations()) {
+			for (Declaration d : s.getAllDeclarationsIncludingVirtualShorthands()) {
 				Item item = declarationItemMap.get(d);
-				if (item.getSupportSize() >= minSupport) {
+				if (item != null && item.getSupportSize() >= minSupport) {
 					currentItems.add(item);
 				}
 			}
