@@ -200,11 +200,8 @@ public class FPGrowth {
 	 * Check if the new itemset has a better suprtset, or
 	 * delete all subsets
 	 */
+
 	private void addItemSet(Set<Item> is) {
-		addItemSet(is, removeSubsets);
-	}
-	
-	private void addItemSet(Set<Item> is, boolean removeSubsets) {
 		ItemSet newItemSet = new ItemSet();
 		newItemSet.addAll(is);
 		if (removeSubsets) {
