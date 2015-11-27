@@ -308,4 +308,18 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 		return this.support.size();
 	}
 	
+	public boolean containsDifferencesInValues() {
+		Declaration[] declarationsArray = declarations.toArray(new Declaration[]{});
+		if (declarationsArray.length > 0) {
+			Declaration baseDeclaration = declarationsArray[0];
+			for (int i = 1; i < declarationsArray.length; i++) {
+				if (!baseDeclaration.declarationIsEquivalent(declarationsArray[i])) {
+					return true; 
+				}
+			}
+			return false;
+		}
+		return false;
+	}
+	
 }
