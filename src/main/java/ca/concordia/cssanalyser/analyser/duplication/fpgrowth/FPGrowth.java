@@ -77,13 +77,13 @@ public class FPGrowth {
 		for (TreeSet<Item> orderedImtes : itemSet) {
 			List<Item> items = new ArrayList<>(orderedImtes.descendingSet());
 			if (items.size() > 0)
-				insert_tree(items, tree.getRoot(), tree);
+				insertTree(items, tree.getRoot(), tree);
 		}
 
 		return tree;
 	}
 
-	private void insert_tree(List<Item> items, Node root, FPTree tree) {
+	private void insertTree(List<Item> items, Node root, FPTree tree) {
 		Item item = items.get(0);
 		items.remove(0);
 		Node node = root.getFirstChildForItem(item);
@@ -95,7 +95,7 @@ public class FPGrowth {
 			root.addChild(node);
 		}
 		if (items.size() > 0)
-			insert_tree(items, node, tree);
+			insertTree(items, node, tree);
 	}
 
 	private Set<Set<Item>> getAllSubsets(Collection<Item> s) {
