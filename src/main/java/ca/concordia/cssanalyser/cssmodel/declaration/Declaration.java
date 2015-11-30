@@ -36,14 +36,6 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	 */
 	protected ShorthandDeclaration parentShorthand;
 	
-	/**
-	 * @param propertyName
-	 * @param values
-	 * @param belongsTo
-	 * @param offset
-	 * @param length
-	 * @param important
-	 */
 	public Declaration(String propertyName, Selector belongsTo, boolean important, LocationInfo location) {
 		property = propertyName.toLowerCase().trim();
 		parentSelector = belongsTo;
@@ -199,7 +191,7 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 						return false;
 				}
 			} else {				
-				if (!parentSelector.getMediaQueryLists().equals(otherDeclaration.parentSelector.getMediaQueryLists()))
+				if (!parentSelector.mediaQueryListsEqual(otherDeclaration.parentSelector))
 					return false;
 			}
 		}
@@ -275,7 +267,7 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	 * Each of the items of this list will be a collection of values, corresponding to the
 	 * given property name.
 	 * for instance, for property <code>font: bold 10pt Tahoma, Arial</code>,
-	 * calling this method like <code>getPropertyToValuesMap("font-familty")</code> will
+	 * calling this method like <code>getPropertyToValuesMap("font-family")</code> will
 	 * return a list with one item, which is a collection containing "Tahoma" and "Arial".
 	 * @return
 	 */

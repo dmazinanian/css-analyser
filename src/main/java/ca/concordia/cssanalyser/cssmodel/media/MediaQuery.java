@@ -1,5 +1,6 @@
 package ca.concordia.cssanalyser.cssmodel.media;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -36,6 +37,10 @@ public class MediaQuery extends CSSModelObject {
 	
 	public void addMediaFeatureExpression(MediaFeatureExpression expression) {
 		mediaFeatureExpresions.add(expression);
+	}
+	
+	public Iterable<MediaFeatureExpression> getMediaFeatureExpressions() {
+		return mediaFeatureExpresions;
 	}
 	
 	@Override
@@ -107,5 +112,44 @@ public class MediaQuery extends CSSModelObject {
 		return true;
 	}
 	
-	
+	/**
+	 * Compares two media queries only based on 
+	 * their media types, prefixes and media feature expressions.
+	 * Media feature expressions are checked with {@link MediaFeatureExpression#mediaFeatureEquals()}}.
+	 * The order of media feature expressions is not important
+	 * @param otherMediaQuery
+	 * @return
+	 */
+	public boolean mediaQueryEquals(MediaQuery otherMediaQuery) {
+		if (mediaType == null) {
+			if (otherMediaQuery.mediaType != null)
+				return false;
+		} else if (!mediaType.equals(otherMediaQuery.mediaType))
+			return false;
+		if (prefix != otherMediaQuery.prefix)
+			return false;
+		if (mediaFeatureExpresions == null) {
+			if (otherMediaQuery.mediaFeatureExpresions != null)
+				return false;
+		} else {
+			Set<MediaFeatureExpression> alreadyMatchedFeatureInOther = new HashSet<>();
+			if (mediaFeatureExpresions.size() != otherMediaQuery.mediaFeatureExpresions.size())
+				return false;
+			for (MediaFeatureExpression mediaFeatureExpression : mediaFeatureExpresions) {
+				boolean found = false;
+				for (MediaFeatureExpression mediaFeatureExpression2 : otherMediaQuery.mediaFeatureExpresions) {
+					if (!alreadyMatchedFeatureInOther.contains(mediaFeatureExpression2) &&
+							mediaFeatureExpression.mediaFeatureEquals(mediaFeatureExpression2)) {
+						alreadyMatchedFeatureInOther.add(mediaFeatureExpression2);
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					return false;
+			}			
+		}
+		
+		return true;
+	}
 }

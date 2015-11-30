@@ -47,6 +47,8 @@ public class DescendantSelector extends Combinator {
 	public boolean selectorEquals(Selector otherSelector) {
 		if (!generalEquals(otherSelector))
 			return false;
+		if (!mediaQueryListsEqual(otherSelector))
+			return false;
 		DescendantSelector otherDesendantSelector = (DescendantSelector)otherSelector;
 		return parentSelector.selectorEquals(otherDesendantSelector.parentSelector) &&
 				childSelector.selectorEquals(otherDesendantSelector.childSelector);
@@ -57,6 +59,13 @@ public class DescendantSelector extends Combinator {
 		if (!generalEquals(obj))
 			return false;;
 		DescendantSelector otherDesendantSelector = (DescendantSelector)obj;
+		if (mediaQueryLists != null) {
+			DescendantSelector otherDescendantSelector = (DescendantSelector)obj;
+			if (otherDescendantSelector.mediaQueryLists == null)
+				return false;
+			if (!mediaQueryLists.equals(otherDescendantSelector.mediaQueryLists))
+				return false;
+		}
 		return (getLocationInfo().equals(otherDesendantSelector.getLocationInfo()) &&
 				selectorEquals(otherDesendantSelector));
 	}
@@ -68,13 +77,6 @@ public class DescendantSelector extends Combinator {
 			return true;
 		if (!(obj instanceof DescendantSelector))
 			return false;
-		if (mediaQueryLists != null) {
-			DescendantSelector otherDescendantSelector = (DescendantSelector)obj;
-			if (otherDescendantSelector.mediaQueryLists == null)
-				return false;
-			if (!mediaQueryLists.equals(otherDescendantSelector.mediaQueryLists))
-				return false;
-		}
 		return true;
 	}
 	

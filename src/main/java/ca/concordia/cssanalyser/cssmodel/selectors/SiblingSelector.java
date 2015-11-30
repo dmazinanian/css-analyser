@@ -34,11 +34,17 @@ public class SiblingSelector extends Combinator {
 	public boolean equals(Object obj) {
 		if (!generalEquals(obj))
 			return false;
-		SiblingSelector otherObj = (SiblingSelector)obj;
-		if (getLocationInfo().equals(otherObj.getLocationInfo()) &&
-				beforeMainSelector.equals(otherObj.beforeMainSelector) &&
-				mainSelector.equals(otherObj.mainSelector))
+		SiblingSelector otherIndirectAdjacentSelector = (SiblingSelector)obj;
+		if (getLocationInfo().equals(otherIndirectAdjacentSelector.getLocationInfo()) &&
+				beforeMainSelector.equals(otherIndirectAdjacentSelector.beforeMainSelector) &&
+				mainSelector.equals(otherIndirectAdjacentSelector.mainSelector))
 			return true;
+		if (mediaQueryLists != null) {
+			if (otherIndirectAdjacentSelector.mediaQueryLists == null)
+				return false;
+			if (!mediaQueryLists.equals(otherIndirectAdjacentSelector.mediaQueryLists))
+				return false;
+		}
 		return false;
 	}
 	
@@ -49,19 +55,14 @@ public class SiblingSelector extends Combinator {
 			return true;
 		if (!(obj instanceof SiblingSelector))
 			return false;
-		if (mediaQueryLists != null) {
-			SiblingSelector otherIndirectAdjacentSelector = (SiblingSelector)obj;
-			if (otherIndirectAdjacentSelector.mediaQueryLists == null)
-				return false;
-			if (!mediaQueryLists.equals(otherIndirectAdjacentSelector.mediaQueryLists))
-				return false;
-		}
 		return true;
 	}
 	
 	@Override
 	public boolean selectorEquals(Selector otherSelector) {
 		if (!generalEquals(otherSelector))
+			return false;
+		if (!mediaQueryListsEqual(otherSelector))
 			return false;
 		SiblingSelector otherIndirectAdjacentSelector = (SiblingSelector)otherSelector;
 		return mainSelector.selectorEquals(otherIndirectAdjacentSelector.mainSelector) &&

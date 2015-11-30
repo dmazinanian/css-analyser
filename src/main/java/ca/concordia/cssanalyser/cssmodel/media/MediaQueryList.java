@@ -1,5 +1,6 @@
 package ca.concordia.cssanalyser.cssmodel.media;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -37,6 +38,38 @@ public class MediaQueryList extends CSSModelObject implements Iterable<MediaQuer
 		return listOfMediaQueries.size();
 	}
 
+
+	/**
+	 * Compares two MediaQueryList's only based on 
+	 * their media queries and {@link MediaQuery#mediaQueryEquals()}, 
+	 * The order of media queries is not important.
+	 * @param otherMediaQuery
+	 * @return
+	 */
+	public boolean mediaQueryListEquals(MediaQueryList otherMediaQueryList) {
+		if (listOfMediaQueries == null) {
+			if (otherMediaQueryList.listOfMediaQueries != null)
+				return false;
+		} else {
+			Set<MediaQuery> alreadyMatchedQueryInOther = new HashSet<>();
+			if (listOfMediaQueries.size() != otherMediaQueryList.listOfMediaQueries.size())
+				return false;
+			for (MediaQuery mediaQuery : listOfMediaQueries) {
+				boolean found = false;
+				for (MediaQuery mediaQuery2 : otherMediaQueryList.listOfMediaQueries) {
+					if (!alreadyMatchedQueryInOther.contains(mediaQuery2) &&
+							mediaQuery.mediaQueryEquals(mediaQuery2)) {
+						alreadyMatchedQueryInOther.add(mediaQuery2);
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					return false;
+			}
+		}
+		return true;
+	}
 
 	@Override
 	public Iterator<MediaQuery> iterator() {

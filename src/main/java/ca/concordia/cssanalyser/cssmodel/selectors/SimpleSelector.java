@@ -143,20 +143,30 @@ public class SimpleSelector extends BaseSelector {
 	
 	@Override
 	public boolean selectorEquals(Selector otherSelector) {
+		return selectorEquals(otherSelector, true);
+	}
+	
+	private boolean selectorEquals(Selector otherSelector, boolean checkForMediaQueryListsEquality) {
 		if (!generalEquals(otherSelector))
 			return false;
 		
 		SimpleSelector otherSimpleSelector = (SimpleSelector)otherSelector;
 		
-		return selectedElementName.equalsIgnoreCase(otherSimpleSelector.selectedElementName) &&
+		if (!(selectedElementName.equalsIgnoreCase(otherSimpleSelector.selectedElementName) &&
 				selectedID.equalsIgnoreCase(otherSimpleSelector.selectedID) &&
 				selectedClasses.size() == otherSimpleSelector.selectedClasses.size() && 
 					selectedClasses.containsAll(otherSimpleSelector.selectedClasses) &&
 				conditions.size() == otherSimpleSelector.conditions.size() &&
 					conditions.containsAll(otherSimpleSelector.conditions) &&
 				pseudoClasses.equals(otherSimpleSelector.pseudoClasses) &&
-				pseudoElements.equals(otherSimpleSelector.pseudoElements) &&
-				mediaQueryLists.equals(otherSimpleSelector.mediaQueryLists);
+				pseudoElements.equals(otherSimpleSelector.pseudoElements))) {
+			return false;
+		}
+		
+		if (checkForMediaQueryListsEquality)
+			return mediaQueryListsEqual(otherSimpleSelector);
+		
+		return true;
 	}
 	
 	/**
@@ -174,6 +184,14 @@ public class SimpleSelector extends BaseSelector {
 		if (!getLocationInfo().equals(otherBaseSelector.getLocationInfo()))
 			return false;
 		
+		if (mediaQueryLists != null) {
+			BaseSelector otherAtomicElementSelector = (BaseSelector)obj;
+			if (otherAtomicElementSelector.mediaQueryLists == null)
+				return false;
+			if (!mediaQueryLists.equals(otherAtomicElementSelector.mediaQueryLists))
+				return false;
+		}
+		
 		if (getParentGroupingSelector() == null) {
 			if (otherBaseSelector.getParentGroupingSelector() != null)
 				return false;
@@ -182,7 +200,7 @@ public class SimpleSelector extends BaseSelector {
 				return false;
 		}
 				
-		return selectorEquals(otherBaseSelector);
+		return selectorEquals(otherBaseSelector, false);
 	}
 
 	private boolean generalEquals(Object obj) {
@@ -192,13 +210,6 @@ public class SimpleSelector extends BaseSelector {
 			return true;
 		if (obj.getClass() != SimpleSelector.class)
 			return false;
-		if (mediaQueryLists != null) {
-			BaseSelector otherAtomicElementSelector = (BaseSelector)obj;
-			if (otherAtomicElementSelector.mediaQueryLists == null)
-				return false;
-			if (!mediaQueryLists.equals(otherAtomicElementSelector.mediaQueryLists))
-				return false;
-		}
 		return true;
 	}
 

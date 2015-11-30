@@ -43,6 +43,7 @@ public class MediaFeatureExpression extends CSSModelObject {
 		result = prime * result
 				+ ((expression == null) ? 0 : expression.hashCode());
 		result = prime * result + ((feature == null) ? 0 : feature.hashCode());
+		result = prime * result + locationInfo.hashCode();
 		return result;
 	}
 
@@ -55,6 +56,23 @@ public class MediaFeatureExpression extends CSSModelObject {
 		if (getClass() != obj.getClass())
 			return false;
 		MediaFeatureExpression other = (MediaFeatureExpression) obj;
+		if (locationInfo == null) {
+			if (other.locationInfo != null)
+				return false;
+		} else {
+			if (!locationInfo.equals(other.locationInfo))
+				return false;
+		}
+		return mediaFeatureEquals(other);
+	}
+	
+	/**
+	 * Compares two media features only based on 
+	 * their expressions and features
+	 * @param other
+	 * @return
+	 */
+	public boolean mediaFeatureEquals(MediaFeatureExpression other) {
 		if (expression == null) {
 			if (other.expression != null)
 				return false;
@@ -65,16 +83,9 @@ public class MediaFeatureExpression extends CSSModelObject {
 				return false;
 		} else if (!feature.equals(other.feature))
 			return false;
-		if (locationInfo == null) {
-			if (other.locationInfo != null)
-				return false;
-		} else {
-			if (!locationInfo.equals(other.locationInfo))
-				return false;
-		}
 		return true;
 	}
-	
+
 	public MediaFeatureExpression clone() {
 		return new MediaFeatureExpression(feature, expression);
 	}	

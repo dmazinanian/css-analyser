@@ -41,7 +41,6 @@ public abstract class Selector extends CSSModelObject  {
 		this.locationInfo = locationInfo;
 		declarations = new LinkedHashMap<>();
 		mediaQueryLists = new LinkedHashSet<>();
-		
 	}
 	
 	/**
@@ -168,6 +167,33 @@ public abstract class Selector extends CSSModelObject  {
 
 	public void addMediaQueryList(MediaQueryList forMedia) {
 		mediaQueryLists.add(forMedia);		
+	}
+	
+	/**
+	 * Compares two selectors only based on their MediaQueryList's.
+	 * It uses {@link MediaQueryList#mediaQueryListEquals()}
+	 * and does not consider order of MediaQueryLists.
+	 * @param otherSelector
+	 * @return
+	 */
+	public boolean mediaQueryListsEqual(Selector otherSelector) {
+		Set<MediaQueryList> alreadyMatchedQueryListInOther = new HashSet<>();
+		if (mediaQueryLists.size() != otherSelector.mediaQueryLists.size())
+			return false;
+		for (MediaQueryList mediaQueryList : mediaQueryLists) {
+			boolean found = false;
+			for (MediaQueryList mediaQueryList2 : otherSelector.mediaQueryLists) {
+				if (!alreadyMatchedQueryListInOther.contains(mediaQueryList2) &&
+						mediaQueryList.mediaQueryListEquals(mediaQueryList2)) {
+					alreadyMatchedQueryListInOther.add(mediaQueryList2);
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				return false;
+		}
+		return true;
 	}
 
 	/**

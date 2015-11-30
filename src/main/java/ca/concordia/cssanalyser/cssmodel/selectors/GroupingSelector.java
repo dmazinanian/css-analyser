@@ -79,7 +79,8 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		GroupingSelector otherObj = (GroupingSelector)otherSelector;
 		if (listOfBaseSelectors.size() != otherObj.listOfBaseSelectors.size())
 			return false;
-		//return listOfSelectors.containsAll(otherObj.listOfSelectors);
+		if (!mediaQueryListsEqual(otherSelector))
+			return false;
 		List<BaseSelector> tempList = new ArrayList<>(otherObj.listOfBaseSelectors);
 		for (Selector selector : listOfBaseSelectors) {
 			boolean valueFound = false;
@@ -103,13 +104,6 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 			return true;
 		if (!(otherSelector instanceof GroupingSelector))
 			return false;
-		if (this.mediaQueryLists != null) {
-			GroupingSelector otherGroupedSelector = (GroupingSelector)otherSelector;
-			if (otherGroupedSelector.mediaQueryLists == null)
-				return false;
-			if (!mediaQueryLists.equals(otherGroupedSelector.mediaQueryLists))
-				return false;
-		}
 		return true;
 	}
 	
@@ -124,7 +118,12 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		if (!generalEquals(obj))
 			return false;
 		GroupingSelector otherGroupedSelector = (GroupingSelector)obj;
-
+		if (this.mediaQueryLists != null) {
+			if (otherGroupedSelector.mediaQueryLists == null)
+				return false;
+			if (!mediaQueryLists.equals(otherGroupedSelector.mediaQueryLists))
+				return false;
+		}
 		return getLocationInfo().equals(otherGroupedSelector.getLocationInfo()) &&
 				otherGroupedSelector.listOfBaseSelectors.size() == listOfBaseSelectors.size() &&
 				otherGroupedSelector.listOfBaseSelectors.containsAll(listOfBaseSelectors);
