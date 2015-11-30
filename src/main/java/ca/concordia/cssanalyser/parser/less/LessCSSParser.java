@@ -2,12 +2,6 @@ package ca.concordia.cssanalyser.parser.less;
 
 import java.io.File;
 
-import org.apache.commons.lang.NotImplementedException;
-
-import ca.concordia.cssanalyser.cssmodel.StyleSheet;
-import ca.concordia.cssanalyser.parser.CSSParser;
-import ca.concordia.cssanalyser.parser.ParseException;
-
 import com.github.sommeri.less4j.LessSource;
 import com.github.sommeri.less4j.LessSource.CannotReadFile;
 import com.github.sommeri.less4j.LessSource.FileNotFound;
@@ -15,11 +9,25 @@ import com.github.sommeri.less4j.core.parser.ANTLRParser;
 import com.github.sommeri.less4j.core.parser.ASTBuilder;
 import com.github.sommeri.less4j.core.problems.ProblemsHandler;
 
+import ca.concordia.cssanalyser.cssmodel.StyleSheet;
+import ca.concordia.cssanalyser.parser.CSSParser;
+import ca.concordia.cssanalyser.parser.ParseException;
+
 public class LessCSSParser implements CSSParser {
 
 	@Override
-	public StyleSheet parseCSSString(String css) {
-		throw new NotImplementedException();
+	public StyleSheet parseCSSString(String css) throws ParseException {
+		
+		com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet = getLessStyleSheet(new LessSource.StringSource(css));
+		
+		try {
+			
+			LessStyleSheetAdapter adapter = new LessStyleSheetAdapter(lessStyleSheet);
+			return adapter.getAdaptedStyleSheet();
+			
+		} catch (RuntimeException ex) {
+			throw new ParseException(ex);
+		}	
 	}
 
 	@Override
@@ -34,8 +42,7 @@ public class LessCSSParser implements CSSParser {
 			
 		} catch (RuntimeException ex) {
 			throw new ParseException(ex);
-		}
-		
+		}	
 
 	}
 

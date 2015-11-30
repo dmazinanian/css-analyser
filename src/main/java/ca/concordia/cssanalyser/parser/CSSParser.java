@@ -8,7 +8,7 @@ import ca.concordia.cssanalyser.cssmodel.StyleSheet;
  */
 public interface CSSParser {
 	
-	public StyleSheet parseCSSString(String css);
+	public StyleSheet parseCSSString(String css) throws ParseException;
 	
 	public StyleSheet parseExternalCSS(String path) throws ParseException;
 	

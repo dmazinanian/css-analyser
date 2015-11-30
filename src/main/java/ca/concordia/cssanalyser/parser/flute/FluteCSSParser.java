@@ -31,12 +31,12 @@ public class FluteCSSParser implements CSSParser {
 
 	}
 	
-	public StyleSheet parseCSSString(String css) {
+	public StyleSheet parseCSSString(String css) throws ParseException {
 		try {
 			return parseStreamCSS(new ByteArrayInputStream(css.getBytes()));
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(e);
+			throw new ParseException(e);
 		}
 	}
 	
