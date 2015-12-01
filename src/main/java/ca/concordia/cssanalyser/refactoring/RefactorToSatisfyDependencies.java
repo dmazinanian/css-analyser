@@ -49,52 +49,15 @@ public class RefactorToSatisfyDependencies {
 	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld, List<Integer> newOrdering) {
 		
 		newOrdering.clear();
-
-		/*
-		 * Only selectors which have a role in the dependencies list are important to be considered.
-		 * Others must be added to the style sheet without any problem 
-		 */	
-		Set<Selector> selectorsInvolvedInDependencies = new HashSet<>();
-		
+	
 		/*
 		 * We map every dependency in the original CSS file to the new selectors in the 
 		 * given style sheet.
 		 * Every dependency has two selectors, so the map is from dependency to an array
 		 * of selectors that has two members always.
 		 */
-		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap = new HashMap<>();
-
-		for (BaseSelector selector : styleSheet.getAllBaseSelectors()) {
-
-			for (Declaration d : selector.getDeclarations()) {
-
-				for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
-					
-					if (dependency.getSelector1().selectorEquals(selector) && dependency.getDeclaration1().declarationEquals(d)) {
-						selectorsInvolvedInDependencies.add(d.getSelector());
-						// Put the declaration's selector (the selector in the new StyleSheet)
-						putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, d.getSelector(), 0);
-					}
-					if (dependency.getSelector2().selectorEquals(selector) && dependency.getDeclaration2().declarationEquals(d)) {
-						selectorsInvolvedInDependencies.add(d.getSelector());
-						putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, d.getSelector(), 1);
-					}
-				}
-			}	
-		}
-		
-		// IntraSelector dependency shouldn't be here
-		Set<CSSValueOverridingDependency> markedDependenciesToRemove = new HashSet<>();
-		for (CSSValueOverridingDependency d : dependencyNodeToSelectorMap.keySet()) {
-			Selector[] selectors = getCorrespondingRealSelectors(dependencyNodeToSelectorMap, d);
-			if (selectors[0] == selectors[1]) {
-				markedDependenciesToRemove.add(d);
-				selectorsInvolvedInDependencies.remove(selectors[0]);
-				selectorsInvolvedInDependencies.remove(selectors[1]);
-			}
-		}
-		for (CSSValueOverridingDependency d : markedDependenciesToRemove)
-			dependencyNodeToSelectorMap.remove(d);
+		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToRealSelectorsMap 
+				= getDependencyToSelectorsMap(styleSheet, listOfDependenciesToBeHeld);
 		
 		
 		// 1. Create a Solver 
@@ -128,7 +91,7 @@ public class RefactorToSatisfyDependencies {
 		// 2. Create variables through the variable factory
 		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
 
-			Selector[] correspondingSelectors = dependencyNodeToSelectorMap.get(dependency);
+			Selector[] correspondingSelectors = dependencyNodeToRealSelectorsMap.get(dependency);
 			
 			if (correspondingSelectors == null || correspondingSelectors[0] == null || correspondingSelectors[1] == null)
 				continue;
@@ -180,6 +143,40 @@ public class RefactorToSatisfyDependencies {
 			// It is better to throw something at least. I know.
 		}
 		
+	}
+
+	private Map<CSSValueOverridingDependency, Selector[]> getDependencyToSelectorsMap(StyleSheet styleSheet,
+			CSSValueOverridingDependencyList listOfDependenciesToBeHeld) {
+		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap = new HashMap<>();
+
+		for (BaseSelector selector : styleSheet.getAllBaseSelectors()) {
+
+			for (Declaration d : selector.getDeclarations()) {
+
+				for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
+					
+					if (dependency.getSelector1().selectorEquals(selector) && dependency.getDeclaration1().declarationEquals(d)) {
+						// Put the declaration's selector (the selector in the new StyleSheet)
+						putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, d.getSelector(), 0);
+					}
+					if (dependency.getSelector2().selectorEquals(selector) && dependency.getDeclaration2().declarationEquals(d)) {
+						putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, d.getSelector(), 1);
+					}
+				}
+			}	
+		}
+		
+		// IntraSelector dependency shouldn't be here
+		Set<CSSValueOverridingDependency> markedDependenciesToRemove = new HashSet<>();
+		for (CSSValueOverridingDependency d : dependencyNodeToSelectorMap.keySet()) {
+			Selector[] selectors = getCorrespondingRealSelectors(dependencyNodeToSelectorMap, d);
+			if (selectors[0] == selectors[1]) {
+				markedDependenciesToRemove.add(d);
+			}
+		}
+		for (CSSValueOverridingDependency d : markedDependenciesToRemove)
+			dependencyNodeToSelectorMap.remove(d);
+		return dependencyNodeToSelectorMap;
 	}
 
 	/**
