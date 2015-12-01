@@ -30,6 +30,25 @@ public class RefactorToSatisfyDependencies {
 	 * @return
 	 */
 	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld) {
+		return refactorToSatisfyOverridingDependencies(styleSheet, listOfDependenciesToBeHeld, new ArrayList<>());
+	}
+	
+	/**
+	 * Refactores a stylesheet (that possibly breaks some dependencies) to satisfy the given dependencies,
+	 * by re-ordering selectors.
+	 * @param styleSheet
+	 * @param listOfDependenciesToBeHeld
+	 * @param newOrdering A List<Integer> should be passed. This list will be cleared,
+	 * and will be filled by the selector numbers in the new ordering.
+	 * For instance, if this list contains {3, 1, 2}, this means that the selector
+	 * which was placed 3rd in the style sheet is 
+	 * placed in position 1 of the new style sheet and so forth.
+	 * This can be used to track changes in the UI, etc.
+	 * @return
+	 */
+	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld, List<Integer> newOrdering) {
+		
+		newOrdering.clear();
 
 		/*
 		 * Only selectors which have a role in the dependencies list are important to be considered.
@@ -148,8 +167,11 @@ public class RefactorToSatisfyDependencies {
 			StyleSheet refactoredStyleSheet = new StyleSheet();
 			
 			// Put the selectors in the style sheet in order
-			for (int i = 1; i <= assignmentToSelectorMap.size(); i++)
-				refactoredStyleSheet.addSelector(assignmentToSelectorMap.get(i));
+			for (int i = 1; i <= assignmentToSelectorMap.size(); i++) {
+				Selector selector = assignmentToSelectorMap.get(i);
+				newOrdering.add(selector.getSelectorNumber());
+				refactoredStyleSheet.addSelector(selector);
+			}
 		
 			return refactoredStyleSheet;
 			
@@ -196,7 +218,5 @@ public class RefactorToSatisfyDependencies {
 		}
 		return realSelectorsForThisDependency;
 	}
-
-	
 	
 }
