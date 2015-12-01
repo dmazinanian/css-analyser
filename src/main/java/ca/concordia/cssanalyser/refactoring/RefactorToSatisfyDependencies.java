@@ -155,23 +155,26 @@ public class RefactorToSatisfyDependencies {
 	 */
 	private Map<CSSValueOverridingDependency, Selector[]> getDependencyToSelectorsMap(StyleSheet styleSheet,
 			CSSValueOverridingDependencyList listOfDependenciesToBeHeld) {
+
 		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap = new HashMap<>();
-
-		for (BaseSelector selector : styleSheet.getAllBaseSelectors()) {
-
-			for (Declaration d : selector.getDeclarations()) {
-
-				for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
-					
-					if (dependency.getSelector1().selectorEquals(selector) && dependency.getDeclaration1().declarationEquals(d)) {
-						// Put the declaration's selector (the selector in the new StyleSheet)
-						putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, d.getSelector(), 0);
+		
+		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
+			for (BaseSelector selector : styleSheet.getAllBaseSelectors()) {
+				if (dependency.getSelector1().selectorEquals(selector)) {
+					for (Declaration declaration : selector.getDeclarations()) {
+						if (declaration.declarationIsEquivalent(dependency.getDeclaration1())) {
+							// Put the declaration's selector (the selector in the new StyleSheet)
+							putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 0);
+						}
 					}
-					if (dependency.getSelector2().selectorEquals(selector) && dependency.getDeclaration2().declarationEquals(d)) {
-						putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, d.getSelector(), 1);
+				} else if (dependency.getSelector2().selectorEquals(selector)) {
+					for (Declaration declaration : selector.getDeclarations()) {
+						if (declaration.declarationIsEquivalent(dependency.getDeclaration2())) {
+							putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 1);
+						}
 					}
 				}
-			}	
+			}
 		}
 		
 		// IntraSelector dependency shouldn't be here
@@ -184,6 +187,7 @@ public class RefactorToSatisfyDependencies {
 		}
 		for (CSSValueOverridingDependency d : markedDependenciesToRemove)
 			dependencyNodeToSelectorMap.remove(d);
+		
 		return dependencyNodeToSelectorMap;
 	}
 
