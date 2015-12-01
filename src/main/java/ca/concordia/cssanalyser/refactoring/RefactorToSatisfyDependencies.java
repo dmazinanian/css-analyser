@@ -145,6 +145,14 @@ public class RefactorToSatisfyDependencies {
 		
 	}
 
+	/**
+	 * Returns a Map that maps each dependency to an array (always of size 2) of Selectors.
+	 * The first and second items of this array are the selectors in the given style sheet
+	 * corresponding to the From and To selectors of each of the given dependencies. 
+	 * @param styleSheet
+	 * @param listOfDependenciesToBeHeld
+	 * @return
+	 */
 	private Map<CSSValueOverridingDependency, Selector[]> getDependencyToSelectorsMap(StyleSheet styleSheet,
 			CSSValueOverridingDependencyList listOfDependenciesToBeHeld) {
 		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap = new HashMap<>();
