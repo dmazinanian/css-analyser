@@ -427,4 +427,17 @@ public class ItemSet implements Set<Item>, Cloneable {
 		}
 		return declarationsToBeRemoved;
 	}
+	
+	/**
+	 * Indicates weather there exists an Item in this ItemSet
+	 * for which {@link Item#containsDifferencesInValues()} returns true.
+	 */
+	public boolean containsDifferencesInValues() {
+		for (Item item : this.itemset) {
+			if (item.containsDifferencesInValues()) {
+				return true;
+			}
+		}
+		return false;
+	}
 }
