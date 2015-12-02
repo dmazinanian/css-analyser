@@ -308,6 +308,12 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 		return this.support.size();
 	}
 	
+	/**
+	 * Indicates weather one of the declarations in the Item
+	 * has a different (i.e., not equal or equivalent) value than other 
+	 * declarations in the Item
+	 * @return
+	 */
 	public boolean containsDifferencesInValues() {
 		Declaration[] declarationsArray = declarations.toArray(new Declaration[]{});
 		if (declarationsArray.length > 0) {
