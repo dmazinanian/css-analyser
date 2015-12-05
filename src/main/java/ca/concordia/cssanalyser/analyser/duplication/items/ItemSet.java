@@ -3,9 +3,11 @@ package ca.concordia.cssanalyser.analyser.duplication.items;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -439,5 +441,32 @@ public class ItemSet implements Set<Item>, Cloneable {
 			}
 		}
 		return false;
+	}
+	
+	/**
+	 * Returns the selectors which would be empty if we remove the 
+	 * declarations 
+	 * @return
+	 */
+	public Set<Selector> getEmptySelectorsAfterRefactoring() {
+		Set<Selector> toReturn = new HashSet<>();
+		Set<Declaration> declarationsToBeRemoved = getDeclarationsToBeRemoved();
+		Map<Selector, Integer> numberOfDeletedDeclarationsMap = new HashMap<>();
+		for (Declaration declaration : declarationsToBeRemoved) {
+			Selector selector = declaration.getSelector();
+			if (!numberOfDeletedDeclarationsMap.containsKey(selector)) {
+				numberOfDeletedDeclarationsMap.put(selector, 0);
+			}
+			int currentNumberOfDeletedDeclarations = numberOfDeletedDeclarationsMap.get(selector);
+			currentNumberOfDeletedDeclarations++;
+			numberOfDeletedDeclarationsMap.put(selector, currentNumberOfDeletedDeclarations);
+		}
+		for (Selector selector : numberOfDeletedDeclarationsMap.keySet()) {
+			if (selector.getNumberOfDeclarations() == numberOfDeletedDeclarationsMap.get(selector)) {
+				// All the declarations of this selector are going to be removed
+				toReturn.add(selector);
+			}
+		}
+		return toReturn;
 	}
 }
