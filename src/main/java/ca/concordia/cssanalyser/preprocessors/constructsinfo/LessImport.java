@@ -4,12 +4,12 @@ import java.io.File;
 
 import org.apache.commons.lang.NotImplementedException;
 
-import com.github.sommeri.less4j.LessSource.FileSource;
 import com.github.sommeri.less4j.core.ast.Import;
 import com.github.sommeri.less4j.core.ast.StyleSheet;
 
 import ca.concordia.cssanalyser.parser.ParseException;
 import ca.concordia.cssanalyser.parser.less.LessCSSParser;
+import ca.concordia.cssanalyser.parser.less.ModifiedLessFileSource;
 import ca.concordia.cssanalyser.preprocessors.util.less.ImportInliner;
 
 public class LessImport extends LessConstruct {
@@ -76,7 +76,7 @@ public class LessImport extends LessConstruct {
 			throw new NotImplementedException("We don't support remote URLs for the moment");
 		}
 		if (!"".equals(this.getImportedFileAbsolutePath())) {
-			return LessCSSParser.getLessStyleSheet(new FileSource(new File(this.getImportedFileAbsolutePath())));
+			return LessCSSParser.getLessStyleSheet(new ModifiedLessFileSource(new File(this.getImportedFileAbsolutePath())));
 		} else {
 			throw new ParseException("Target URL not found");
 		}

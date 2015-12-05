@@ -33,7 +33,7 @@ public class LessCSSParser implements CSSParser {
 	@Override
 	public StyleSheet parseExternalCSS(String path) throws ParseException {
 		
-		com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet = getLessStyleSheet(new LessSource.FileSource(new File(path)));
+		com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet = getLessStyleSheet(new ModifiedLessFileSource(new File(path)));
 		
 		try {
 			
@@ -71,7 +71,7 @@ public class LessCSSParser implements CSSParser {
 		if (styleSheet.getFilePath() == null) {
 			return getLessStyleSheet(new LessSource.StringSource(styleSheet.toString()));
 		} else {
-			return getLessStyleSheet(new LessSource.FileSource(new File(styleSheet.getFilePath())));
+			return getLessStyleSheet(new ModifiedLessFileSource(new File(styleSheet.getFilePath())));
 		}
 		
 	}

@@ -19,6 +19,7 @@ import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPrinter;
 import ca.concordia.cssanalyser.parser.less.LessCSSParser;
+import ca.concordia.cssanalyser.parser.less.ModifiedLessFileSource;
 
 public class ImportInliner {
 	
@@ -46,9 +47,9 @@ public class ImportInliner {
 		}
 	}
 	
-	private static String replaceImports(File lessFile, boolean onlyImportLessFiles) throws IOException {
+	static String replaceImports(File lessFile, boolean onlyImportLessFiles) throws IOException {
 		try {
-			StyleSheet lessStyleSheet = LessCSSParser.getLessStyleSheet(new LessSource.FileSource(lessFile));
+			StyleSheet lessStyleSheet = LessCSSParser.getLessStyleSheet(new ModifiedLessFileSource(lessFile));
 			List<Import> allImports = getAllImports(lessStyleSheet);
 			String toReturn = IOHelper.readFileToString(lessFile.getAbsolutePath());
 			for(Import importNode : allImports) {

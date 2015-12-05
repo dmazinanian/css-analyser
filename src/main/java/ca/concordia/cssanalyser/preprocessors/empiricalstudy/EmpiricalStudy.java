@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.github.sommeri.less4j.LessSource.FileSource;
 import com.github.sommeri.less4j.core.ast.StyleSheet;
 
 import ca.concordia.cssanalyser.app.CSSAnalyserCLI;
@@ -15,6 +14,7 @@ import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.parser.ParseException;
 import ca.concordia.cssanalyser.parser.less.LessCSSParser;
+import ca.concordia.cssanalyser.parser.less.ModifiedLessFileSource;
 import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessASTQueryHandler;
 import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessEmbeddedScriptInfo;
 import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessExtend;
@@ -79,7 +79,7 @@ public class EmpiricalStudy {
 	
 	public EmpiricalStudy(String website, List<String> pathToLessFiles) throws ParseException {
 		for (String pathToLessFile : pathToLessFiles) {
-			StyleSheet styleSheet = LessCSSParser.getLessStyleSheet(new FileSource(new File(pathToLessFile)));
+			StyleSheet styleSheet = LessCSSParser.getLessStyleSheet(new ModifiedLessFileSource(new File(pathToLessFile)));
 			this.lessStyleSheets.add(styleSheet);
 			this.queryHandlers.add(new LessASTQueryHandler(styleSheet));
 		}
