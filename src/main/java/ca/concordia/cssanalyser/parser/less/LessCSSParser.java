@@ -58,7 +58,7 @@ public class LessCSSParser implements CSSParser {
 			
 			result = parser.parseStyleSheet(source.getContent(), source);
 
-			lessStyleSheet = astBuilder.parse(result.getTree());			
+			lessStyleSheet = astBuilder.parseStyleSheet(result.getTree());			
 
 		} catch (FileNotFound | CannotReadFile ex) {
 			throw new ParseException(ex);

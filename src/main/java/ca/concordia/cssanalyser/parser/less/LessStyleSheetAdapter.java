@@ -218,13 +218,17 @@ public class LessStyleSheetAdapter {
 					values  = new ArrayList<>();
 					values.add(new DeclarationValue("", ValueType.OTHER));
 				}
-				
+				boolean isImportant = false;
+				if ("!important".equals(values.get(values.size() - 1).getValue())) {
+					isImportant = true;
+					values.remove(values.size() - 1);
+				}
 				if (values.size() == 0) {
 					LOGGER.warn(String.format("No CSS values could be found for property %s at line %s, column %s", property, 
 							lessDeclaration.getSourceLine(), lessDeclaration.getSourceColumn()));
 				} else {
 					declaration = DeclarationFactory.getDeclaration(
-							property, values, null, lessDeclaration.isImportant(), true, LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(declarationNode));
+							property, values, null, isImportant, true, LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(declarationNode));
 				}
 
 			} catch (Exception ex) {
@@ -470,7 +474,7 @@ public class LessStyleSheetAdapter {
 			
 			BaseSelector leftHandSelector = getCombinatorFromLessSelectorParts(partsCopy);
 			
-			switch (lastPart.getLeadingCombinator().getCombinator()) {
+			switch (lastPart.getLeadingCombinator().getCombinatorType()) {
 				//ADJACENT_SIBLING("+"), CHILD(">"), DESCENDANT("' '"), GENERAL_SIBLING("~"), HAT("^"), CAT("^^");
 				case ADJACENT_SIBLING:
 					baseSelectorToReturn = new AdjacentSiblingSelector(leftHandSelector, rightHandSelector);
@@ -484,10 +488,13 @@ public class LessStyleSheetAdapter {
 				case GENERAL_SIBLING:
 					baseSelectorToReturn = new SiblingSelector(leftHandSelector, rightHandSelector);
 					break;
+				case NAMED:
 				case HAT:
 				case CAT:
 					// Not supported
 					return null;
+			default:
+				break;
 
 			}
 			

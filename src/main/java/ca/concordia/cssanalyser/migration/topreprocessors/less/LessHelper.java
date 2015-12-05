@@ -65,7 +65,7 @@ public class LessHelper {
 		ProblemsHandler problemsHandler = new ProblemsHandler();
 		ASTBuilder astBuilder = new ASTBuilder(problemsHandler);
 		LessToCssCompiler compiler = new LessToCssCompiler(problemsHandler, options);
-		com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet = astBuilder.parse(result.getTree());
+		com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet = astBuilder.parseStyleSheet(result.getTree());
 		ASTCssNode cssStyleSheet = compiler.compileToCss(lessStyleSheet, source, options);
 		
 		// Adapt to our style sheet

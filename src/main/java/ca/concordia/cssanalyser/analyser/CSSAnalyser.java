@@ -6,12 +6,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.w3c.dom.Document;
@@ -33,13 +31,8 @@ import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
 import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
-import ca.concordia.cssanalyser.parser.flute.FluteCSSParser;
 import ca.concordia.cssanalyser.refactoring.BatchGroupingRefactoringResult;
 import ca.concordia.cssanalyser.refactoring.RefactorDuplications;
-import ca.concordia.cssanalyser.refactoring.RefactorToSatisfyDependencies;
-import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
-import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDifferenceList;
-import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 
 /**

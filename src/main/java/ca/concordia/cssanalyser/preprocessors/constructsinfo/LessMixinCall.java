@@ -29,7 +29,7 @@ public class LessMixinCall extends LessConstruct {
 	}
 	
 	public int getNumberOfParameters() {
-		return reference.getNumberOfDeclaredParameters();
+		return reference.getNamedParameters().size() + reference.getPositionalParameters().size();
 	}
 
 	public ASTCssNode getParentStructure() {
@@ -37,7 +37,7 @@ public class LessMixinCall extends LessConstruct {
 	}
 
 	public String getMixinCallHashString() {
-		return String.format("%s(%s)", this.reference.getFinalNameAsString(), this.reference.getNumberOfDeclaredParameters());
+		return String.format("%s(%s)", this.reference.getFinalNameAsString(), getNumberOfParameters());
 	}
 	
 	@Override

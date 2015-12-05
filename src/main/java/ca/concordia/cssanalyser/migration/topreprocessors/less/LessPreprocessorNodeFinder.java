@@ -17,8 +17,6 @@ import com.github.sommeri.less4j.core.parser.LessLexer;
 
 public class LessPreprocessorNodeFinder extends PreprocessorNodeFinder<StyleSheet, ASTCssNode> {
 	
-	
-	
 	public LessPreprocessorNodeFinder(StyleSheet forStyleSheet) {
 		super(forStyleSheet);
 	}
@@ -60,7 +58,7 @@ public class LessPreprocessorNodeFinder extends PreprocessorNodeFinder<StyleShee
 		} else {
 			firstChild = node.getUnderlyingStructure().getChild(0);
 			while (firstChild.getChildCount() > 0) {
-				if (firstChild.getChild(0).getType() == LessLexer.EMPTY_COMBINATOR) {
+				if (firstChild.getChild(0).getGeneralType() == LessLexer.EMPTY_COMBINATOR) {
 					if (firstChild.getChildCount() > 1)
 						firstChild = firstChild.getChild(1);
 					else

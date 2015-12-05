@@ -792,9 +792,6 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 		if (declaration.getExpression() != null)
 			append(declaration.getExpression());
 
-		if (declaration.isImportant())
-			builder.ensureSeparator().append("!important");
-
 		if (shouldHaveSemicolon(declaration))
 			builder.appendIgnoreNull(";");
 
@@ -1169,14 +1166,14 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 	}
 
 	public boolean appendSelectorCombinator(SelectorCombinator combinator) {
-		SelectorCombinator.Combinator realCombinator = combinator.getCombinator();
+		SelectorCombinator.CombinatorType realCombinator = combinator.getCombinatorType();
 		switch (realCombinator) {
 		case DESCENDANT:
 			builder.ensureSeparator();
 			break;
 
 		default:
-			builder.ensureSeparator().append(realCombinator.getSymbol());
+			builder.ensureSeparator().append(combinator.toString());
 
 		}
 
