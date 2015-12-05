@@ -352,10 +352,15 @@ public class ItemSet implements Set<Item>, Cloneable {
 
 	/**
 	* Returns the new grouping selector which has to be created
-	* from the given itemset for removing duplication
+	* from the given ItemSet for removing duplication
+	* If the ItemSet has differences in some values for some declaration,
+	* this method returns null.
 	* @return
 	*/
 	public GroupingSelector getGroupingSelector() {
+		
+		if (containsDifferencesInValues())
+			return null;
 	
 		GroupingSelector newGroupingSelector = new GroupingSelector();
 		
