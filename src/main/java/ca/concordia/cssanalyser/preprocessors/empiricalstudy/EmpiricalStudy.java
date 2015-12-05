@@ -109,7 +109,7 @@ public class EmpiricalStudy {
 								website,
 								lessMixinCallInfo.getStyleSheetPath(), 
 								lessMixinCallInfo.getName(),
-								lessMixinCallInfo.getReference().getNumberOfDeclaredParameters(),
+								lessMixinCallInfo.getNumberOfParameters(),
 								lessMixinCallInfo.getNumberOfMultiValuedArguments(),
 								mixinDeclaration != null ? mixinDeclaration.getStyleSheetPath() : "",
 								mixinDeclaration != null ? mixinDeclaration.getMixinName() : ""
