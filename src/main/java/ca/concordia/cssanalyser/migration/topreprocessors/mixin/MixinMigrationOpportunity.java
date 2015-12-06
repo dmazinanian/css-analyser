@@ -365,5 +365,40 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	public abstract String getMixinReferenceString(Selector selector);
 
 	public abstract boolean preservesPresentation();
+
+	/**
+	 * When we remove a shorthand because of a virtual individual, we should add
+	 * the remaining individuals to the selector. This gives the list of such
+	 * declarations
+	 * @return
+	 */
+	public List<Declaration> getDeclarationsToBeAdded() {
+		Map<ShorthandDeclaration, Set<Declaration>> parentShortandsToIndividualsMap = new HashMap<>();
+		for (Declaration declaration : getDeclarationsToBeRemoved()) {
+			if (declaration.isVirtualIndividualDeclarationOfAShorthand()) {
+				ShorthandDeclaration parentShorthand = declaration.getParentShorthand();
+				//if (!parentShorthand.isVirtual()) {
+					Set<Declaration> individualsOfTheSameParent = parentShortandsToIndividualsMap.get(parentShorthand);
+					if (individualsOfTheSameParent == null) {
+						individualsOfTheSameParent = new HashSet<Declaration>();
+						parentShortandsToIndividualsMap.put(parentShorthand, individualsOfTheSameParent);
+					}
+					individualsOfTheSameParent.add(declaration);
+				//}
+			}
+		}
+		
+		List<Declaration> declarationsToBeAdded = new ArrayList<>();
+		for (ShorthandDeclaration parentShorthand : parentShortandsToIndividualsMap.keySet()) {
+			Set<Declaration> individualsToBeRemoved = parentShortandsToIndividualsMap.get(parentShorthand);
+			for (Declaration individual : parentShorthand.getIndividualDeclarations()) {
+				if (!individualsToBeRemoved.contains(individual) &&
+						!parentShorthand.getSelector().getOriginalSelector().containsDeclaration(individual)) {
+					declarationsToBeAdded.add(individual);
+				}
+			}
+		}
+		return declarationsToBeAdded;
+	}
 	
 }
