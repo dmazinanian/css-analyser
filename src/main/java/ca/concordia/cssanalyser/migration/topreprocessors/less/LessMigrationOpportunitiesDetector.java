@@ -5,6 +5,7 @@ import java.util.List;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunitiesDetector;
+import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
 
 
 public class LessMigrationOpportunitiesDetector extends PreprocessorMigrationOpportunitiesDetector<com.github.sommeri.less4j.core.ast.StyleSheet> {
@@ -14,7 +15,7 @@ public class LessMigrationOpportunitiesDetector extends PreprocessorMigrationOpp
 	}
 
 	@Override
-	public LessMixinMigrationOpportunity getNewPreprocessorSpecificOpportunity(Iterable<Selector> forSelectors) {
+	public MixinMigrationOpportunity<com.github.sommeri.less4j.core.ast.StyleSheet> getNewPreprocessorSpecificOpportunity(Iterable<Selector> forSelectors) {
 		return new LessMixinMigrationOpportunity(forSelectors, getStyleSheet());
 	}
 	
