@@ -16,8 +16,10 @@ import ca.concordia.cssanalyser.cssmodel.CSSSource;
 import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.DeclarationFactory;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
+import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependency;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
@@ -262,7 +264,19 @@ public abstract class Selector extends CSSModelObject  {
 			}
 			virtualShorthand.isImportant(isImportant);
 			
-			virtualShorthands.add(virtualShorthand);
+			/*
+			 * Check if the new virtual shorthand is styling the same
+			 * properties as the individual ones 
+			 * This is, BTW, a HACK.
+			 * A better implementation needs using default values for all properties
+			 * to insert them when the corresponding individual declarations do not exist.
+			 */
+			List<DeclarationValue> values = new ArrayList<>();
+			values.add(new DeclarationValue("none", ValueType.IDENT));
+			Declaration toTest = DeclarationFactory.getDeclaration(entry.getKey(), values, this, isImportant, true, new LocationInfo(-1, -1));
+			((ShorthandDeclaration)toTest).isVirtual(true);
+			if (toTest.getAllSetPropertyAndLayers().equals(virtualShorthand.getAllSetPropertyAndLayers()))
+				virtualShorthands.add(virtualShorthand);
 			
 		}
 		return virtualShorthands;
