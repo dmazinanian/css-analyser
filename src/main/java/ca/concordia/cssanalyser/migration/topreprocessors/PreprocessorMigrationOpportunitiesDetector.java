@@ -61,7 +61,7 @@ public abstract class PreprocessorMigrationOpportunitiesDetector<T> {
 	public MixinMigrationOpportunity<T> getMixinOpportunityFromItemSet(ItemSet itemSet) {
 		MixinMigrationOpportunity<T> opportunity = getNewPreprocessorSpecificOpportunity(itemSet.getSupport());
 
-		// Declarations in a item have the same property
+		// Declarations in an Item have the same property
 		for (Item item : itemSet) {
 			List<Declaration> declarationsToAdd = new ArrayList<>();
 			/*
