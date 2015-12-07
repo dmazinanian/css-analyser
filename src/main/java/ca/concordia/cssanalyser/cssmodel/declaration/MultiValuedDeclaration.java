@@ -54,8 +54,13 @@ public class MultiValuedDeclaration extends Declaration {
 	
 	private static void initializeMultiValuedProperties() {
 		String[] properties = new String[] { 
-				"background-position", 
+				"background-clip",
+				"background-origin",
 				"background-size",
+				"background-position",
+				"background-image",
+				"background-repeat",
+				"background-attachment",
 				"border-top-left-radius",
 				"border-top-right-radius",
 				"border-bottom-right-radius",
@@ -89,6 +94,7 @@ public class MultiValuedDeclaration extends Declaration {
 			case "background":
 			case "background-clip":
 			case "background-origin":
+			case "background-size":
 			case "background-position":
 			case "background-image":
 			case "background-repeat":
@@ -128,62 +134,117 @@ public class MultiValuedDeclaration extends Declaration {
 	
 			case "background-position": {
 				//http://www.w3.org/TR/css3-background/#the-background-position
-				final String BACKGROUND_POSITION_LEFT = "background-position-left";
-				final String BACKGROUND_POSITION_TOP = "background-position-top";
-	
-				DeclarationValue firstValue = declarationValues.get(0);
-				DeclarationValue secondValue = null;
 				
-				// TODO add four-valued background-position
-				if (declarationValues.size() == 1) {
-					if ("inherit".equals(firstValue.getValue())) {
-						break;
+				List<DeclarationValue> allValues = new ArrayList<>(declarationValues);
+				DeclarationValue sentinel = new DeclarationValue(",", ValueType.SEPARATOR);
+				allValues.add(sentinel);
+				
+				List<DeclarationValue> currentLayerValues = new ArrayList<>();
+				int currentLayerIndex = 0;
+				
+				for (int currentValueIndex = 0; currentValueIndex < allValues.size(); currentValueIndex++) {
+					DeclarationValue currentValue = allValues.get(currentValueIndex);
+					if (currentValue.getType() == ValueType.SEPARATOR && ",".equals(currentValue.getValue())) {
+						currentLayerIndex++;
+						
+						
+						final String BACKGROUND_POSITION_LEFT = "background-position-left";
+						final String BACKGROUND_POSITION_TOP = "background-position-top";
+			
+						DeclarationValue firstValue = currentLayerValues.get(0);
+						DeclarationValue secondValue = null;
+						
+						// TODO add four-valued background-position
+						if (currentLayerValues.size() == 1) {
+							if ("inherit".equals(firstValue.getValue())) {
+								break;
+							} else {
+								if (firstValue.isKeyword()) {
+									secondValue = new DeclarationEquivalentValue("center", "50%", ValueType.LENGTH);
+								}
+								else {
+									secondValue = new DeclarationEquivalentValue("50%", "50%", ValueType.LENGTH);
+								}
+								addMissingValue(secondValue, 1);
+							}
+						} else {
+							secondValue = currentLayerValues.get(1);
+						}
+						
+						
+						if ("top".equals(firstValue.getValue()) || "bottom".equals(firstValue.getValue()) ||
+							"left".equals(secondValue.getValue()) || "right".equals(secondValue.getValue())) {
+							assignStylePropertyToValue(BACKGROUND_POSITION_TOP, currentLayerIndex, firstValue, false);
+							assignStylePropertyToValue(BACKGROUND_POSITION_LEFT, currentLayerIndex, secondValue, false);
+						} else {
+							assignStylePropertyToValue(BACKGROUND_POSITION_LEFT, currentLayerIndex, firstValue, false);
+							assignStylePropertyToValue(BACKGROUND_POSITION_TOP, currentLayerIndex, secondValue, false);
+						}
+						
+						currentLayerValues.clear();
+						
 					} else {
-						if (firstValue.isKeyword()) {
-							secondValue = new DeclarationEquivalentValue("center", "50%", ValueType.LENGTH);
-						}
-						else {
-							secondValue = new DeclarationEquivalentValue("50%", "50%", ValueType.LENGTH);
-						}
-						addMissingValue(secondValue, 1);
+						currentLayerValues.add(currentValue);
 					}
-				} else {
-					secondValue = declarationValues.get(1);
 				}
 				
-				
-				if ("top".equals(firstValue.getValue()) || "bottom".equals(firstValue.getValue()) ||
-					"left".equals(secondValue.getValue()) || "right".equals(secondValue.getValue())) {
-					assignStylePropertyToValue(BACKGROUND_POSITION_TOP, firstValue);
-					assignStylePropertyToValue(BACKGROUND_POSITION_LEFT, secondValue);
-				} else {
-					assignStylePropertyToValue(BACKGROUND_POSITION_LEFT, firstValue);
-					assignStylePropertyToValue(BACKGROUND_POSITION_TOP, secondValue);
-				}
 				break;
 				
 			}
 			case "background-size": {
 				//http://www.w3.org/TR/css3-background/#the-background-size
-				final String BOTH = "background-size-both";
-				final String WIDTH = "background-size-width";
-				final String HEIGHT = "background-size-height";
-				DeclarationValue firstValue = declarationValues.get(0);
-				assignStylePropertyToValue(WIDTH, firstValue);
-				DeclarationValue secondValue = null;
-				if (declarationValues.size() == 1) {
-					String val = firstValue.getValue();
-					if (!("cover".equals(val) || "contain".equals(val) || "inherit".equals(val))) {
-						secondValue = new DeclarationValue("auto", ValueType.LENGTH);
-						assignStylePropertyToValue(HEIGHT, secondValue);
-						addMissingValue(secondValue, 1);
+				
+				List<DeclarationValue> allValues = new ArrayList<>(declarationValues);
+				DeclarationValue sentinel = new DeclarationValue(",", ValueType.SEPARATOR);
+				allValues.add(sentinel);
+				
+				List<DeclarationValue> currentLayerValues = new ArrayList<>();
+				int currentLayerIndex = 0;
+				
+				for (int currentValueIndex = 0; currentValueIndex < allValues.size(); currentValueIndex++) {
+					DeclarationValue currentValue = allValues.get(currentValueIndex);
+					if (currentValue.getType() == ValueType.SEPARATOR && ",".equals(currentValue.getValue())) {
+						currentLayerIndex++;
+				
+						final String BOTH = "background-size-both";
+						final String WIDTH = "background-size-width";
+						final String HEIGHT = "background-size-height";
+						DeclarationValue firstValue = currentLayerValues.get(0);
+						assignStylePropertyToValue(WIDTH, currentLayerIndex, firstValue, false);
+						DeclarationValue secondValue = null;
+						if (currentLayerValues.size() == 1) {
+							String val = firstValue.getValue();
+							if (!("cover".equals(val) || "contain".equals(val) || "inherit".equals(val))) {
+								secondValue = new DeclarationValue("auto", ValueType.LENGTH);
+								assignStylePropertyToValue(HEIGHT, currentLayerIndex, secondValue, false);
+								addMissingValue(secondValue, 1);
+							} else {
+								assignStylePropertyToValue(BOTH, currentLayerIndex, firstValue, false);
+								// There if no second value
+							}
+						} else {
+							secondValue = currentLayerValues.get(1);
+							assignStylePropertyToValue(HEIGHT, currentLayerIndex, secondValue, false);
+						}
+						
+						currentLayerValues.clear();
 					} else {
-						assignStylePropertyToValue(BOTH, firstValue);
-						// There if no second value
+						currentLayerValues.add(currentValue);
 					}
-				} else {
-					secondValue = declarationValues.get(1);
-					assignStylePropertyToValue(HEIGHT, secondValue);
+				}
+					
+				break;
+			}
+			case "background-clip":
+			case "background-origin":
+			case "background-image":
+			case "background-repeat":
+			case "background-attachment": {
+				int currentLayer = 0;
+				for (DeclarationValue value : declarationValues) {
+					if (value.getType() != ValueType.SEPARATOR) {
+						assignStylePropertyToValue(getNonVendorProperty(getNonHackedProperty(property)), ++currentLayer, value, true);
+					}
 				}
 				break;
 			}

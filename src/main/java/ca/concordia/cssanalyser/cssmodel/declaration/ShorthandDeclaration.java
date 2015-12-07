@@ -867,11 +867,11 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 								bgPositionY = null,
 								bgSizeW = null,
 								bgSizeH = null,
-								bgColor = null;
+								bgColor = null,
+								slash = null;
 	
 						int numberOfBoxes = 0;
 						List<Integer> lenghtValuesIndices = new ArrayList<>();
-						boolean slashFound = false;
 	
 						for (int currentLayerValueIndex = currentLayerStartIndex; currentLayerValueIndex < currentValueIndex; currentLayerValueIndex++) {
 							// Current layer indices are from currentLayerValueIndex to currentValueIndex
@@ -913,8 +913,9 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 								lenghtValuesIndices.add(currentLayerValueIndex);
 								break;
 							case OPERATOR:
+							case OTHER:
 								if ("/".equals(currentLayerCurrentValue.getValue())) {
-									slashFound = true;
+									slash = currentLayerCurrentValue;
 									DeclarationValue tempValue;
 									if (currentLayerValueIndex - 1 >= currentLayerStartIndex) {
 										tempValue = allValues.get(currentLayerValueIndex - 1);
@@ -988,8 +989,11 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 							}
 						}
 	
-						if (!slashFound)
-							addMissingValue(new DeclarationValue("/", ValueType.OPERATOR), currentLayerStartIndex + missingValueOffset + 3);
+						if (slash == null) {
+							slash = new DeclarationValue("/", ValueType.OPERATOR);
+							addMissingValue(slash, currentLayerStartIndex + missingValueOffset + 3);
+							totalAddedMissingValues++;
+						}
 	
 						if (bgSizeW == null) {
 							bgSizeW = new DeclarationValue("auto", ValueType.IDENT);
@@ -1059,7 +1063,9 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 						assignStylePropertyToValue(CLIP, currentLayerIndex, bgClip, false);
 						assignStylePropertyToValue(POSITION + "-x", currentLayerIndex, bgPositionX, false);
 						assignStylePropertyToValue(POSITION + "-y", currentLayerIndex, bgPositionY, false);
-						assignStylePropertyToValue(SIZE, currentLayerIndex, bgImage, false);
+						assignStylePropertyToValue(SIZE + "-w", currentLayerIndex, bgSizeW, false);
+						assignStylePropertyToValue(SIZE + "-h", currentLayerIndex, bgSizeH, false);
+						assignStylePropertyToValue("/", currentLayerIndex, slash, false);
 
 						
 						// Color only comes in the last layer

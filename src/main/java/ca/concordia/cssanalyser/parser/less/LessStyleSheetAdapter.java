@@ -36,6 +36,7 @@ import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPreprocessorN
 import ca.concordia.cssanalyser.parser.ParseException;
 
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
+import com.github.sommeri.less4j.core.ast.AnonymousExpression;
 import com.github.sommeri.less4j.core.ast.BinaryExpression;
 import com.github.sommeri.less4j.core.ast.ColorExpression;
 import com.github.sommeri.less4j.core.ast.ColorExpression.ColorWithAlphaExpression;
@@ -357,6 +358,9 @@ public class LessStyleSheetAdapter {
 			
 		//} else if (expression instanceof Variable) {
 		//	value = DeclarationValueFactory.getDeclarationValue(property, expression.toString(), ValueType.OTHER);
+		} else if (expression instanceof AnonymousExpression) {
+			AnonymousExpression anonymousExpression = (AnonymousExpression) expression; 
+			value = DeclarationValueFactory.getDeclarationValue(property, anonymousExpression.getValue(), ValueType.OTHER);
 		} else {
 			throw new RuntimeException("What is that?" + expression);
 		}
