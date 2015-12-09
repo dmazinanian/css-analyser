@@ -193,8 +193,7 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 			}
 
 			// 2- Add the necessary declarations to the involved selectors
-			List<Declaration> declarationsToBeAdded = getDeclarationsToBeAdded();
-			for (Declaration declaration : declarationsToBeAdded) {
+			for (Declaration declaration : getDeclarationsToBeAdded()) {
 				Selector selector = declaration.getSelector().getOriginalSelector();
 				PreprocessorNode<ASTCssNode> selectorNode = nodeFinder.perform(selector.getLocationInfo().getOffset(), selector.getLocationInfo().getLength());
 				String nodeString = declaration.toString();

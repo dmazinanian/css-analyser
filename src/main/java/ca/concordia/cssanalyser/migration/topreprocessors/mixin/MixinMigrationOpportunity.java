@@ -372,7 +372,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	 * declarations
 	 * @return
 	 */
-	public List<Declaration> getDeclarationsToBeAdded() {
+	public Iterable<Declaration> getDeclarationsToBeAdded() {
 		Map<ShorthandDeclaration, Set<Declaration>> parentShortandsToIndividualsMap = new HashMap<>();
 		for (Declaration declaration : getDeclarationsToBeRemoved()) {
 			if (declaration.isVirtualIndividualDeclarationOfAShorthand()) {
