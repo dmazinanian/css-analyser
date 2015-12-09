@@ -7,6 +7,7 @@ import com.github.sommeri.less4j.LessSource.CannotReadFile;
 import com.github.sommeri.less4j.LessSource.FileNotFound;
 import com.github.sommeri.less4j.core.parser.ANTLRParser;
 import com.github.sommeri.less4j.core.parser.ASTBuilder;
+import com.github.sommeri.less4j.core.problems.BugHappened;
 import com.github.sommeri.less4j.core.problems.ProblemsHandler;
 
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
@@ -60,7 +61,7 @@ public class LessCSSParser implements CSSParser {
 
 			lessStyleSheet = astBuilder.parseStyleSheet(result.getTree());			
 
-		} catch (FileNotFound | CannotReadFile ex) {
+		} catch (FileNotFound | CannotReadFile | BugHappened ex) {
 			throw new ParseException(ex);
 		}
 		return lessStyleSheet;
