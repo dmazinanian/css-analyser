@@ -79,7 +79,6 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		this.mixinName = mixinName;
 	}
 	
-	
 	public void addDeclarationsWithTheSameProperty(List<Declaration> declarations) {
 		String forProperty = declarations.get(0).getProperty();
 		List<Declaration> declarationsToBeAdded = new ArrayList<>();
@@ -409,4 +408,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		return preprocessorType;
 	}
 	
+	public MixinDeclaration getMixinDeclarationForDeclaration(Declaration declaration) {
+		return this.declarationToMixinDeclarationMapper.get(declaration);
+	}
 }
