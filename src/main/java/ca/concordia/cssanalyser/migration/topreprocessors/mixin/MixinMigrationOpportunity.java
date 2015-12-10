@@ -18,6 +18,7 @@ import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunity;
+import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorType;
 import ca.concordia.cssanalyser.migration.topreprocessors.differences.StylePropertyValuesDifferenceInValues;
 
 /**
@@ -45,12 +46,15 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	
 	private boolean shouldCalculateParameters = false;
 	
+	private final PreprocessorType preprocessorType;
+	
 	// Map every Declaration to a MixinDeclaration
 	private Map<Declaration, MixinDeclaration> declarationToMixinDeclarationMapper = new HashMap<>();
 	
-	public MixinMigrationOpportunity(Iterable<Selector> forSelectors, StyleSheet forStyleSheet) {
+	public MixinMigrationOpportunity(Iterable<Selector> forSelectors, StyleSheet forStyleSheet, PreprocessorType type) {
 		super(forStyleSheet);
 		this.involvedSelectors = forSelectors;
+		preprocessorType = type;
 	}
 
 	// The list of properties and MixinValues. The real mixin will be created based on this
@@ -399,6 +403,10 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			}
 		}
 		return declarationsToBeAdded;
+	}
+
+	public PreprocessorType getPreprocessorType() {
+		return preprocessorType;
 	}
 	
 }

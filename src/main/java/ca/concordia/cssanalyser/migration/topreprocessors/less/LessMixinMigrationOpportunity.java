@@ -16,6 +16,7 @@ import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorNode;
+import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorType;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinDeclaration;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameter;
@@ -31,7 +32,7 @@ import com.github.sommeri.less4j.core.ast.ASTCssNode;
 public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com.github.sommeri.less4j.core.ast.StyleSheet> {
 	
 	public LessMixinMigrationOpportunity(Iterable<Selector> forSelectors, StyleSheet forStyleSheet) {
-		super(forSelectors, forStyleSheet);
+		super(forSelectors, forStyleSheet, PreprocessorType.LESS);
 	}
 
 	@Override
