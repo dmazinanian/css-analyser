@@ -3,17 +3,18 @@ package ca.concordia.cssanalyser.migration.topreprocessors.less;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.antlr.runtime.Token;
 import org.apache.commons.lang3.reflect.FieldUtils;
-
-import ca.concordia.cssanalyser.cssmodel.LocationInfo;
-import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorNode;
-import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorNodeFinder;
 
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
 import com.github.sommeri.less4j.core.ast.StyleSheet;
 import com.github.sommeri.less4j.core.parser.HiddenTokenAwareErrorTree;
 import com.github.sommeri.less4j.core.parser.HiddenTokenAwareTree;
 import com.github.sommeri.less4j.core.parser.LessLexer;
+
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
+import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorNode;
+import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorNodeFinder;
 
 public class LessPreprocessorNodeFinder extends PreprocessorNodeFinder<StyleSheet, ASTCssNode> {
 	
@@ -52,9 +53,9 @@ public class LessPreprocessorNodeFinder extends PreprocessorNodeFinder<StyleShee
 	}
 	
 	public static LocationInfo getLocationInfoForLessASTCssNode(ASTCssNode node) {
-		HiddenTokenAwareTree firstChild, lastChild;
+		HiddenTokenAwareTree firstChild;
 		if (node.getUnderlyingStructure().getChildren().size() == 0) {
-			firstChild = lastChild = node.getUnderlyingStructure();
+			firstChild = node.getUnderlyingStructure();
 		} else {
 			firstChild = node.getUnderlyingStructure().getChild(0);
 			while (firstChild.getChildCount() > 0) {
@@ -67,12 +68,6 @@ public class LessPreprocessorNodeFinder extends PreprocessorNodeFinder<StyleShee
 					firstChild = firstChild.getChild(0);	
 				}
 			}
-			
-			lastChild = node.getUnderlyingStructure().getChild(node.getUnderlyingStructure().getChildCount() - 1);
-			while (lastChild.getChildCount() > 0) {
-				lastChild = lastChild.getChild(lastChild.getChildCount() - 1);
-			}
-	
 		}
 		
 		int line = node.getSourceLine();
@@ -80,14 +75,16 @@ public class LessPreprocessorNodeFinder extends PreprocessorNodeFinder<StyleShee
 		
 		int offset = -1, length = -1;
 		
-		if (firstChild instanceof HiddenTokenAwareErrorTree || 
-				lastChild instanceof HiddenTokenAwareErrorTree) {
+		if (firstChild instanceof HiddenTokenAwareErrorTree) {
 			throw new IllegalArgumentException("File has syntax errors, so the location info cannot be retrieved.");
 		}
 		
 		try {
 			offset = (int)FieldUtils.readField(firstChild.getToken(), "start", true);
-			length = (int)FieldUtils.readField(lastChild.getToken(), "stop", true) - offset + 1;
+			Token stopToken = node.getUnderlyingStructure().getStopToken();
+			if (stopToken == null)
+				stopToken = node.getUnderlyingStructure().getToken();
+			length = (int)FieldUtils.readField(stopToken, "stop", true) - offset + 1;
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
@@ -95,5 +92,4 @@ public class LessPreprocessorNodeFinder extends PreprocessorNodeFinder<StyleShee
 		LocationInfo toReturn = new LocationInfo(line, column, offset, length);
 		return toReturn;
 	}
-
 }
