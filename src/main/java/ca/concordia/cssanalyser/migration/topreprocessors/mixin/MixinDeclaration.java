@@ -1,6 +1,7 @@
 package ca.concordia.cssanalyser.migration.topreprocessors.mixin;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -11,6 +12,8 @@ import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.PropertyAndLayer;
+import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
+import ca.concordia.cssanalyser.cssmodel.declaration.value.ValueType;
 
 public class MixinDeclaration {
 	
@@ -64,6 +67,53 @@ public class MixinDeclaration {
 
 	public void setMixinDeclarationNumber(int mixinDeclarationNumber) {
 		this.mixinDeclarationNumber = mixinDeclarationNumber;
+	}
+	
+	public Iterable<MixinValue> getMixinValues() {
+		
+		List<MixinValue> toReturn = new ArrayList<>();
+		
+		// Get the declaration with the highest number of layers and get all the values from that
+		Declaration declarationWithHighestNumberOfLayers = getReferenceDeclaration();
+		// values includes all DeclarationValue objects of the declaration with the highest number of values
+		List<DeclarationValue> values = new ArrayList<>();
+		for (DeclarationValue v : declarationWithHighestNumberOfLayers.getDeclarationValues())
+			values.add(v);
+		Set<Integer> checkedValuesIndices = new HashSet<>(); 
+		for (int i = 0; i < values.size(); i++) {
+			DeclarationValue value = values.get(i);
+			if (checkedValuesIndices.contains(i))
+				continue;
+			if (value.getCorrespondingStyleProperty() != null) {
+				MixinValue mixinValue = getMixinValueForPropertyandLayer(value.getCorrespondingStylePropertyAndLayer());
+				if (mixinValue != null) {
+					toReturn.add(mixinValue);
+					// Check all the values related to this style property, so we skip them in other runs
+					for (int j = 0; j < values.size(); j++) {
+						if (!checkedValuesIndices.contains(j) &&
+								value.getCorrespondingStylePropertyAndLayer().equals(values.get(j).getCorrespondingStylePropertyAndLayer())) {
+							checkedValuesIndices.add(j);
+							/*
+							 * Try to remove the separator (comma) related to this property and layer
+							 * If the next value is a separator and the value after the separator has 
+							 * the same property and value, the separator should be removed
+							 */
+							if (j <= values.size() - 3 && 
+									values.get(j + 1).getType() == ValueType.SEPARATOR &&
+									value.getCorrespondingStylePropertyAndLayer().equals(values.get(j + 2).getCorrespondingStylePropertyAndLayer())) {
+								checkedValuesIndices.add(j + 1);								
+							}
+						}
+					}
+				}
+			} else { 
+				Collection<DeclarationValue> temp = new ArrayList<>();
+				temp.add(value);
+				toReturn.add(new MixinLiteral(temp, value.getCorrespondingStylePropertyAndLayer()));
+			}
+		}
+		
+		return toReturn;
 	}
 
 	@Override
@@ -154,6 +204,5 @@ public class MixinDeclaration {
 		}
 		return true;
 	}
-	
 	
 }
