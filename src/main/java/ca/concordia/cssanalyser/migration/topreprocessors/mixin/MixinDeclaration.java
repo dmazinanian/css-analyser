@@ -204,5 +204,20 @@ public class MixinDeclaration {
 		}
 		return true;
 	}
+
+	public String getMixinDeclarationString() {
+		StringBuilder toReturn = new StringBuilder();
+		toReturn.append(getPropertyName()).append(": ");
+		List<MixinValue> mixinValues = new ArrayList<>();
+		for (MixinValue mixinValue : getMixinValues()) {
+			mixinValues.add(mixinValue);
+		}
+		for (int i = 0; i < mixinValues.size(); i++) {
+			toReturn.append(mixinValues.get(i));
+			if (i < mixinValues.size() - 1 && !mixinValues.get(i + 1).toString().trim().equals(","))
+				toReturn.append(" ");
+		}
+		return toReturn.toString();
+	}
 	
 }
