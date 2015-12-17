@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.github.sommeri.less4j.Less4jException;
+import com.github.sommeri.less4j.LessSource;
+import com.github.sommeri.less4j.core.ast.ASTCssNode;
+
 import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
@@ -20,13 +24,8 @@ import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinDeclaration
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameter;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameterizedValue;
-import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinValue;
 import ca.concordia.cssanalyser.parser.ParseException;
 import ca.concordia.cssanalyser.parser.less.LessCSSParser;
-
-import com.github.sommeri.less4j.Less4jException;
-import com.github.sommeri.less4j.LessSource;
-import com.github.sommeri.less4j.core.ast.ASTCssNode;
 
 public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com.github.sommeri.less4j.core.ast.StyleSheet> {
 	
@@ -41,16 +40,8 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		toReturn.append(" {").append(System.lineSeparator());
 		for (Iterator<MixinDeclaration> iterator = getAllMixinDeclarations().iterator(); iterator.hasNext(); ) {
 			MixinDeclaration mixinDeclaration = iterator.next();
-			toReturn.append("\t").append(mixinDeclaration.getPropertyName()).append(": ");
-			List<MixinValue> mixinValues = new ArrayList<>();
-			for (MixinValue mixinValue : mixinDeclaration.getMixinValues()) {
-				mixinValues.add(mixinValue);
-			}
-			for (int i = 0; i < mixinValues.size(); i++) {
-				toReturn.append(mixinValues.get(i));
-				if (i < mixinValues.size() - 1 && !mixinValues.get(i + 1).toString().trim().equals(","))
-					toReturn.append(" ");
-			}
+			toReturn.append("\t");
+			toReturn.append(mixinDeclaration.getMixinDeclarationString());
 			if (iterator.hasNext())
 				toReturn.append(";");
 			toReturn.append(System.lineSeparator());
