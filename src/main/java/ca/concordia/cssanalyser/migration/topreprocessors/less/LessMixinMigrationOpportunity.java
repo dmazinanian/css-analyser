@@ -37,13 +37,8 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 	@Override
 	public String toString() {
 		StringBuilder toReturn = new StringBuilder();
-		toReturn.append(this.getMixinName()).append("(");
-		for(Iterator<MixinParameter> iterator = getParameters().iterator(); iterator.hasNext(); ) {
-			toReturn.append("@").append(iterator.next().getName());
-			if (iterator.hasNext())
-				toReturn.append("; ");
-		}
-		toReturn.append(") {").append(System.lineSeparator());
+		toReturn.append(getMixinSignature());
+		toReturn.append(" {").append(System.lineSeparator());
 		for (Iterator<MixinDeclaration> iterator = getAllMixinDeclarations().iterator(); iterator.hasNext(); ) {
 			MixinDeclaration mixinDeclaration = iterator.next();
 			toReturn.append("\t").append(mixinDeclaration.getPropertyName()).append(": ");
@@ -61,6 +56,19 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 			toReturn.append(System.lineSeparator());
 		}
 		toReturn.append("}");
+		return toReturn.toString();
+	}
+
+	@Override
+	public String getMixinSignature() {
+		StringBuilder toReturn = new StringBuilder();
+		toReturn.append(this.getMixinName()).append("(");
+		for(Iterator<MixinParameter> iterator = getParameters().iterator(); iterator.hasNext(); ) {
+			toReturn.append("@").append(iterator.next().getName());
+			if (iterator.hasNext())
+				toReturn.append("; ");
+		}
+		toReturn.append(")");
 		return toReturn.toString();
 	}
 

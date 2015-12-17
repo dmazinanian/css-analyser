@@ -411,4 +411,6 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	public MixinDeclaration getMixinDeclarationForDeclaration(Declaration declaration) {
 		return this.declarationToMixinDeclarationMapper.get(declaration);
 	}
+	
+	public abstract String getMixinSignature();
 }
