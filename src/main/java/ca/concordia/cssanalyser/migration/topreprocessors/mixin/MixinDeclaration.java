@@ -205,6 +205,14 @@ public class MixinDeclaration {
 		return true;
 	}
 
+	/**
+	 * Returns the string representation of this Mixin declaration
+	 * in the CSS syntax.
+	 */
+	/*
+	 * TODO: This uses Less syntax, because MixinParameter uses it.
+	 * Should introduce preprocessor-specific classes
+	 */
 	public String getMixinDeclarationString() {
 		StringBuilder toReturn = new StringBuilder();
 		toReturn.append(getPropertyName()).append(": ");
