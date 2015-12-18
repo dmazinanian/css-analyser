@@ -92,7 +92,7 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		try {
 			afterMigration = LessHelper.compileLESSStyleSheet(resultingLESSStyleSheet);
 		} catch (Less4jException e) {
-			String message = "Error in parsing compiling mixin opportunity." + System.lineSeparator() + e.getMessage();
+			String message = "Error in compiling the resulting style sheet after applying mixin migration opportunity." + System.lineSeparator() + e.getMessage();
 			FileLogger.getLogger(this.getClass()).warn(message);
 			return false;
 		}
