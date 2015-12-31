@@ -35,7 +35,19 @@ public class MixinLiteral extends MixinValue {
 	public String toString() {
 		StringBuilder toReturn = new StringBuilder();
 		for (Iterator<DeclarationValue> iterator = forValues.iterator(); iterator.hasNext(); ) {
-			toReturn.append(iterator.next().getValue());
+			String valueString = iterator.next().getValue();
+			if (assignedTo != null) {
+				/*
+				 * Special handling for / in border-radius
+				 * This is necessary, as preprocessor compiler 
+				 * does not distinguish this with binary operator
+				 */
+				String propertyName = assignedTo.getPropertyName();
+				if ("border-radius-slash".equals(propertyName)) {
+					valueString = "~'" + valueString + "'";
+				}
+			}
+			toReturn.append(valueString);
 			if (iterator.hasNext())
 				toReturn.append(", ");
 		}
