@@ -42,6 +42,7 @@ import com.github.sommeri.less4j.core.ast.ColorExpression;
 import com.github.sommeri.less4j.core.ast.ColorExpression.ColorWithAlphaExpression;
 import com.github.sommeri.less4j.core.ast.CssClass;
 import com.github.sommeri.less4j.core.ast.CssString;
+import com.github.sommeri.less4j.core.ast.EscapedValue;
 import com.github.sommeri.less4j.core.ast.Expression;
 import com.github.sommeri.less4j.core.ast.FixedMediaExpression;
 import com.github.sommeri.less4j.core.ast.FunctionExpression;
@@ -313,7 +314,7 @@ public class LessStyleSheetAdapter {
 		} else if (expression instanceof ColorWithAlphaExpression) {
 
 			ColorWithAlphaExpression colorWithAlpha = (ColorWithAlphaExpression)expression;
-			throw new RuntimeException(colorWithAlpha.toString());
+			value = DeclarationValueFactory.getDeclarationValue(property, colorWithAlpha.toString(), ValueType.FUNCTION);  
 
 		} else if (expression instanceof IdentifierExpression) {
 
@@ -361,6 +362,9 @@ public class LessStyleSheetAdapter {
 		} else if (expression instanceof AnonymousExpression) {
 			AnonymousExpression anonymousExpression = (AnonymousExpression) expression; 
 			value = DeclarationValueFactory.getDeclarationValue(property, anonymousExpression.getValue(), ValueType.OTHER);
+		} else if (expression instanceof EscapedValue) {
+			EscapedValue escapedValue = (EscapedValue) expression;
+			value = DeclarationValueFactory.getDeclarationValue(property, escapedValue.getValue(), ValueType.OTHER);
 		} else {
 			throw new RuntimeException("What is that?" + expression);
 		}
