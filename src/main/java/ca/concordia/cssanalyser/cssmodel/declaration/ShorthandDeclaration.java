@@ -181,6 +181,9 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 		switch (getNonVendorProperty(getNonHackedProperty(property))) {
 		
 			case "border-radius": {
+				
+				if (declarationValues.size() == 0) 
+					return;
 	
 				//http://www.w3.org/TR/css3-background/#the-border-radius
 				DeclarationValue borderTLHRadius, borderTLVRadius,
@@ -188,9 +191,9 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				borderBRHRadius, borderBRVRadius,
 				borderBLHRadius, borderBLVRadius;
 	
-				int slashPosition = declarationValues.indexOf(new DeclarationValue("/", ValueType.SEPARATOR));
-				if (declarationValues.size() == 0) 
-					return;
+				DeclarationValue slash = new DeclarationValue("/", ValueType.SEPARATOR);
+				int slashPosition = declarationValues.indexOf(slash);
+				
 				borderTLHRadius = declarationValues.get(0);
 				borderTRHRadius = borderTLHRadius.clone(); 
 				borderBRHRadius = borderTLHRadius.clone();
@@ -225,7 +228,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				}
 	
 				if (slashPosition < 0)
-					addMissingValue(new DeclarationValue("/", ValueType.SEPARATOR), 4);
+					addMissingValue(slash, 4);
 	
 				borderTLVRadius = borderTLHRadius.clone(); 
 				borderTRVRadius = borderTRHRadius.clone(); 
@@ -262,6 +265,11 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 					borderBRVRadius = declarationValues.get(7);
 					borderBLVRadius = borderTRVRadius.clone();
 					addMissingValue(borderBLVRadius, 8);
+				case 9: // 4 items after slash
+					borderTLVRadius = declarationValues.get(5);
+					borderTRVRadius = declarationValues.get(6); 
+					borderBRVRadius = declarationValues.get(7);
+					borderBLVRadius = declarationValues.get(8);
 				}
 	
 				// Add shorthand values
@@ -278,6 +286,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				final String BRVR = "border-bottom-right-vertical-radius";
 				final String BLHR = "border-bottom-left-horizontal-radius";
 				final String BLVR = "border-bottom-left-vertical-radius";
+				final String SLASH = "border-radius-slash";
 				
 				assignStylePropertyToValue(TLHR, borderTLHRadius);
 				assignStylePropertyToValue(TLVR, borderTLVRadius);
@@ -287,6 +296,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				assignStylePropertyToValue(BRVR, borderBRVRadius);
 				assignStylePropertyToValue(BLHR, borderBLHRadius);
 				assignStylePropertyToValue(BLVR, borderBLVRadius);
+				assignStylePropertyToValue(SLASH, slash);
 				
 				break;
 			}
@@ -814,7 +824,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				final String SIZE = "font-size";
 				final String HEIGHT = "line-height";
 				final String FAMILY = "font-family";
-				final String SLASH = "slash";
+				final String SLASH = "font-slash";
 				
 				addIndividualDeclaration(STYLE, fontStyle);
 				addIndividualDeclaration(VARIANT, fontVarient);
@@ -1047,6 +1057,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 						final String POSITION = "background-position";
 						final String SIZE = "background-size";
 						final String COLOR = "background-color";
+						final String SLASH = "background-slash";
 						
 						addIndividualDeclaration(IMAGE, bgImage);
 						addIndividualDeclaration(REPEAT, bgRepeat);
@@ -1065,9 +1076,8 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 						assignStylePropertyToValue(POSITION + "-y", currentLayerIndex, bgPositionY, false);
 						assignStylePropertyToValue(SIZE + "-w", currentLayerIndex, bgSizeW, false);
 						assignStylePropertyToValue(SIZE + "-h", currentLayerIndex, bgSizeH, false);
-						assignStylePropertyToValue("/", currentLayerIndex, slash, false);
+						assignStylePropertyToValue(SLASH, currentLayerIndex, slash, false);
 
-						
 						// Color only comes in the last layer
 						if (isLastLayer) {
 							addIndividualDeclaration(COLOR, bgColor);
