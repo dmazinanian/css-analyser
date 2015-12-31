@@ -221,9 +221,14 @@ public class MixinDeclaration {
 			mixinValues.add(mixinValue);
 		}
 		for (int i = 0; i < mixinValues.size(); i++) {
-			toReturn.append(mixinValues.get(i));
-			if (i < mixinValues.size() - 1 && !mixinValues.get(i + 1).toString().trim().equals(","))
-				toReturn.append(" ");
+			MixinValue mixinValue = mixinValues.get(i);
+			toReturn.append(mixinValue);
+			if (i < mixinValues.size() - 1 && !mixinValue.toString().trim().equals("/")) {
+				MixinValue nextValue = mixinValues.get(i + 1);
+				if (!nextValue.toString().trim().equals(",") &&
+						!nextValue.toString().trim().equals("/"))
+					toReturn.append(" ");
+			}
 		}
 		return toReturn.toString();
 	}
