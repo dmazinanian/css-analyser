@@ -24,6 +24,7 @@ import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessMixinDeclaratio
 import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessNesting;
 import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessSelector;
 import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessVariableDeclaration;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessVariableDeclaration.VariableType;
 
 public class EmpiricalStudy {
 	
@@ -207,7 +208,7 @@ public class EmpiricalStudy {
 
 	public void writeVariableInformation(String path, boolean header) {
 		
-		CSVColumns columns = new CSVColumns("WebSite" , "File" , "Line" , "Variable" , "Type" , "Scope");
+		CSVColumns columns = new CSVColumns("WebSite" , "File" , "Line" , "Variable" , "Type" , "Scope", "FunctionName");
 
 		if (header) {	
 			writeStringToFile(columns.getHeader(true), path, false);
@@ -230,7 +231,10 @@ public class EmpiricalStudy {
 							variableInfo.getSourceLine(), 
 							variableInfo.getVariableString().replace("|", "{???}"),
 							variableInfo.getVariableType(),
-							variableInfo.getScope()
+							variableInfo.getScope(),
+							(variableInfo.getVariableType() == VariableType.OTHER_FUNCTION ?
+									variableInfo.getFunctionName() :
+										variableInfo.getVariableDeclaration().getValue().getType())
 						), 
 						path, true);
 
