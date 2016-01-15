@@ -100,6 +100,8 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	 * @return
 	 */
 	public Selector getSelector() {
+		if (this.parentShorthand != null)
+			return parentShorthand.getSelector();
 		return parentSelector;
 	}
 	
