@@ -1291,6 +1291,19 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 	public Declaration getIndividualDeclarationForProperty(String property) {
 		return individualDeclarations.get(property);
 	}
+	
+	/**
+	 * Get the individual declaration corresponding to the given property
+	 * @param property
+	 * @return
+	 */
+	public Declaration getIndividualDeclarationForPropertyAtTheDeepestLevel(String property) {
+		Iterable<Declaration> individualDeclarationsAtTheDeepestLevel = getIndividualDeclarationsAtTheDeepestLevel();
+		for (Declaration declaration : individualDeclarationsAtTheDeepestLevel)
+			if (declaration.getProperty().equals(property))
+				return declaration;
+		return null;
+	}
 
 	@Override
 	public ShorthandDeclaration clone() {
