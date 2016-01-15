@@ -1229,7 +1229,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 			}
 
 		}
-
+		declaration.parentShorthand = this;
 		individualDeclarations.put(declaration.getProperty(), declaration);
 
 	}
