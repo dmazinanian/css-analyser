@@ -258,9 +258,8 @@ public abstract class Selector extends CSSModelObject  {
 			virtualShorthand.isVirtual(true);
 			boolean isImportant = true;
 			for (Declaration individual : entry.getValue()) {
-				virtualShorthand.addIndividualDeclaration(individual);
+				virtualShorthand.addIndividualDeclaration(individual.clone());
 				isImportant &= individual.isImportant();
-				individual.setParentShorthand(virtualShorthand);
 			}
 			virtualShorthand.isImportant(isImportant);
 			
