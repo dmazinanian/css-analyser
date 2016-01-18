@@ -57,6 +57,18 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 		prefixes.add("-ms-");
 		prefixes.add("-o-");
 		
+		prefixes.add("-ah-");
+		prefixes.add("-apple-");
+		prefixes.add("-atsc-");
+		prefixes.add("-epub-");
+		prefixes.add("-hp-");
+		prefixes.add("-khtml-");
+		prefixes.add("-rim-");
+		prefixes.add("-ro-");
+		prefixes.add("-tc-");
+		prefixes.add("-wap-");
+		prefixes.add("-xv-");
+		
 		for (String prefix : prefixes)
 			if (torReturn.startsWith(prefix)) {
 				torReturn = torReturn.substring(prefix.length());
