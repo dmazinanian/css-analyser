@@ -213,4 +213,9 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		}
 		return nodesToBeRemoved;
 	}
+	
+	@Override
+	public double getRank() {
+		return 0;
+	}
 }
