@@ -11,6 +11,7 @@ import com.github.sommeri.less4j.core.ast.StyleSheet;
 
 import ca.concordia.cssanalyser.app.CSSAnalyserCLI;
 import ca.concordia.cssanalyser.app.FileLogger;
+import ca.concordia.cssanalyser.io.CSVColumns;
 import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.parser.ParseException;
 import ca.concordia.cssanalyser.parser.less.LessCSSParser;
@@ -28,48 +29,6 @@ import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessVariableDeclara
 
 public class EmpiricalStudy {
 	
-	private static class CSVColumns {
-		
-		private static final String SEPARATOR = "|";
-		
-		private final String[] columns;
-		
-		public CSVColumns(String... columns) {
-			this.columns = columns;
-		}
-
-		public String getHeader(boolean addLineSeparator) {
-			StringBuilder toReturn = new StringBuilder();
-			for (int i = 0; i < columns.length; i++) {
-				toReturn.append(columns[i]);
-				if (i < columns.length - 1) {
-					toReturn.append(SEPARATOR);
-				} else { 
-					if (addLineSeparator) {
-						toReturn.append(System.lineSeparator());
-					}
-				}
-			}
-			return toReturn.toString();
-		}
-		
-		public String getRowFormat(boolean addLineSeparator) {
-			StringBuilder toReturn = new StringBuilder();
-			for (int i = 0; i < columns.length; i++) {
-				toReturn.append("%s");
-				if (i < columns.length - 1) {
-					toReturn.append(SEPARATOR);
-				} else { 
-					if (addLineSeparator) {
-						toReturn.append(System.lineSeparator());
-					}
-				}
-			}
-			return toReturn.toString();
-		}
-		
-	}
-
 	public static void writeStringToFile(String string, String path, boolean append) {
 		IOHelper.writeStringToFile(string.replace("#", "\\#"), path, append);
 	}
