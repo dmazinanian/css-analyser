@@ -35,6 +35,9 @@ import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorConditionT
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPreprocessorNodeFinder;
 import ca.concordia.cssanalyser.parser.ParseException;
 
+import com.github.sommeri.less4j.LessSource;
+import com.github.sommeri.less4j.LessSource.FileSource;
+import com.github.sommeri.less4j.LessSource.URLSource;
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
 import com.github.sommeri.less4j.core.ast.AnonymousExpression;
 import com.github.sommeri.less4j.core.ast.BinaryExpression;
@@ -626,8 +629,11 @@ public class LessStyleSheetAdapter {
 	}
 
 	public StyleSheet getAdaptedStyleSheet() {
-		StyleSheet ourStyleSheet = new StyleSheet(); 
-		ourStyleSheet.setPath(lessStyleSheet.getSource().toString());
+		StyleSheet ourStyleSheet = new StyleSheet();
+		LessSource source = lessStyleSheet.getSource();
+		if (source instanceof FileSource || source instanceof URLSource) {
+			ourStyleSheet.setPath(source.getURI().toString());
+		}
 		adapt(ourStyleSheet);
 		return ourStyleSheet;
 	}
