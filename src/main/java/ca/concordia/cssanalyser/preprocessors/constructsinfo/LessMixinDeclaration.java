@@ -1,10 +1,13 @@
 package ca.concordia.cssanalyser.preprocessors.constructsinfo;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import com.github.sommeri.less4j.core.ast.Declaration;
 import com.github.sommeri.less4j.core.ast.ReusableStructure;
 import com.github.sommeri.less4j.core.ast.StyleSheet;
+
+import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 
 public class LessMixinDeclaration extends LessConstruct {
 	
@@ -121,6 +124,20 @@ public class LessMixinDeclaration extends LessConstruct {
 		return nodeName;
 	}
 
+	public Iterable<String> getAllPropertiesAtTheDeepestLevel() {
+		Set<String> propertiesToReturn = new HashSet<>();
+		Set<Declaration> declarations = getDeclarations();
+		for (Declaration declaration : declarations) {
+			String property = declaration.getNameAsString();
+			if (ShorthandDeclaration.isShorthandProperty(property)) {
+				propertiesToReturn.addAll(ShorthandDeclaration.getIndividualPropertiesForAShorthand(property));
+			} else {
+				propertiesToReturn.add(property);
+			}
+		}
+		
+		return propertiesToReturn;
+	}
 	
 	@Override
 	public int hashCode() {
