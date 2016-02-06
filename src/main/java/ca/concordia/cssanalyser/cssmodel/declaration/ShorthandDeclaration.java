@@ -488,10 +488,13 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				}
 	
 				if (declarationValues.size() == 1) {
-					switch (declarationValues.get(0).getValue()) {
+					DeclarationValue value = declarationValues.get(0);
+					switch (value.getValue()) {
 						case "inherit":
 						case "none":
-							return;
+							listType = value;
+							listImage = value;
+							listPosition = value;
 						default:
 						// throw new Exception("Invalid list-style declaration");
 					}
@@ -1145,9 +1148,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 	// TODO: Maybe consider using a BiMap
 	public static Set<String> getShorthandPropertyNames(String property) {
 		String nonVendorproperty = getNonVendorProperty(getNonHackedProperty(property));
-		String prefix = "";
-		if (!property.equals(nonVendorproperty))
-			prefix = property.substring(0, property.indexOf(nonVendorproperty));
+		String prefix = getVendorPrefixForProperty(property);
 		Set<String> toReturn = new HashSet<>();
 		for (Entry<String, Set<String>> entry : shorthandProperties.entrySet()) {
 			if (entry.getValue().contains(nonVendorproperty)) {
@@ -1168,6 +1169,12 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 	 * @param values List<Values> of the individual declaration.
 	 */
 	public void addIndividualDeclaration(String propertyName, List<DeclarationValue> values) {
+		
+		String vendorPrefix = getVendorPrefixForProperty(this.property);
+		if (!"".equals(vendorPrefix)) {
+			propertyName = vendorPrefix + propertyName;
+		}
+		
 		if (individualDeclarations == null) {
 			individualDeclarations =  new HashMap<>();
 		}	
