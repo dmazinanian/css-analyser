@@ -91,6 +91,14 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 		return torReturn;
 	}
 	
+	public static String getVendorPrefixForProperty(String property) {
+		String nonVendorproperty = getNonVendorProperty(property);
+		String prefix = "";
+		if (!property.equals(nonVendorproperty))
+			prefix = property.substring(0, property.indexOf(nonVendorproperty));
+		return prefix;
+	}
+	
 	/**
 	 * Returns true if the declaration is declared with !important
 	 * @return
