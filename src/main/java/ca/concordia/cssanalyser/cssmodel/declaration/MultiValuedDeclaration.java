@@ -206,7 +206,6 @@ public class MultiValuedDeclaration extends Declaration {
 					if (currentValue.getType() == ValueType.SEPARATOR && ",".equals(currentValue.getValue())) {
 						currentLayerIndex++;
 				
-						final String BOTH = "background-size-both";
 						final String WIDTH = "background-size-width";
 						final String HEIGHT = "background-size-height";
 						DeclarationValue firstValue = currentLayerValues.get(0);
@@ -214,12 +213,13 @@ public class MultiValuedDeclaration extends Declaration {
 						DeclarationValue secondValue = null;
 						if (currentLayerValues.size() == 1) {
 							String val = firstValue.getValue();
-							if (!("cover".equals(val) || "contain".equals(val) || "inherit".equals(val))) {
+							if (!("cover".equals(val) || "contain".equals(val) || "inherit".equals(val) || "auto".equals(val))) {
 								secondValue = new DeclarationValue("auto", ValueType.LENGTH);
 								assignStylePropertyToValue(HEIGHT, currentLayerIndex, secondValue, false);
 								addMissingValue(secondValue, 1);
 							} else {
-								assignStylePropertyToValue(BOTH, currentLayerIndex, firstValue, false);
+								secondValue = firstValue.clone();
+								assignStylePropertyToValue(HEIGHT, currentLayerIndex, secondValue, false);
 								// There if no second value
 							}
 						} else {
@@ -252,8 +252,8 @@ public class MultiValuedDeclaration extends Declaration {
 			case "border-top-right-radius":
 			case "border-bottom-right-radius":
 			case "border-bottom-left-radius": {
-				final String HRADIUS = "horizontal-radius";
-				final String VRADIUS = "vertical-radius";
+				final String HRADIUS = property + "-horizontal";
+				final String VRADIUS = property + "-vertical";
 				DeclarationValue firstValue = declarationValues.get(0);
 				DeclarationValue secondValue = null;
 				// http://www.w3.org/TR/css3-background/
