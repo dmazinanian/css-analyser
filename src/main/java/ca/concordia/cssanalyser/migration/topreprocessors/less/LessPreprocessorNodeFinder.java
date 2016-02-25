@@ -79,6 +79,10 @@ public class LessPreprocessorNodeFinder extends PreprocessorNodeFinder<StyleShee
 			throw new IllegalArgumentException("File has syntax errors, so the location info cannot be retrieved.");
 		}
 		
+		if (firstChild.getToken() == null) {
+			return new LocationInfo(-1, -1, -1, -1);
+		}
+		
 		try {
 			offset = (int)FieldUtils.readField(firstChild.getToken(), "start", true);
 			Token stopToken = node.getUnderlyingStructure().getStopToken();
