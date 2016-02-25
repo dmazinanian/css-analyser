@@ -67,7 +67,10 @@ public class MultiValuedDeclaration extends Declaration {
 				"border-bottom-left-radius",
 				"transform-origin",
 				"transition-property",
+				"transition-timing-function",
+				"transition-delay",
 				"transform",
+				"transition-duration",
 				"perspective-origin",
 				"border-spacing",
 				"text-shadow",
@@ -351,8 +354,13 @@ public class MultiValuedDeclaration extends Declaration {
 							case IDENT:
 								if ("inset".equals(currentLayerCurrentValue.getValue()))
 									inset = currentLayerCurrentValue;
-								else if ("none".equals(currentLayerCurrentValue.getValue()))
-									return;
+								else if ("none".equals(currentLayerCurrentValue.getValue())) {
+											 hOffset = new DeclarationValue("0", ValueType.LENGTH);
+											 vOffset = new DeclarationValue("0", ValueType.LENGTH);
+									 		 blurRadius = new DeclarationValue("0", ValueType.LENGTH);
+									 		 spreadDistance = new DeclarationValue("0", ValueType.LENGTH);
+									 		 color = new DeclarationEquivalentValue("transparent", "rgba(0, 0, 0, 0)", ValueType.COLOR);
+								}
 								break;
 							case LENGTH:
 								numberOfLengths++;
@@ -436,26 +444,26 @@ public class MultiValuedDeclaration extends Declaration {
 				break;
 			}
 			
-			case "content": {
-				for (DeclarationValue value : declarationValues) {
-					if (value.getType() != ValueType.SEPARATOR)
-						assignStylePropertyToValue("content", 1, value, true);
-				}
-				break;
-			}
-			
+			case "content":
 			case "font-family": {
 				for (DeclarationValue value : declarationValues) {
 					if (value.getType() != ValueType.SEPARATOR)
-						assignStylePropertyToValue("font-family", 1, value, true);
+						assignStylePropertyToValue(property, 1, value, false);
+					/*else
+						assignStylePropertyToValue(property + "-comma", 1, value, true);*/
 				}
 				break;
 			}
 			
-			case "transition-property": {
+			case "transition-property":
+			case "transition-duration":
+			case "transition-timing-function":
+			case "transition-delay": {
 				for (DeclarationValue value : declarationValues) {
 					if (value.getType() != ValueType.SEPARATOR)
-						assignStylePropertyToValue("transition-property", 1, value, false);
+						assignStylePropertyToValue(property, 1, value, false);
+//					else
+//						assignStylePropertyToValue(property + "-comma", 1, value, false);
 				}
 				break;
 			}
