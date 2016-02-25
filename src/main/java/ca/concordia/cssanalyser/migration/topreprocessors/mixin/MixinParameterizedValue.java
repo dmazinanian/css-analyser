@@ -26,6 +26,10 @@ public class MixinParameterizedValue {
 	public MixinParameter getMixinParameter() {
 		return mixinParameter;
 	}
+	
+	public void setMixinParameter(MixinParameter mixinParameter) {
+		this.mixinParameter = mixinParameter;
+	}
 
 	public Declaration getForDeclaration() {
 		return forDeclaration;
@@ -101,5 +105,7 @@ public class MixinParameterizedValue {
 		}
 		return true;
 	}
+
+
 	
 }
