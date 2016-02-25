@@ -7,6 +7,35 @@ import java.util.List;
 import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
 
+import com.github.sommeri.less4j.LessSource;
+import com.github.sommeri.less4j.LessSource.FileSource;
+import com.github.sommeri.less4j.LessSource.URLSource;
+import com.github.sommeri.less4j.core.ast.ASTCssNode;
+import com.github.sommeri.less4j.core.ast.AnonymousExpression;
+import com.github.sommeri.less4j.core.ast.BinaryExpression;
+import com.github.sommeri.less4j.core.ast.ColorExpression;
+import com.github.sommeri.less4j.core.ast.ColorExpression.ColorWithAlphaExpression;
+import com.github.sommeri.less4j.core.ast.CssClass;
+import com.github.sommeri.less4j.core.ast.CssString;
+import com.github.sommeri.less4j.core.ast.EscapedValue;
+import com.github.sommeri.less4j.core.ast.Expression;
+import com.github.sommeri.less4j.core.ast.FixedMediaExpression;
+import com.github.sommeri.less4j.core.ast.FunctionExpression;
+import com.github.sommeri.less4j.core.ast.IdSelector;
+import com.github.sommeri.less4j.core.ast.IdentifierExpression;
+import com.github.sommeri.less4j.core.ast.InterpolableName;
+import com.github.sommeri.less4j.core.ast.InterpolatedMediaExpression;
+import com.github.sommeri.less4j.core.ast.ListExpression;
+import com.github.sommeri.less4j.core.ast.ListExpressionOperator.Operator;
+import com.github.sommeri.less4j.core.ast.MediaExpression;
+import com.github.sommeri.less4j.core.ast.NamedColorExpression;
+import com.github.sommeri.less4j.core.ast.NestedSelectorAppender;
+import com.github.sommeri.less4j.core.ast.Nth;
+import com.github.sommeri.less4j.core.ast.NumberExpression;
+import com.github.sommeri.less4j.core.ast.RuleSet;
+import com.github.sommeri.less4j.core.ast.SelectorAttribute;
+import com.github.sommeri.less4j.core.ast.SelectorPart;
+
 import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
@@ -34,34 +63,6 @@ import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorCondition;
 import ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorConditionType;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPreprocessorNodeFinder;
 import ca.concordia.cssanalyser.parser.ParseException;
-
-import com.github.sommeri.less4j.LessSource;
-import com.github.sommeri.less4j.LessSource.FileSource;
-import com.github.sommeri.less4j.LessSource.URLSource;
-import com.github.sommeri.less4j.core.ast.ASTCssNode;
-import com.github.sommeri.less4j.core.ast.AnonymousExpression;
-import com.github.sommeri.less4j.core.ast.BinaryExpression;
-import com.github.sommeri.less4j.core.ast.ColorExpression;
-import com.github.sommeri.less4j.core.ast.ColorExpression.ColorWithAlphaExpression;
-import com.github.sommeri.less4j.core.ast.CssClass;
-import com.github.sommeri.less4j.core.ast.CssString;
-import com.github.sommeri.less4j.core.ast.EscapedValue;
-import com.github.sommeri.less4j.core.ast.Expression;
-import com.github.sommeri.less4j.core.ast.FixedMediaExpression;
-import com.github.sommeri.less4j.core.ast.FunctionExpression;
-import com.github.sommeri.less4j.core.ast.IdSelector;
-import com.github.sommeri.less4j.core.ast.IdentifierExpression;
-import com.github.sommeri.less4j.core.ast.InterpolableName;
-import com.github.sommeri.less4j.core.ast.InterpolatedMediaExpression;
-import com.github.sommeri.less4j.core.ast.ListExpression;
-import com.github.sommeri.less4j.core.ast.ListExpressionOperator.Operator;
-import com.github.sommeri.less4j.core.ast.MediaExpression;
-import com.github.sommeri.less4j.core.ast.NamedColorExpression;
-import com.github.sommeri.less4j.core.ast.Nth;
-import com.github.sommeri.less4j.core.ast.NumberExpression;
-import com.github.sommeri.less4j.core.ast.RuleSet;
-import com.github.sommeri.less4j.core.ast.SelectorAttribute;
-import com.github.sommeri.less4j.core.ast.SelectorPart;
 
 /**
  * Adapts a Less StyleSheet object to a CSSAnalyser StyleSheet object 
@@ -172,7 +173,7 @@ public class LessStyleSheetAdapter {
 		
 		return mediaQueryList;
 	}
-
+	
 	public Selector getSelectorFromLessRuleSet(RuleSet ruleSetNode) {
 		Selector selector = null;
 		
@@ -194,9 +195,9 @@ public class LessStyleSheetAdapter {
 
 		// Handle declarations
 		addDeclarationsToSelectorFromLessRuleSetNode(ruleSetNode, selector);
+
 		return selector;
 	}
-
 	
 	private void addDeclarationsToSelectorFromLessRuleSetNode(RuleSet ruleSetNode, Selector selector) {
 		
@@ -381,38 +382,41 @@ public class LessStyleSheetAdapter {
 		
 		DeclarationValue value = null;
 		
+		String originalString = numberExpression.getOriginalString();
 		switch(numberExpression.getDimension()) {
 			case ANGLE:
-				value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.ANGLE);
+				value = DeclarationValueFactory.getDeclarationValue(property, originalString, ValueType.ANGLE);
 			case EMS:
 			case EXS:
 			case LENGTH:
-				value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.LENGTH);
+				value = DeclarationValueFactory.getDeclarationValue(property, originalString, ValueType.LENGTH);
 				break;
 			case FREQ:
-				value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.FREQUENCY);
+				value = DeclarationValueFactory.getDeclarationValue(property, originalString, ValueType.FREQUENCY);
 				break;
 			case NUMBER:
-				if (numberExpression.getOriginalString().indexOf(".") > -1)
+				if (originalString.indexOf(".") > -1)
 					value = DeclarationValueFactory.getDeclarationValue(property, DeclarationValueFactory.formatFloat(numberExpression.getValueAsDouble()), ValueType.REAL);
 				else
 					value = DeclarationValueFactory.getDeclarationValue(property, DeclarationValueFactory.formatFloat(numberExpression.getValueAsDouble()), ValueType.INTEGER);
 				break;
 			case PERCENTAGE:
-				value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.PERCENTAGE);
+				value = DeclarationValueFactory.getDeclarationValue(property, originalString, ValueType.PERCENTAGE);
 				break;
 			case REPEATER:
-				throw new RuntimeException("What is " + property + ":" + numberExpression.getOriginalString());
+				throw new RuntimeException("What is " + property + ":" + originalString);
 			case TIME:
-				value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.TIME);
+				value = DeclarationValueFactory.getDeclarationValue(property, originalString, ValueType.TIME);
 				break;
 			case UNKNOWN:
-				if ("turn".equals(numberExpression.getSuffix().toLowerCase()))
-					value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.ANGLE);
-				else if ("rem".equals(numberExpression.getSuffix().toLowerCase()))
-					value = DeclarationValueFactory.getDeclarationValue(property, numberExpression.getOriginalString(), ValueType.PERCENTAGE);
-				else
-					throw new ParseException("What is " + property + ":" + numberExpression.getOriginalString());
+			String suffix = numberExpression.getSuffix().toLowerCase();
+			if ("turn".equals(suffix)) {
+					value = DeclarationValueFactory.getDeclarationValue(property, originalString, ValueType.ANGLE);
+				} else if ("rem".equals(suffix) || "vw".equals(suffix) || "vh".equals(suffix) || "vmin".equals(suffix)) {
+					value = DeclarationValueFactory.getDeclarationValue(property, originalString, ValueType.PERCENTAGE);
+				} else {
+					throw new ParseException("What is " + property + ":" + originalString);
+				}
 			default:
 				break;
 		}
@@ -476,16 +480,23 @@ public class LessStyleSheetAdapter {
 		SelectorPart lastPart = partsCopy.get(partsCopy.size() - 1);
 		SimpleSelector rightHandSelector = getSimpleSelectorFromLessSelectorPart(lastPart);
 		
-		BaseSelector baseSelectorToReturn = rightHandSelector;
-		
-		
 		partsCopy.remove(partsCopy.size() - 1);
+		
+		if (partsCopy.size() >= 1) {
+			if (partsCopy.get(partsCopy.size() - 1) instanceof NestedSelectorAppender) {
+				rightHandSelector.setSelectedElementName("&");
+				partsCopy.remove(partsCopy.size() - 1);
+			}
+		}
+		
+		BaseSelector baseSelectorToReturn = rightHandSelector;
 		
 		if (partsCopy.size() != 0) {
 			
 			BaseSelector leftHandSelector = getCombinatorFromLessSelectorParts(partsCopy);
 			
-			switch (lastPart.getLeadingCombinator().getCombinatorType()) {
+			if (lastPart.getLeadingCombinator() != null) {
+				switch (lastPart.getLeadingCombinator().getCombinatorType()) {
 				//ADJACENT_SIBLING("+"), CHILD(">"), DESCENDANT("' '"), GENERAL_SIBLING("~"), HAT("^"), CAT("^^");
 				case ADJACENT_SIBLING:
 					baseSelectorToReturn = new AdjacentSiblingSelector(leftHandSelector, rightHandSelector);
@@ -504,9 +515,11 @@ public class LessStyleSheetAdapter {
 				case CAT:
 					// Not supported
 					return null;
-			default:
-				break;
-
+				default:
+					break;
+				}
+			} else {
+				baseSelectorToReturn = new AdjacentSiblingSelector(leftHandSelector, rightHandSelector);
 			}
 			
 			int lineNumber = leftHandSelector.getSelectorNameLocationInfo().getLineNumber();
@@ -525,82 +538,87 @@ public class LessStyleSheetAdapter {
 	private SimpleSelector getSimpleSelectorFromLessSelectorPart(SelectorPart selectorPart) {
 		
 		SimpleSelector simpleSelector = new SimpleSelector();
-	
-		for (ASTCssNode cssASTNode : selectorPart.getChilds()) {
-			
-			if (cssASTNode instanceof InterpolableName) {
-				
-				InterpolableName name = (InterpolableName)cssASTNode;
-				simpleSelector.setSelectedElementName(name.getName());
-				
-			} else if (cssASTNode instanceof IdSelector) {
-				
-				IdSelector id = (IdSelector)cssASTNode;
-				simpleSelector.setElementID(id.getName());
-				
-			} else if (cssASTNode instanceof CssClass) {
-				
-				CssClass className = (CssClass)cssASTNode;
-				simpleSelector.addClassName(className.getName());
-				
-			} else if (cssASTNode instanceof SelectorAttribute) {
-				
-				SelectorAttribute attribute = (SelectorAttribute)cssASTNode;
-				SelectorCondition condition = new SelectorCondition(attribute.getName());
-				SelectorConditionType adaptedConditionType = null;
-				switch (attribute.getOperator().getOperator()) {
-				case NONE:
-					adaptedConditionType = SelectorConditionType.HAS_ATTRIBUTE;
-					break;
-				case EQUALS:
-					adaptedConditionType = SelectorConditionType.VALUE_EQUALS_EXACTLY;
-					break;
-				case INCLUDES:
-					adaptedConditionType = SelectorConditionType.VALUE_CONTAINS_WORD_SPACE_SEPARATED;
-					break;
-				case PREFIXMATCH:
-					adaptedConditionType = SelectorConditionType.VALUE_STARTS_WITH;
-					break;
-				case SPECIAL_PREFIX:
-					adaptedConditionType = SelectorConditionType.VALUE_START_WITH_DASH_SEPARATED;
-					break;
-				case SUBSTRINGMATCH:
-					adaptedConditionType = SelectorConditionType.VALUE_CONTAINS;
-					break;
-				case SUFFIXMATCH:
-					adaptedConditionType = SelectorConditionType.VALUE_ENDS_WITH;
-				}
-				condition.setConditionType(adaptedConditionType);
-				if (adaptedConditionType != SelectorConditionType.HAS_ATTRIBUTE)
-					condition.setValue(attribute.getValue().toString());
-				simpleSelector.addCondition(condition);
-				
-			} else if (cssASTNode instanceof com.github.sommeri.less4j.core.ast.PseudoClass) {
-				
-				com.github.sommeri.less4j.core.ast.PseudoClass pseudoClass = (com.github.sommeri.less4j.core.ast.PseudoClass) cssASTNode;
-				
-				PseudoClass adaptedPseudoClass = null;
-				if ("not".equals(pseudoClass.getName().toLowerCase())) {
-					com.github.sommeri.less4j.core.ast.Selector parameter = (com.github.sommeri.less4j.core.ast.Selector)pseudoClass.getParameter();
-					adaptedPseudoClass = new NegationPseudoClass(getBaseSelectorFromLessSelector(parameter));
-				} else {
-					adaptedPseudoClass =  new PseudoClass(pseudoClass.getName());
-					if (pseudoClass.hasParameters()) {
-						if (pseudoClass.getParameter() instanceof Nth) {
-							adaptedPseudoClass.setValue(NthToString((Nth)pseudoClass.getParameter()));
-						} else if ("lang".equals(pseudoClass.getName().toLowerCase())) {
-							adaptedPseudoClass.setValue(pseudoClass.getParameter().toString());
-						} else {
-							throw new NotImplementedException("Unhandled parameter for pseudo class :" + pseudoClass.getParameter());
+		
+		if (selectorPart instanceof NestedSelectorAppender) {
+			simpleSelector.setSelectedElementName("&");
+		} else {
+
+			for (ASTCssNode cssASTNode : selectorPart.getChilds()) {
+
+				if (cssASTNode instanceof InterpolableName) {
+
+					InterpolableName name = (InterpolableName)cssASTNode;
+					simpleSelector.setSelectedElementName(name.getName());
+
+				} else if (cssASTNode instanceof IdSelector) {
+
+					IdSelector id = (IdSelector)cssASTNode;
+					simpleSelector.setElementID(id.getName());
+
+				} else if (cssASTNode instanceof CssClass) {
+
+					CssClass className = (CssClass)cssASTNode;
+					simpleSelector.addClassName(className.getName());
+
+				} else if (cssASTNode instanceof SelectorAttribute) {
+
+					SelectorAttribute attribute = (SelectorAttribute)cssASTNode;
+					SelectorCondition condition = new SelectorCondition(attribute.getName());
+					SelectorConditionType adaptedConditionType = null;
+					switch (attribute.getOperator().getOperator()) {
+					case NONE:
+						adaptedConditionType = SelectorConditionType.HAS_ATTRIBUTE;
+						break;
+					case EQUALS:
+						adaptedConditionType = SelectorConditionType.VALUE_EQUALS_EXACTLY;
+						break;
+					case INCLUDES:
+						adaptedConditionType = SelectorConditionType.VALUE_CONTAINS_WORD_SPACE_SEPARATED;
+						break;
+					case PREFIXMATCH:
+						adaptedConditionType = SelectorConditionType.VALUE_STARTS_WITH;
+						break;
+					case SPECIAL_PREFIX:
+						adaptedConditionType = SelectorConditionType.VALUE_START_WITH_DASH_SEPARATED;
+						break;
+					case SUBSTRINGMATCH:
+						adaptedConditionType = SelectorConditionType.VALUE_CONTAINS;
+						break;
+					case SUFFIXMATCH:
+						adaptedConditionType = SelectorConditionType.VALUE_ENDS_WITH;
+					}
+					condition.setConditionType(adaptedConditionType);
+					if (adaptedConditionType != SelectorConditionType.HAS_ATTRIBUTE)
+						condition.setValue(attribute.getValue().toString());
+					simpleSelector.addCondition(condition);
+
+				} else if (cssASTNode instanceof com.github.sommeri.less4j.core.ast.PseudoClass) {
+
+					com.github.sommeri.less4j.core.ast.PseudoClass pseudoClass = (com.github.sommeri.less4j.core.ast.PseudoClass) cssASTNode;
+
+					PseudoClass adaptedPseudoClass = null;
+					if ("not".equals(pseudoClass.getName().toLowerCase())) {
+						com.github.sommeri.less4j.core.ast.Selector parameter = (com.github.sommeri.less4j.core.ast.Selector)pseudoClass.getParameter();
+						adaptedPseudoClass = new NegationPseudoClass(getBaseSelectorFromLessSelector(parameter));
+					} else {
+						adaptedPseudoClass =  new PseudoClass(pseudoClass.getName());
+						if (pseudoClass.hasParameters()) {
+							if (pseudoClass.getParameter() instanceof Nth) {
+								adaptedPseudoClass.setValue(NthToString((Nth)pseudoClass.getParameter()));
+							} else if ("lang".equals(pseudoClass.getName().toLowerCase())) {
+								adaptedPseudoClass.setValue(pseudoClass.getParameter().toString());
+							} else {
+								throw new NotImplementedException("Unhandled parameter for pseudo class :" + pseudoClass.getParameter());
+							}
 						}
 					}
+					simpleSelector.addPseudoClass(adaptedPseudoClass);	
+
+				} else if (cssASTNode instanceof com.github.sommeri.less4j.core.ast.PseudoElement) {
+					com.github.sommeri.less4j.core.ast.PseudoElement pseudoElement = (com.github.sommeri.less4j.core.ast.PseudoElement) cssASTNode;
+					PseudoElement adaptedPseudoElement = new PseudoElement(pseudoElement.getName());
+					simpleSelector.addPseudoElement(adaptedPseudoElement);
 				}
-				simpleSelector.addPseudoClass(adaptedPseudoClass);	
-			
-			} else if (cssASTNode instanceof com.github.sommeri.less4j.core.ast.PseudoElement) {
-				com.github.sommeri.less4j.core.ast.PseudoElement pseudoElement = (com.github.sommeri.less4j.core.ast.PseudoElement) cssASTNode;
-				PseudoElement adaptedPseudoElement = new PseudoElement(pseudoElement.getName());
-				simpleSelector.addPseudoElement(adaptedPseudoElement);
 			}
 		}
 			
