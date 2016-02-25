@@ -152,8 +152,9 @@ public class LessASTQueryHandler {
 		
 		List<LessSelector> selectorsInfo = getSelectorsInfo();
 		for (LessSelector selectorInfo : selectorsInfo) {
-			if (selectorInfo.getFullyQualifiedName().equals(lessMixinCall.getName()))
-				return getLessMixinDeclarationFromReusableStructure(((RuleSet)selectorInfo.getNode()).convertToReusableStructure());
+			if (selectorInfo.getFullyQualifiedName().equals(lessMixinCall.getName())) {
+				return getLessMixinDeclarationFromReusableStructure(((RuleSet)selectorInfo.getNode()).convertToReusableStructure(), selectorInfo.getStyleSheet());
+			}
 		}
 
 		return null;
@@ -191,7 +192,7 @@ public class LessASTQueryHandler {
 
 				ReusableStructure reusableNode = (ReusableStructure)node;
 				
-				LessMixinDeclaration mixinDeclarationInfo = getLessMixinDeclarationFromReusableStructure(reusableNode);				
+				LessMixinDeclaration mixinDeclarationInfo = getLessMixinDeclarationFromReusableStructure(reusableNode, lessStyleSheet);				
 				
 				toReturn.add(mixinDeclarationInfo);
 				
@@ -209,8 +210,8 @@ public class LessASTQueryHandler {
 	
 	}
 
-	private LessMixinDeclaration getLessMixinDeclarationFromReusableStructure(ReusableStructure reusableNode) {
-		LessMixinDeclaration mixinDeclarationInfo = new LessMixinDeclaration(reusableNode, this.lessStyleSheet);
+	private LessMixinDeclaration getLessMixinDeclarationFromReusableStructure(ReusableStructure reusableNode, StyleSheet styleSheet) {
+		LessMixinDeclaration mixinDeclarationInfo = new LessMixinDeclaration(reusableNode, styleSheet);
 		
 		Map<String, Set<String>> propertyToCountMap = new HashMap<>();
 		
@@ -334,23 +335,31 @@ public class LessASTQueryHandler {
 	}
 	
 	public static Set<com.github.sommeri.less4j.core.ast.Declaration> getAllDeclarations(GeneralBody body) {
+		return getAllDeclarations(body, true);
+	}
+	
+	public static Set<com.github.sommeri.less4j.core.ast.Declaration> getAllDeclarations(GeneralBody body, boolean includeNesting) {
 		Set<com.github.sommeri.less4j.core.ast.Declaration> toReturn = new HashSet<>();
 		for (ASTCssNode child : body.getChilds()) {
 			if (child instanceof com.github.sommeri.less4j.core.ast.Declaration) {
 				toReturn.add((com.github.sommeri.less4j.core.ast.Declaration) child);
-			} else if (child instanceof GeneralBody) {
-				toReturn.addAll(getAllDeclarations((GeneralBody)child));
-			} else if (child instanceof RuleSet) {
-				toReturn.addAll(getAllDeclarations(((RuleSet)child).getBody()));
-			} else if (child instanceof ReusableStructure) {
-				toReturn.addAll(getAllDeclarations(((ReusableStructure)child).getBody()));
-			} else if (child instanceof Media) {
-				toReturn.addAll(getAllDeclarations(((Media)child).getBody()));
 			} else {
-				// if (!(child instanceof SyntaxOnlyElement) && 
-				// !(child instanceof VariableDeclaration) && 
-				// !(child instanceof MixinReference) &&
-				// !(child instanceof Extend))
+				if (includeNesting) {
+					if (child instanceof GeneralBody) {
+						toReturn.addAll(getAllDeclarations((GeneralBody)child));
+					} else if (child instanceof RuleSet) {
+						toReturn.addAll(getAllDeclarations(((RuleSet)child).getBody()));
+					} else if (child instanceof ReusableStructure) {
+						toReturn.addAll(getAllDeclarations(((ReusableStructure)child).getBody()));
+					} else if (child instanceof Media) {
+						toReturn.addAll(getAllDeclarations(((Media)child).getBody()));
+					} else {
+						// if (!(child instanceof SyntaxOnlyElement) && 
+						// !(child instanceof VariableDeclaration) && 
+						// !(child instanceof MixinReference) &&
+						// !(child instanceof Extend))
+					}
+				}
 			}
 		}
 		return toReturn;

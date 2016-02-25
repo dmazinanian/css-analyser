@@ -111,7 +111,11 @@ public class LessMixinDeclaration extends LessConstruct {
 	}
 
 	public Set<Declaration> getDeclarations() {
-		return LessASTQueryHandler.getAllDeclarations(this.reusableNode.getBody());
+		return getDeclarations(true);
+	}
+	
+	public Set<Declaration> getDeclarations(boolean includeNesting) {
+		return LessASTQueryHandler.getAllDeclarations(this.reusableNode.getBody(), includeNesting);
 	}
 
 	public String getMixinHashString() {
