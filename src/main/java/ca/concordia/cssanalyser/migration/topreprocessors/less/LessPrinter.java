@@ -1158,7 +1158,7 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 	}
 
 	private void appendSimpleSelectorHead(SimpleSelector selector) {
-		builder.ensureSeparator();
+		//builder.ensureSeparator();
 		if (!selector.isStar() || !selector.isEmptyForm()) {
 			InterpolableName elementName = selector.getElementName();
 			builder.appendIgnoreNull(elementName.getName());
