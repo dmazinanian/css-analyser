@@ -33,6 +33,7 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	private Set<Integer> duplicationTypes = new HashSet<>();
 	private Iterable<MediaQueryList> mediaQueryLists;
 	
+	private int hashCode = -1;
 	/**
 	 * Creates an empty Item
 	 */
@@ -76,6 +77,7 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 			if (paretnItemSet != null)
 				paretnItemSet.rebuildSupport();
 		}
+		hashCode = -1;
 		return declarationsChanged;
 	}
 	
@@ -86,6 +88,8 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 		for (Declaration d : declarations)
 			if (add(d))
 				changed = true;
+		if (changed)
+			hashCode = -1;
 		return changed;
 	}
 
@@ -94,6 +98,7 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 		declarations.clear();
 		support.clear();
 		mediaQueryLists = null;
+		hashCode = -1;
 	}
 
 	@Override
@@ -124,6 +129,7 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 		}
 		if (support.isEmpty())
 			mediaQueryLists = null;
+		hashCode = -1;
 		return declarations.remove(o);
 	}
 
@@ -133,12 +139,14 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 		for (Object o : c)
 			if (remove(o))
 				changed = true;
+		if (changed)
+			hashCode = -1;
 		return changed;
 	}
 
 	@Override
 	public boolean retainAll(Collection<?> c) {
-		boolean changed = retainAll(c);
+		boolean changed = declarations.retainAll(c);
 		if (changed) {
 			support.clear();
 			for (Declaration d : declarations) {
@@ -146,6 +154,7 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 			}
 			if (support.isEmpty())
 				mediaQueryLists = null;
+			hashCode = -1;
 		}
 		return changed;
 	}
@@ -184,12 +193,17 @@ public class Item implements Set<Declaration>, Cloneable, Comparable<Item> {
 	
 	@Override
 	public boolean equals(Object obj) {
-		return declarations.equals(obj);
+		if (obj != null && obj.getClass() == getClass())
+			return hashCode() == obj.hashCode();
+		return false;
 	}
 	
 	@Override
 	public int hashCode() {
-		return declarations.hashCode();
+		if (hashCode == -1) {
+			hashCode = declarations.hashCode();	
+		}
+		return hashCode;
 	}
 	
 	@Override
