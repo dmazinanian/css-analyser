@@ -131,8 +131,10 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	 */
 	public void setSelector(Selector selector) {
 		this.parentSelector = selector;
-		if (!this.parentSelector.containsDeclaration(this))
-			this.parentSelector.addDeclaration(this);
+		if (this.parentSelector != null) {
+			if (!this.parentSelector.containsDeclaration(this))
+				this.parentSelector.addDeclaration(this);
+		}
 	}
 
 	/**
