@@ -1,8 +1,21 @@
 package ca.concordia.cssanalyser.preprocessors.constructsinfo;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.github.sommeri.less4j.Less4jException;
+import com.github.sommeri.less4j.LessSource;
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
+import com.github.sommeri.less4j.core.ast.GeneralBody;
 import com.github.sommeri.less4j.core.ast.MixinReference;
+import com.github.sommeri.less4j.core.ast.RuleSet;
 import com.github.sommeri.less4j.core.ast.StyleSheet;
+
+import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
+import ca.concordia.cssanalyser.migration.topreprocessors.less.LessHelper;
+import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPrinter;
+import ca.concordia.cssanalyser.parser.ParseException;
+import ca.concordia.cssanalyser.parser.less.LessCSSParser;
 
 public class LessMixinCall extends LessConstruct {
 
@@ -98,6 +111,61 @@ public class LessMixinCall extends LessConstruct {
 		}
 		return true;
 	}
-	
-	
+
+	public Selector getCallingSelector() {
+		List<RuleSet> parents = new ArrayList<>();
+
+		ASTCssNode parentStructure = getParentStructure();
+		if (parentStructure == null) {
+			return null;
+		}
+		
+		RuleSet lastOne = null;
+		do {
+			if (parentStructure instanceof RuleSet) {
+				RuleSet clone = (RuleSet)parentStructure.clone();
+				clone.getBody().removeAllMembers();
+				if (lastOne == null) {
+					try {
+						clone.getBody().addMember(LessHelper.getLessNodeFromLessString("foo: bar;"));
+					} catch (ParseException e) {
+						e.printStackTrace();
+						return null;
+					}
+				} else {
+					clone.getBody().addMember(lastOne);
+				}
+				clone.configureParentToAllChilds();
+				parents.add(clone);
+				lastOne = clone;
+			}
+			if (parentStructure.getParent() instanceof GeneralBody) {
+				parentStructure = parentStructure.getParent().getParent();
+			} else if (parentStructure.getParent() instanceof StyleSheet) {
+				break;
+			} else {
+				throw new RuntimeException("What is parent structure " + parentStructure.getParent());
+			}
+		} while (!(parentStructure instanceof StyleSheet));
+		
+		if (parents.size() == 0)
+			return null;
+		
+		Selector selectorToReturn = null;
+		
+		LessPrinter printer = new LessPrinter();
+		ASTCssNode rootNode = parents.get(parents.size() - 1);
+		
+		try {
+			String stringOfRootNode = printer.getStringForNode(rootNode);
+			StyleSheet lessStyleSheet = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(stringOfRootNode));
+			ca.concordia.cssanalyser.cssmodel.StyleSheet compileLESSStyleSheet = LessHelper.compileLESSStyleSheet(lessStyleSheet);
+			selectorToReturn = compileLESSStyleSheet.getAllSelectors().iterator().next();
+			selectorToReturn.removeDeclaration(selectorToReturn.getDeclarations().iterator().next());
+		} catch (ParseException | Less4jException e) {
+			e.printStackTrace();
+		}
+
+		return selectorToReturn;
+	}
 }
