@@ -27,5 +27,7 @@ enum ProgramMode {
 	/** Perform empirical study */
 	EMPIRICAL_STUDY, 
 	/** Inline imports in the given less files */
-	INLINE_IMPORTS
+	INLINE_IMPORTS,
+	/** Empirical study for migrating to Mixins */
+	MIXIN_MIGRATION_EMPIRICAL
 }
