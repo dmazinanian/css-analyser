@@ -16,6 +16,7 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDepen
 public class GroupingSelector extends Selector implements Collection<BaseSelector> {
 
 	private Set<BaseSelector> listOfBaseSelectors;
+	private int hashCode = -1;
 	
 	public GroupingSelector() {
 		this(new LocationInfo());
@@ -37,6 +38,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 
 	@Override
 	public void addDeclaration(Declaration declaration) {
+		hashCode = -1;
 		for (BaseSelector baseSelector : listOfBaseSelectors)
 			baseSelector.addDeclaration(declaration);
 		// The parent of the selector must be the grouping selector
@@ -45,6 +47,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 	
 	@Override
 	public void removeDeclaration(Declaration d) {
+		hashCode = -1;
 		for (BaseSelector baseSelector : this.listOfBaseSelectors)
 			baseSelector.removeDeclaration(d);
 		super.removeDeclaration(d);
@@ -73,13 +76,13 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 	 * @return
 	 */
 	@Override
-	public boolean selectorEquals(Selector otherSelector) {
+	public boolean selectorEquals(Selector otherSelector, boolean considerMediaQueryLists) {
 		if (!generalEquals(otherSelector))
 			return false;
 		GroupingSelector otherObj = (GroupingSelector)otherSelector;
 		if (listOfBaseSelectors.size() != otherObj.listOfBaseSelectors.size())
 			return false;
-		if (!mediaQueryListsEqual(otherSelector))
+		if (considerMediaQueryLists && !mediaQueryListsEqual(otherSelector))
 			return false;
 		List<BaseSelector> tempList = new ArrayList<>(otherObj.listOfBaseSelectors);
 		for (Selector selector : listOfBaseSelectors) {
@@ -117,38 +120,36 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 	public boolean equals(Object obj) {
 		if (!generalEquals(obj))
 			return false;
-		GroupingSelector otherGroupedSelector = (GroupingSelector)obj;
-		if (this.mediaQueryLists != null) {
-			if (otherGroupedSelector.mediaQueryLists == null)
-				return false;
-			if (!mediaQueryLists.equals(otherGroupedSelector.mediaQueryLists))
-				return false;
-		}
-		return getLocationInfo().equals(otherGroupedSelector.getLocationInfo()) &&
-				otherGroupedSelector.listOfBaseSelectors.size() == listOfBaseSelectors.size() &&
-				otherGroupedSelector.listOfBaseSelectors.containsAll(listOfBaseSelectors);
+		return obj.hashCode() == hashCode();
 	}
 	
 	@Override
 	public int hashCode() {
-		int result = 17;
-		result = result * 31 + getLocationInfo().hashCode();
-		result = result * 31 + listOfBaseSelectors.hashCode();
-		return result;
+		if (hashCode == -1) {
+			hashCode = 17;
+			hashCode = hashCode * 31 + getLocationInfo().hashCode();
+			hashCode = hashCode * 31 + listOfBaseSelectors.hashCode();
+			if (mediaQueryLists != null)
+				hashCode = hashCode * 31 + mediaQueryLists.hashCode();
+		}
+		return hashCode;
 	}
 
 	@Override
 	public boolean add(BaseSelector baseSelector) {
+		hashCode = -1;
 		return listOfBaseSelectors.add(baseSelector);
 	}
 
 	@Override
 	public boolean addAll(Collection<? extends BaseSelector> baseSelectors) {
+		hashCode = -1;
 		return listOfBaseSelectors.addAll(baseSelectors);
 	}
 
 	@Override
 	public void clear() {
+		hashCode = -1;
 		listOfBaseSelectors.clear();
 	}
 
@@ -169,16 +170,19 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 
 	@Override
 	public boolean remove(Object atomicSelector) {
+		hashCode = -1;
 		return listOfBaseSelectors.remove(atomicSelector);
 	}
 
 	@Override
 	public boolean removeAll(Collection<?> listOfAtomicSelectors) {
+		hashCode = -1;
 		return listOfAtomicSelectors.removeAll(listOfAtomicSelectors);
 	}
 
 	@Override
 	public boolean retainAll(Collection<?> arg0) {
+		hashCode = -1;
 		return listOfBaseSelectors.retainAll(arg0);
 	}
 

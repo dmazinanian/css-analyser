@@ -36,6 +36,7 @@ public class SimpleSelector extends BaseSelector {
 	private List<SelectorCondition> conditions;
 	private List<PseudoClass> pseudoClasses;
 	private List<PseudoElement> pseudoElements;
+	private int hashCode = -1;
 	
 	private static final Logger LOGGER = FileLogger.getLogger(SimpleSelector.class);
 
@@ -71,6 +72,7 @@ public class SimpleSelector extends BaseSelector {
 	}
 
 	public void setSelectedElementName(String elementName) {
+		hashCode = -1;
 		selectedElementName = elementName;
 	}
 
@@ -79,6 +81,7 @@ public class SimpleSelector extends BaseSelector {
 	}
 	
 	public void addClassName(String className) {
+		hashCode = -1;
 		selectedClasses.add(className);
 	}
 	
@@ -87,6 +90,7 @@ public class SimpleSelector extends BaseSelector {
 	}
 
 	public void setElementID(String idName) {
+		hashCode = -1;
 		selectedID = idName;
 	}
 	
@@ -106,6 +110,7 @@ public class SimpleSelector extends BaseSelector {
 	 * @see ca.concordia.cssanalyser.cssmodel.selectors.conditions.SelectorConditionType
 	 */
 	public void addCondition(SelectorCondition condition) {
+		hashCode = -1;
 		conditions.add(condition);
 	}
 	
@@ -114,6 +119,7 @@ public class SimpleSelector extends BaseSelector {
 	}
 
 	public void addPseudoClass(PseudoClass pseudoClass) {
+		hashCode = -1;
 		pseudoClasses.add(pseudoClass);
 	}
 	
@@ -130,6 +136,7 @@ public class SimpleSelector extends BaseSelector {
 	 * @param pseudoElement
 	 */
 	public void addPseudoElement(PseudoElement pseudoElement) {
+		hashCode = -1;
 		pseudoElements.add(pseudoElement);
 	}
 	
@@ -142,11 +149,7 @@ public class SimpleSelector extends BaseSelector {
 	}
 	
 	@Override
-	public boolean selectorEquals(Selector otherSelector) {
-		return selectorEquals(otherSelector, true);
-	}
-	
-	private boolean selectorEquals(Selector otherSelector, boolean checkForMediaQueryListsEquality) {
+	public boolean selectorEquals(Selector otherSelector, boolean considerMediaQueryLists) {
 		if (!generalEquals(otherSelector))
 			return false;
 		
@@ -163,7 +166,7 @@ public class SimpleSelector extends BaseSelector {
 			return false;
 		}
 		
-		if (checkForMediaQueryListsEquality)
+		if (considerMediaQueryLists)
 			return mediaQueryListsEqual(otherSimpleSelector);
 		
 		return true;
@@ -177,30 +180,8 @@ public class SimpleSelector extends BaseSelector {
 	public boolean equals(Object obj) {
 
 		if (!generalEquals(obj))
-		return false;
-		
-		BaseSelector otherBaseSelector = (BaseSelector) obj;
-
-		if (!getLocationInfo().equals(otherBaseSelector.getLocationInfo()))
 			return false;
-		
-		if (mediaQueryLists != null) {
-			BaseSelector otherAtomicElementSelector = (BaseSelector)obj;
-			if (otherAtomicElementSelector.mediaQueryLists == null)
-				return false;
-			if (!mediaQueryLists.equals(otherAtomicElementSelector.mediaQueryLists))
-				return false;
-		}
-		
-		if (getParentGroupingSelector() == null) {
-			if (otherBaseSelector.getParentGroupingSelector() != null)
-				return false;
-		} else {
-			if (!getParentGroupingSelector().equals(otherBaseSelector.getParentGroupingSelector()))
-				return false;
-		}
-				
-		return selectorEquals(otherBaseSelector, false);
+		return hashCode() == obj.hashCode();
 	}
 
 	private boolean generalEquals(Object obj) {
@@ -215,21 +196,25 @@ public class SimpleSelector extends BaseSelector {
 
 	@Override
 	public int hashCode() {
-		int result = 17;
-		result = 31 * result + getLocationInfo().hashCode();
-		if (selectedID != null)
-			result = 31 * result + selectedID.hashCode();
-		if (selectedElementName != null)
-			result = 31 * result + selectedElementName.hashCode();
-		for (String c : selectedClasses)
-			result += c.hashCode();
-		for (SelectorCondition condition : conditions)
-			result += (condition == null ? 0 : condition.hashCode());
-		for (PseudoClass pseudoClass : pseudoClasses)
-			result = 31 * result + (pseudoClass == null ? 0 : pseudoClass.hashCode());
-		for (PseudoElement pElement : pseudoElements)
-			result = 31 * result + (pElement == null ? 0 : pElement.hashCode());
-		return result;
+		if (hashCode  == -1) {
+			hashCode = 17;
+			hashCode = 31 * hashCode + getLocationInfo().hashCode();
+			if (selectedID != null)
+				hashCode = 31 * hashCode + selectedID.hashCode();
+			if (selectedElementName != null)
+				hashCode = 31 * hashCode + selectedElementName.hashCode();
+			for (String c : selectedClasses)
+				hashCode += c.hashCode();
+			for (SelectorCondition condition : conditions)
+				hashCode += (condition == null ? 0 : condition.hashCode());
+			for (PseudoClass pseudoClass : pseudoClasses)
+				hashCode = 31 * hashCode + (pseudoClass == null ? 0 : pseudoClass.hashCode());
+			for (PseudoElement pElement : pseudoElements)
+				hashCode = 31 * hashCode + (pElement == null ? 0 : pElement.hashCode());
+			if (mediaQueryLists != null)
+				hashCode = 31 * hashCode + mediaQueryLists.hashCode();
+		}
+		return hashCode;
 	}
 
 	@Override

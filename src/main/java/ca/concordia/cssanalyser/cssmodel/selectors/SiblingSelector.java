@@ -11,6 +11,7 @@ public class SiblingSelector extends Combinator {
 	
 	protected final BaseSelector beforeMainSelector;
 	protected final SimpleSelector mainSelector;
+	private int hashCode = -1;
 	
 	public SiblingSelector(BaseSelector firstSelector, SimpleSelector secondSelector) {
 		beforeMainSelector = firstSelector;
@@ -34,18 +35,7 @@ public class SiblingSelector extends Combinator {
 	public boolean equals(Object obj) {
 		if (!generalEquals(obj))
 			return false;
-		SiblingSelector otherIndirectAdjacentSelector = (SiblingSelector)obj;
-		if (getLocationInfo().equals(otherIndirectAdjacentSelector.getLocationInfo()) &&
-				beforeMainSelector.equals(otherIndirectAdjacentSelector.beforeMainSelector) &&
-				mainSelector.equals(otherIndirectAdjacentSelector.mainSelector))
-			return true;
-		if (mediaQueryLists != null) {
-			if (otherIndirectAdjacentSelector.mediaQueryLists == null)
-				return false;
-			if (!mediaQueryLists.equals(otherIndirectAdjacentSelector.mediaQueryLists))
-				return false;
-		}
-		return false;
+		return hashCode() == obj.hashCode();
 	}
 	
 	private boolean generalEquals(Object obj) {
@@ -59,24 +49,29 @@ public class SiblingSelector extends Combinator {
 	}
 	
 	@Override
-	public boolean selectorEquals(Selector otherSelector) {
+	public boolean selectorEquals(Selector otherSelector, boolean considerMediaQueryLists) {
 		if (!generalEquals(otherSelector))
 			return false;
-		if (!mediaQueryListsEqual(otherSelector))
+		if (considerMediaQueryLists && !mediaQueryListsEqual(otherSelector))
 			return false;
 		SiblingSelector otherIndirectAdjacentSelector = (SiblingSelector)otherSelector;
-		return mainSelector.selectorEquals(otherIndirectAdjacentSelector.mainSelector) &&
-				beforeMainSelector.selectorEquals(otherIndirectAdjacentSelector.beforeMainSelector);
+		return mainSelector.selectorEquals(otherIndirectAdjacentSelector.mainSelector, considerMediaQueryLists) &&
+				beforeMainSelector.selectorEquals(otherIndirectAdjacentSelector.beforeMainSelector, considerMediaQueryLists);
 				
 	}
 
 	@Override
 	public int hashCode() {
-		int result = 17;
-		result = 31 * result + getLocationInfo().hashCode();
-		result = 31 * result + (beforeMainSelector == null ? 0 : beforeMainSelector.hashCode());
-		result = 31 * result + (mainSelector == null ? 0 : mainSelector.hashCode());
-		return result;
+		if (hashCode == -1) {
+			hashCode = 17;
+			hashCode = 31 * hashCode + getLocationInfo().hashCode();
+			hashCode = 31 * hashCode + (beforeMainSelector == null ? 0 : beforeMainSelector.hashCode());
+			hashCode = 31 * hashCode + (mainSelector == null ? 0 : mainSelector.hashCode());
+			if (mediaQueryLists != null) {
+				hashCode = 31 * hashCode + mediaQueryLists.hashCode();
+			}
+		}
+		return hashCode;
 	}
 	
 	@Override

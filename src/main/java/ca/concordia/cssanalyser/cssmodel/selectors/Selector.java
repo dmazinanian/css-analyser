@@ -105,6 +105,10 @@ public abstract class Selector extends CSSModelObject  {
 		return parentStyleSheet.getSelectorNumber(this);
 	}
 	
+	public boolean selectorEquals(Selector otherSelector) {
+		return selectorEquals(otherSelector, true);
+	}
+	
 	/**
 	 * The equals() method for different selectors have different meanings
 	 * but in all of them selectors should be exactly the same and are appeared
@@ -112,9 +116,10 @@ public abstract class Selector extends CSSModelObject  {
 	 * two selectors to see weather they are equal, regardless of their
 	 * definition location
 	 * @param otherSelector
+	 * @param considerMediaQueryLists
 	 * @return
 	 */
-	public abstract boolean selectorEquals(Selector otherSelector);
+	public abstract boolean selectorEquals(Selector otherSelector, boolean considerMediaQueryLists);
 	
 	public abstract Selector clone();
 	
@@ -136,12 +141,12 @@ public abstract class Selector extends CSSModelObject  {
 	 * @param declaration
 	 */
 	public void removeDeclaration(Declaration declaration) {
-		declaration.setSelector(null);
 		this.declarations.remove(declaration);
 		// Update the numbers associated with declarations
 		int i = 0;
 		for (Declaration d : declarations.keySet())
 			declarations.put(d, i++);
+		declaration.setSelector(null);
 	}
 
 	/**
