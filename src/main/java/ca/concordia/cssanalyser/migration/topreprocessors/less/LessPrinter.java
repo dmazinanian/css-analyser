@@ -58,6 +58,7 @@ import com.github.sommeri.less4j.core.ast.SignedExpression;
 import com.github.sommeri.less4j.core.ast.MediumModifier.Modifier;
 import com.github.sommeri.less4j.core.ast.MediumType;
 import com.github.sommeri.less4j.core.ast.MixinReference;
+import com.github.sommeri.less4j.core.ast.MultiTargetExtend;
 import com.github.sommeri.less4j.core.ast.Name;
 import com.github.sommeri.less4j.core.ast.NamedColorExpression;
 import com.github.sommeri.less4j.core.ast.NamedExpression;
@@ -343,6 +344,9 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 		case EXTEND:
 			return appendExtend((Extend) node);
 			
+		case MULTI_TARGET_EXTEND:
+			return appendMultiTargetExtend((MultiTargetExtend) node);
+			
 		case SIGNED_EXPRESSION:
 			return appendSignedExpression((SignedExpression) node);
 			
@@ -384,6 +388,23 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 		if (node.isAll()) {
 			builder.ensureSeparator();
 			builder.append("all");
+		}
+		builder.append(");");
+		return true;
+	}
+	
+	public boolean appendMultiTargetExtend(MultiTargetExtend node) {
+		builder.append("&:extend(");
+		for (Iterator<Extend> iterator = node.getAllExtends().iterator(); iterator.hasNext();) {
+			Extend extend = iterator.next();
+			append(extend.getTarget());
+			if (extend.isAll()) {
+				builder.ensureSeparator();
+				builder.append("all");
+			}
+			if (iterator.hasNext()) {
+				builder.append(", ");
+			}
 		}
 		builder.append(");");
 		return true;
