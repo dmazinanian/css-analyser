@@ -38,6 +38,7 @@ import com.github.sommeri.less4j.core.ast.VariableDeclaration;
 
 import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessPrinter;
 import ca.concordia.cssanalyser.preprocessors.util.less.ImportInliner;
 
@@ -69,7 +70,11 @@ public class LessASTQueryHandler {
 					LessASTQueryHandler lessASTQueryHandler = new LessASTQueryHandler(lessImport.getImportedStyleSheet(), this.importedStyleSheetsData);
 					importedStyleSheetsData.put(lessImport, lessASTQueryHandler);
 				} else {
-					LOGGER.warn(String.format("File %s not found for importing.", lessImport.getUrl()));
+					if (importNode.isOptional()) {
+						LOGGER.warn("File {} not found for importing, but was skipped because the import is optional");
+					} else {
+						LOGGER.warn("File {} not found for importing.", lessImport.getUrl());
+					}
 				}
 			}
 			catch (NotImplementedException niex) {
@@ -704,6 +709,25 @@ public class LessASTQueryHandler {
 		
 		return toReturn;
 		
+	}
+
+	public Map<LessMixinDeclaration, Set<Selector>> getMixinDeclarationsAndSelectorsTheyWereCalledIn() {
+		Map<LessMixinDeclaration, Set<Selector>> mixinCallsMap = new HashMap<>();
+		List<LessMixinCall> mixinCallInfo = getMixinCallInfo();
+		for (LessMixinCall lessMixinCall : mixinCallInfo) {
+			Set<Selector> mixinCalledInSelectors = new HashSet<>();
+			LessMixinDeclaration mixinDeclaration = lessMixinCall.getMixinDeclaration();
+			if (mixinDeclaration != null) {
+				if (mixinCallsMap.containsKey(mixinDeclaration)) {
+					mixinCalledInSelectors = mixinCallsMap.get(mixinDeclaration);
+				}
+				Selector callingSelector = lessMixinCall.getCallingSelector();
+				if (callingSelector != null)
+					mixinCalledInSelectors.add(callingSelector);
+				mixinCallsMap.put(mixinDeclaration, mixinCalledInSelectors);
+			}
+		}
+		return mixinCallsMap;
 	}
 
 }
