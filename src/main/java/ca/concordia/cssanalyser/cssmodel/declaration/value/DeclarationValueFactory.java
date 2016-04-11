@@ -117,7 +117,7 @@ public class DeclarationValueFactory {
 						case "text-shadow":
 						case "box-shadow":
 						/*
-						 * Dangorous to do!
+						 * Dangerous to do!
 						 * case "transform-origin":
 						 * case "-ms-transform-origin":
 						 * case "-webkit-transform-origin":
@@ -212,6 +212,9 @@ public class DeclarationValueFactory {
 				String postfix = value.substring(value.length() - 2);
 				float floatVal = Float.valueOf(value.replace(postfix, ""));
 				String eqVal = "";
+				if (value.startsWith(".")) {
+					value = "0" + value;
+				}
 				switch(postfix) {
 					case "pc": {
 						// 1pc = 12pt = 16px
