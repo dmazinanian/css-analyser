@@ -170,6 +170,11 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				"animation-delay",
 				"animation-iteration-count",
 				"animation-direction");
+		
+		addShorthandProperty("flex", 
+				"flex-grow",
+				"flex-shrink",
+				"flex-basis");
 	}
 
 	@Override
@@ -916,7 +921,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 								case "border-box":
 								case "content-box":
 									numberOfBoxes++;
-									if (numberOfBoxes >= 1)
+									if (numberOfBoxes == 1)
 										bgOrigin = currentLayerCurrentValue;
 									if (numberOfBoxes == 2)
 										bgClip = currentLayerCurrentValue;
