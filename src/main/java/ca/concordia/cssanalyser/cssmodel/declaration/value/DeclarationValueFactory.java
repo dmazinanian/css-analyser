@@ -290,6 +290,8 @@ public class DeclarationValueFactory {
 			}
 			case TIME: {
 				// Each second is 1000 ms
+				if (value.startsWith("."))
+					value = "0" + value;
 				String eqVal = value;
 				if (value.endsWith("ms")) {
 					eqVal = formatFloat(Float.valueOf(value.replace("ms", "")) * 1000) + "ms";
