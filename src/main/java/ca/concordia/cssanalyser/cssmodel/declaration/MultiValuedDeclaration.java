@@ -77,7 +77,8 @@ public class MultiValuedDeclaration extends Declaration {
 				"box-shadow",
 				"content",
 				"font-family",
-				"quotes"
+				"quotes",
+				"mask-box-image",
 		};
 		for (String property : properties)
 			muliValuedProperties.add(property);
@@ -261,8 +262,7 @@ public class MultiValuedDeclaration extends Declaration {
 				DeclarationValue secondValue = null;
 				// http://www.w3.org/TR/css3-background/
 				if (declarationValues.size() == 1) {
-					String val = firstValue.getValue();
-					secondValue = new DeclarationValue(val, ValueType.LENGTH);
+					secondValue = firstValue.clone();
 					addMissingValue(secondValue, 1);
 				} else {
 					secondValue = declarationValues.get(1);
@@ -344,6 +344,7 @@ public class MultiValuedDeclaration extends Declaration {
 								 		 spreadDistance = null,
 								 		 color = null;
 						int numberOfLengths = 0;
+						boolean isNone = false;
 						// Count from current layer's start index to this separator
 						for (int currentLayerValueIndex = currentLayerStartIndex; currentLayerValueIndex < currentValueIndex; currentLayerValueIndex++) {
 							DeclarationValue currentLayerCurrentValue = allValues.get(currentLayerValueIndex);
@@ -355,11 +356,9 @@ public class MultiValuedDeclaration extends Declaration {
 								if ("inset".equals(currentLayerCurrentValue.getValue()))
 									inset = currentLayerCurrentValue;
 								else if ("none".equals(currentLayerCurrentValue.getValue())) {
-											 hOffset = new DeclarationValue("0", ValueType.LENGTH);
-											 vOffset = new DeclarationValue("0", ValueType.LENGTH);
-									 		 blurRadius = new DeclarationValue("0", ValueType.LENGTH);
-									 		 spreadDistance = new DeclarationValue("0", ValueType.LENGTH);
-									 		 color = new DeclarationEquivalentValue("transparent", "rgba(0, 0, 0, 0)", ValueType.COLOR);
+									hOffset = new DeclarationValue("0", ValueType.LENGTH);
+									declarationValues.set(currentLayerValueIndex, hOffset);
+									isNone = true;
 								}
 								break;
 							case LENGTH:
@@ -386,7 +385,7 @@ public class MultiValuedDeclaration extends Declaration {
 						int vOffsetPosition = 1, blurPosition = 2, distancePosition = 3, colorPosition = 3;
 						if ("box-shadow".equals(getNonVendorProperty(getNonHackedProperty(property)))) {
 							colorPosition++;
-							if (inset != null) {
+ 							if (inset != null) {
 								vOffsetPosition++;
 								colorPosition++;
 								blurPosition++;
@@ -408,30 +407,33 @@ public class MultiValuedDeclaration extends Declaration {
 						
 						if ("box-shadow".equals(property) && spreadDistance == null) {
 							spreadDistance = new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH);
-							addMissingValue(spreadDistance, distancePosition);
+ 							addMissingValue(spreadDistance, distancePosition);
 							totalAddedMissingValues++;
 						}
 						
 						if (color == null) {
-							color = new DeclarationValue("currentColor", ValueType.COLOR);
+							if (isNone)
+								color = new DeclarationEquivalentValue("transparent", "rgba(0, 0, 0, 0)", ValueType.COLOR);
+							else 
+								color = new DeclarationValue("currentColor", ValueType.COLOR);
 							addMissingValue(color, currentLayerStartIndex + missingValueOffset + colorPosition);
 							totalAddedMissingValues++;
 						}
 						
 						currentLayerStartIndex = currentValueIndex + 1;
 						
-						final String COLOR = "color";
-						final String HOFFSET = "hoffset";
+ 						final String COLOR = "color";
+ 						final String HOFFSET = "hoffset";
 						final String VOFFSET = "voffset";
 						final String BLUR = "blur";
 						final String SPREAD = "spread";
-						final String INSET = "inset";
+ 						final String INSET = "inset";
 						
-						assignStylePropertyToValue(COLOR, currentLayerIndex, color, false);
-						assignStylePropertyToValue(HOFFSET, currentLayerIndex, hOffset, false);
-						assignStylePropertyToValue(VOFFSET, currentLayerIndex, vOffset, false);
-						assignStylePropertyToValue(BLUR, currentLayerIndex, blurRadius, false);
-						if ("box-shadow".equals(property)) {
+  						assignStylePropertyToValue(COLOR, currentLayerIndex, color, false);
+ 						assignStylePropertyToValue(HOFFSET, currentLayerIndex, hOffset, false);
+ 						assignStylePropertyToValue(VOFFSET, currentLayerIndex, vOffset, false);
+ 						assignStylePropertyToValue(BLUR, currentLayerIndex, blurRadius, false);
+ 						if ("box-shadow".equals(property)) {
 							assignStylePropertyToValue(SPREAD, currentLayerIndex, spreadDistance, false);
 							if (inset != null)
 								assignStylePropertyToValue(INSET, currentLayerIndex, inset, false);
