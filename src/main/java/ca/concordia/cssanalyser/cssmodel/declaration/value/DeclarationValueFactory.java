@@ -127,6 +127,8 @@ public class DeclarationValueFactory {
 				}
 			}
 			case PERCENTAGE: {
+				if (value.startsWith("."))
+					value = "0" + value;
 				String eqVal = value;
 				if ("0".equals(value)) {
 					switch (forProperty) {
@@ -264,6 +266,8 @@ public class DeclarationValueFactory {
 			
 			}
 			case ANGLE: {
+				if (value.startsWith("."))
+					value = "0" + value;
 				String eqVal = "";
 				if (value.endsWith("grad")) {
 					// 1grad = 0.9deg
@@ -279,7 +283,9 @@ public class DeclarationValueFactory {
 				}
 				return new DeclarationEquivalentValue(value, eqVal, type);
 			}
-			case FREQUENCY: {		
+			case FREQUENCY: {
+				if (value.startsWith("."))
+					value = "0" + value;
 				String eqVal = value;
 				// 1KHz = 1000Hz
 				if (value.endsWith("khz")) {
