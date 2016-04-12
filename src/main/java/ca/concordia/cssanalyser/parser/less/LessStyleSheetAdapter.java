@@ -649,8 +649,10 @@ public class LessStyleSheetAdapter {
 	public StyleSheet getAdaptedStyleSheet() {
 		StyleSheet ourStyleSheet = new StyleSheet();
 		LessSource source = lessStyleSheet.getSource();
-		if (source instanceof FileSource || source instanceof URLSource) {
+		if ((source instanceof FileSource || source instanceof URLSource) && source.getURI() != null) {
 			ourStyleSheet.setPath(source.getURI().toString());
+		} else if (source instanceof ModifiedLessFileSource) {
+			ourStyleSheet.setPath(((ModifiedLessFileSource) source).getInputFile().getAbsolutePath());
 		}
 		adapt(ourStyleSheet);
 		return ourStyleSheet;
