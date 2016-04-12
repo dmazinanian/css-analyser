@@ -58,9 +58,6 @@ public class ImportInliner {
 					String url = getURLFromImportStatement(importNode);	
 
 					if (!"".equals(url)) {
-						if (url.startsWith("\"") && url.endsWith("\"")) {
-							url = url.substring(1, url.length() - 1);
-						}
 						if (!onlyImportLessFiles && url.endsWith(".css"))
 							continue;
 						if (url.contains("@{")) {
@@ -127,7 +124,7 @@ public class ImportInliner {
 				FunctionExpression functionExpression = (FunctionExpression) urlExpression;
 				if ("url".equals(functionExpression.getName())) {
 					url = (new LessPrinter()).getStringForNode(functionExpression.getParameter());
-					if (url.startsWith("'")) // Remove quotes
+					if (url.startsWith("'") || url.startsWith("\"")) // Remove quotes
 						url = url.substring(1, url.length() - 1);
 				} else {
 					throw new Exception(
