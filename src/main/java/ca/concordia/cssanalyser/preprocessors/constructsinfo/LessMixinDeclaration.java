@@ -128,7 +128,7 @@ public class LessMixinDeclaration extends LessConstruct {
 		return nodeName;
 	}
 
-	public Iterable<String> getAllPropertiesAtTheDeepestLevel() {
+	public Set<String> getPropertiesAtTheDeepestLevel() {
 		Set<String> propertiesToReturn = new HashSet<>();
 		Set<Declaration> declarations = getDeclarations();
 		for (Declaration declaration : declarations) {
@@ -139,7 +139,12 @@ public class LessMixinDeclaration extends LessConstruct {
 				propertiesToReturn.add(property);
 			}
 		}
-		
+		// remove existing shorthands
+		for (String property : new HashSet<>(propertiesToReturn)) {
+			if (ShorthandDeclaration.isShorthandProperty(property) &&
+					propertiesToReturn.containsAll(ShorthandDeclaration.getIndividualPropertiesForAShorthand(property)))
+				propertiesToReturn.remove(property);
+		}
 		return propertiesToReturn;
 	}
 	
