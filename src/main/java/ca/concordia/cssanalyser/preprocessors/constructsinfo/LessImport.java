@@ -39,7 +39,7 @@ public class LessImport extends LessConstruct {
 						+ File.separator 
 						+ this.url;
 				importedFile = new File(absolutePath);
-				if (importedFile.exists()) {
+				if (importedFile.exists() && !importedFile.isDirectory()) {
 					this.importedFileAbsolutePath = absolutePath;
 				} else {
 					if (!this.url.endsWith(".less")) {
