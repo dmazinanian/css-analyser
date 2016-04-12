@@ -6,6 +6,7 @@ import java.util.List;
 import com.github.sommeri.less4j.Less4jException;
 import com.github.sommeri.less4j.LessSource;
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
+import com.github.sommeri.less4j.core.ast.DetachedRuleset;
 import com.github.sommeri.less4j.core.ast.GeneralBody;
 import com.github.sommeri.less4j.core.ast.MixinReference;
 import com.github.sommeri.less4j.core.ast.RuleSet;
@@ -113,6 +114,7 @@ public class LessMixinCall extends LessConstruct {
 	}
 
 	public Selector getCallingSelector() {
+
 		List<RuleSet> parents = new ArrayList<>();
 
 		ASTCssNode parentStructure = getParentStructure();
@@ -143,6 +145,9 @@ public class LessMixinCall extends LessConstruct {
 				parentStructure = parentStructure.getParent().getParent();
 			} else if (parentStructure.getParent() instanceof StyleSheet) {
 				break;
+			} else if (parentStructure.getParent() instanceof DetachedRuleset ||
+					parentStructure.getParent() instanceof MixinReference) {
+				return null;
 			} else {
 				throw new RuntimeException("What is parent structure " + parentStructure.getParent());
 			}
@@ -157,11 +162,13 @@ public class LessMixinCall extends LessConstruct {
 		ASTCssNode rootNode = parents.get(parents.size() - 1);
 		
 		try {
-			String stringOfRootNode = printer.getStringForNode(rootNode);
+			String stringOfRootNode = printer.getStringForNode(rootNode);		
 			StyleSheet lessStyleSheet = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(stringOfRootNode));
 			ca.concordia.cssanalyser.cssmodel.StyleSheet compileLESSStyleSheet = LessHelper.compileLESSStyleSheet(lessStyleSheet);
-			selectorToReturn = compileLESSStyleSheet.getAllSelectors().iterator().next();
-			selectorToReturn.removeDeclaration(selectorToReturn.getDeclarations().iterator().next());
+			if (compileLESSStyleSheet.getAllSelectors().iterator().hasNext()) {
+				selectorToReturn = compileLESSStyleSheet.getAllSelectors().iterator().next();
+				selectorToReturn.removeDeclaration(selectorToReturn.getDeclarations().iterator().next());
+			}
 		} catch (ParseException | Less4jException e) {
 			e.printStackTrace();
 		}
