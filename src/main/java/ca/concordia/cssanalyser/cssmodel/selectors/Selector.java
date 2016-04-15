@@ -319,16 +319,24 @@ public abstract class Selector extends CSSModelObject  {
 		}
 		
 		// Handle overrides
-		Set<String> visitedProperties = new HashSet<>();
-		List<Declaration> toReturn = new ArrayList<>();
+		Map<String, Declaration> finalDeclarations = new LinkedHashMap<>(); //Keep the order!
 		
+		// Loop from down to top
 		for (int i = allIndividualDeclarations.size() - 1; i >= 0; i--) {
 			Declaration currentIndividualDeclaration = allIndividualDeclarations.get(i);
-			if (visitedProperties.contains(currentIndividualDeclaration.getProperty()))
-				continue;
-			toReturn.add(0, currentIndividualDeclaration);;
-			visitedProperties.add(currentIndividualDeclaration.getProperty());
+			String property = currentIndividualDeclaration.getProperty();
+			if (finalDeclarations.containsKey(property)) {
+				if (currentIndividualDeclaration.isImportant() && !finalDeclarations.get(property).isImportant()) {
+					// If current is important, it should override
+					finalDeclarations.put(property, currentIndividualDeclaration);
+				} 
+			} else {
+				finalDeclarations.put(property, currentIndividualDeclaration);
+			}
 		}
+		
+		List<Declaration> toReturn = new ArrayList<>();
+		finalDeclarations.entrySet().forEach(entry -> toReturn.add(entry.getValue()));
 		
 		return toReturn;
 	}
