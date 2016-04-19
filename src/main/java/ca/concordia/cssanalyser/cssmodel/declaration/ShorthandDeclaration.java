@@ -276,7 +276,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 					borderBRVRadius = declarationValues.get(7);
 					borderBLVRadius = declarationValues.get(8);
 				}
-	
+				
 				// Add shorthand values
 				addIndividualDeclaration("border-top-left-radius", borderTLHRadius, borderTLVRadius);
 				addIndividualDeclaration("border-top-right-radius", borderTRHRadius, borderTRVRadius);
@@ -498,34 +498,41 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 						case "inherit":
 						case "none":
 							listType = value;
-							listImage = value;
-							listPosition = value;
+							listImage = value.clone();
+							addMissingValue(listImage, 1);
+							listPosition = value.clone();
+							addMissingValue(listPosition, 1);
 						default:
-						// throw new Exception("Invalid list-style declaration");
+							// throw new Exception("Invalid list-style declaration");
 					}
-	
 				}
-				
-				if (nonValues.size() >= 2) {
-					listType = declarationValues.get(nonValues.get(0));
-					listImage = declarationValues.get(nonValues.get(1));
-				} else if (nonValues.size() == 1) {
+
+				switch(nonValues.size()) {
+				case 1:
 					if (nonValues.contains(0))
 						listType = declarationValues.get(nonValues.get(0));
 					else
 						listImage = declarationValues.get(nonValues.get(0));
+					break;
+				case 2:
+					break;
+				case 3:
+					listType = declarationValues.get(nonValues.get(0));
+					listImage = declarationValues.get(nonValues.get(1));
+					listPosition = declarationValues.get(nonValues.get(2));
+					break;
 				}
-	
+
 				if (listType == null) {
 					listType = new DeclarationValue("none", ValueType.IDENT);
 					addMissingValue(listType, 0);
 				}
-	
-				if (listPosition== null) {
+
+				if (listPosition == null) {
 					listPosition = new DeclarationValue("outside", ValueType.IDENT);
 					addMissingValue(listPosition, 1);
 				}
-	
+
 				if (listImage == null) {
 					listImage = new DeclarationValue("none", ValueType.IDENT);
 					addMissingValue(listImage, 2);
@@ -546,7 +553,6 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				break;
 			}
 			case "transition": {
-	
 				// http://www.w3.org/TR/css3-transitions/#transition-shorthand-property
 				// transition is comma-separated
 				
@@ -557,6 +563,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				
 				int currentLayerStartIndex = 0;
 				int totalAddedMissingValues = 0;
+				int currentLayerIndex = 0;
 				
 				for (int currentValueIndex = 0; currentValueIndex < allValues.size(); currentValueIndex++) {
 					DeclarationValue currentValue = allValues.get(currentValueIndex);
@@ -566,7 +573,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 								 		 transitionTimingFunction = null,
 								 		 transitionDuration = null,
 								 		 transitionDelay = null;
-						
+						currentLayerIndex++;
 						for (int currentLayerValueIndex = currentLayerStartIndex; currentLayerValueIndex < currentValueIndex; currentLayerValueIndex++) {
 							DeclarationValue currentLayerCurrentValue = allValues.get(currentLayerValueIndex);
 							switch (currentLayerCurrentValue.getType()) {
@@ -645,10 +652,10 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 						addIndividualDeclaration(DELAY, transitionDelay);
 						addIndividualDeclaration(PROPERTY, transitionProperty);
 						
-						assignStylePropertyToValue(DURATION, currentLayerStartIndex, transitionDuration, false);
-						assignStylePropertyToValue(TIMINGFUNCTION, currentLayerStartIndex, transitionTimingFunction, false);
-						assignStylePropertyToValue(DELAY, currentLayerStartIndex, transitionDelay, false);
-						assignStylePropertyToValue(PROPERTY, currentLayerStartIndex, transitionProperty, false);
+						assignStylePropertyToValue(DURATION, currentLayerIndex, transitionDuration, false);
+						assignStylePropertyToValue(TIMINGFUNCTION, currentLayerIndex, transitionTimingFunction, false);
+						assignStylePropertyToValue(DELAY, currentLayerIndex, transitionDelay, false);
+						assignStylePropertyToValue(PROPERTY, currentLayerIndex, transitionProperty, false);
 						
 					}
 					
@@ -1100,7 +1107,8 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 	
 				break;
 			}
-			case "animation": {
+			case "animation":
+				case "flex": {
 				LOGGER.warn("Animation property is not handled");
 				break;
 			}
@@ -1339,15 +1347,19 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 	
 	@Override
 	public int getDeclarationNumber() {
+		if (this.parentSelector == null && this.isVirtualIndividualDeclarationOfAShorthand()) {
+			return getParentShorthand().getDeclarationNumber();
+		} 
 		if (this.isVirtual) {
 			// Get the mean of the numbers of individual declarations
 			int sum = 0;
-			for (Declaration individual : individualDeclarations.values())
+			for (Declaration individual : individualDeclarations.values()) {
 				sum += individual.getDeclarationNumber();
+			}
 
 			return (int)Math.floor((float)sum / this.individualDeclarations.values().size());
 		}
-		return super.getDeclarationNumber();
+		return this.parentSelector.getDeclarationNumber(this);
 	}
 	
 	@Override
