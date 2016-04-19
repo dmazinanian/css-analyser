@@ -71,6 +71,8 @@ import ca.concordia.cssanalyser.parser.ParseException;
  */
 public class LessStyleSheetAdapter {
 	
+	private static final String IMPORTANT = "!important";
+
 	private static Logger LOGGER = FileLogger.getLogger(LessStyleSheetAdapter.class);
 	
 	private final ASTCssNode lessStyleSheet;
@@ -225,9 +227,15 @@ public class LessStyleSheetAdapter {
 					values.add(new DeclarationValue("", ValueType.OTHER));
 				}
 				boolean isImportant = false;
-				if ("!important".equals(values.get(values.size() - 1).getValue())) {
+				DeclarationValue declarationValue = values.get(values.size() - 1);
+				if (declarationValue.getValue().endsWith(IMPORTANT)) {
 					isImportant = true;
-					values.remove(values.size() - 1);
+					if (declarationValue.getValue().equals(IMPORTANT)) {
+						values.remove(values.size() - 1);
+					} else {
+						String value = declarationValue.getValue().replace("!important", "");
+						values.set(values.size() - 1, DeclarationValueFactory.getDeclarationValue(property, value, declarationValue.getType()));
+					}
 				}
 				if (values.size() == 0) {
 					LOGGER.warn(String.format("No CSS values could be found for property %s at line %s, column %s", property, 
