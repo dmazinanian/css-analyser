@@ -29,6 +29,7 @@ import com.github.sommeri.less4j.core.ast.ListExpression;
 import com.github.sommeri.less4j.core.ast.ListExpressionOperator.Operator;
 import com.github.sommeri.less4j.core.ast.MediaExpression;
 import com.github.sommeri.less4j.core.ast.NamedColorExpression;
+import com.github.sommeri.less4j.core.ast.NamedExpression;
 import com.github.sommeri.less4j.core.ast.NestedSelectorAppender;
 import com.github.sommeri.less4j.core.ast.Nth;
 import com.github.sommeri.less4j.core.ast.NumberExpression;
@@ -258,17 +259,16 @@ public class LessStyleSheetAdapter {
 	private List<DeclarationValue> getListOfDeclarationValuesFromLessExpression(String property, Expression expression) throws ParseException {
 		
 		List<DeclarationValue> values = new ArrayList<>();
-		
+
 		if (expression instanceof ListExpression) {
 			ListExpression listExpression = (ListExpression)expression;
 			for (Iterator<Expression> iterator = listExpression.getExpressions().iterator(); iterator.hasNext();) {
-				
+
 				Expression expr = iterator.next();
-				
 				List<DeclarationValue> vals = getListOfDeclarationValuesFromLessExpression(property, expr);
 				values.addAll(vals);
 				if (listExpression.getOperator() != null) {
-					
+
 					if (listExpression.getOperator().getOperator() ==  Operator.COMMA) {
 						if (iterator.hasNext()) {
 							DeclarationValue value = DeclarationValueFactory.getDeclarationValue(property, ",", ValueType.SEPARATOR);
@@ -280,12 +280,12 @@ public class LessStyleSheetAdapter {
 					} else {
 						throw new RuntimeException("Operator = " + listExpression.getOperator());
 					}
-					
+
 				} else {
 					throw new RuntimeException("Operator = " + listExpression.getOperator());
 				}
 			}
-				
+
 		} else if (expression instanceof BinaryExpression) {
 			
 			BinaryExpression binary = (BinaryExpression)expression;
@@ -293,12 +293,19 @@ public class LessStyleSheetAdapter {
 			values.addAll(getListOfDeclarationValuesFromLessExpression(property, binary.getLeft()));
 			
 			// Operator
-			DeclarationValueFactory.getDeclarationValue(property, binary.getOperator().toString(), ValueType.OPERATOR);
 			DeclarationValue operator = DeclarationValueFactory.getDeclarationValue(property, binary.getOperator().toString(), ValueType.OPERATOR);
 			operator.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(binary.getOperator()));
 			values.add(operator);
 			
 			values.addAll(getListOfDeclarationValuesFromLessExpression(property, binary.getRight()));
+
+		} else if (expression instanceof NamedExpression) {
+			
+			NamedExpression namedExpression = (NamedExpression) expression;
+			values.add(DeclarationValueFactory.getDeclarationValue(property, namedExpression.getName(), ValueType.IDENT));
+			values.add(DeclarationValueFactory.getDeclarationValue(property, "=", ValueType.OPERATOR));
+
+			values.addAll(getListOfDeclarationValuesFromLessExpression(property, namedExpression.getExpression()));
 			
 		} else {
 			
@@ -350,7 +357,7 @@ public class LessStyleSheetAdapter {
 				String functionString = getFunctionStringFromLessFunctionExpression(property, function);
 				value = DeclarationValueFactory.getDeclarationValue(property, functionString, ValueType.COLOR);
 
-			} else if(functionName.equals("url")) {
+			} else if (functionName.equals("url")) {
 
 				if (function.getParameter().getChilds().get(1) instanceof CssString) {
 					String url = "url('" + ((CssString)function.getParameter().getChilds().get(1)).getValue() + "')"; 
@@ -358,7 +365,6 @@ public class LessStyleSheetAdapter {
 				} else {
 					throw new RuntimeException("What is that?" + expression);
 				}
-
 			} else {
 				
 				String functionString = getFunctionStringFromLessFunctionExpression(property, function);
@@ -433,16 +439,17 @@ public class LessStyleSheetAdapter {
 		return value;
 	}
 
-	private String getFunctionStringFromLessFunctionExpression(String property, FunctionExpression function) throws ParseException {
-				
-		StringBuilder functionString = new StringBuilder(function.getName());
+	private String getFunctionStringFromLessFunctionExpression(String property, FunctionExpression function) throws ParseException {		
+		String functionName = function.getName();
+		StringBuilder functionString = new StringBuilder(functionName);
 		functionString.append("(");
-		List<DeclarationValue> values = getListOfDeclarationValuesFromLessExpression(property, function.getParameter());		
+		Expression parameter = function.getParameter();
+		List<DeclarationValue> values = getListOfDeclarationValuesFromLessExpression(property, parameter);		
 		for (Iterator<DeclarationValue> iterator = values.iterator(); iterator.hasNext(); ) {
 			DeclarationValue value = iterator.next();
 			if ("".equals(value.getValue()))
-					throw new ParseException(String.format("Could not parse one of the parameters for function %s at <%s:%s>", function.getName(), function.getSourceLine(), function.getSourceColumn()));
-			
+				throw new ParseException(String.format("Could not parse one of the parameters for function %s at <%s:%s>", functionName, function.getSourceLine(), function.getSourceColumn()));
+
 			if (value.getType() != ValueType.SEPARATOR && !functionString.toString().endsWith("(")) {
 				functionString.append(" ");
 			}
