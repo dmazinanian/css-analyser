@@ -429,7 +429,8 @@ public class LessStyleSheetAdapter {
 				} else if ("rem".equals(suffix) || "vw".equals(suffix) || "vh".equals(suffix) || "vmin".equals(suffix)) {
 					value = DeclarationValueFactory.getDeclarationValue(property, originalString, ValueType.PERCENTAGE);
 				} else {
-					throw new ParseException("What is " + property + ":" + originalString);
+					value = DeclarationValueFactory.getDeclarationValue(property, originalString, ValueType.OTHER);
+//					throw new ParseException("What is " + property + ":" + originalString);
 				}
 			default:
 				break;
