@@ -1,7 +1,9 @@
 package ca.concordia.cssanalyser.preprocessors.constructsinfo;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.github.sommeri.less4j.Less4jException;
 import com.github.sommeri.less4j.LessSource;
@@ -9,6 +11,7 @@ import com.github.sommeri.less4j.core.ast.ASTCssNode;
 import com.github.sommeri.less4j.core.ast.DetachedRuleset;
 import com.github.sommeri.less4j.core.ast.GeneralBody;
 import com.github.sommeri.less4j.core.ast.MixinReference;
+import com.github.sommeri.less4j.core.ast.ReusableStructure;
 import com.github.sommeri.less4j.core.ast.RuleSet;
 import com.github.sommeri.less4j.core.ast.StyleSheet;
 
@@ -23,11 +26,14 @@ public class LessMixinCall extends LessConstruct {
 	private final int numberOfMultiValuedArguments;
 	private final MixinReference reference;
 	private LessMixinDeclaration mixinDeclaration;
+	private final LessASTQueryHandler queryHandler;
+	private List<Selector> callingSelectors;
 
-	public LessMixinCall(MixinReference reference, int numberOfMultiValuedArguments, StyleSheet styleSheet) {
+	public LessMixinCall(MixinReference reference, int numberOfMultiValuedArguments, StyleSheet styleSheet, LessASTQueryHandler queryHandler) {
 		super(styleSheet);
 		this.reference = reference;
 		this.numberOfMultiValuedArguments = numberOfMultiValuedArguments;
+		this.queryHandler = queryHandler;
 	}
 
 	public int getNumberOfMultiValuedArguments() {
@@ -113,14 +119,52 @@ public class LessMixinCall extends LessConstruct {
 		return true;
 	}
 
-	public Selector getCallingSelector() {
+	public List<Selector> getCallingSelectors() {
 
-		List<RuleSet> parents = new ArrayList<>();
+		if (callingSelectors == null) {
 
+			List<Selector> selectorsToReturn = new ArrayList<>();
+
+			List<LessMixinCall> mixinCallInfo = queryHandler.getMixinCallInfo();
+			List<List<ASTCssNode>> parentsList = getParentRuleSets(mixinCallInfo, new HashSet<>());
+
+			if (parentsList.size() == 0)
+				return selectorsToReturn;
+
+			for (List<ASTCssNode> parents : parentsList) {
+				LessPrinter printer = new LessPrinter();
+				ASTCssNode rootNode = parents.get(parents.size() - 1);
+
+				try {
+					String stringOfRootNode = printer.getStringForNode(rootNode);		
+					StyleSheet lessStyleSheet = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(stringOfRootNode));
+					ca.concordia.cssanalyser.cssmodel.StyleSheet compileLESSStyleSheet = LessHelper.compileLESSStyleSheet(lessStyleSheet);
+					if (compileLESSStyleSheet.getAllSelectors().iterator().hasNext()) {
+						Selector callingSelector = compileLESSStyleSheet.getAllSelectors().iterator().next();
+						callingSelector.removeDeclaration(callingSelector.getDeclarations().iterator().next());
+						selectorsToReturn.add(callingSelector);
+					}
+				} catch (ParseException | Less4jException e) {
+					e.printStackTrace();
+				}
+			}
+			callingSelectors = selectorsToReturn;
+			
+		}
+
+		return callingSelectors;
+	}
+
+	private List<List<ASTCssNode>> getParentRuleSets(List<LessMixinCall> mixinCallInfo, Set<LessMixinCall> alreadyVisited) {
+		
+		List<List<ASTCssNode>> toReturn = new ArrayList<>();
+		
 		ASTCssNode parentStructure = getParentStructure();
 		if (parentStructure == null) {
-			return null;
+			return toReturn;
 		}
+		
+		List<ASTCssNode> currentParentNodes = new ArrayList<>();
 		
 		RuleSet lastOne = null;
 		do {
@@ -132,14 +176,30 @@ public class LessMixinCall extends LessConstruct {
 						clone.getBody().addMember(LessHelper.getLessNodeFromLessString("foo: bar;"));
 					} catch (ParseException e) {
 						e.printStackTrace();
-						return null;
+						return toReturn;
 					}
 				} else {
 					clone.getBody().addMember(lastOne);
 				}
-				clone.configureParentToAllChilds();
-				parents.add(clone);
+				clone.getBody().configureParentToAllChilds();
+				currentParentNodes.add(clone);
 				lastOne = clone;
+			} else if (parentStructure instanceof ReusableStructure) {
+				ReusableStructure parentReusableStructure = (ReusableStructure) parentStructure;
+				String mixinName = parentReusableStructure.getNamesAsStrings().toString();
+				mixinName = mixinName.substring(1, mixinName.length() - 1);
+				if (!this.getName().equals(mixinName)) {
+					for (LessMixinCall lessMixinCall : mixinCallInfo) {
+						if (!alreadyVisited.contains(lessMixinCall)) {
+							// This is dangerous! FIXME
+							if (lessMixinCall.getName().equals(mixinName)) {
+								alreadyVisited.add(lessMixinCall);
+								toReturn.addAll(lessMixinCall.getParentRuleSets(mixinCallInfo, alreadyVisited));
+								alreadyVisited.remove(lessMixinCall);
+							}
+						}
+					}
+				}		
 			}
 			if (parentStructure.getParent() instanceof GeneralBody) {
 				parentStructure = parentStructure.getParent().getParent();
@@ -147,32 +207,31 @@ public class LessMixinCall extends LessConstruct {
 				break;
 			} else if (parentStructure.getParent() instanceof DetachedRuleset ||
 					parentStructure.getParent() instanceof MixinReference) {
-				return null;
+				return toReturn;
 			} else {
 				throw new RuntimeException("What is parent structure " + parentStructure.getParent());
 			}
 		} while (!(parentStructure instanceof StyleSheet));
 		
-		if (parents.size() == 0)
-			return null;
-		
-		Selector selectorToReturn = null;
-		
-		LessPrinter printer = new LessPrinter();
-		ASTCssNode rootNode = parents.get(parents.size() - 1);
-		
-		try {
-			String stringOfRootNode = printer.getStringForNode(rootNode);		
-			StyleSheet lessStyleSheet = LessCSSParser.getLessStyleSheet(new LessSource.StringSource(stringOfRootNode));
-			ca.concordia.cssanalyser.cssmodel.StyleSheet compileLESSStyleSheet = LessHelper.compileLESSStyleSheet(lessStyleSheet);
-			if (compileLESSStyleSheet.getAllSelectors().iterator().hasNext()) {
-				selectorToReturn = compileLESSStyleSheet.getAllSelectors().iterator().next();
-				selectorToReturn.removeDeclaration(selectorToReturn.getDeclarations().iterator().next());
+		if (!currentParentNodes.isEmpty()) {
+			if (toReturn.size() == 0) {
+				toReturn.add(currentParentNodes);
+			} else {
+				// Prepend
+				for (int i = 0; i < toReturn.size(); i++) {
+					List<ASTCssNode> list = toReturn.get(i);
+					List<ASTCssNode> newList = new ArrayList<>();
+					GeneralBody body = ((RuleSet)list.get(0)).getBody();//((RuleSet)currentParentNodes.get(0)).getBody();
+					body.removeAllMembers();
+					body.addMember(currentParentNodes.get(currentParentNodes.size() - 1));
+					body.configureParentToAllChilds();
+					newList.addAll(currentParentNodes);
+					newList.addAll(list);
+					toReturn.set(i, newList);
+				}
 			}
-		} catch (ParseException | Less4jException e) {
-			e.printStackTrace();
 		}
-
-		return selectorToReturn;
+		
+		return toReturn;
 	}
 }

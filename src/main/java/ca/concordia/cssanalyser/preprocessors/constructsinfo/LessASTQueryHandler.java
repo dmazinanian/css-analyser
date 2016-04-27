@@ -50,6 +50,8 @@ public class LessASTQueryHandler {
 	private StyleSheet lessStyleSheet;
 	private final Map<LessImport, LessASTQueryHandler> importedStyleSheetsData;
 
+	private List<LessMixinDeclaration> mixinDeclarationInfo;
+
 	private LessASTQueryHandler(StyleSheet lessStyleSheet, Map<LessImport, LessASTQueryHandler> importedStyleSheetsData) {
 		this.lessStyleSheet = lessStyleSheet;
 		this.importedStyleSheetsData = importedStyleSheetsData;
@@ -124,7 +126,7 @@ public class LessASTQueryHandler {
 							}
 						}
 						
-						LessMixinCall lessMixinCall = new LessMixinCall(reference, numberOfMultiValuedArguments, this.lessStyleSheet);
+						LessMixinCall lessMixinCall = new LessMixinCall(reference, numberOfMultiValuedArguments, this.lessStyleSheet, this);
 						LessMixinDeclaration lessMixinDeclaration = getMixinDeclarationForMixinCall(lessMixinCall);
 						lessMixinCall.setMixinDeclaration(lessMixinDeclaration);
 						toReturn.add(lessMixinCall);
@@ -182,8 +184,11 @@ public class LessASTQueryHandler {
 
 	public List<LessMixinDeclaration> getMixinDeclarationInfo() {
 		
-		Set<LessImport> importsToSkip = new HashSet<>();
-		return getMixinDeclarationInfo(importsToSkip);
+		if (mixinDeclarationInfo == null) {
+			Set<LessImport> importsToSkip = new HashSet<>();
+			mixinDeclarationInfo = getMixinDeclarationInfo(importsToSkip);
+		}
+		return mixinDeclarationInfo;
 		
 	}
 	
@@ -721,9 +726,8 @@ public class LessASTQueryHandler {
 				if (mixinCallsMap.containsKey(mixinDeclaration)) {
 					mixinCalledInSelectors = mixinCallsMap.get(mixinDeclaration);
 				}
-				Selector callingSelector = lessMixinCall.getCallingSelector();
-				if (callingSelector != null)
-					mixinCalledInSelectors.add(callingSelector);
+				List<Selector> callingSelector = lessMixinCall.getCallingSelectors();
+				mixinCalledInSelectors.addAll(callingSelector);
 				mixinCallsMap.put(mixinDeclaration, mixinCalledInSelectors);
 			}
 		}
