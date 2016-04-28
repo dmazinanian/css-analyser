@@ -22,6 +22,7 @@ import com.github.sommeri.less4j.core.ast.CssClass;
 import com.github.sommeri.less4j.core.ast.CssString;
 import com.github.sommeri.less4j.core.ast.Declaration;
 import com.github.sommeri.less4j.core.ast.DetachedRuleset;
+import com.github.sommeri.less4j.core.ast.DetachedRulesetReference;
 import com.github.sommeri.less4j.core.ast.Document;
 import com.github.sommeri.less4j.core.ast.ElementSubsequent;
 import com.github.sommeri.less4j.core.ast.EmbeddedScript;
@@ -39,6 +40,7 @@ import com.github.sommeri.less4j.core.ast.GeneralBody;
 import com.github.sommeri.less4j.core.ast.IdSelector;
 import com.github.sommeri.less4j.core.ast.IdentifierExpression;
 import com.github.sommeri.less4j.core.ast.Import;
+import com.github.sommeri.less4j.core.ast.IndirectVariable;
 import com.github.sommeri.less4j.core.ast.InlineContent;
 import com.github.sommeri.less4j.core.ast.InterpolableName;
 import com.github.sommeri.less4j.core.ast.InterpolableNamePart;
@@ -320,6 +322,9 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 		case DETACHED_RULESET:
 			return appendDetachedRuleset((DetachedRuleset) node);
 			
+		case DETACHED_RULESET_REFERENCE:
+			return appendDetachedRuleSetReference((DetachedRulesetReference) node);
+			
 		case REUSABLE_STRUCTURE:
 			return appendReusableStructure((ReusableStructure) node);
 			
@@ -352,15 +357,26 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 			
 		case INTERPOLABLE_NAME:
 			return appendInterpolableName((InterpolableName) node);
-			
-		case ESCAPED_SELECTOR:
-		case DETACHED_RULESET_REFERENCE:
+		
 		case INDIRECT_VARIABLE:
+			return appendIndirectVariable((IndirectVariable) node);
+					
+		case ESCAPED_SELECTOR:
 			throw new NotACssException(node);
 
 		default:
 			throw new IllegalStateException("Unknown: " + node.getType() + " " + node.getSourceLine() + ":" + node.getSourceColumn());
 		}
+	}
+
+	private boolean appendIndirectVariable(IndirectVariable node) {
+		builder.append("@").append(node.getName());
+		return true;
+	}
+
+	private boolean appendDetachedRuleSetReference(DetachedRulesetReference node) {
+		builder.append(node.getVariable()).append(";");
+		return true;
 	}
 
 	private boolean appendInterpolableName(InterpolableName interpolableName) {
@@ -427,17 +443,22 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 	}
 
 	private boolean appendNestedSelesctorAppender(NestedSelectorAppender node) {
-		builder.append("&");
+	    if (!node.isDirectlyAfter())
+	        builder.ensureSeparator();
+	      builder.append("&");
+	      if (!node.isDirectlyBefore())
+	        builder.ensureSeparator();
 		return true;
 	}
 
 	private boolean appendMixinReference(MixinReference node) {
-		builder.appendIgnoreNull(node.getFinalNameAsString());
+		String finalNameAsString = node.getFinalNameAsString();
+		builder.appendIgnoreNull(finalNameAsString);
 		builder.append('(');
 		for (Iterator<Expression> iterator = node.getPositionalParameters().iterator(); iterator.hasNext();) {
 			Expression expression = iterator.next();
 			append(expression);
-			if (iterator.hasNext())
+			if (expression instanceof ListExpression || iterator.hasNext())
 				builder.append("; ");
 		}
 		if (node.isImportant())
@@ -482,7 +503,11 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 	}
 
 	public boolean appendDetachedRuleset(DetachedRuleset node) {
-		throw new NotACssException(node);
+		builder.append("{").ensureNewLine();
+		append(node.getBody());
+		builder.ensureNewLine();
+		builder.append("}");
+		return false;
 	}
 
 	public boolean appendCommaSeparated(List<? extends ASTCssNode> values) {
@@ -767,21 +792,19 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 	}
 
 	private boolean appendBodyOptimizeDuplicates(Body body) {
-		if (body.isEmpty())
-			return false;
-
 		builder.ensureSeparator();
 		append(body.getOpeningCurlyBrace());
-		builder.increaseIndentationLevel();
-		Iterable<LessPrinter> declarationsBuilders = collectUniqueBodyMembersStrings(body);
-		for (LessPrinter miniBuilder : declarationsBuilders) {
+		if (!body.isEmpty()) {
+			builder.increaseIndentationLevel();
+			Iterable<LessPrinter> declarationsBuilders = collectUniqueBodyMembersStrings(body);
+			for (LessPrinter miniBuilder : declarationsBuilders) {
+				builder.ensureNewLine();
+				append(miniBuilder);
+			}
+			appendComments(body.getOrphanComments(), false);
+			builder.decreaseIndentationLevel();
 			builder.ensureNewLine();
-			append(miniBuilder);
 		}
-
-		appendComments(body.getOrphanComments(), false);
-		builder.decreaseIndentationLevel();
-		builder.ensureNewLine();
 		append(body.getClosingCurlyBrace());
 
 		return true;
@@ -1194,7 +1217,7 @@ public class LessPrinter implements PreprocessorCodePrinter<StyleSheet> {
 			break;
 
 		default:
-			builder.ensureSeparator().append(combinator.toString());
+			builder.ensureSeparator().append(combinator.toString()).ensureSeparator();
 
 		}
 
