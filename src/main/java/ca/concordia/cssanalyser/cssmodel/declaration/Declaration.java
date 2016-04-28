@@ -300,7 +300,11 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	public abstract Collection<String> getStyleProperties();
 	
 	public int getDeclarationNumber() {
-		return this.parentSelector.getDeclarationNumber(this);
+		if (this.parentSelector == null && isVirtualIndividualDeclarationOfAShorthand()) {
+			return this.parentShorthand.getDeclarationNumber();
+		} else {
+			return this.parentSelector.getDeclarationNumber(this);
+		}
 	}
 
 	public abstract Iterable<DeclarationValue> getDeclarationValues();
