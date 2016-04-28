@@ -1108,8 +1108,8 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				break;
 			}
 			case "animation":
-				case "flex": {
-				LOGGER.warn("Animation property is not handled");
+			case "flex": {
+				LOGGER.debug(property + " is not handled");
 				break;
 			}
 			default:
