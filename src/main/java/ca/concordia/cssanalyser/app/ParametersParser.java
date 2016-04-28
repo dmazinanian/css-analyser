@@ -45,6 +45,9 @@ class ParametersParser {
 					case "minsup":
 					case "mode":
 					case "to":
+					case "max-declarations":
+					case "max-calls":
+					case "max-parameters":
 						params.put(parameter, value);
 						break;
 					case "outfolder":
@@ -150,6 +153,33 @@ class ParametersParser {
 		return params.get("css2");
 	}
 
+	public int getMaxDeclarations() {
+		int maxDeclarations = -1;
+		String value = params.get("max-declarations");
+		if (value != null) {
+			maxDeclarations = Integer.valueOf(value);
+		}
+		return maxDeclarations;
+	}
+	
+	public int getMaxParameters() {
+		int maxParameters = -1;
+		String value = params.get("max-parameters");
+		if (value != null) {
+			maxParameters = Integer.valueOf(value);
+		}
+		return maxParameters;
+	}
+	
+	public int getMaxCalls() {
+		int maxCalls = -1;
+		String value = params.get("max-calls");
+		if (value != null) {
+			maxCalls = Integer.valueOf(value);
+		}
+		return maxCalls;
+	}
+	
 	/**
 	 * Returns a list of paths to the URLs,
 	 * which are provided in the url list file using --urlsfile:path/to/file
