@@ -167,7 +167,11 @@ public class DuplicationDetector {
 
 				boolean equals;
 				if (onlyCheckProperties)
-					equals = currentDeclaration.getProperty().equals(checkingDeclaration.getProperty());
+					equals = currentDeclaration.getProperty().equals(checkingDeclaration.getProperty()) &&
+						currentDeclaration.isImportant() == checkingDeclaration.isImportant() &&
+						/*currentDeclaration.getSelector().mediaQueryListsEqual(checkingDeclaration.getSelector()) &&*/
+						currentDeclaration.getNumberOfValueLayers() == checkingDeclaration.getNumberOfValueLayers() &&
+						!currentDeclaration.getSelector().equals(checkingDeclaration.getSelector());
 				else
 					equals = currentDeclaration.declarationEquals(checkingDeclaration);
 
@@ -257,7 +261,10 @@ public class DuplicationDetector {
 
 							boolean equivalentCondition = false;
 							if (onlyCheckProperties)
-								equivalentCondition = virtualShorthand.getProperty().equals(checkingDeclaration.getProperty());
+								equivalentCondition = virtualShorthand.getProperty().equals(checkingDeclaration.getProperty()) &&
+										virtualShorthand.isImportant() == checkingDeclaration.isImportant() &&
+												checkingDeclaration.getSelector().mediaQueryListsEqual(checkingDeclaration.getSelector()) &&
+												checkingDeclaration.getNumberOfValueLayers() == checkingDeclaration.getNumberOfValueLayers();
 							else
 								equivalentCondition = virtualShorthand.individualDeclarationsEquivalent(checkingShorthandDeclaration);
 							
