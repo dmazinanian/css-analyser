@@ -155,7 +155,9 @@ public class SimpleSelector extends BaseSelector {
 		
 		SimpleSelector otherSimpleSelector = (SimpleSelector)otherSelector;
 		
-		if (!(selectedElementName.equalsIgnoreCase(otherSimpleSelector.selectedElementName) &&
+		if (!((selectedElementName.equalsIgnoreCase(otherSimpleSelector.selectedElementName) ||
+				("*".equals(selectedElementName.trim()) && "".equals(otherSimpleSelector.selectedElementName.trim())) ||
+				("".equals(selectedElementName.trim()) && "*".equals(otherSimpleSelector.selectedElementName.trim()))) &&
 				selectedID.equalsIgnoreCase(otherSimpleSelector.selectedID) &&
 				selectedClasses.size() == otherSimpleSelector.selectedClasses.size() && 
 					selectedClasses.containsAll(otherSimpleSelector.selectedClasses) &&
@@ -196,15 +198,15 @@ public class SimpleSelector extends BaseSelector {
 
 	@Override
 	public int hashCode() {
-		if (hashCode  == -1) {
+		if (hashCode == -1) {
 			hashCode = 17;
 			hashCode = 31 * hashCode + getLocationInfo().hashCode();
 			if (selectedID != null)
-				hashCode = 31 * hashCode + selectedID.hashCode();
+				hashCode = 31 * hashCode + ("#" + selectedID).hashCode();
 			if (selectedElementName != null)
 				hashCode = 31 * hashCode + selectedElementName.hashCode();
 			for (String c : selectedClasses)
-				hashCode += c.hashCode();
+				hashCode += ("." + c).hashCode();
 			for (SelectorCondition condition : conditions)
 				hashCode += (condition == null ? 0 : condition.hashCode());
 			for (PseudoClass pseudoClass : pseudoClasses)
