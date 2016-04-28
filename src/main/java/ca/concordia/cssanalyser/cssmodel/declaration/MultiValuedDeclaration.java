@@ -36,7 +36,6 @@ public class MultiValuedDeclaration extends Declaration {
 	 * We use {@link PropertyAndLayer} class for the keys to store the layer with the property name. 
 	 */
 	protected final Map<PropertyAndLayer, Collection<DeclarationValue>> stylePropertyToDeclarationValueMap;
-	protected int numberOfMissingValues;
 	private static final Set<String> muliValuedProperties = new HashSet<>();
 	
 	static {
@@ -219,13 +218,12 @@ public class MultiValuedDeclaration extends Declaration {
 							String val = firstValue.getValue();
 							if (!("cover".equals(val) || "contain".equals(val) || "inherit".equals(val) || "auto".equals(val))) {
 								secondValue = new DeclarationValue("auto", ValueType.LENGTH);
-								assignStylePropertyToValue(HEIGHT, currentLayerIndex, secondValue, false);
-								addMissingValue(secondValue, 1);
 							} else {
 								secondValue = firstValue.clone();
-								assignStylePropertyToValue(HEIGHT, currentLayerIndex, secondValue, false);
-								// There if no second value
+								// There is no second value
 							}
+							assignStylePropertyToValue(HEIGHT, currentLayerIndex, secondValue, false);
+							addMissingValue(secondValue, 1);
 						} else {
 							secondValue = currentLayerValues.get(1);
 							assignStylePropertyToValue(HEIGHT, currentLayerIndex, secondValue, false);
@@ -252,6 +250,7 @@ public class MultiValuedDeclaration extends Declaration {
 				}
 				break;
 			}
+			
 			case "border-top-left-radius":
 			case "border-top-right-radius":
 			case "border-bottom-right-radius":
@@ -405,7 +404,7 @@ public class MultiValuedDeclaration extends Declaration {
 							totalAddedMissingValues++;
 						}
 						
-						if ("box-shadow".equals(property) && spreadDistance == null) {
+						if ("box-shadow".equals(getNonVendorProperty(getNonHackedProperty(property))) && spreadDistance == null) {
 							spreadDistance = new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH);
  							addMissingValue(spreadDistance, distancePosition);
 							totalAddedMissingValues++;
@@ -446,11 +445,11 @@ public class MultiValuedDeclaration extends Declaration {
 				break;
 			}
 			
-			case "content":
-			case "font-family": {
+			case "font-family": 
+			case "content": {
 				for (DeclarationValue value : declarationValues) {
 					if (value.getType() != ValueType.SEPARATOR)
-						assignStylePropertyToValue(property, 1, value, false);
+						assignStylePropertyToValue(property, 1, value, true);
 					/*else
 						assignStylePropertyToValue(property + "-comma", 1, value, true);*/
 				}
@@ -564,7 +563,6 @@ public class MultiValuedDeclaration extends Declaration {
 	 */
 	public void addMissingValue(DeclarationValue value, int position) {
 		value.setIsAMissingValue(true);
-		numberOfMissingValues++;
 		declarationValues.add(position, value);
 	}
 	
@@ -573,7 +571,7 @@ public class MultiValuedDeclaration extends Declaration {
 	 * @return
 	 */
 	public int getNumberOfMissingValues() {
-		return numberOfMissingValues;
+		return ((List<DeclarationValue>)getMissingValues()).size();
 	}
 	
 	/**
@@ -620,8 +618,6 @@ public class MultiValuedDeclaration extends Declaration {
 	 * @param value
 	 */
 	public void addValue(DeclarationValue value) {
-		if (value.isAMissingValue())
-			numberOfMissingValues++;
 		declarationValues.add(value);
 	}
 	
@@ -675,7 +671,7 @@ public class MultiValuedDeclaration extends Declaration {
 							.hashCode());
 			result = prime * result + (isCommaSeparatedListOfValues ? 1231 : 1237);
 			result = prime * result + (isImportant ? 1231 : 1237);
-			result = prime * result + numberOfMissingValues;
+			result = prime * result + getNumberOfMissingValues();
 			result = prime * result
 					+ ((parentSelector == null) ? 0 : parentSelector.hashCode());
 			result = prime * result
@@ -699,7 +695,7 @@ public class MultiValuedDeclaration extends Declaration {
 			return false;
 		if (isImportant != other.isImportant)
 			return false;
-		if (numberOfMissingValues != other.numberOfMissingValues)
+		if (getNumberOfMissingValues() != other.getNumberOfMissingValues())
 			return false;
 		if (property == null) {
 			if (other.property != null)
