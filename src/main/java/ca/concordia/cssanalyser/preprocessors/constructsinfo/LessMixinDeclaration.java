@@ -27,6 +27,10 @@ public class LessMixinDeclaration extends LessConstruct {
 		super(parentStyleSheet);
 		this.reusableNode = reusableStructure;
 	}
+	
+	public  ReusableStructure getReusableNode() {
+		return this.reusableNode;
+	}
 
 	public String getMixinName() {
 		String mixinName = reusableNode.getNamesAsStrings().toString();
@@ -128,9 +132,9 @@ public class LessMixinDeclaration extends LessConstruct {
 		return nodeName;
 	}
 
-	public Set<String> getPropertiesAtTheDeepestLevel() {
+	public Set<String> getPropertiesAtTheDeepestLevel(boolean includeNesting) {
 		Set<String> propertiesToReturn = new HashSet<>();
-		Set<Declaration> declarations = getDeclarations();
+		Set<Declaration> declarations = getDeclarations(includeNesting);
 		for (Declaration declaration : declarations) {
 			String property = declaration.getNameAsString();
 			if (ShorthandDeclaration.isShorthandProperty(property)) {
