@@ -229,15 +229,9 @@ public class ItemSetList implements Set<ItemSet> {
 	 * @param itemSetList
 	 */
 	public void removeSubsets(ItemSetList itemSetList) {
-		ArrayList<ItemSet> toRemove = new ArrayList<>();
 		for (ItemSet itemSet : itemSetList) {
-			for (ItemSet itemSet2 : itemsets) {
-				if (itemSet.containsAll(itemSet2)
-						&& itemSet.getSupport().equals(itemSet2.getSupport()))
-					toRemove.add(itemSet2);
-			}
+			removeSubset(itemSet);
 		}
-		itemsets.removeAll(toRemove);
 	}
 
 	public boolean containsSuperSet(ItemSet itemSetToCheck) {
@@ -253,16 +247,19 @@ public class ItemSetList implements Set<ItemSet> {
 	}
 
 	public void removeSubset(ItemSet superSet) {
-		ArrayList<ItemSet> toRemove = new ArrayList<>();
-		Set<ItemSet> allItemSetsWithSameSupport = supportItemSetMap
-				.get(superSet.getSupport());
+		List<ItemSet> toRemove = new ArrayList<>();
+		Set<ItemSet> allItemSetsWithSameSupport = supportItemSetMap.get(superSet.getSupport());
 		if (allItemSetsWithSameSupport == null)
 			return;
 		for (ItemSet itemSet : allItemSetsWithSameSupport) {
-			if (superSet.containsAll(itemSet))
-				toRemove.add(itemSet);
+			if (superSet.containsAll(itemSet)) {
+				toRemove.remove(itemSet);
+			}
 		}
-		itemsets.removeAll(toRemove);
+		for (ItemSet itemSet : toRemove) {
+			itemsets.remove(itemSet);
+			supportItemSetMap.get(itemSet.getSupport()).remove(itemSet);
+		}
 	}
 
 	public static ItemSet findItemSetWithMaxImpact(List<ItemSetList> itemSetList) {
