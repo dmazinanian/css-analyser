@@ -108,8 +108,8 @@ public class DeclarationValueFactory {
 						case "border-radius":
 						case "border-bottom-left-radius":
 						case "border-bottom-right-radius":
-						case "border-bottom-top-radius":
-						case "border-bottom-bottom-radius":
+						case "border-top-left-radius":
+						case "border-top-right-radius":
 						case "column-width":
 						case "column-rule-width":
 						case "column-gap":
