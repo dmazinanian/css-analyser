@@ -22,12 +22,15 @@ public class MixinDeclaration {
 	private Declaration referenceDeclaration;
 	private Set<Declaration> forDeclarations = new HashSet<>();
 	private int mixinDeclarationNumber;
+	private final boolean isImportant;
 
 	public MixinDeclaration(String propertyName, Declaration referenceDeclaration, Iterable<Declaration> forDeclarations) {
 		this.propertyName = propertyName;
 		this.referenceDeclaration = referenceDeclaration;
-		for (Declaration declaration : forDeclarations)
+		this.isImportant = referenceDeclaration.isImportant();
+		for (Declaration declaration : forDeclarations) {
 			this.forDeclarations.add(declaration);
+		}
 	}
 	
 	public void addMixinValue(PropertyAndLayer propertyAndLayer, MixinValue value) {
@@ -229,6 +232,9 @@ public class MixinDeclaration {
 						!nextValue.toString().trim().equals("/"))
 					toReturn.append(" ");
 			}
+		}
+		if (isImportant) {
+			toReturn.append(" !important");
 		}
 		return toReturn.toString();
 	}
