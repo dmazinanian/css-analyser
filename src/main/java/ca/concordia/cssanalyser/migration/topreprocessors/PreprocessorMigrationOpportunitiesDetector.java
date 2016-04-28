@@ -27,16 +27,13 @@ public abstract class PreprocessorMigrationOpportunitiesDetector<T> {
 		return this.styleSheet;
 	}
 
-	public List<? extends MixinMigrationOpportunity<T>> findMixinOpportunities() {
-
-		// Remove intra-selector dependencies!
-		StyleSheet styleSheetWithRemovedDependencies = this.styleSheet.getStyleSheetWithIntraSelectorDependenciesRemoved();
+	public List<? extends MixinMigrationOpportunity<T>> findMixinOpportunities(boolean removeSubsets) {
 
 		// Apply FP-Growth on property duplications
-		DuplicationDetector duplicationDetector = new DuplicationDetector(styleSheetWithRemovedDependencies);
+		DuplicationDetector duplicationDetector = new DuplicationDetector(this.styleSheet);
 		duplicationDetector.findPropertyDuplications();
 
-		List<ItemSetList> itemSetLists = duplicationDetector.fpGrowth(2, false);
+		List<ItemSetList> itemSetLists = duplicationDetector.fpGrowth(2, removeSubsets);
 
 		List<MixinMigrationOpportunity<T>> mixinMigrationOpportunities = new ArrayList<>();
 
@@ -68,31 +65,34 @@ public abstract class PreprocessorMigrationOpportunitiesDetector<T> {
 			 * Check if all of the declarations are virtual shorthand,
 			 * in this case, we add individual declarations instead 
 			 */
-			boolean allVirtual = true;
+			boolean hasVirtual = false;
 			// This loop does two things!
 			for (Declaration d : item) {
-				if (d instanceof ShorthandDeclaration && !((ShorthandDeclaration)d).isVirtual()) {
-					allVirtual = false;
+				if (d instanceof ShorthandDeclaration && ((ShorthandDeclaration)d).isVirtual()) {
+					hasVirtual = true;
 				}
 				if (itemSet.supportContains(d.getSelector()))
 					declarationsToAdd.add(d);
 			}
-			// What if all of them are single or multi-valued? you need an extra check
-			if (ShorthandDeclaration.isShorthandProperty(declarationsToAdd.get(0).getProperty()) && allVirtual) {
+			// Break down, when there is a shorthand, because you don't know if you can parameterize
+			if (hasVirtual) {
 				ShorthandDeclaration referenceVirtualShorthand = (ShorthandDeclaration)declarationsToAdd.get(0);
-				for (Declaration referenceIndividual : referenceVirtualShorthand.getIndividualDeclarations()) {
+				for (Declaration referenceIndividual : referenceVirtualShorthand.getIndividualDeclarationsAtTheDeepestLevel()) {
 					List<Declaration> individualDeclarationsToAdd = new ArrayList<>();
 					individualDeclarationsToAdd.add(referenceIndividual);
 					String referenceVirtualShorthandProperty = referenceIndividual.getProperty();
 					for (int i = 1; i < declarationsToAdd.size(); i++) {
 						ShorthandDeclaration virtualShorthand = (ShorthandDeclaration)declarationsToAdd.get(i);
 						Declaration individualForThisProperty =
-								virtualShorthand.getIndividualDeclarationForProperty(referenceVirtualShorthandProperty);
+								virtualShorthand.getIndividualDeclarationForPropertyAtTheDeepestLevel(referenceVirtualShorthandProperty);
+						if (individualForThisProperty == null) {
+							individualForThisProperty = virtualShorthand.getIndividualDeclarationForPropertyAtTheDeepestLevel(referenceVirtualShorthandProperty);
+						}
 						individualDeclarationsToAdd.add(individualForThisProperty);
 					}
 					opportunity.addDeclarationsWithTheSameProperty(individualDeclarationsToAdd);
 				}
-			} else { // If not all the declarations are virtual shorthands
+			} else { // If none of the declarations are virtual shorthands
 				opportunity.addDeclarationsWithTheSameProperty(declarationsToAdd);
 			}
 		}

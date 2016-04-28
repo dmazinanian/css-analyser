@@ -21,8 +21,8 @@ public class LessMigrationOpportunitiesDetector extends PreprocessorMigrationOpp
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public List<LessMixinMigrationOpportunity> findMixinOpportunities() {
-		return (List<LessMixinMigrationOpportunity>) super.findMixinOpportunities();
+	public List<LessMixinMigrationOpportunity> findMixinOpportunities(boolean removeSubsets) {
+		return (List<LessMixinMigrationOpportunity>) super.findMixinOpportunities(removeSubsets);
 	}
 	
 }
