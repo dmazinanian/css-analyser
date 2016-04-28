@@ -261,11 +261,26 @@ public abstract class Selector extends CSSModelObject  {
 			ShorthandDeclaration virtualShorthand = new ShorthandDeclaration(entry.getKey(), new ArrayList<DeclarationValue>(), this, false, false, new LocationInfo(-1, -1));
 
 			virtualShorthand.isVirtual(true);
-			boolean isImportant = true;
+			Boolean isImportant = null;
+			boolean shouldSkipDueToDifferentImportance = false;
 			for (Declaration individual : entry.getValue()) {
 				virtualShorthand.addIndividualDeclaration(individual.clone());
-				isImportant &= individual.isImportant();
+				if (isImportant == null) {
+					isImportant = individual.isImportant();
+				} else {
+					if (isImportant != individual.isImportant()) {
+						shouldSkipDueToDifferentImportance = true;
+						break;
+					}
+					
+				}
 			}
+			
+			if (shouldSkipDueToDifferentImportance) {
+				// Don't add this, because some of the individual declarations have different importance
+				continue;
+			}
+			
 			virtualShorthand.isImportant(isImportant);
 			
 			/*
