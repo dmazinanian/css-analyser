@@ -16,7 +16,17 @@ import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
 public abstract class Combinator extends BaseSelector {
 	
 	public abstract SimpleSelector getRightHandSideSelector();
-	public abstract BaseSelector getLeftHandSideSelector(); 
+	public abstract BaseSelector getLeftHandSideSelector();		
+	
+	private final char combinatorCharacter;
+	
+	public Combinator(char combinatorCharacter) {
+		this.combinatorCharacter = combinatorCharacter;
+	}
+	
+	public char getCombinatorCharacter() {
+		return combinatorCharacter;
+	}
 	
 	@Override
 	public DOMNodeWrapperList getSelectedNodes(Document document) {

@@ -17,6 +17,11 @@ public class DescendantSelector extends Combinator {
 	private int hashCode = -1; 
 	
 	public DescendantSelector(BaseSelector parent, SimpleSelector child) {
+		this(parent, child, ' ');
+	}
+	
+	public DescendantSelector(BaseSelector parent, SimpleSelector child, char combinatorCharacter) {
+		super(combinatorCharacter);
 		parentSelector = parent;
 		childSelector = child;
 	}
@@ -41,7 +46,7 @@ public class DescendantSelector extends Combinator {
 	
 	@Override
 	public String toString() {
-		return parentSelector + " " + childSelector;
+		return parentSelector + String.valueOf(getCombinatorCharacter()) + childSelector;
 	}
 	
 	@Override
@@ -76,6 +81,7 @@ public class DescendantSelector extends Combinator {
 	public int hashCode() {
 		if (hashCode  == -1) {
 			hashCode = 17;
+			hashCode = 31 * hashCode + Character.hashCode(getCombinatorCharacter());
 			hashCode = 31 * hashCode + getLocationInfo().hashCode();
 			hashCode = 31 * hashCode + (parentSelector == null ? 0 : parentSelector.hashCode());
 			hashCode = 31 * hashCode + (childSelector == null ? 0 : childSelector.hashCode());

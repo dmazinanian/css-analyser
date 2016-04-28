@@ -14,6 +14,11 @@ public class SiblingSelector extends Combinator {
 	private int hashCode = -1;
 	
 	public SiblingSelector(BaseSelector firstSelector, SimpleSelector secondSelector) {
+		this(firstSelector, secondSelector, '~');
+	}
+	
+	public SiblingSelector(BaseSelector firstSelector, SimpleSelector secondSelector, char combinatorCharacter) {
+		super(combinatorCharacter);
 		beforeMainSelector = firstSelector;
 		mainSelector = secondSelector;
 	}
@@ -24,11 +29,6 @@ public class SiblingSelector extends Combinator {
 	
 	public SimpleSelector getSecondSelector() {
 		return mainSelector;
-	}
-	
-	@Override
-	public String toString() {
-		return beforeMainSelector + " ~ " + mainSelector;
 	}
 	
 	@Override
@@ -64,6 +64,7 @@ public class SiblingSelector extends Combinator {
 	public int hashCode() {
 		if (hashCode == -1) {
 			hashCode = 17;
+			hashCode = 31 * hashCode + Character.hashCode(getCombinatorCharacter());
 			hashCode = 31 * hashCode + getLocationInfo().hashCode();
 			hashCode = 31 * hashCode + (beforeMainSelector == null ? 0 : beforeMainSelector.hashCode());
 			hashCode = 31 * hashCode + (mainSelector == null ? 0 : mainSelector.hashCode());
@@ -129,6 +130,9 @@ public class SiblingSelector extends Combinator {
 		return beforeMainSelector;
 	}
 
-	
+	@Override
+	public String toString() {
+		return getLeftHandSideSelector() + " " + String.valueOf(getCombinatorCharacter()) + " " + getRightHandSideSelector();
+	}
 
 }

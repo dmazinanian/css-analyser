@@ -8,12 +8,7 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
 public class AdjacentSiblingSelector extends SiblingSelector {
 
 	public AdjacentSiblingSelector(BaseSelector firstSelector, SimpleSelector secondSelector) {
-		super(firstSelector, secondSelector);
-	}
-
-	@Override
-	public String toString() {
-		return beforeMainSelector + " + " + mainSelector;
+		super(firstSelector, secondSelector, '+');
 	}
 	
 	@Override

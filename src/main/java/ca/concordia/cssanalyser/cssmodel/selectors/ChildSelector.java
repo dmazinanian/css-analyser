@@ -7,12 +7,12 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
 public class ChildSelector extends DescendantSelector {
 
 	public ChildSelector(BaseSelector parent, SimpleSelector child) {
-		super(parent, child);
+		super(parent, child, '>');
 	}
 	
 	@Override
 	public String toString() {
-		return parentSelector + " > " + childSelector;
+		return getLeftHandSideSelector() + " " + String.valueOf(getCombinatorCharacter()) + " " + getRightHandSideSelector(); 
 	}
 
 	@Override
