@@ -7,19 +7,34 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.IntConstraintFactory;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.VariableFactory;
+
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.PropertyAndLayer;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
+import ca.concordia.cssanalyser.migration.topreprocessors.DependenciesNotSatisfiableException;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorType;
 import ca.concordia.cssanalyser.migration.topreprocessors.differences.StylePropertyValuesDifferenceInValues;
+import ca.concordia.cssanalyser.parser.CSSParserFactory;
+import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
+import ca.concordia.cssanalyser.parser.ParseException;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependency;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 /**
  * Represents a Mixin refactoring opportunity in the preprocessor.
@@ -33,7 +48,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	private String mixinName;
 	
 	// Declarations having differences in their values are stored here. 
-	private Map<String, List<Declaration>> realDeclarations = new LinkedHashMap<>();
+	protected Map<String, List<Declaration>> realDeclarations = new LinkedHashMap<>();
 
 	// List of parameters for this mixin
 	private List<MixinParameter> parameters = new ArrayList<>(); 
@@ -61,10 +76,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	private Map<String, MixinDeclaration> mixinDeclarations = new LinkedHashMap<>();
 	
 	public Iterable<String> getProperties() {
-		List<String> toReturn = new ArrayList<>();
-		for (String property : realDeclarations.keySet())
-			toReturn.add(property);
-		return toReturn;
+		return new ArrayList<>(realDeclarations.keySet());
 	}
 	
 	public String getMixinName() {
@@ -90,7 +102,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	}
 	
 	private void calculateParameters() {
-		
+
 		if (!shouldCalculateParameters)
 			return;
 		
@@ -106,26 +118,15 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		// Map every property name to a list of differences in different declarations
 		Map<String, List<StylePropertyValuesDifferenceInValues>> propertyNameToDifferencesMap = getDifferences();
 		
+		Set<String> propertiesInOrder = getPropertiesInOrder();
+		
 		// Make a parameter for every difference, a literal for every value which is the same, and add the corresponding parameterized values for call sites
-		for (String propertyName : realDeclarations.keySet()) {
+		for (String propertyName : propertiesInOrder) {
 			List<StylePropertyValuesDifferenceInValues> differencesForThisProperty = propertyNameToDifferencesMap.get(propertyName);
 			List<Declaration> declarationsHavingTheSameProperty = realDeclarations.get(propertyName);
 			Set<PropertyAndLayer> allSetPropertyAndLayers = getAllSetPropertyAndLayersForDeclarations(declarationsHavingTheSameProperty);
 			
-			Declaration declarationWithMaxLayers = Collections.max(declarationsHavingTheSameProperty, new Comparator<Declaration>() {
-				@Override
-				public int compare(Declaration o1, Declaration o2) {
-					
-					if (o1 instanceof ShorthandDeclaration && ((ShorthandDeclaration) o1).isVirtual())
-						return -1;
-					else if (o2 instanceof ShorthandDeclaration && ((ShorthandDeclaration)o2).isVirtual())
-						return 1;
-					
-					if (o1.getNumberOfValueLayers() == o2.getNumberOfValueLayers())
-						return 1;
-					return Integer.compare(o1.getNumberOfValueLayers(), o2.getNumberOfValueLayers());
-				}
-			});
+			Declaration declarationWithMaxLayers = getDeclarationWithMaxPropertyAndLayers(declarationsHavingTheSameProperty);
 			
 			MixinDeclaration mixinDeclaration = new MixinDeclaration(propertyName, declarationWithMaxLayers, declarationsHavingTheSameProperty);
 			
@@ -146,6 +147,15 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 							// In the case of multiple layers, add layer number to the parameter name
 							if (declarationWithMaxLayers.getNumberOfValueLayers() > 1)
 								parameterName += "_" + propertyAndLayer.getPropertyLayer();
+							// In case of repetitive names, prepend property name
+							for (MixinParameter p : initialParameters) {
+								if (p.getName().equals(parameterName)) {
+									parameterName = propertyName.replace("-", "_") + "_" + parameterName;
+									if (parameterName.startsWith("_"))
+										parameterName = parameterName.substring(1); 
+									break;
+								}
+							}
 							MixinParameter parameter = new MixinParameter(parameterName, propertyAndLayer);
 							initialParameters.add(parameter);
 							value = parameter;
@@ -160,7 +170,12 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 
 								Collection<DeclarationValue> declarationValuesForThisPropertyAndLayer = 
 										declaration.getDeclarationValuesForStyleProperty(propertyAndLayer);
-								MixinParameterizedValue parameterizedValue = new MixinParameterizedValue(declaration, declarationValuesForThisPropertyAndLayer , parameter);
+								if (declarationValuesForThisPropertyAndLayer == null)
+									FileLogger.getLogger(MixinMigrationOpportunity.class).warn(	
+											String.format("NULL declaration value in %s for property and layer %s",
+													declaration,
+													propertyAndLayer));
+								MixinParameterizedValue parameterizedValue = new MixinParameterizedValue(declaration, declarationValuesForThisPropertyAndLayer, parameter);
 								setOfParameterizedValues.add(parameterizedValue);
 							}
 
@@ -176,32 +191,32 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 					// But if all values in all declarations are missing, ignore,
 					// Except if the values we are adding are the only values of this declaration!
 					
-					boolean theOnlyValuesOfThisDeclaration = 
-							declarationsHavingTheSameProperty.get(0).getAllSetPropertyAndLayers().size() == 1;
+//					boolean theOnlyValuesOfThisDeclaration = 
+//							getDeclarationWithMaxLayers(declarationsHavingTheSameProperty).getAllSetPropertyAndLayers().size() == 1;
 					
-					boolean allMissing = true;
-					for (Declaration declaration : declarationsHavingTheSameProperty) {
-						Collection<DeclarationValue> declarationValuesForStyleProperty = declaration.getDeclarationValuesForStyleProperty(propertyAndLayer);
-						if (declarationValuesForStyleProperty != null) {
-							for (DeclarationValue v : declarationValuesForStyleProperty) {
-								if (!v.isAMissingValue()) {
-									allMissing = false;
-									break;
-								}
-							}
-							if (!allMissing)
-								break;
-						}
-					}
+//					boolean allMissing = true;
+//					for (Declaration declaration : declarationsHavingTheSameProperty) {
+//						Collection<DeclarationValue> declarationValuesForStyleProperty = declaration.getDeclarationValuesForStyleProperty(propertyAndLayer);
+//						if (declarationValuesForStyleProperty != null) {
+//							for (DeclarationValue v : declarationValuesForStyleProperty) {
+//								if (!v.isAMissingValue()) {
+//									allMissing = false;
+//									break;
+//								}
+//							}
+//							if (!allMissing)
+//								break;
+//						}
+//					}
 					
-					if (theOnlyValuesOfThisDeclaration || !allMissing) {
+//					if (theOnlyValuesOfThisDeclaration || !allMissing) {
 						Collection<DeclarationValue> declarationValuesForStyleProperty =
-								declarationsHavingTheSameProperty.get(0).
+								getDeclarationWithMaxPropertyAndLayers(declarationsHavingTheSameProperty).
 								getDeclarationValuesForStyleProperty(propertyAndLayer);
 						value = new MixinLiteral(declarationValuesForStyleProperty, propertyAndLayer);
-					} else {
-						value = null;
-					}
+//					} else {
+//						value = null;
+//					}
 				}
 				
 				if (value != null)
@@ -217,9 +232,173 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 				
 		// We have to minimize the parameters
 		this.parameters = initialParameters;
+		mergeParameters();
 		
 		shouldCalculateParameters = false;
 		
+	}
+
+	private Set<String> getPropertiesInOrder() /*throws DependenciesNotSatisfiableException*/ {
+		
+		List<Selector> selectors = new ArrayList<>();
+		involvedSelectors.forEach(selector -> selectors.add(selector));
+		
+		Set<Declaration> declarations = new TreeSet<>(new Comparator<Declaration>() {
+			@Override
+			public int compare(Declaration o1, Declaration o2) {
+				int declarationNumber1 = o1.getDeclarationNumber();
+				int declarationNumber2 = o2.getDeclarationNumber();
+				if (declarationNumber1 == declarationNumber2 && !o1.equals(o2)) {
+					return -1;
+				}
+				return Integer.compare(declarationNumber1, declarationNumber2);
+			}
+		});
+		
+		Set<String> propertiesInOrder = new LinkedHashSet<>();
+		Selector firstSelector = selectors.get(0);
+		for (String property : realDeclarations.keySet()) {
+			List<Declaration> list = realDeclarations.get(property);
+			for (Declaration declaration : list) {
+				if (declaration.getSelector().equals(firstSelector)) {
+					declarations.add(declaration);
+				}
+			}
+		}
+		
+		//Get the order from the first selector, if it is different in others, the change is not possible
+		declarations.forEach(declaration -> propertiesInOrder.add(declaration.getProperty()));
+		
+//		CSSValueOverridingDependencyList intraSelectorOverridingDependencies = firstSelector.getIntraSelectorOverridingDependencies();
+//		if (intraSelectorOverridingDependencies.size() != 0) {
+//			for (int i = 1; i < selectors.size(); i++) {
+//				Selector selectorToCheckWith = selectors.get(i);
+//				
+//			}
+//		}  
+		
+		return propertiesInOrder;
+	}
+
+	/**
+	 * @param declarationsHavingTheSameProperty
+	 * @return
+	 */
+	private Declaration getDeclarationWithMaxPropertyAndLayers(List<Declaration> declarationsHavingTheSameProperty) {
+		return Collections.max(declarationsHavingTheSameProperty, new Comparator<Declaration>() {
+			@Override
+			public int compare(Declaration o1, Declaration o2) {
+				
+				if (o1 instanceof ShorthandDeclaration && ((ShorthandDeclaration) o1).isVirtual())
+					return -1;
+				else if (o2 instanceof ShorthandDeclaration && ((ShorthandDeclaration)o2).isVirtual())
+					return 1;
+				
+				if (o1.getNumberOfValueLayers() == o2.getNumberOfValueLayers())
+					return Integer.compare(o1.getAllSetPropertyAndLayers().size(), o2.getAllSetPropertyAndLayers().size());
+				return Integer.compare(o1.getNumberOfValueLayers(), o2.getNumberOfValueLayers());
+			}
+		});
+	}
+
+	private void mergeParameters() {
+		
+		Map<MixinParameter, List<MixinParameterizedValue>> mixinParameterToParameterizedValuesMap = new HashMap<>();
+		for (Set<MixinParameterizedValue> parameterizedValuesForDeclaration : parameterizedValues.values()) {
+			for (MixinParameterizedValue parameterizedValue : parameterizedValuesForDeclaration) {
+				MixinParameter mixinParameter = parameterizedValue.getMixinParameter();
+				List<MixinParameterizedValue> parameterizedValuesForParameter = new ArrayList<>();
+				if (mixinParameterToParameterizedValuesMap.containsKey(mixinParameter)) {
+					parameterizedValuesForParameter = mixinParameterToParameterizedValuesMap.get(mixinParameter);
+				} else {
+					mixinParameterToParameterizedValuesMap.put(mixinParameter, parameterizedValuesForParameter);
+				}
+				parameterizedValuesForParameter.add(parameterizedValue);
+			}
+		}
+		
+		Set<Integer> alreadyMerged = new HashSet<>();
+		
+		for (int i = 0; i < parameters.size(); i++) {
+			if (alreadyMerged.contains(i))
+					continue;
+			List<Integer> candidatesForMerging = new ArrayList<>();
+			candidatesForMerging.add(i);
+			List<MixinParameterizedValue> list1 = mixinParameterToParameterizedValuesMap.get(parameters.get(i));
+			for (int j = i + 1; j < parameters.size(); j++) {
+				if (alreadyMerged.contains(j))
+					continue;
+				List<MixinParameterizedValue> list2 = mixinParameterToParameterizedValuesMap.get(parameters.get(j));
+				// compare values between the two lists
+				if (haveTheSameValues(list1, list2)) {
+					candidatesForMerging.add(j);
+				}
+			}
+			
+			if (candidatesForMerging.size() > 1) {
+				MixinParameter parameterToMergeWith = parameters.get(candidatesForMerging.get(0));
+				for (int j = 1; j < candidatesForMerging.size(); j++) {
+					Integer candidateParameterForMergingIndex = candidatesForMerging.get(j);
+					MixinParameter parameterToMerge = parameters.get(candidateParameterForMergingIndex);
+					alreadyMerged.add(candidateParameterForMergingIndex);
+					for (MixinParameterizedValue parameterizedValue : mixinParameterToParameterizedValuesMap.get(parameterToMerge)) {
+						parameterizedValue.setMixinParameter(parameterToMergeWith);
+					}
+					
+					for (MixinDeclaration declaration : mixinDeclarations.values()) {
+						if (parameterToMerge == declaration.getMixinValueForPropertyandLayer(parameterToMerge.getAssignedTo())) {
+							declaration.addMixinValue(parameterToMerge.getAssignedTo(), parameterToMergeWith);
+						}
+					}
+				}
+			}
+			
+		}
+		
+		List<MixinParameter> newMixinParameters = new ArrayList<>();
+		for (int i = 0; i < parameters.size(); i++) {
+			if (!alreadyMerged.contains(i)) {
+				newMixinParameters.add(parameters.get(i));
+			}
+		}
+		
+		this.parameters = newMixinParameters;
+	}
+
+	private boolean haveTheSameValues(List<MixinParameterizedValue> list1, List<MixinParameterizedValue> list2) {
+	
+		Map<Selector, Collection<DeclarationValue>> selectorToValuesMap1 = new HashMap<>();
+		Map<Selector, Collection<DeclarationValue>> selectorToValuesMap2 = new HashMap<>();
+		
+		for (MixinParameterizedValue value : list1) {
+			selectorToValuesMap1.put(value.getForDeclaration().getSelector(), value.getForValues());
+		}
+		
+		for (MixinParameterizedValue value : list2) {
+			selectorToValuesMap2.put(value.getForDeclaration().getSelector(), value.getForValues());
+		}
+		
+		for (Selector selector : selectorToValuesMap1.keySet()) {
+			Collection<DeclarationValue> collection1 = selectorToValuesMap1.get(selector);
+			if (selectorToValuesMap2.containsKey(selector)) {
+				Collection<DeclarationValue> collection2 = selectorToValuesMap2.get(selector);
+				if ((collection1 == null && collection2 == null) || (collection1 != null && collection1.equals(collection2))) {
+					
+				} else {
+					return false;
+				}
+			} else {
+				return false;
+			}
+		}
+//			Collection<DeclarationValue> forValues1 = value1.getForValues();
+//			for (MixinParameterizedValue value2 : list2) {
+//				Collection<DeclarationValue> forValues2 = value2.getForValues();
+//				if (!forValues1.equals(forValues2))
+//					return false;
+//			}
+
+		return true;
 	}
 
 	private Map<String, List<StylePropertyValuesDifferenceInValues>> getDifferences() {
@@ -239,20 +418,20 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 				boolean shouldAddDifference = false;
 				Collection<DeclarationValue> groundTruth = null;
 				for (Declaration declaration : declarations) {
-					Collection<DeclarationValue> declarationValuesForThisDeclaration = 
+					Collection<DeclarationValue> declarationValuesForThisStyleProperty = 
 							declaration.getDeclarationValuesForStyleProperty(propertyAndLayer);
-					if (declarationValuesForThisDeclaration == null) {
-						//shouldAddDifference = true; 
+					if (declarationValuesForThisStyleProperty == null) {
+						shouldAddDifference = true; 
 					} else {
 						if (groundTruth == null) {
-							groundTruth = declarationValuesForThisDeclaration;
+							groundTruth = declarationValuesForThisStyleProperty;
 						} else {
-							if (groundTruth.size() != declarationValuesForThisDeclaration.size()) {
+							if (groundTruth.size() != declarationValuesForThisStyleProperty.size()) {
 								shouldAddDifference = true;
 							} else {
 								if (groundTruth instanceof List) { // Position is important
 									List<DeclarationValue> toBeCheckedWithList = (List<DeclarationValue>)groundTruth;
-									List<DeclarationValue> checkingList = (List<DeclarationValue>)declarationValuesForThisDeclaration;
+									List<DeclarationValue> checkingList = (List<DeclarationValue>)declarationValuesForThisStyleProperty;
 									for (int i = 0; i < toBeCheckedWithList.size(); i++) {
 										if (!checkingList.get(i).equivalent(toBeCheckedWithList.get(i))) {
 											shouldAddDifference = true;
@@ -261,7 +440,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 									}
 								} else if (groundTruth instanceof Set) {
 									Set<DeclarationValue> toBeCheckedWithSet = (Set<DeclarationValue>)groundTruth;
-									Set<DeclarationValue> checkingSet = (Set<DeclarationValue>)declarationValuesForThisDeclaration;
+									Set<DeclarationValue> checkingSet = (Set<DeclarationValue>)declarationValuesForThisStyleProperty;
 									Set<DeclarationValue> checkedValues = new HashSet<>();
 									for (DeclarationValue value : toBeCheckedWithSet) {
 										boolean valueFound = false;
@@ -282,7 +461,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 							}
 						}
 					}
-					difference.addDifference(declaration, declarationValuesForThisDeclaration);
+					difference.addDifference(declaration, declarationValuesForThisStyleProperty);
 				}
 				if (shouldAddDifference) {
 					List<StylePropertyValuesDifferenceInValues> differences = propertyNameToDifferencesMap.get(declarationProperty);
@@ -360,8 +539,9 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	public Iterable<Declaration> getDeclarationsToBeRemoved() {
 		calculateParameters();
 		Set<Declaration> allDeclarations = new HashSet<>();
-		for (String property : realDeclarations.keySet())
-			allDeclarations.addAll(realDeclarations.get(property));
+		for (Selector selector : involvedSelectors) {
+			allDeclarations.addAll(getInvolvedDeclarations(selector));
+		}
 		return allDeclarations;
 	}
 
@@ -396,6 +576,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			Set<Declaration> individualsToBeRemoved = parentShortandsToIndividualsMap.get(parentShorthand);
 			for (Declaration individual : parentShorthand.getIndividualDeclarations()) {
 				if (!individualsToBeRemoved.contains(individual) &&
+						parentShorthand.getSelector().getOriginalSelector() != null &&
 						!parentShorthand.getSelector().getOriginalSelector().containsDeclaration(individual)) {
 					declarationsToBeAdded.add(individual);
 				}
@@ -413,4 +594,327 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	}
 	
 	public abstract String getMixinSignature();
+
+	public int getNumberOfParameters() {
+		calculateParameters();
+		return parameters.size();
+	}
+
+	public int getNumberOfMixinDeclarations() {
+		calculateParameters();
+		return realDeclarations.keySet().size();
+	}
+	
+	public int getNumberOfDeclarationsUsingParameters() {
+		calculateParameters();
+		int numberOfDeclarationsUsingParameters = 0;
+		for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
+			for (MixinValue mixinValue : mixinDeclaration.getMixinValues()) {
+				if (mixinValue instanceof MixinParameter) {
+					numberOfDeclarationsUsingParameters++;
+				}
+			}
+		}
+		return numberOfDeclarationsUsingParameters;
+	}
+
+	public int getNumberOfUniqueCrossBrowserDeclarations() {
+		Set<String> uniqueCrossBrowserDeclarations = new HashSet<>();
+		for (String property : realDeclarations.keySet()) {
+			String nonVendorProperty = Declaration.getNonVendorProperty(property);
+			if (!property.equals(nonVendorProperty)) {
+				uniqueCrossBrowserDeclarations.add(nonVendorProperty);
+			}
+		}
+		return uniqueCrossBrowserDeclarations.size();
+	}
+
+	public int getNumberOfNonCrossBrowserDeclarations() {
+		Set<String> numberOfNonCrossBrowserDeclarations = new HashSet<>();
+		for (String property : realDeclarations.keySet()) {
+			String nonVendorProperty = Declaration.getNonVendorProperty(property);
+			if (property.equals(nonVendorProperty)) {
+				numberOfNonCrossBrowserDeclarations.add(property);
+			}
+		}
+		return numberOfNonCrossBrowserDeclarations.size();
+	}
+
+	public int getNumberOfDeclarationsHavingOnlyHardCodedValues() {
+		calculateParameters();
+		int numberOfDeclarationsHavingOnlyHardCodedValues = mixinDeclarations.values().size();
+		for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
+			for (MixinValue mixinValue : mixinDeclaration.getMixinValues()) {
+				if (mixinValue instanceof MixinParameter) {
+					numberOfDeclarationsHavingOnlyHardCodedValues--;
+					break;
+				}
+			}
+		}
+		return numberOfDeclarationsHavingOnlyHardCodedValues;
+	}
+
+	public int getNumberOfVendorSpecificSharingParameter() {
+		calculateParameters();
+		Set<String> vendorSpecificSharingParams = new HashSet<>();
+
+		for (MixinParameter parameter : parameters) {
+			for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
+				if (parameter == mixinDeclaration.getMixinValueForPropertyandLayer(parameter.assignedTo)) {
+					String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
+					if (!nonVendorProperty.equals(mixinDeclaration.getPropertyName()))
+						vendorSpecificSharingParams.add(nonVendorProperty);
+				}
+			}
+		}
+		
+		return vendorSpecificSharingParams.size();
+	}
+
+	public int getNumberOfUniqueParametersUsedInVendorSpecific() {
+		calculateParameters();
+		
+		int numberOfUniqueParamsSharedInVendorSpecific = 0;
+		
+		for (MixinParameter parameter : parameters) {
+			Map<String, Integer> vendorSpecificSharingParams = new HashMap<>();
+			for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
+				if (parameter == mixinDeclaration.getMixinValueForPropertyandLayer(parameter.assignedTo)) {
+					String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
+					int n = 0;
+					if (vendorSpecificSharingParams.containsKey(nonVendorProperty)) {
+						n = vendorSpecificSharingParams.get(nonVendorProperty);
+					}
+					vendorSpecificSharingParams.put(nonVendorProperty, n + 1);
+				}
+			}
+			for (String property : vendorSpecificSharingParams.keySet()) {
+				if (vendorSpecificSharingParams.get(property) >= 2) {
+					numberOfUniqueParamsSharedInVendorSpecific++;
+					break;
+				}
+			}
+		}
+		return numberOfUniqueParamsSharedInVendorSpecific;
+	}
+
+	public int getNumberOfUniqueParametersUsedInMoreThanOneKindOfDeclaration() {
+		calculateParameters();
+		int uniqueParamsUsedInMoreThanOneKindOrDeclaration = 0;
+
+		for (MixinParameter parameter : parameters) {
+			Set<String> distinctProperties = new HashSet<>();
+			for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
+				if (parameter == mixinDeclaration.getMixinValueForPropertyandLayer(parameter.assignedTo)) {
+					String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
+					distinctProperties.add(nonVendorProperty);
+				}
+			}
+			if (distinctProperties.size() > 1)
+				uniqueParamsUsedInMoreThanOneKindOrDeclaration++;
+		}
+		return uniqueParamsUsedInMoreThanOneKindOrDeclaration;
+	}
+
+	public Set<String> getPropertiesAtTheDeepestLevel() {
+		calculateParameters();
+		Set<String> propertiesInOpportunity = new HashSet<>();
+		for (MixinDeclaration mixinDeclaration : getAllMixinDeclarations()) {
+			String propertyName = mixinDeclaration.getPropertyName();
+			if (ShorthandDeclaration.isShorthandProperty(propertyName)) {
+				propertiesInOpportunity.addAll(ShorthandDeclaration.getIndividualPropertiesForAShorthand(propertyName));
+			} else {
+				propertiesInOpportunity.add(propertyName);
+			}									
+		}
+		return propertiesInOpportunity;
+	}
+	
+	public Set<Declaration> getInvolvedDeclarations(Selector selector) {
+		Set<Declaration> involvedDeclarations = new HashSet<>();
+		for (Declaration declaration : selector.getDeclarations()) {
+			if (realDeclarations.containsKey(declaration.getProperty())) {
+				List<Declaration> list = realDeclarations.get(declaration.getProperty());
+				for (Declaration d : list) {
+					if (d.equals(declaration)) {
+						involvedDeclarations.add(declaration);
+						break;		
+					}
+				}
+//				involvedDeclarations.add(declaration);
+			} else {
+				// Check for possible shorthand
+				Set<String> individuals = ShorthandDeclaration.getIndividualPropertiesForAShorthand(declaration.getProperty());
+				if (individuals.size() > 0) {
+					boolean declarationFound = false;
+					for (String individual : individuals) {
+						if (realDeclarations.containsKey(individual)) {
+							List<Declaration> list = realDeclarations.get(individual);
+							for (Declaration d : list) {
+								if (d.getSelector().equals(selector) && d.isVirtualIndividualDeclarationOfAShorthand()) {
+									ShorthandDeclaration parentShorthand = d.getParentShorthand();
+									do {
+										if (parentShorthand.equals(declaration)) {
+											involvedDeclarations.add(declaration);
+											declarationFound = true;
+											break;
+										}
+										parentShorthand = parentShorthand.getParentShorthand();
+									} while(parentShorthand != null);
+									
+									if (declarationFound) {
+										break;		
+									}
+								}
+							}
+							if (declarationFound) {
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		return involvedDeclarations;
+	}
+
+	/**
+	 * Returns the declarations, in order, to satisfy dependencies.
+	 * The mixin call is denoted by a fake declaration MIXIN: CALL;
+	 * A null array means don't re-arrange!
+	 * @param selector
+	 * @return
+	 * @throws Exception 
+	 */
+	public Declaration[] getMixinCallPosition(Selector selector) throws DependenciesNotSatisfiableException {
+		
+		CSSValueOverridingDependencyList intraSelectorOverridingDependencies = selector.getIntraSelectorOverridingDependencies();
+		
+		if (intraSelectorOverridingDependencies.size() == 0) {
+			return null;
+		}
+		
+		Solver solver = new Solver("Finding mixin call position problem");
+		
+		Declaration mixinFakeDeclaration = null;
+		try {
+			mixinFakeDeclaration =
+				CSSParserFactory.getCSSParser(CSSParserType.LESS).parseCSSString(".selector {MIXIN:CALL}")
+					.getAllSelectors().iterator().next()
+					.getDeclarations().iterator().next();
+		} catch (ParseException parseEx) {
+			parseEx.printStackTrace();
+		}
+		
+		Set<Declaration> involvedDeclarationsInMixin = getInvolvedDeclarations(selector);
+		Set<Declaration> otherDeclarations = new HashSet<Declaration>();
+		
+		for (Declaration declaration : selector.getDeclarations()) {
+			if (!involvedDeclarationsInMixin.contains(declaration)) {
+				otherDeclarations.add(declaration);
+			}
+		}
+		
+		/*
+		 * The maximum number for variable domain is the number of declarations not being involved
+		 * in the mixin plus one for mixin call
+		 */
+		int maximumNumber = otherDeclarations.size() + 1;
+		
+		Map<Declaration, IntVar> declarationsToVariablesMap = new HashMap<>();
+		
+		
+		declarationsToVariablesMap.put(mixinFakeDeclaration, VariableFactory.bounded(mixinFakeDeclaration.toString(), 1, maximumNumber, solver));
+		for (Declaration declaration : otherDeclarations) {
+			String variableName = declaration.toString();
+			declarationsToVariablesMap.put(declaration, VariableFactory.bounded(variableName, 1, maximumNumber, solver));
+		}
+		
+		Set<Declaration> declarationsInvolvedInDependencies = new HashSet<>();
+		// Add the constraints
+		
+		for (CSSValueOverridingDependency cssValueOverridingDependency : intraSelectorOverridingDependencies) {
+			Declaration declaration1 = cssValueOverridingDependency.getDeclaration1();
+			Declaration declaration2 = cssValueOverridingDependency.getDeclaration2();
+			IntVar variable1 = null, variable2 = null;
+			
+			if (involvedDeclarationsInMixin.contains(declaration1) && otherDeclarations.contains(declaration2)) {
+				variable1 = declarationsToVariablesMap.get(mixinFakeDeclaration);
+				variable2 = declarationsToVariablesMap.get(declaration2);
+				declarationsInvolvedInDependencies.add(declaration2);
+			} else if (involvedDeclarationsInMixin.contains(declaration2) && otherDeclarations.contains(declaration1)) {
+				variable1 = declarationsToVariablesMap.get(declaration1);
+				variable2 = declarationsToVariablesMap.get(mixinFakeDeclaration);
+				declarationsInvolvedInDependencies.add(declaration1);
+			} else if (otherDeclarations.contains(declaration1) && otherDeclarations.contains(declaration2)) {
+				variable1 = declarationsToVariablesMap.get(declaration1);
+				variable2 = declarationsToVariablesMap.get(declaration2);
+				declarationsInvolvedInDependencies.add(declaration1);
+				declarationsInvolvedInDependencies.add(declaration2);
+			}
+			
+			if (variable1 != null && variable2 != null) {
+				solver.post(IntConstraintFactory.arithm(variable1, "<", variable2));
+			}
+		}
+		
+		IntVar[] allVars = new IntVar[declarationsToVariablesMap.size()];
+		allVars = declarationsToVariablesMap.values().toArray(allVars);
+		// "BC" = bound-consistency
+		solver.post(IntConstraintFactory.alldifferent(allVars, "BC"));
+		
+		boolean result = solver.findSolution();
+		
+		if (result) {
+			Declaration[] toReturn = new Declaration[declarationsToVariablesMap.size()];
+			for (Entry<Declaration, IntVar> entry : declarationsToVariablesMap.entrySet()) {
+				if (entry.getValue().getValue() == 0 || entry.getValue().getValue() - 1 >= toReturn.length) {
+					throw new DependenciesNotSatisfiableException("Not solvable! Array index out of bound for declarations");
+				} else {
+					toReturn[entry.getValue().getValue() - 1] = entry.getKey();
+				}
+			}
+			return toReturn;
+		} else {
+//			Set<String> set = new HashSet<>();
+//			for (Declaration declaration : otherDeclarations) {
+//				String p = declaration.getProperty();
+//				if (set.contains(p)) {
+//					throw new DependenciesNotSatisfiableException("Not solvable, duplicated properties!"); 
+//				}
+//				set.add(p);
+//			}
+			throw new DependenciesNotSatisfiableException("Not solvable!");
+		}
+	}
+	
+	public int getNumberOfIntraSelectorDependenciesInMixin() {
+		return getNumberOfDependenciesAffectingMigration(false);
+	}
+
+	public int getNumberOfIntraSelectorDependenciesAffectingMixinCallPosition() {
+		return getNumberOfDependenciesAffectingMigration(true);
+	}
+	
+	private int getNumberOfDependenciesAffectingMigration(boolean affectingMixinCall) {
+		int numberOfDependencies = 0;
+		for (Selector selector : involvedSelectors) {
+			CSSValueOverridingDependencyList intraSelectorOverridingDependencies = selector.getIntraSelectorOverridingDependencies();
+			Set<Declaration> involvedDeclarations = getInvolvedDeclarations(selector);
+			for (CSSValueOverridingDependency cssValueOverridingDependency : intraSelectorOverridingDependencies) {
+				if (affectingMixinCall) {
+					if (involvedDeclarations.contains(cssValueOverridingDependency.getDeclaration1()) && !involvedDeclarations.contains(cssValueOverridingDependency.getDeclaration2()) ||
+							involvedDeclarations.contains(cssValueOverridingDependency.getDeclaration2()) && !involvedDeclarations.contains(cssValueOverridingDependency.getDeclaration1())) {
+						numberOfDependencies++;
+					}
+				} else {
+					if (involvedDeclarations.contains(cssValueOverridingDependency.getDeclaration1()) &&
+							involvedDeclarations.contains(cssValueOverridingDependency.getDeclaration2())) {
+						numberOfDependencies++;
+					}
+				}
+			}
+		}
+		return numberOfDependencies ;
+	}
 }

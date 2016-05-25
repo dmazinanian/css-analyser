@@ -11,10 +11,14 @@ import java.util.Set;
 import com.github.sommeri.less4j.Less4jException;
 import com.github.sommeri.less4j.LessSource;
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
+import com.github.sommeri.less4j.core.ast.ASTCssNodeType;
+import com.github.sommeri.less4j.core.ast.RuleSet;
 
 import ca.concordia.cssanalyser.app.FileLogger;
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.MultiValuedDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
@@ -67,19 +71,31 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 	public String getMixinReferenceString(Selector selector) {
 		Map<MixinParameter, MixinParameterizedValue> paramToValMap = getParameterizedValues(selector);
 		StringBuilder mixinReferenceStringBuilder = new StringBuilder(getMixinName());
+		boolean mustAddSemiColon = false;
 		mixinReferenceStringBuilder.append("(");
 		// Preserve the order of parameters
 		for (Iterator<MixinParameter> paramterIterator = getParameters().iterator(); paramterIterator.hasNext(); ) {
 			MixinParameter parameter = paramterIterator.next();
 			MixinParameterizedValue value = paramToValMap.get(parameter);
 			//mixinReferenceStringBuilder.append(parameter.toString()).append(": ");
-			for (Iterator<DeclarationValue> declarationValueIterator = value.getForValues().iterator(); declarationValueIterator.hasNext(); ) {
-				mixinReferenceStringBuilder.append(declarationValueIterator.next().getValue());
-				if (declarationValueIterator.hasNext())
-					mixinReferenceStringBuilder.append(", ");
+			if (value.getForValues() != null) {
+				for (Iterator<DeclarationValue> declarationValueIterator = value.getForValues().iterator(); declarationValueIterator.hasNext(); ) {
+					mixinReferenceStringBuilder.append(declarationValueIterator.next().getValue());
+					if (declarationValueIterator.hasNext()) {
+						if (MultiValuedDeclaration.isCommaSeparated(value.getForDeclaration().getProperty())) {
+							mixinReferenceStringBuilder.append(", ");
+							mustAddSemiColon = true;
+						} else {
+							mixinReferenceStringBuilder.append(" ");
+						}
+					}
+				}
+			} else {
+				mixinReferenceStringBuilder.append("''");
 			}
-			if (paramterIterator.hasNext())
+			if (mustAddSemiColon || paramterIterator.hasNext()) {
 				mixinReferenceStringBuilder.append("; ");
+			}
 		}
 		mixinReferenceStringBuilder.append(");");
 		return mixinReferenceStringBuilder.toString();
@@ -96,6 +112,10 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 			FileLogger.getLogger(this.getClass()).warn(message);
 			return false;
 		}
+		if ("".equals(afterMigration.toString())) {
+			FileLogger.getLogger(this.getClass()).warn("PRESENTATION: StyleSheet is empty, possibe compile error ");
+			return false;
+		}
 		/*
 		 * Find each selector in the second StyleSheet,
 		 * then see if the corresponding selectors style the same properties
@@ -104,36 +124,55 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		 * selectors because a Mixin migration opportunity
 		 * does not change the selector names and relative positions of them. 
 		 */
-		Set<Selector> checkedSelectorsIn2 = new HashSet<>(); // Don't map one selector two times. 
+		Set<Selector> checkedSelectorsIn2 = new HashSet<>(); // Don't map one selector two times.
 		for (Selector selector1 : getStyleSheet().getAllSelectors()) {
-			boolean selectorFound = false;
-			for (Selector selector2 : afterMigration.getAllSelectors()) {
-				if (checkedSelectorsIn2.contains(selector2))
-					continue;
-				if (selector1.selectorEquals(selector2)) { // Selector names should be the same (including class names, ID, Pseudos, etc).
-					checkedSelectorsIn2.add(selector2);
-					// Now check if they style similarly
-					Map<String, Declaration> individualDeclarations1 = new HashMap<>();
-					for (Declaration declaration : selector1.getFinalStylingIndividualDeclarations()) {
-						individualDeclarations1.put(declaration.getProperty(), declaration);
+			Iterable<Declaration> selector1FinalStylingIndividualDeclarations = selector1.getFinalStylingIndividualDeclarations();
+			if (selector1FinalStylingIndividualDeclarations.iterator().hasNext()) { // Skip empty selectors, because less will not print it
+				boolean selectorFound = false;
+				for (Selector selector2 : afterMigration.getAllSelectors()) {
+					if (checkedSelectorsIn2.contains(selector2))
+						continue;
+					if (selector1.selectorEquals(selector2)) { // Selector names should be the same (including class names, ID, Pseudos, etc).
+						checkedSelectorsIn2.add(selector2);
+						// Now check if they style similarly
+						Map<String, Declaration> individualDeclarations1 = new HashMap<>();
+
+						for (Declaration declaration : selector1FinalStylingIndividualDeclarations) {
+							individualDeclarations1.put(declaration.getProperty(), declaration);
+						}
+
+						Map<String, Declaration> individualDeclarations2 = new HashMap<>();
+						for (Declaration declaration : selector2.getFinalStylingIndividualDeclarations()) {
+							individualDeclarations2.put(declaration.getProperty(), declaration);
+						}
+
+						for (String property : individualDeclarations1.keySet()) {
+							if (!individualDeclarations2.containsKey(property)) {
+								FileLogger.getLogger(this.getClass()).warn("PRESENTATION: Declaration not found for {} ", property);
+								return false;
+							} else {
+								Declaration declaration2 = individualDeclarations2.get(property);
+								Declaration declaration1 = individualDeclarations1.get(property);
+								if (!declaration2.declarationIsEquivalent(declaration1)) {
+									FileLogger.getLogger(this.getClass()).warn("PRESENTATION: declarationIsEquivalent is false {} AND {} ", declaration1, declaration2);
+									declaration2.declarationIsEquivalent(declaration1);
+									if ((declaration2.isImportant() && !declaration1.isImportant()) ||
+											(!declaration2.isImportant() && declaration1.isImportant())) {
+										FileLogger.getLogger(this.getClass()).warn("PRESENTATION: !important is different {} AND {} ", declaration1, declaration2);
+									}
+									return false;
+								}
+							}
+						}
+						selectorFound = true;
+						break;
 					}
-					
-					Map<String, Declaration> individualDeclarations2 = new HashMap<>();
-					for (Declaration declaration : selector2.getFinalStylingIndividualDeclarations()) {
-						individualDeclarations2.put(declaration.getProperty(), declaration);
-					}
-					
-					for (String property : individualDeclarations1.keySet()) {
-						if (!individualDeclarations2.containsKey(property) ||
-								!individualDeclarations2.get(property).declarationEquals(individualDeclarations1.get(property)))
-							return false;
-					}
-					selectorFound = true;
-					break;
+				}
+				if (!selectorFound) {
+					FileLogger.getLogger(this.getClass()).warn("PRESENTATION: Selector {} not found ", selector1);
+					return false;
 				}
 			}
-			if (!selectorFound)
-				return false;
 		}
 		
 		return true;
@@ -151,7 +190,7 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 			// 1- Remove the declarations being parameterized
 			List<PreprocessorNode<ASTCssNode>> nodesToBeRemoved = new ArrayList<>();
 			for (Declaration declaration : getDeclarationsToBeRemoved()) {
-				nodesToBeRemoved.addAll(getDeclarationNodesToBeRemoved(nodeFinder, declaration));
+				nodesToBeRemoved.add(nodeFinder.perform(declaration.getLocationInfo().getOffset(), declaration.getLocationInfo().getLength()));
 			}
 			
 			for (PreprocessorNode<ASTCssNode> node : nodesToBeRemoved) {
@@ -175,17 +214,53 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 				
 			// 4- Add the Mixin call to the corresponding selectors
 			for (Selector involvedSelector : getInvolvedSelectors()) {									
-				String nodeString = getMixinReferenceString(involvedSelector);
-				ASTCssNode resultingNode = LessHelper.getLessNodeFromLessString(nodeString);
-				PreprocessorNode<ASTCssNode> node = nodeFinder.perform(involvedSelector.getLocationInfo().getOffset(), involvedSelector.getLocationInfo().getLength()); 
-				node.addChild(new LessPreprocessorNode(resultingNode));
-			}
+				String mixinCallString = getMixinReferenceString(involvedSelector);
+				ASTCssNode mixinCallNode = LessHelper.getLessNodeFromLessString(mixinCallString);
+				RuleSet ruleSetNode = 
+						(RuleSet)nodeFinder.perform(involvedSelector.getLocationInfo().getOffset(), involvedSelector.getLocationInfo().getLength()).getRealNode();
+				try {
+					Declaration[] positionsMap = getMixinCallPosition(involvedSelector);
 
-			
+					if (positionsMap == null) { // don't touch anything, just add the call to the end
+						ruleSetNode.getBody().addMember(mixinCallNode);
+					} else {
+
+						// Rearrange declarations inside the selector to satisfy dependencies
+						Map<LocationInfo, com.github.sommeri.less4j.core.ast.Declaration> declarations = new HashMap<>();
+						// Remove all the declarations
+						for (ASTCssNode declarationNode : ruleSetNode.getBody().membersByType(ASTCssNodeType.DECLARATION)) {
+							LocationInfo locationInfo = LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(declarationNode);
+							declarations.put(locationInfo, (com.github.sommeri.less4j.core.ast.Declaration)declarationNode);
+							ruleSetNode.getBody().removeMember(declarationNode);
+						}
+
+						for (int i = 0; i < positionsMap.length; i++) {
+							Declaration declaration = positionsMap[i];
+							ASTCssNode nodeToAdd = null;
+							if ("MIXIN".equals(declaration.getProperty().toUpperCase())) {
+								nodeToAdd  = mixinCallNode;
+							} else {
+								nodeToAdd = declarations.get(declaration.getLocationInfo()); 
+							}
+							if (nodeToAdd != null)
+								ruleSetNode.getBody().addMember(nodeToAdd);	
+							else 
+								throw new Exception ("Couln't find declaration " + declaration.toString());
+						}
+						ruleSetNode.getBody().configureParentToAllChilds();
+					}
+				} catch (Exception ex){
+//					IOHelper.writeStringToFile("Duplicated\n", "c:/users/davood/desktop/out/duplicated.txt", true);
+					FileLogger.getLogger(LessMixinMigrationOpportunity.class).warn(ex.getMessage() + "\n" + this.toString());
+					ruleSetNode.getBody().addMember(mixinCallNode);
+				}
+			}
+						
 			return lessStyleSheet;
 			
 		} catch (ParseException e) {
-			e.printStackTrace();
+			
+			FileLogger.getLogger(LessMixinMigrationOpportunity.class).warn(e.getMessage());
 		}
 		
 		return null;
@@ -213,9 +288,70 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		}
 		return nodesToBeRemoved;
 	}
-	
+	private double rank = -1;
 	@Override
 	public double getRank() {
-		return 0;
+//		double weightParams = 1, weightDeclarations = 1, weightVendorSpecificDeclarations = 1;
+//		int paramCount = ((List<MixinParameter>)this.getParameters()).size();
+//		int declarationsCount = 0;
+//		int vendorPrefixedDeclarations = 0;
+//		for (MixinDeclaration mixinDeclaration : getAllMixinDeclarations()) {
+//			declarationsCount++;
+//			if (!Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName()).equals(mixinDeclaration.getPropertyName())) {
+//				vendorPrefixedDeclarations++;
+//			}
+//		}
+//		double penalty = weightParams * Math.abs(paramCount - 1) +
+//				weightDeclarations * Math.abs(declarationsCount - 3) - 
+//				weightVendorSpecificDeclarations * vendorPrefixedDeclarations;
+//		return -penalty;
+		return rank;
 	}
+	
+	public void setRank(double rank) {
+		this.rank = rank;
+	}
+
+	public LessMixinMigrationOpportunity getSubOpportunity(Set<String> propertiesComingTogetherInAMixin, Set<Selector> forSelectors) {
+		if (propertiesComingTogetherInAMixin.equals(this.getPropertiesAtTheDeepestLevel()) &&
+				forSelectors.equals(getInvolvedSelectors())) {
+			return this;
+		}
+		LessMixinMigrationOpportunity subOpportunity = new LessMixinMigrationOpportunity(forSelectors, getStyleSheet());
+		for (String property : propertiesComingTogetherInAMixin) {
+			
+			List<Declaration> declarationsToAddToSubOpportunity = null;
+			
+			Set<String> shorthandPropertyNames = ShorthandDeclaration.getShorthandPropertyNames(property);
+			if (shorthandPropertyNames.size() > 0) {
+				List<String> toTest = new ArrayList<>();
+				toTest.add(property);
+				toTest.addAll(shorthandPropertyNames);
+				for (String p : toTest) {
+					List<Declaration> declarations = realDeclarations.get(p);
+					if (declarations != null) {
+						declarationsToAddToSubOpportunity = declarations;
+						break;
+					}
+				}
+			} else {
+				declarationsToAddToSubOpportunity = realDeclarations.get(property);
+			}
+			
+			if (declarationsToAddToSubOpportunity != null) {
+				List<Declaration> declarationsInTheSelectors = new ArrayList<>();
+				for (Declaration declaration : declarationsToAddToSubOpportunity) {
+					if (forSelectors.contains(declaration.getSelector())) {
+						declarationsInTheSelectors.add(declaration);
+					}
+				}
+				if (declarationsInTheSelectors.size() > 0)
+					subOpportunity.addDeclarationsWithTheSameProperty(declarationsInTheSelectors);
+			} else {
+				FileLogger.getLogger(LessMixinMigrationOpportunity.class).warn(String.format("Declaration %s not found", property));
+			}
+		}
+		return subOpportunity;
+	}
+
 }
