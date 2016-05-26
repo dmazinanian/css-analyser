@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.github.sommeri.less4j.Less4jException;
 import com.github.sommeri.less4j.LessSource;
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
 import com.github.sommeri.less4j.core.ast.ASTCssNodeType;
@@ -107,7 +106,7 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		StyleSheet afterMigration;
 		try {
 			afterMigration = LessHelper.compileLESSStyleSheet(resultingLESSStyleSheet);
-		} catch (Less4jException e) {
+		} catch (Exception e) {
 			String message = "Error in compiling the resulting style sheet after applying mixin migration opportunity." + System.lineSeparator() + e.getMessage();
 			FileLogger.getLogger(this.getClass()).warn(message);
 			return false;
