@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.github.sommeri.less4j.Less4jException;
 import com.github.sommeri.less4j.LessSource;
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
 import com.github.sommeri.less4j.core.ast.DetachedRuleset;
@@ -144,7 +143,7 @@ public class LessMixinCall extends LessConstruct {
 						callingSelector.removeDeclaration(callingSelector.getDeclarations().iterator().next());
 						selectorsToReturn.add(callingSelector);
 					}
-				} catch (ParseException | Less4jException e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
