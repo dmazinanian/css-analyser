@@ -253,7 +253,7 @@ public class ItemSetList implements Set<ItemSet> {
 			return;
 		for (ItemSet itemSet : allItemSetsWithSameSupport) {
 			if (superSet.containsAll(itemSet)) {
-				toRemove.remove(itemSet);
+				toRemove.add(itemSet);
 			}
 		}
 		for (ItemSet itemSet : toRemove) {
