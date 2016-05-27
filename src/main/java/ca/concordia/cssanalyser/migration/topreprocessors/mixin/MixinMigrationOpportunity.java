@@ -807,7 +807,8 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		}
 		
 		Set<Declaration> involvedDeclarationsInMixin = getInvolvedDeclarations(selector);
-		Set<Declaration> otherDeclarations = new HashSet<Declaration>();
+		// Get them in order, we want to make the changes to ordering minimal
+		Set<Declaration> otherDeclarations = new LinkedHashSet<Declaration>();
 		
 		for (Declaration declaration : selector.getDeclarations()) {
 			if (!involvedDeclarationsInMixin.contains(declaration)) {
@@ -823,11 +824,16 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		
 		Map<Declaration, IntVar> declarationsToVariablesMap = new HashMap<>();
 		
-		
+		Declaration lastDeclaraion = null;
 		declarationsToVariablesMap.put(mixinFakeDeclaration, VariableFactory.bounded(mixinFakeDeclaration.toString(), 1, maximumNumber, solver));
 		for (Declaration declaration : otherDeclarations) {
 			String variableName = declaration.toString();
 			declarationsToVariablesMap.put(declaration, VariableFactory.bounded(variableName, 1, maximumNumber, solver));
+			if (lastDeclaraion != null) {
+				// Minimize changes
+				solver.post(IntConstraintFactory.arithm(declarationsToVariablesMap.get(lastDeclaraion), "<", declarationsToVariablesMap.get(declaration)));
+			}
+			lastDeclaraion = declaration;
 		}
 		
 		Set<Declaration> declarationsInvolvedInDependencies = new HashSet<>();
