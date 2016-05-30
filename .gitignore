@@ -7,3 +7,5 @@ desktop.ini
 .settings
 .project
 .classpath
+/.idea
+*.iml
