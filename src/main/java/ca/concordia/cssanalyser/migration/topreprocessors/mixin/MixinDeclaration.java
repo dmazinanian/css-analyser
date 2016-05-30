@@ -112,7 +112,7 @@ public class MixinDeclaration {
 			} else { 
 				Collection<DeclarationValue> temp = new ArrayList<>();
 				temp.add(value);
-				toReturn.add(new MixinLiteral(temp, value.getCorrespondingStylePropertyAndLayer()));
+				toReturn.add(new MixinLiteral(temp));
 			}
 		}
 		
@@ -225,7 +225,12 @@ public class MixinDeclaration {
 		}
 		for (int i = 0; i < mixinValues.size(); i++) {
 			MixinValue mixinValue = mixinValues.get(i);
-			toReturn.append(mixinValue);
+			if ("/".equals(mixinValue.toString())) {
+				// FIXME: this may need more conditions
+				toReturn.append(" ").append(escape(mixinValue.toString())).append(" ");
+			} else {
+				toReturn.append(mixinValue);
+			}
 			if (i < mixinValues.size() - 1 && !mixinValue.toString().trim().equals("/")) {
 				MixinValue nextValue = mixinValues.get(i + 1);
 				if (!nextValue.toString().trim().equals(",") &&
@@ -239,4 +244,17 @@ public class MixinDeclaration {
 		return toReturn.toString();
 	}
 	
+	// FIXME: Less syntax
+	private String escape(String valueString) {
+		return "~'" + valueString + "'";
+	}
+	
+	public PropertyAndLayer getPropertyAndLayerForMixinValue(MixinValue value) {
+		for (PropertyAndLayer propertyAndLayer : getAllSetPropertyAndLayers()) {
+			if (value == getMixinValueForPropertyandLayer(propertyAndLayer)) {
+				return propertyAndLayer;
+			}
+		}
+		return null;
+	}
 }

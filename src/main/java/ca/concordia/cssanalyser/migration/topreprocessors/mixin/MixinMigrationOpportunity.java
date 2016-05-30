@@ -156,7 +156,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 									break;
 								}
 							}
-							MixinParameter parameter = new MixinParameter(parameterName, propertyAndLayer);
+							MixinParameter parameter = new MixinParameter(parameterName, mixinDeclaration, propertyAndLayer);
 							initialParameters.add(parameter);
 							value = parameter;
 
@@ -213,7 +213,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 						Collection<DeclarationValue> declarationValuesForStyleProperty =
 								getDeclarationWithMaxPropertyAndLayers(declarationsHavingTheSameProperty).
 								getDeclarationValuesForStyleProperty(propertyAndLayer);
-						value = new MixinLiteral(declarationValuesForStyleProperty, propertyAndLayer);
+						value = new MixinLiteral(declarationValuesForStyleProperty);
 //					} else {
 //						value = null;
 //					}
@@ -321,7 +321,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		
 		for (int i = 0; i < parameters.size(); i++) {
 			if (alreadyMerged.contains(i))
-					continue;
+				continue;
 			List<Integer> candidatesForMerging = new ArrayList<>();
 			candidatesForMerging.add(i);
 			List<MixinParameterizedValue> list1 = mixinParameterToParameterizedValuesMap.get(parameters.get(i));
@@ -346,8 +346,11 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 					}
 					
 					for (MixinDeclaration declaration : mixinDeclarations.values()) {
-						if (parameterToMerge == declaration.getMixinValueForPropertyandLayer(parameterToMerge.getAssignedTo())) {
-							declaration.addMixinValue(parameterToMerge.getAssignedTo(), parameterToMergeWith);
+						for (PropertyAndLayer propertyAndLayer : declaration.getAllSetPropertyAndLayers()) {
+							if (parameterToMerge == declaration.getMixinValueForPropertyandLayer(propertyAndLayer)) {
+								declaration.addMixinValue(propertyAndLayer, parameterToMergeWith);
+								break;
+							}
 						}
 					}
 				}
@@ -660,10 +663,13 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 
 		for (MixinParameter parameter : parameters) {
 			for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
-				if (parameter == mixinDeclaration.getMixinValueForPropertyandLayer(parameter.assignedTo)) {
-					String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
-					if (!nonVendorProperty.equals(mixinDeclaration.getPropertyName()))
-						vendorSpecificSharingParams.add(nonVendorProperty);
+				for (MixinValue value : mixinDeclaration.getMixinValues()) {
+					if (parameter == value) {
+						String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
+						if (!nonVendorProperty.equals(mixinDeclaration.getPropertyName()))
+							vendorSpecificSharingParams.add(nonVendorProperty);
+						break;
+					}
 				}
 			}
 		}
@@ -679,13 +685,16 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		for (MixinParameter parameter : parameters) {
 			Map<String, Integer> vendorSpecificSharingParams = new HashMap<>();
 			for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
-				if (parameter == mixinDeclaration.getMixinValueForPropertyandLayer(parameter.assignedTo)) {
-					String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
-					int n = 0;
-					if (vendorSpecificSharingParams.containsKey(nonVendorProperty)) {
-						n = vendorSpecificSharingParams.get(nonVendorProperty);
+				for (MixinValue value : mixinDeclaration.getMixinValues()) {
+					if (parameter == value) {
+						String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
+						int n = 0;
+						if (vendorSpecificSharingParams.containsKey(nonVendorProperty)) {
+							n = vendorSpecificSharingParams.get(nonVendorProperty);
+						}
+						vendorSpecificSharingParams.put(nonVendorProperty, n + 1);
+						break;
 					}
-					vendorSpecificSharingParams.put(nonVendorProperty, n + 1);
 				}
 			}
 			for (String property : vendorSpecificSharingParams.keySet()) {
@@ -705,9 +714,12 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		for (MixinParameter parameter : parameters) {
 			Set<String> distinctProperties = new HashSet<>();
 			for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
-				if (parameter == mixinDeclaration.getMixinValueForPropertyandLayer(parameter.assignedTo)) {
-					String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
-					distinctProperties.add(nonVendorProperty);
+				for (MixinValue value : mixinDeclaration.getMixinValues()) {
+					if (parameter == value) {
+						String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
+						distinctProperties.add(nonVendorProperty);
+						break;
+					}
 				}
 			}
 			if (distinctProperties.size() > 1)

@@ -3,12 +3,11 @@ package ca.concordia.cssanalyser.migration.topreprocessors.mixin;
 import ca.concordia.cssanalyser.cssmodel.declaration.PropertyAndLayer;
 
 
-public class MixinParameter extends MixinValue {
+public class MixinParameter implements MixinValue {
 	
 	private String parameterName;
 	
-	public MixinParameter(String parameterName, PropertyAndLayer assignedTo) {
-		super(assignedTo);
+	public MixinParameter(String parameterName, MixinDeclaration forDeclaration, PropertyAndLayer assignedTo) {
 		this.parameterName = parameterName;
 	}
 	
@@ -16,6 +15,7 @@ public class MixinParameter extends MixinValue {
 		return parameterName;
 	}
 	
+	// FIXME: Less syntax
 	@Override
 	public String toString() {
 		return String.format("@%s", parameterName);
@@ -51,7 +51,5 @@ public class MixinParameter extends MixinValue {
 		}
 		return true;
 	}
-	
-	
 
 }
