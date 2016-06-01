@@ -18,7 +18,6 @@ import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.MultiValuedDeclaration;
-import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorNode;
@@ -265,92 +264,10 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		return null;
 		
 	}
-
-	private List<PreprocessorNode<ASTCssNode>> getDeclarationNodesToBeRemoved(LessPreprocessorNodeFinder nodeFinder, Declaration declaration) {
-		List<PreprocessorNode<ASTCssNode>> nodesToBeRemoved = new ArrayList<PreprocessorNode<ASTCssNode>>();
-		if (declaration.isVirtualIndividualDeclarationOfAShorthand()) {
-			ShorthandDeclaration parentShorthand = declaration.getParentShorthand();
-			if (!(parentShorthand.isVirtual()))
-				declaration = parentShorthand;
-		} 
-		PreprocessorNode<ASTCssNode> node = nodeFinder.perform(declaration.getLocationInfo().getOffset(), declaration.getLocationInfo().getLength()); 
-		if (!node.isNull())
-			nodesToBeRemoved.add(node);
-
-		if (declaration instanceof ShorthandDeclaration) {
-			ShorthandDeclaration shorthandDeclaration = (ShorthandDeclaration)declaration;
-			if (shorthandDeclaration.isVirtual()) {
-				for (Declaration d : shorthandDeclaration.getIndividualDeclarations()) {
-					nodesToBeRemoved.addAll(getDeclarationNodesToBeRemoved(nodeFinder, d));
-				}
-			}
-		}
-		return nodesToBeRemoved;
-	}
-	private double rank = -1;
+	
 	@Override
 	public double getRank() {
-//		double weightParams = 1, weightDeclarations = 1, weightVendorSpecificDeclarations = 1;
-//		int paramCount = ((List<MixinParameter>)this.getParameters()).size();
-//		int declarationsCount = 0;
-//		int vendorPrefixedDeclarations = 0;
-//		for (MixinDeclaration mixinDeclaration : getAllMixinDeclarations()) {
-//			declarationsCount++;
-//			if (!Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName()).equals(mixinDeclaration.getPropertyName())) {
-//				vendorPrefixedDeclarations++;
-//			}
-//		}
-//		double penalty = weightParams * Math.abs(paramCount - 1) +
-//				weightDeclarations * Math.abs(declarationsCount - 3) - 
-//				weightVendorSpecificDeclarations * vendorPrefixedDeclarations;
-//		return -penalty;
-		return rank;
+		return -1;
 	}
 	
-	public void setRank(double rank) {
-		this.rank = rank;
-	}
-
-	public LessMixinMigrationOpportunity getSubOpportunity(Set<String> propertiesComingTogetherInAMixin, Set<Selector> forSelectors) {
-		if (propertiesComingTogetherInAMixin.equals(this.getPropertiesAtTheDeepestLevel()) &&
-				forSelectors.equals(getInvolvedSelectors())) {
-			return this;
-		}
-		LessMixinMigrationOpportunity subOpportunity = new LessMixinMigrationOpportunity(forSelectors, getStyleSheet());
-		for (String property : propertiesComingTogetherInAMixin) {
-			
-			List<Declaration> declarationsToAddToSubOpportunity = null;
-			
-			Set<String> shorthandPropertyNames = ShorthandDeclaration.getShorthandPropertyNames(property);
-			if (shorthandPropertyNames.size() > 0) {
-				List<String> toTest = new ArrayList<>();
-				toTest.add(property);
-				toTest.addAll(shorthandPropertyNames);
-				for (String p : toTest) {
-					List<Declaration> declarations = realDeclarations.get(p);
-					if (declarations != null) {
-						declarationsToAddToSubOpportunity = declarations;
-						break;
-					}
-				}
-			} else {
-				declarationsToAddToSubOpportunity = realDeclarations.get(property);
-			}
-			
-			if (declarationsToAddToSubOpportunity != null) {
-				List<Declaration> declarationsInTheSelectors = new ArrayList<>();
-				for (Declaration declaration : declarationsToAddToSubOpportunity) {
-					if (forSelectors.contains(declaration.getSelector())) {
-						declarationsInTheSelectors.add(declaration);
-					}
-				}
-				if (declarationsInTheSelectors.size() > 0)
-					subOpportunity.addDeclarationsWithTheSameProperty(declarationsInTheSelectors);
-			} else {
-				FileLogger.getLogger(LessMixinMigrationOpportunity.class).warn(String.format("Declaration %s not found", property));
-			}
-		}
-		return subOpportunity;
-	}
-
 }

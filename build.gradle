@@ -20,6 +20,7 @@ dependencies {
 	compile "com.crawljax.plugins:crawloverview-plugin:${crawljax_crawloverview_plugin_version}"
 	compile "com.github.sommeri:less4j:${less4j_version}"
 	compile "org.w3c.css:sac:${sac_version}"
+	testCompile "junit:junit:${junit_version}"
 }
 
 jar {
@@ -29,6 +30,10 @@ jar {
         attributes 'Main-Class': mainClassName,
                    "Class-Path": configurations.compile.collect { "libs/${it.getName()}" }.join(' ')
     }
+}
+
+test {
+     include "ca/concordia/cssanalyser/testrunner/AllTestsSuite.class"
 }
 
 task copyToLibs(type: Copy) {

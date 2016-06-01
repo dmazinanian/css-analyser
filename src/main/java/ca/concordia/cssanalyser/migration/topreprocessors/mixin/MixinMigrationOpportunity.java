@@ -30,6 +30,7 @@ import ca.concordia.cssanalyser.migration.topreprocessors.DependenciesNotSatisfi
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorType;
 import ca.concordia.cssanalyser.migration.topreprocessors.differences.StylePropertyValuesDifferenceInValues;
+import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMixinMigrationOpportunity;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
 import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
 import ca.concordia.cssanalyser.parser.ParseException;
@@ -934,5 +935,47 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			}
 		}
 		return numberOfDependencies ;
+	}
+	
+	public MixinMigrationOpportunity<?> getSubOpportunity(Set<String> propertiesComingTogetherInAMixin, Set<Selector> forSelectors) {
+		if (propertiesComingTogetherInAMixin.equals(this.getPropertiesAtTheDeepestLevel()) &&
+				forSelectors.equals(getInvolvedSelectors())) {
+			return this;
+		}
+		LessMixinMigrationOpportunity subOpportunity = new LessMixinMigrationOpportunity(forSelectors, getStyleSheet());
+		for (String property : propertiesComingTogetherInAMixin) {
+			
+			List<Declaration> declarationsToAddToSubOpportunity = null;
+			
+			Set<String> shorthandPropertyNames = ShorthandDeclaration.getShorthandPropertyNames(property);
+			if (shorthandPropertyNames.size() > 0) {
+				List<String> toTest = new ArrayList<>();
+				toTest.add(property);
+				toTest.addAll(shorthandPropertyNames);
+				for (String p : toTest) {
+					List<Declaration> declarations = realDeclarations.get(p);
+					if (declarations != null) {
+						declarationsToAddToSubOpportunity = declarations;
+						break;
+					}
+				}
+			} else {
+				declarationsToAddToSubOpportunity = realDeclarations.get(property);
+			}
+			
+			if (declarationsToAddToSubOpportunity != null) {
+				List<Declaration> declarationsInTheSelectors = new ArrayList<>();
+				for (Declaration declaration : declarationsToAddToSubOpportunity) {
+					if (forSelectors.contains(declaration.getSelector())) {
+						declarationsInTheSelectors.add(declaration);
+					}
+				}
+				if (declarationsInTheSelectors.size() > 0)
+					subOpportunity.addDeclarationsWithTheSameProperty(declarationsInTheSelectors);
+			} else {
+				FileLogger.getLogger(LessMixinMigrationOpportunity.class).warn(String.format("Declaration %s not found", property));
+			}
+		}
+		return subOpportunity;
 	}
 }
