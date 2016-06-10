@@ -248,7 +248,6 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 						ruleSetNode.getBody().configureParentToAllChilds();
 					}
 				} catch (Exception ex){
-//					IOHelper.writeStringToFile("Duplicated\n", "c:/users/davood/desktop/out/duplicated.txt", true);
 					FileLogger.getLogger(LessMixinMigrationOpportunity.class).warn(ex.getMessage() + "\n" + this.toString());
 					ruleSetNode.getBody().addMember(mixinCallNode);
 				}
