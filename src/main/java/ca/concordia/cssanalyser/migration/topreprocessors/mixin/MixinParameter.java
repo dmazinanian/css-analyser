@@ -15,6 +15,10 @@ public class MixinParameter implements MixinValue {
 		return parameterName;
 	}
 	
+	public void setName(String name) {
+		this.parameterName = name;
+	}
+	
 	// FIXME: Less syntax
 	@Override
 	public String toString() {
