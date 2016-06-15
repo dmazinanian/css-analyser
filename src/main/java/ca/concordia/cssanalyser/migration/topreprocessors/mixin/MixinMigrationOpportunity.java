@@ -89,12 +89,11 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	}
 
 	/**
-	 * 
 	 * @param mixinName
 	 * @throws IllegalArgumentException in case of an invalid name
 	 */
 	public void setMixinName(String mixinName) {
-		String mixinNamePattern = "\\.[a-zA-Z\\$_][a-zA-Z0-9\\$_]*";
+		String mixinNamePattern = "\\.[a-zA-Z_][a-zA-Z0-9_]*";
 		if (!mixinName.matches(mixinNamePattern)) {
 			throw new IllegalArgumentException("Mixin name is invalid");
 		}
