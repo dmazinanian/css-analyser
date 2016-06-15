@@ -34,33 +34,57 @@ import ca.concordia.cssanalyser.parser.less.ModifiedLessFileSource;
  *
  */
 public class LessHelper {
+
+	/**
+	 * Compiles a given less style sheet to a {@link StyleSheet} object
+	 * @param lessStyleSheetToCompile
+	 * The method will first try to read from the source
+	 * (using {@link com.github.sommeri.less4j.core.ast.StyleSheet#getSource()}
+	 * of the style sheet being compiled.
+	 * If not found, it tries to use the AST of the given file to compile;
+	 * i.e., it will call compileLESSStyleSheet(lessStyleSheetToCompile, false).
+	 * @return Pure CSS represented in our model
+	 * @see #compileLESSStyleSheet(com.github.sommeri.less4j.core.ast.StyleSheet, boolean)
+	 * @throws Less4jException
+	 */
+	public static StyleSheet compileLESSStyleSheet(com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheetToCompile) throws Exception {
+		return compileLESSStyleSheet(lessStyleSheetToCompile, false);
+	}
 	
 	/**
 	 * Compiles a given less style sheet to a {@link StyleSheet} object
 	 * @param lessStyleSheetToCompile
-	 * @return
+	 * @param forceReadingFromAST Force the method to read from the AST.
+	 * otherwise, the method will first try to read from the source
+	 * (using {@link com.github.sommeri.less4j.core.ast.StyleSheet#getSource()}
+	 * of the style sheet being compiled.
+	 * @return Pure CSS represented in our model
 	 * @throws Less4jException
 	 */
-	public static StyleSheet compileLESSStyleSheet(com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheetToCompile) throws Exception {
+	public static StyleSheet compileLESSStyleSheet(com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheetToCompile, boolean forceReadingFromAST) throws Exception {
 		try {
 
 			String filePath = "";
-
-			LessSource source = lessStyleSheetToCompile.getSource();
-			if (source instanceof FileSource) {
-				FileSource fileSource = (FileSource) source;
-				if (fileSource.getURI() != null) {
-					filePath = fileSource.getURI().toString();
-				} else {
-					if (source instanceof ModifiedLessFileSource) {
-						ModifiedLessFileSource modifiedLessFileSource = (ModifiedLessFileSource) source;
-						filePath = modifiedLessFileSource.getInputFile().getAbsolutePath();
+			
+			if (!forceReadingFromAST) {
+				LessSource source = lessStyleSheetToCompile.getSource();
+				if (source instanceof FileSource) {
+					FileSource fileSource = (FileSource) source;
+					if (fileSource.getURI() != null) {
+						filePath = fileSource.getURI().toString();
+					} else {
+						if (source instanceof ModifiedLessFileSource) {
+							ModifiedLessFileSource modifiedLessFileSource = (ModifiedLessFileSource) source;
+							filePath = modifiedLessFileSource.getInputFile().getAbsolutePath();
+						}
 					}
+				} else if (source instanceof URLSource) {
+					URLSource urlSource = (URLSource) source;
+					filePath = urlSource.getURI().toString();
 				}
-			} else if (source instanceof URLSource) {
-				URLSource urlSource = (URLSource) source;
-				filePath = urlSource.getURI().toString();
-			} else {
+			}
+			
+			if ("".equals(filePath) || forceReadingFromAST) {
 				File tempFile = File.createTempFile("lessToCompile", "less");
 				LessPrinter lessPrinter = new LessPrinter();	
 				String lessCSSFileAsString = lessPrinter.getString(lessStyleSheetToCompile);

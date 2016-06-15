@@ -104,7 +104,7 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		com.github.sommeri.less4j.core.ast.StyleSheet resultingLESSStyleSheet = this.apply();
 		StyleSheet afterMigration;
 		try {
-			afterMigration = LessHelper.compileLESSStyleSheet(resultingLESSStyleSheet);
+			afterMigration = LessHelper.compileLESSStyleSheet(resultingLESSStyleSheet, true); // Avoid re-reading from physical file
 		} catch (Exception e) {
 			String message = "Error in compiling the resulting style sheet after applying mixin migration opportunity." + System.lineSeparator() + e.getMessage();
 			FileLogger.getLogger(this.getClass()).warn(message);
