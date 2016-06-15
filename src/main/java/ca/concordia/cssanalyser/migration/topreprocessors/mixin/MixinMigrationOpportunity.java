@@ -595,9 +595,18 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			Set<Declaration> individualsToBeRemoved = parentShortandsToIndividualsMap.get(parentShorthand);
 			for (Declaration individual : parentShorthand.getIndividualDeclarationsAtTheDeepestLevel()) {
 				if (!individualsToBeRemoved.contains(individual) &&
-						parentShorthand.getSelector() != null &&
-						!parentShorthand.getSelector().containsDeclaration(individual)) {
-					declarationsToBeAdded.add(individual);
+						parentShorthand.getSelector() != null) {
+					// Check if parent selector does not have this declaration, then add it
+					boolean selectorAlreadyHasThisDeclaration = false;
+					for (Declaration declaration : parentShorthand.getSelector().getDeclarations()) {
+						if (declaration.declarationIsEquivalent(individual)) {
+							selectorAlreadyHasThisDeclaration = true;
+							break;
+						}
+					}
+					if (!selectorAlreadyHasThisDeclaration) {
+						declarationsToBeAdded.add(individual);
+					}
 				}
 			}
 		}
