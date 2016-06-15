@@ -88,7 +88,17 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		return mixinName;
 	}
 
+	/**
+	 * 
+	 * @param mixinName
+	 * @throws IllegalArgumentException in case of an invalid name
+	 */
 	public void setMixinName(String mixinName) {
+		String mixinNamePattern = "\\.[a-zA-Z\\$_][a-zA-Z0-9\\$_]*";
+		if (!mixinName.matches(mixinNamePattern)) {
+			throw new IllegalArgumentException("Mixin name is invalid");
+		}
+		// FIXME for repetitive names
 		this.mixinName = mixinName;
 	}
 	
@@ -561,27 +571,33 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	 */
 	public Iterable<Declaration> getDeclarationsToBeAdded() {
 		Map<ShorthandDeclaration, Set<Declaration>> parentShortandsToIndividualsMap = new HashMap<>();
-		for (Declaration declaration : getDeclarationsToBeRemoved()) {
-			if (declaration.isVirtualIndividualDeclarationOfAShorthand()) {
-				ShorthandDeclaration parentShorthand = declaration.getParentShorthand();
-				//if (!parentShorthand.isVirtual()) {
-					Set<Declaration> individualsOfTheSameParent = parentShortandsToIndividualsMap.get(parentShorthand);
-					if (individualsOfTheSameParent == null) {
-						individualsOfTheSameParent = new HashSet<Declaration>();
-						parentShortandsToIndividualsMap.put(parentShorthand, individualsOfTheSameParent);
+		for (String property : realDeclarations.keySet()) {
+			List<Declaration> declarations = realDeclarations.get(property);
+			for (Declaration declaration : declarations) {
+				if (declaration.isVirtualIndividualDeclarationOfAShorthand()) {
+					ShorthandDeclaration parentShorthand = declaration.getParentShorthand();
+					while (parentShorthand != null && parentShorthand.isVirtualIndividualDeclarationOfAShorthand()) {
+						parentShorthand = parentShorthand.getParentShorthand();
+					} 
+					if (parentShorthand != null) {
+						Set<Declaration> individualsOfTheSameParent = parentShortandsToIndividualsMap.get(parentShorthand);
+						if (individualsOfTheSameParent == null) {
+							individualsOfTheSameParent = new HashSet<Declaration>();
+							parentShortandsToIndividualsMap.put(parentShorthand, individualsOfTheSameParent);
+						}
+						individualsOfTheSameParent.add(declaration);
 					}
-					individualsOfTheSameParent.add(declaration);
-				//}
+				}
 			}
 		}
 		
 		List<Declaration> declarationsToBeAdded = new ArrayList<>();
 		for (ShorthandDeclaration parentShorthand : parentShortandsToIndividualsMap.keySet()) {
 			Set<Declaration> individualsToBeRemoved = parentShortandsToIndividualsMap.get(parentShorthand);
-			for (Declaration individual : parentShorthand.getIndividualDeclarations()) {
+			for (Declaration individual : parentShorthand.getIndividualDeclarationsAtTheDeepestLevel()) {
 				if (!individualsToBeRemoved.contains(individual) &&
-						parentShorthand.getSelector().getOriginalSelector() != null &&
-						!parentShorthand.getSelector().getOriginalSelector().containsDeclaration(individual)) {
+						parentShorthand.getSelector() != null &&
+						!parentShorthand.getSelector().containsDeclaration(individual)) {
 					declarationsToBeAdded.add(individual);
 				}
 			}
