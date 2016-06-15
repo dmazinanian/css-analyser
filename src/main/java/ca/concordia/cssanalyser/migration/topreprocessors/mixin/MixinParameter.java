@@ -16,6 +16,10 @@ public class MixinParameter implements MixinValue {
 	}
 	
 	public void setName(String name) {
+		String mixinNamePattern = "[a-zA-Z_][a-zA-Z0-9_]*";
+		if (!name.matches(mixinNamePattern)) {
+			throw new IllegalArgumentException("Parameter name is invalid");
+		}
 		this.parameterName = name;
 	}
 	
