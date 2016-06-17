@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,9 +18,7 @@ import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
 
 
 public class FPGrowth {
-	
-	//private static Logger LOGGER = FileLogger.getLogger(FPGrowth.class);
-	
+		
 	private final Map<Integer, ItemSetList> resultItemSetLists;
 	private final boolean removeSubsets;
 	private final ItemSetList returningDummyObject;
@@ -123,27 +122,48 @@ public class FPGrowth {
 	
 	private void fpGrowth(FPTree tree, Set<Item> currentItems, int minSupport, boolean topLevel) {
 		if (tree.hasASinglePath()) {
-			// All combinations required
-			Set<Item> itemsAlongThePath = new HashSet<>();
+			// All combinations may be required
+			Set<Item> itemsAlongThePath = new LinkedHashSet<>();
 			Node node = tree.getRoot();
 			// Get items along the single path
 			while (node.getChildern().iterator().hasNext()) {
 				node = node.getChildern().iterator().next();
 				itemsAlongThePath.add(node.getItem());
-
 			}
-			for (Set<Item> itemSet : getAllSubsets(itemsAlongThePath)) {
-				itemSet.addAll(currentItems);
-				addItemSet(itemSet);
+			if (removeSubsets) {
+				// Don't get all subsets, many of them will be removed
+				// Only get the maximal ones along the path 
+				List<Set<Item>> itemSetsToConsider = new ArrayList<>();
+				ItemSet itemsSoFar = new ItemSet();
+				int lastSize = 0;
+				for (Item item : itemsAlongThePath) {
+					itemsSoFar.add(item);
+					if (itemsSoFar.getSupportSize() < lastSize) {
+						HashSet<Item> copy = new HashSet<>(itemsSoFar);
+						copy.remove(item);
+						itemSetsToConsider.add(copy);
+					}
+					lastSize = itemsSoFar.getSupportSize();
+				}
+				// The longest set is always a desired itemset
+				itemSetsToConsider.add(itemsAlongThePath);
+				for (Set<Item> itemSet : itemSetsToConsider) {
+					itemSet.addAll(currentItems);
+					addItemSet(itemSet);
+				}
+			} else {
+				Set<Set<Item>> allSubsets = getAllSubsets(itemsAlongThePath);
+				for (Set<Item> itemSet : allSubsets) {
+					itemSet.addAll(currentItems);
+					addItemSet(itemSet);
+				}
+				if (currentItems.size() > 0) {
+					addItemSet(currentItems);
+				}
 			}
-			//addItemSet(currentItems);
 		} else {
-			//int x = 0;
 			// Start from the end of the header table of tree.
 			for (Item item : tree.getHeaderTable()) {
-//				if (topLevel) {
-//					LOGGE.info("Item " + ++x + " of " + tree.getHeaderTable().size());
-//				}
 				// First see if the current prefix is frequent.
 				int support = tree.getTotalSupport(item);
 				if (support < minSupport)
@@ -200,7 +220,6 @@ public class FPGrowth {
 	 * Check if the new itemset has a better suprtset, or
 	 * delete all subsets
 	 */
-
 	private void addItemSet(Set<Item> is) {
 		ItemSet newItemSet = new ItemSet();
 		newItemSet.addAll(is);
