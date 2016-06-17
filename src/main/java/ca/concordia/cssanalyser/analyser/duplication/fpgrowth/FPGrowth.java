@@ -106,6 +106,11 @@ public class FPGrowth {
 		for (int i = 1; i < Math.pow(2, s.size()); i++) {
 			Set<Item> newSubSet = new HashSet<>();
 			String bits = Integer.toBinaryString(i);
+			// Add leading zeros
+			int zerosToAdd = s.size() - bits.length();
+			for (int j = 0; j < zerosToAdd; j++) {
+				bits = "0" + bits;
+			}
 			for (int j = 0; j < bits.length(); j++) {
 				if (bits.charAt(j) == '1')
 					newSubSet.add(items.get(bits.length() - j - 1));
