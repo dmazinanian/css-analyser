@@ -21,12 +21,7 @@ public class FPGrowth {
 		
 	private final Map<Integer, ItemSetList> resultItemSetLists;
 	private final boolean removeSubsets;
-	private final ItemSetList returningDummyObject;
 	private int maxItemSetSize = -1;
-	
-	public FPGrowth(boolean removeSubSets) { 
-		this(removeSubSets, new ItemSetList());
-	}
 	
 	/**
 	 * Creates a new object of FPGrowth class
@@ -40,14 +35,12 @@ public class FPGrowth {
 	 * (or any subclass). The resulting ItemSetLists will
 	 * have the same type if this given dummy object.
 	 */
-	public FPGrowth(boolean removeSubSets, ItemSetList dummyObject) {
+	public FPGrowth(boolean removeSubSets) {
 		this.resultItemSetLists = new HashMap<>();
 		this.removeSubsets = removeSubSets;
-		this.returningDummyObject = dummyObject;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public <T  extends ItemSetList> List<T> mine(Collection<TreeSet<Item>> dataSet, int minSupport) {
+	public List<ItemSetList> mine(Collection<TreeSet<Item>> dataSet, int minSupport) {
 		
 		FPTree tree = generateFPTree(dataSet);
 
@@ -58,11 +51,11 @@ public class FPGrowth {
 		// Deliver results in order.
 		List<Integer> keys = new ArrayList<>(resultItemSetLists.keySet());
 		Collections.sort(keys);
-		List<T> results = new ArrayList<>();
+		List<ItemSetList> results = new ArrayList<>();
 		for (int i : keys) {
 			ItemSetList itemSetList = resultItemSetLists.get(i);
 			if (itemSetList != null) {
-				results.add((T)itemSetList);
+				results.add(itemSetList);
 			}
 		}
 
@@ -239,12 +232,7 @@ public class FPGrowth {
 		}
 		ItemSetList correspondingItemSetList = resultItemSetLists.get(newItemSet.size());
 		if (correspondingItemSetList == null) {
-			try {
-				correspondingItemSetList = returningDummyObject.getClass().newInstance();
-			} catch (InstantiationException | IllegalAccessException e) {
-				e.printStackTrace();
-				throw new RuntimeException(e);
-			}
+			correspondingItemSetList = new ItemSetList();
 			resultItemSetLists.put(newItemSet.size(), correspondingItemSetList);
 		}
 		correspondingItemSetList.add(newItemSet);
