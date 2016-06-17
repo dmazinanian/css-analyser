@@ -322,6 +322,8 @@ public class MultiValuedDeclaration extends Declaration {
 				 * They are the same, except for "inset" keyword and
 				 * spread value (fourth numeric value) which are not allowed for text-shadow 
 				 */ 
+				boolean isBoxShadow = "box-shadow".equals(getNonVendorProperty(getNonHackedProperty(property)));
+				
 				List<DeclarationValue> allValues = new ArrayList<>(declarationValues);
 				DeclarationValue sentinel = new DeclarationValue(",", ValueType.SEPARATOR);
 				allValues.add(sentinel);
@@ -382,7 +384,7 @@ public class MultiValuedDeclaration extends Declaration {
 						int missingValueOffset = totalAddedMissingValues;
 						
 						int vOffsetPosition = 1, blurPosition = 2, distancePosition = 3, colorPosition = 3;
-						if ("box-shadow".equals(getNonVendorProperty(getNonHackedProperty(property)))) {
+						if (isBoxShadow) {
 							colorPosition++;
  							if (inset != null) {
 								vOffsetPosition++;
@@ -404,7 +406,7 @@ public class MultiValuedDeclaration extends Declaration {
 							totalAddedMissingValues++;
 						}
 						
-						if ("box-shadow".equals(getNonVendorProperty(getNonHackedProperty(property))) && spreadDistance == null) {
+						if (isBoxShadow && spreadDistance == null) {
 							spreadDistance = new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH);
  							addMissingValue(spreadDistance, distancePosition);
 							totalAddedMissingValues++;
@@ -432,7 +434,7 @@ public class MultiValuedDeclaration extends Declaration {
  						assignStylePropertyToValue(HOFFSET, currentLayerIndex, hOffset, false);
  						assignStylePropertyToValue(VOFFSET, currentLayerIndex, vOffset, false);
  						assignStylePropertyToValue(BLUR, currentLayerIndex, blurRadius, false);
- 						if ("box-shadow".equals(property)) {
+ 						if (isBoxShadow) {
 							assignStylePropertyToValue(SPREAD, currentLayerIndex, spreadDistance, false);
 							if (inset != null)
 								assignStylePropertyToValue(INSET, currentLayerIndex, inset, false);
