@@ -249,12 +249,13 @@ public class MixinDeclaration {
 		return "~'" + valueString + "'";
 	}
 	
-	public PropertyAndLayer getPropertyAndLayerForMixinValue(MixinValue value) {
+	public Set<PropertyAndLayer> getPropertyAndLayerForMixinValue(MixinValue value) {
+		Set<PropertyAndLayer> propertiesAndLayers = new HashSet<>();
 		for (PropertyAndLayer propertyAndLayer : getAllSetPropertyAndLayers()) {
 			if (value == getMixinValueForPropertyandLayer(propertyAndLayer)) {
-				return propertyAndLayer;
+				propertiesAndLayers.add(propertyAndLayer);
 			}
 		}
-		return null;
+		return propertiesAndLayers;
 	}
 }
