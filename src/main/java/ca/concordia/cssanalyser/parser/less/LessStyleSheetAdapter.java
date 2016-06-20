@@ -29,6 +29,7 @@ import com.github.sommeri.less4j.core.ast.ListExpression;
 import com.github.sommeri.less4j.core.ast.ListExpressionOperator.Operator;
 import com.github.sommeri.less4j.core.ast.MediaExpression;
 import com.github.sommeri.less4j.core.ast.NamedColorExpression;
+import com.github.sommeri.less4j.core.ast.NamedColorWithAlphaExpression;
 import com.github.sommeri.less4j.core.ast.NamedExpression;
 import com.github.sommeri.less4j.core.ast.NestedSelectorAppender;
 import com.github.sommeri.less4j.core.ast.Nth;
@@ -327,13 +328,22 @@ public class LessStyleSheetAdapter {
 
 		} else if (expression instanceof NamedColorExpression) {
 
-			NamedColorExpression  namedExpression = (NamedColorExpression)expression;
-			value = DeclarationValueFactory.getDeclarationValue(property, namedExpression.getColorName(), ValueType.IDENT);
+			NamedColorExpression namedExpression = (NamedColorExpression)expression;
+			value = DeclarationValueFactory.getDeclarationValue(property, namedExpression.getColorName(), ValueType.COLOR);
 
 		} else if (expression instanceof ColorWithAlphaExpression) {
-
-			ColorWithAlphaExpression colorWithAlpha = (ColorWithAlphaExpression)expression;
-			value = DeclarationValueFactory.getDeclarationValue(property, colorWithAlpha.toString(), ValueType.FUNCTION);  
+			
+			if (expression instanceof NamedColorWithAlphaExpression) {
+				
+				NamedColorWithAlphaExpression namedColorWithAlphaExpression = (NamedColorWithAlphaExpression) expression;
+				value = DeclarationValueFactory.getDeclarationValue(property, namedColorWithAlphaExpression.getColorName(), ValueType.IDENT);
+				
+			} else {
+				
+				ColorWithAlphaExpression colorWithAlpha = (ColorWithAlphaExpression)expression;
+				value = DeclarationValueFactory.getDeclarationValue(property, colorWithAlpha.toString(), ValueType.COLOR);
+				
+			}
 
 		} else if (expression instanceof IdentifierExpression) {
 
