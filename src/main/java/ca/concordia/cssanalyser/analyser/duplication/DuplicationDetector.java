@@ -18,6 +18,7 @@ import ca.concordia.cssanalyser.analyser.duplication.fpgrowth.FPGrowth;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
+import ca.concordia.cssanalyser.analyser.progressmonitor.ProgressMonitor;
 import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
@@ -425,8 +426,12 @@ public class DuplicationDetector {
 		Apriori apriori = new Apriori(C1);
 		return apriori.apriori(minsup);
 	}
-
+	
 	public List<ItemSetList> fpGrowth(int minSupport, boolean removeSubsets) {
+		return fpGrowth(minSupport, removeSubsets, null);
+	}
+
+	public List<ItemSetList> fpGrowth(int minSupport, boolean removeSubsets, ProgressMonitor monitor) {
 		
 		LOGGER.info("Applying fpgrowth algorithm with minimum support count of " + minSupport + " on " + stylesheet.getFilePath());
 		long start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
@@ -445,7 +450,7 @@ public class DuplicationDetector {
 				itemSets.add(currentItems);
 		}
 
-		FPGrowth fpGrowth = new FPGrowth(removeSubsets);
+		FPGrowth fpGrowth = new FPGrowth(removeSubsets, monitor);
 		List<ItemSetList> results = fpGrowth.mine(itemSets, minSupport);
 		long end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 		long time = (end - start) / 1000000L;

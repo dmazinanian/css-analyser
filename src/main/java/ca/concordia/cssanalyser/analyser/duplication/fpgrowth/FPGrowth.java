@@ -15,13 +15,20 @@ import java.util.TreeSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.Item;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSet;
 import ca.concordia.cssanalyser.analyser.duplication.items.ItemSetList;
-
+import ca.concordia.cssanalyser.analyser.progressmonitor.ProgressMonitorDelegator;
+import ca.concordia.cssanalyser.analyser.progressmonitor.ProgressMonitor;
 
 public class FPGrowth {
-		
+	
 	private final Map<Integer, ItemSetList> resultItemSetLists;
 	private final boolean removeSubsets;
 	private int maxItemSetSize = -1;
+	
+	private final ProgressMonitorDelegator monitor;
+	
+	public FPGrowth(boolean removeSubSets) {
+		this(removeSubSets, null);
+	}
 	
 	/**
 	 * Creates a new object of FPGrowth class
@@ -35,9 +42,10 @@ public class FPGrowth {
 	 * (or any subclass). The resulting ItemSetLists will
 	 * have the same type if this given dummy object.
 	 */
-	public FPGrowth(boolean removeSubSets) {
+	public FPGrowth(boolean removeSubSets, ProgressMonitor monitor) {
 		this.resultItemSetLists = new HashMap<>();
 		this.removeSubsets = removeSubSets;
+		this.monitor = new ProgressMonitorDelegator(monitor);
 	}
 	
 	public List<ItemSetList> mine(Collection<TreeSet<Item>> dataSet, int minSupport) {
@@ -119,6 +127,9 @@ public class FPGrowth {
 	}
 	
 	private void fpGrowth(FPTree tree, Set<Item> currentItems, int minSupport, boolean topLevel) {
+		if (topLevel && monitor != null) {
+			monitor.setFinalState(tree.getHeaderTable().size());
+		}
 		if (tree.hasASinglePath()) {
 			// All combinations may be required
 			Set<Item> itemsAlongThePath = new LinkedHashSet<>();
@@ -162,6 +173,9 @@ public class FPGrowth {
 		} else {
 			// Start from the end of the header table of tree.
 			for (Item item : tree.getHeaderTable()) {
+				if (monitor != null && monitor.shouldStop()) {
+					return;
+				}
 				// First see if the current prefix is frequent.
 				int support = tree.getTotalSupport(item);
 				if (support < minSupport)
@@ -207,9 +221,16 @@ public class FPGrowth {
 				newItemSet.addAll(currentItems);
 				newItemSet.add(item);
 				addItemSet(newItemSet);
-				if (!conditionalFP.isEmpty())
+				if (!conditionalFP.isEmpty()) {
 					fpGrowth(conditionalFP, newItemSet, minSupport, false);
+				}
+				if (topLevel && monitor != null) {
+					monitor.worked(1);
+				}
 			}
+		}
+		if (topLevel && monitor != null) {
+			monitor.finished();
 		}
 	}
 	
