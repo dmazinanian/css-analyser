@@ -15,7 +15,17 @@ public class ProgressMonitorDelegator {
 	private final ProgressMonitor progressMonitor;
 	
 	public ProgressMonitorDelegator(ProgressMonitor progressMonitor) {
-		this.progressMonitor = progressMonitor;
+		if (progressMonitor == null) {
+			this.progressMonitor = new ProgressMonitor() {
+				@Override
+				public boolean shouldStop() { return false; }
+				
+				@Override
+				public void progressed(int percent) {}
+			};
+		} else {
+			this.progressMonitor = progressMonitor;
+		}
 	}
 	
 	public void setFinalState(int finalState) {
