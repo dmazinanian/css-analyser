@@ -579,7 +579,7 @@ public class CSSDocumentHandler implements DocumentHandler {
 		case LexicalUnit.SAC_INTEGER:
 			return DeclarationValueFactory.getDeclarationValue(propertyName, String.valueOf(value.getIntegerValue()), ValueType.INTEGER);
 		case LexicalUnit.SAC_REAL:
-			return DeclarationValueFactory.getDeclarationValue(propertyName, DeclarationValueFactory.formatFloat(value.getFloatValue()), ValueType.REAL);
+			return DeclarationValueFactory.getDeclarationValue(propertyName, DeclarationValueFactory.formatDouble(value.getFloatValue()), ValueType.REAL);
 			
 		// Length values may be convertible to each other
 		case LexicalUnit.SAC_PICA:
@@ -597,45 +597,45 @@ public class CSSDocumentHandler implements DocumentHandler {
 			
 		// We convert all angle values to degree.
 		case LexicalUnit.SAC_GRADIAN:
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "grad";
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "grad";
 			return  DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.ANGLE);
 		case LexicalUnit.SAC_RADIAN:
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "rad";
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "rad";
 			return  DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.ANGLE);
 		case LexicalUnitImpl.TURN:
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "turn";
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "turn";
 			return  DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.ANGLE);
 		case LexicalUnit.SAC_DEGREE:
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "deg";
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "deg";
 			return  DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.ANGLE);
 			
 		case LexicalUnit.SAC_KILOHERTZ:
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "khz";
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "khz";
 			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.FREQUENCY);
 		case LexicalUnit.SAC_HERTZ:
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "hz";
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "hz";
 			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.FREQUENCY);
 			
 		// s and ms are convertible to each other
 		case LexicalUnit.SAC_SECOND:
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "s";
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "s";
 			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.TIME);
 		case LexicalUnit.SAC_MILLISECOND:
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "ms";
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "ms";
 			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.TIME);
 			
 		// EM and % are somehow the same. 	
 		case LexicalUnit.SAC_EM:
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "em";			
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "em";			
 			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.LENGTH);
 			
 		case LexicalUnitImpl.REM:
 			// 1rem = 100% of the parent's font. SO we don't add 
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "rem";
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "rem";
 			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.PERCENTAGE);
 			
 		case LexicalUnit.SAC_PERCENTAGE:
-			realVal = DeclarationValueFactory.formatFloat(value.getFloatValue()) + "%";
+			realVal = DeclarationValueFactory.formatDouble(value.getFloatValue()) + "%";
 			return DeclarationValueFactory.getDeclarationValue(propertyName, realVal, ValueType.PERCENTAGE);
 		
 			
@@ -644,11 +644,11 @@ public class CSSDocumentHandler implements DocumentHandler {
 			 *  EX is calculated in a different way across different browsers
 			 * (IE-not known in which version-: 1ex = 0.5em, while not other browsers)
 			 */
-			return DeclarationValueFactory.getDeclarationValue(propertyName, DeclarationValueFactory.formatFloat(value.getFloatValue()) + "ex", ValueType.LENGTH);
+			return DeclarationValueFactory.getDeclarationValue(propertyName, DeclarationValueFactory.formatDouble(value.getFloatValue()) + "ex", ValueType.LENGTH);
 		case LexicalUnit.SAC_DIMENSION:
 			//Unknown dimension :)
 			return DeclarationValueFactory.getDeclarationValue(propertyName, 
-					DeclarationValueFactory.formatFloat(value.getFloatValue()) + value.getDimensionUnitText().toLowerCase(), ValueType.DIMENSION);
+					DeclarationValueFactory.formatDouble(value.getFloatValue()) + value.getDimensionUnitText().toLowerCase(), ValueType.DIMENSION);
 			
 		case LexicalUnit.SAC_URI:
 			realVal = "url('" + value.getStringValue() + "')";

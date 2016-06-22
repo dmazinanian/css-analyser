@@ -13,7 +13,6 @@ import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
  */
 public class DeclarationValueFactory {
 	
-	
 	public static DeclarationValue getDeclarationValue(String forProperty, String value, ValueType type) {
 		//return new DeclarationValue(value, type);
 		forProperty = Declaration.getNonVendorProperty(Declaration.getNonHackedProperty(forProperty.toLowerCase()));
@@ -220,28 +219,28 @@ public class DeclarationValueFactory {
 				switch(postfix) {
 					case "pc": {
 						// 1pc = 12pt = 16px
-						eqVal = formatFloat(floatVal * 16) + "px";
+						eqVal = formatDouble(floatVal * 16) + "px";
 						break;
 					}
 					case "pt": {
 						// 72pt is 96px
-						eqVal = formatFloat(floatVal / 72F * 96F) + "px";
+						eqVal = formatDouble(floatVal / 72F * 96F) + "px";
 						break;
 					}
 					case "in": {
 						// Every inch is 96px
-						eqVal = formatFloat(floatVal * 96F) + "px";
+						eqVal = formatDouble(floatVal * 96F) + "px";
 						break;
 					}
 					case "cm": {
 						// Every cm is (2.54^-1 * 96)px
 						// In browser, every cm is about 38px
-						eqVal = formatFloat(floatVal * 38F) + "px";
+						eqVal = formatDouble(floatVal * 38F) + "px";
 						break;
 					}
 					case "mm": {
 						//every mm is 0.01 cm
-						eqVal = formatFloat(floatVal * 38F / 100F) + "px";
+						eqVal = formatDouble(floatVal * 38F / 100F) + "px";
 						break;
 					}
 					case "px": {
@@ -251,7 +250,7 @@ public class DeclarationValueFactory {
 					case "em": {
 						// 1em = 100%, if we are talking about font
 						if ("font".equals(forProperty) || "font-size".equals(forProperty) || "line-height".equals(forProperty)) {
-							eqVal = formatFloat(floatVal * 100) + "%";
+							eqVal = formatDouble(floatVal * 100) + "%";
 						} else {
 							return new DeclarationValue(value, ValueType.LENGTH);
 						}
@@ -271,13 +270,13 @@ public class DeclarationValueFactory {
 				String eqVal = "";
 				if (value.endsWith("grad")) {
 					// 1grad = 0.9deg
-					eqVal = formatFloat(Float.valueOf(value.replace("grad", "")) * 0.9F) + "deg";
+					eqVal = formatDouble(Float.valueOf(value.replace("grad", "")) * 0.9F) + "deg";
 				} else if (value.endsWith("rad")) {
 					// 2pi rad = 360deg
-					eqVal = formatFloat(Float.valueOf(value.replace("rad", "")) / (2 * 3.1415926F) * 360) + "deg";	
+					eqVal = formatDouble(Float.valueOf(value.replace("rad", "")) / (2 * 3.1415926F) * 360) + "deg";	
 				} else if (value.endsWith("turn")) {
 					// 1turn = 360deg
-					eqVal = formatFloat(Float.valueOf(value.replace("turn", "")) * 360) + "deg";
+					eqVal = formatDouble(Float.valueOf(value.replace("turn", "")) * 360) + "deg";
 				} else if (value.endsWith("deg")) {
 					eqVal = value;
 				}
@@ -289,7 +288,7 @@ public class DeclarationValueFactory {
 				String eqVal = value;
 				// 1KHz = 1000Hz
 				if (value.endsWith("khz")) {
-					eqVal = formatFloat(Float.valueOf(value.replace("khz", "")) * 1000) + "hz";
+					eqVal = formatDouble(Float.valueOf(value.replace("khz", "")) * 1000) + "hz";
 				}
 				
 				return new DeclarationEquivalentValue(value, eqVal, ValueType.FREQUENCY);
@@ -300,7 +299,7 @@ public class DeclarationValueFactory {
 					value = "0" + value;
 				String eqVal = value;
 				if (value.endsWith("ms")) {
-					eqVal = formatFloat(Float.valueOf(value.replace("ms", "")) * 1000) + "ms";
+					eqVal = formatDouble(Float.valueOf(value.replace("ms", "")) * 1000) + "ms";
 				}
 				return new DeclarationEquivalentValue(value, eqVal, ValueType.TIME);
 			}
@@ -348,15 +347,15 @@ public class DeclarationValueFactory {
 			return Math.min(Integer.valueOf(value), 255);
 	}
 	
-	public static String formatFloat(double f) {
-		if(f == (long) f)
-			return String.format("%d",(long)f);
+	public static String formatDouble(double d) {
+		if(d == (long) d)
+			return String.format("%d", (long)d);
 		else
-			return String.format("%s",f);
+			return String.format("%s", d);
 	}
 
 	public static DeclarationValue getFontValue(String propertyName, float value, String unit) {
-		String val = formatFloat(value) + unit;
+		String val = formatDouble(value) + unit;
 		return getDeclarationValue(propertyName, val, ValueType.LENGTH);
 	}
 	

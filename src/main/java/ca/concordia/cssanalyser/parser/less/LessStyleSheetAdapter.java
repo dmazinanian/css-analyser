@@ -420,9 +420,9 @@ public class LessStyleSheetAdapter {
 				break;
 			case NUMBER:
 				if (originalString.indexOf(".") > -1)
-					value = DeclarationValueFactory.getDeclarationValue(property, DeclarationValueFactory.formatFloat(numberExpression.getValueAsDouble()), ValueType.REAL);
+					value = DeclarationValueFactory.getDeclarationValue(property, DeclarationValueFactory.formatDouble(numberExpression.getValueAsDouble()), ValueType.REAL);
 				else
-					value = DeclarationValueFactory.getDeclarationValue(property, DeclarationValueFactory.formatFloat(numberExpression.getValueAsDouble()), ValueType.INTEGER);
+					value = DeclarationValueFactory.getDeclarationValue(property, DeclarationValueFactory.formatDouble(numberExpression.getValueAsDouble()), ValueType.INTEGER);
 				break;
 			case PERCENTAGE:
 				value = DeclarationValueFactory.getDeclarationValue(property, originalString, ValueType.PERCENTAGE);
