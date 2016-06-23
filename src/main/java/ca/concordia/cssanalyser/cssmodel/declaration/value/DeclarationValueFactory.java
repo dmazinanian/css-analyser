@@ -61,12 +61,10 @@ public class DeclarationValueFactory {
 						if (forProperty.equals("font-weight"))
 							return new DeclarationEquivalentValue(value, "400", ValueType.INTEGER);
 						// What should we do for font shorthand property?!
-					}
-
-				return new DeclarationValue(value, ValueType.IDENT);
+				}
+				break;
 			}
 			case INTEGER: {
-				
 				if ("0".equals(value)) {
 					switch (forProperty) {
 						case "margin":
@@ -121,14 +119,13 @@ public class DeclarationValueFactory {
 						 * case "-ms-transform-origin":
 						 * case "-webkit-transform-origin":
 						 */
-						return new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH);	
+						return new DeclarationEquivalentValue(value, "0px", ValueType.LENGTH);	
 					}
 				}
+				break;
 			}
 			case PERCENTAGE: {
-				if (value.startsWith("."))
-					value = "0" + value;
-				String eqVal = value;
+				String eqVal = handlePointWithoutZero(value);
 				if ("0".equals(value)) {
 					switch (forProperty) {
 						case "background-position":
@@ -213,9 +210,8 @@ public class DeclarationValueFactory {
 				String postfix = value.substring(value.length() - 2);
 				float floatVal = Float.valueOf(value.replace(postfix, ""));
 				String eqVal = "";
-				if (value.startsWith(".")) {
-					value = "0" + value;
-				}
+				String originalVal = value;
+				value = handlePointWithoutZero(value);
 				switch(postfix) {
 					case "pc": {
 						// 1pc = 12pt = 16px
@@ -259,14 +255,13 @@ public class DeclarationValueFactory {
 				}
 				
 				if (!"".equals(eqVal))
-					return new DeclarationEquivalentValue(value, eqVal, ValueType.LENGTH);
-				
-				return new DeclarationValue(value, ValueType.LENGTH);
+					return new DeclarationEquivalentValue(originalVal, eqVal, ValueType.LENGTH);
+				break;
 			
 			}
 			case ANGLE: {
-				if (value.startsWith("."))
-					value = "0" + value;
+				String originalValue = value;
+				value = handlePointWithoutZero(value);
 				String eqVal = "";
 				if (value.endsWith("grad")) {
 					// 1grad = 0.9deg
@@ -280,28 +275,28 @@ public class DeclarationValueFactory {
 				} else if (value.endsWith("deg")) {
 					eqVal = value;
 				}
-				return new DeclarationEquivalentValue(value, eqVal, type);
+				return new DeclarationEquivalentValue(originalValue, eqVal, type);
 			}
 			case FREQUENCY: {
-				if (value.startsWith("."))
-					value = "0" + value;
+				String originalValue = value;
+				value = handlePointWithoutZero(value);
 				String eqVal = value;
 				// 1KHz = 1000Hz
 				if (value.endsWith("khz")) {
 					eqVal = formatDouble(Float.valueOf(value.replace("khz", "")) * 1000) + "hz";
 				}
 				
-				return new DeclarationEquivalentValue(value, eqVal, ValueType.FREQUENCY);
+				return new DeclarationEquivalentValue(originalValue, eqVal, ValueType.FREQUENCY);
 			}
 			case TIME: {
+				String originalValue = value;
 				// Each second is 1000 ms
-				if (value.startsWith("."))
-					value = "0" + value;
+				value = handlePointWithoutZero(value);
 				String eqVal = value;
 				if (value.endsWith("ms")) {
 					eqVal = formatDouble(Float.valueOf(value.replace("ms", "")) * 1000) + "ms";
 				}
-				return new DeclarationEquivalentValue(value, eqVal, ValueType.TIME);
+				return new DeclarationEquivalentValue(originalValue, eqVal, ValueType.TIME);
 			}
 			case URL: {
 				if ("url('')".equals(value))
@@ -309,8 +304,17 @@ public class DeclarationValueFactory {
 				return new DeclarationValue(value, ValueType.URL);
 			}
 			default:
-				return new DeclarationValue(value, type);
+				break;
 		}
+		return new DeclarationValue(value, type);
+	}
+
+	private static String handlePointWithoutZero(String value) {
+		if (value.startsWith("."))
+			return "0" + value;
+		else if (value.startsWith("-."))
+			return value.replace("-.", "-0.");
+		return value;
 	}
 
 	protected static float getPercentageValue(String string) throws IllegalArgumentException {
