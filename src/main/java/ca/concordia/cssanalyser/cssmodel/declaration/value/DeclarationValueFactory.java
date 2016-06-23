@@ -113,26 +113,19 @@ public class DeclarationValueFactory {
 						case "perspective-origin":
 						case "text-shadow":
 						case "box-shadow":
-						/*
-						 * Dangerous to do!
-						 * case "transform-origin":
-						 * case "-ms-transform-origin":
-						 * case "-webkit-transform-origin":
-						 */
-						return new DeclarationEquivalentValue(value, "0px", ValueType.LENGTH);	
+						case "transform-origin":
+							return new DeclarationEquivalentValue(value, "0px", ValueType.LENGTH);	
 					}
 				}
 				break;
 			}
 			case PERCENTAGE: {
 				String eqVal = handlePointWithoutZero(value);
-				if ("0".equals(value)) {
+				if ("0%".equals(value)) {
 					switch (forProperty) {
 						case "background-position":
 						case "background-size":
 						case "border-radius":
-						case "-webkit-border-radius":
-						case "-moz-border-radius":
 						case "border-bottom-left-radius":
 						case "border-bottom-right-radius":
 						case "border-bottom-top-radius":
