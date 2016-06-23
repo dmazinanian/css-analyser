@@ -343,7 +343,8 @@ public class MultiValuedDeclaration extends Declaration {
 								 		 vOffset = null,
 								 		 blurRadius = null,
 								 		 spreadDistance = null,
-								 		 color = null;
+								 		 color = null,
+								 		 slash = currentValue;
 						int numberOfLengths = 0;
 						boolean isNone = false;
 						// Count from current layer's start index to this separator
@@ -396,19 +397,19 @@ public class MultiValuedDeclaration extends Declaration {
 						
 						if (vOffset == null) {
 							vOffset = new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH);
-							addMissingValue(vOffset, vOffsetPosition);
+							addMissingValue(vOffset, currentLayerStartIndex + missingValueOffset + vOffsetPosition);
 							totalAddedMissingValues++;
 						}
 						
 						if (blurRadius == null) {
 							blurRadius = new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH);
-							addMissingValue(blurRadius, blurPosition);
+							addMissingValue(blurRadius, currentLayerStartIndex + missingValueOffset + blurPosition);
 							totalAddedMissingValues++;
 						}
 						
 						if (isBoxShadow && spreadDistance == null) {
 							spreadDistance = new DeclarationEquivalentValue("0", "0px", ValueType.LENGTH);
- 							addMissingValue(spreadDistance, distancePosition);
+ 							addMissingValue(spreadDistance, currentLayerStartIndex + missingValueOffset + distancePosition);
 							totalAddedMissingValues++;
 						}
 						
@@ -429,6 +430,7 @@ public class MultiValuedDeclaration extends Declaration {
 						final String BLUR = "blur";
 						final String SPREAD = "spread";
  						final String INSET = "inset";
+ 						final String SLASH = "slash";
 						
   						assignStylePropertyToValue(COLOR, currentLayerIndex, color, false);
  						assignStylePropertyToValue(HOFFSET, currentLayerIndex, hOffset, false);
@@ -439,6 +441,9 @@ public class MultiValuedDeclaration extends Declaration {
 							if (inset != null)
 								assignStylePropertyToValue(INSET, currentLayerIndex, inset, false);
 						}
+ 						if (currentValueIndex < allValues.size() - 2) {
+ 							assignStylePropertyToValue(SLASH, currentLayerIndex, slash, false);
+ 						}
 					}
 					
 					
