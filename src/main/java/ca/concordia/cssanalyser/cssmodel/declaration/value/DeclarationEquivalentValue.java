@@ -74,7 +74,48 @@ public class DeclarationEquivalentValue extends DeclarationValue {
 			 ("bottom".equals(realInFileValue) && "right".equals(otherValue.realInFileValue))
 			)
 			return false;
-		return equivalentValue.equals(valueToCheck);
+		
+		if (getType() != otherValue.getType()) {
+			return false;
+		}
+		
+		switch (getType()) {
+			case LENGTH:
+			case INTEGER:
+			case REAL:
+			case ANGLE:
+			case FREQUENCY:
+			case TIME:
+			case PERCENTAGE:
+				// THIS IS A HACK.
+				// Ideally, we should keep the suffix as a field here
+				int suffixPos1 = getSuffixPosition(equivalentValue);
+				String value1 = "", suffix1 = "";
+				if (suffixPos1 > 0) {
+					value1 = equivalentValue.substring(0, suffixPos1);
+					suffix1 = equivalentValue.substring(suffixPos1, equivalentValue.length()).trim().toLowerCase();
+				}	
+				
+				int suffixPos2 = getSuffixPosition(valueToCheck);
+				String value2 = "", suffix2 = "";
+				if (suffixPos2 > 0) {
+					value2 = valueToCheck.substring(0, suffixPos2);
+					suffix2 = valueToCheck.substring(suffixPos2, valueToCheck.length()).trim().toLowerCase();
+				}
+
+				return Double.parseDouble(value1) == Double.parseDouble(value2) && suffix1.equals(suffix2);
+				
+			default:
+				return equivalentValue.equals(valueToCheck);
+		}
+	}
+	
+	private int getSuffixPosition(String value) {
+		int suffixStartingIndex = 0;
+		while (suffixStartingIndex < value.length() && (!Character.isLetter(value.charAt(suffixStartingIndex)) || value.charAt(suffixStartingIndex) != '%')) {
+			suffixStartingIndex++;
+		} 
+		return suffixStartingIndex;
 	}
 	
 	/**
