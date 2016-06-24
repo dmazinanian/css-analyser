@@ -78,7 +78,11 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 			//mixinReferenceStringBuilder.append(parameter.toString()).append(": ");
 			if (value.getForValues() != null) {
 				for (Iterator<DeclarationValue> declarationValueIterator = value.getForValues().iterator(); declarationValueIterator.hasNext(); ) {
-					mixinReferenceStringBuilder.append(declarationValueIterator.next().getValue());
+					String declarationValue = declarationValueIterator.next().getValue();
+					if (declarationValue.contains("\\") || declarationValue.contains("/")) {
+						declarationValue = escapeValue(declarationValue);
+					}
+					mixinReferenceStringBuilder.append(declarationValue);
 					if (declarationValueIterator.hasNext()) {
 						if (MultiValuedDeclaration.isCommaSeparated(value.getForDeclaration().getProperty())) {
 							mixinReferenceStringBuilder.append(", ");
@@ -99,6 +103,10 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		return mixinReferenceStringBuilder.toString();
 	}
 	
+	private String escapeValue(String value) {
+		return "~'" + value + "'";
+	}
+
 	@Override
 	public boolean preservesPresentation() {
 		com.github.sommeri.less4j.core.ast.StyleSheet resultingLESSStyleSheet = this.apply();
