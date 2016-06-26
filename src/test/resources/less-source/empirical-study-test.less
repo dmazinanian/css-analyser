@@ -1,0 +1,16 @@
+.mixin(@color; @border: none) {
+	color: @color;
+	border: @border;
+}
+
+.class1 {
+	.mixin(red);
+}
+
+.class2 {
+	.mixin(@color: red);
+}
+
+.class3 {
+	.mixin(@border: solid 1px red; @color: red);
+}

@@ -1,0 +1,70 @@
+/* Simple selector */
+.simple 				{ color: #555; border: solid 1px blue; }
+
+/* Descendant */
+.simple1 .simple2 		{ color: blue; float: left; }
+
+/* Child */
+.simple1 > .simple2		{ float: right; }
+
+/* Sibling */
+.simple1 ~ .simple2 	{ margin: 0 2px; }
+
+/* Adjacent Sibling */
+.simple1 + .simple2 	{ color: lime; }
+
+/* Grouping */
+.base1, .base2 			{ text-align: center; }
+
+/* Inside media */
+@media screen and (min-width: 480px) {
+	
+    .simple 			{ background-color: lightgreen; }
+    
+    .simple1 .simple2 	{ color: red; }
+	
+	.simple1 > .simple2 { margin-top: 0px; margin-left: 2px; margin-bottom: 0px; margin-right: 2px; }
+	
+	.simple1 ~ .simple2 { color: red; }
+	
+	.simple1 + .simple2 { color: lime; }
+	
+	.base1, .base2 		{ text-align: right; }
+	
+}
+
+/* For testing Selector#selectorEquals */
+@media screen and (min-width: 480px) {
+	
+    .simple 			{ float: left; }
+    
+    .simple1 .simple2 	{ margin: 0px 2px 0px 2px; }
+    
+   	.simple1 > .simple2 { float: none; }
+	
+	.simple1 ~ .simple2 { top: 0px; }
+	
+	.simple1 + .simple2 { color: red; }
+	
+	.base1, .base2 		{ text-align: left; }
+	
+}
+
+/* Inside different media */
+@media screen and (min-width: 1024px) {
+	
+    .simple 			{ font-weight: bold; }
+    
+    .simple1 .simple2 	{ clear: none; }
+    
+   	.simple1 > .simple2 { font-weight: 700; }
+	
+	.simple1 ~ .simple2 { clear: right; }
+	
+	.simple1 + .simple2 { clear: left; }
+	
+	.base1, .base2 		{ top: 0px; }
+	
+	.important			{ border: solid 1px red !important; }
+	
+}
