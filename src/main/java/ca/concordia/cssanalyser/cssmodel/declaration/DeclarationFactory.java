@@ -1,5 +1,6 @@
 package ca.concordia.cssanalyser.cssmodel.declaration;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -42,8 +43,12 @@ public class DeclarationFactory {
 			DeclarationValue declarationValue = values.get(0);
 			if (values.size() > 1) {
 				String concatanated = "";
-				for (DeclarationValue dv : values)
+				for (Iterator<DeclarationValue> iterator = values.iterator(); iterator.hasNext();) {
+					DeclarationValue dv = iterator.next();
 					concatanated += dv.getValue();
+					if (iterator.hasNext())
+						concatanated += " ";
+				}
 				declarationValue = new DeclarationValue(concatanated, ValueType.OTHER);
 				LOGGER.warn(String.format("Multiple values for single-valued property '%s' are given. All the values are concatenated to make a single value '%s'. Values are %s",
 						propertyName, concatanated, values.toString()));
