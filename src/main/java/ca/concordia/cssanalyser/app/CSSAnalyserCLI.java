@@ -470,7 +470,7 @@ public class CSSAnalyserCLI {
 								if (selectorsIntersection.size() == realMixinCalledInSelectors.size()) {
 									
 									if (maxParameters > -1 && migrationOpportunity.getNumberOfParameters() > maxParameters) {
-										LessMixinMigrationOpportunity subOpportunity = migrationOpportunity.getSubOpportunity(propertiesInRealMixin, selectorsIntersection);
+										MixinMigrationOpportunity<?> subOpportunity = migrationOpportunity.getSubOpportunity(propertiesInRealMixin, selectorsIntersection);
 										if (subOpportunity.getNumberOfParameters() > maxParameters) {	
 											continue;
 										} else {
@@ -521,7 +521,9 @@ public class CSSAnalyserCLI {
 								migrationOpportunity.getNumberOfIntraSelectorDependenciesAffectingMixinCallPosition()
 								);
 
-						IOHelper.writeStringToFile(row.replace("#", "\\#"), opportunitiesCsvOutputPath, true);						
+						IOHelper.writeStringToFile(row.replace("#", "\\#"), opportunitiesCsvOutputPath, true);	
+						
+						//System.out.println((new LessPrinter()).getString(migrationOpportunity.apply()));
 					}
 					mixinsToConsider.removeAll(foundRealMixins);
 					if (mixinsToConsider.size() > 0) {
