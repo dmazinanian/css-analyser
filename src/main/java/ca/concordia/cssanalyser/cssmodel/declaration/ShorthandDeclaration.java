@@ -386,7 +386,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 				for (DeclarationValue v : declarationValues) {
 					if (v.getType() == ValueType.COLOR) {
 						valueColor = v;
-					} else if (v.getType() == ValueType.LENGTH) {
+					} else if (v.getType() == ValueType.LENGTH || v.getType() == ValueType.PERCENTAGE) {
 						valueWidth = v;
 					} else if (v.getType() == ValueType.IDENT) {
 						if ("thin".equals(v.getValue()) || "medium".equals(v.getValue()) || "thick".equals(v.getValue()))
