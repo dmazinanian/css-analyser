@@ -79,7 +79,8 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 			if (value.getForValues() != null) {
 				for (Iterator<DeclarationValue> declarationValueIterator = value.getForValues().iterator(); declarationValueIterator.hasNext(); ) {
 					String declarationValue = declarationValueIterator.next().getValue();
-					if (declarationValue.contains("\\") || declarationValue.contains("/")) {
+					if ((declarationValue.contains("\\") || declarationValue.contains("/")) &&
+							!(declarationValue.startsWith("'") && declarationValue.endsWith("'"))) {
 						declarationValue = escapeValue(declarationValue);
 					}
 					mixinReferenceStringBuilder.append(declarationValue);
