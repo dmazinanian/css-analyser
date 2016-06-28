@@ -22,6 +22,8 @@ import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorNode;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorType;
+import ca.concordia.cssanalyser.migration.topreprocessors.TransformationStatus;
+import ca.concordia.cssanalyser.migration.topreprocessors.TransformationStatus.TransformationStatusFlag;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinDeclaration;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinMigrationOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.mixin.MixinParameter;
@@ -80,7 +82,8 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 				for (Iterator<DeclarationValue> declarationValueIterator = value.getForValues().iterator(); declarationValueIterator.hasNext(); ) {
 					String declarationValue = declarationValueIterator.next().getValue();
 					if ((declarationValue.contains("\\") || declarationValue.contains("/")) &&
-							!(declarationValue.startsWith("'") && declarationValue.endsWith("'"))) {
+							!(declarationValue.startsWith("'") && declarationValue.endsWith("'")) &&
+							!(declarationValue.replace(" ", "").startsWith("url("))) {
 						declarationValue = escapeValue(declarationValue);
 					}
 					mixinReferenceStringBuilder.append(declarationValue);
@@ -109,20 +112,25 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 	}
 
 	@Override
-	public boolean preservesPresentation() {
+	public TransformationStatus preservesPresentation() {
+		TransformationStatus statusToReturn = new TransformationStatus();
 		com.github.sommeri.less4j.core.ast.StyleSheet resultingLESSStyleSheet = this.apply();
-		StyleSheet afterMigration;
+		StyleSheet afterMigration = null;
+		String codeBefore = getStyleSheet().toString();
+		String coreAfter = new LessPrinter().getString(resultingLESSStyleSheet);
 		try {
 			afterMigration = LessHelper.compileLESSStyleSheet(resultingLESSStyleSheet, true); // Avoid re-reading from physical file
 		} catch (Exception e) {
-			String message = "Error in compiling the resulting style sheet after applying mixin migration opportunity." + System.lineSeparator() + e.getMessage();
-			FileLogger.getLogger(this.getClass()).warn(message);
-			return false;
+			String msg = "Error in compiling the resulting style sheet after applying mixin migration opportunity." 
+					+ System.lineSeparator() + e.getMessage();
+			statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
 		}
-		if ("".equals(afterMigration.toString())) {
-			FileLogger.getLogger(this.getClass()).warn("PRESENTATION: StyleSheet is empty, possibe compile error ");
-			return false;
+		if (afterMigration != null && "".equals(afterMigration.toString())) {
+			String msg = "Resulting StyleSheet is empty, possibe transpile errors";
+			statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
 		}
+		
+		if (statusToReturn.isOK()) {
 		/*
 		 * Find each selector in the second StyleSheet,
 		 * then see if the corresponding selectors style the same properties
@@ -131,58 +139,60 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		 * selectors because a Mixin migration opportunity
 		 * does not change the selector names and relative positions of them. 
 		 */
-		Set<Selector> checkedSelectorsIn2 = new HashSet<>(); // Don't map one selector two times.
-		for (Selector selector1 : getStyleSheet().getAllSelectors()) {
-			Iterable<Declaration> selector1FinalStylingIndividualDeclarations = selector1.getFinalStylingIndividualDeclarations();
-			if (selector1FinalStylingIndividualDeclarations.iterator().hasNext()) { // Skip empty selectors, because less will not print it
-				boolean selectorFound = false;
-				for (Selector selector2 : afterMigration.getAllSelectors()) {
-					if (checkedSelectorsIn2.contains(selector2))
-						continue;
-					if (selector1.selectorEquals(selector2)) { // Selector names should be the same (including class names, ID, Pseudos, etc).
-						checkedSelectorsIn2.add(selector2);
-						// Now check if they style similarly
-						Map<String, Declaration> individualDeclarations1 = new HashMap<>();
+			Set<Selector> checkedSelectorsIn2 = new HashSet<>(); // Don't map one selector two times.
+			for (Selector selector1 : getStyleSheet().getAllSelectors()) {
+				Iterable<Declaration> selector1FinalStylingIndividualDeclarations = selector1.getFinalStylingIndividualDeclarations();
+				if (selector1FinalStylingIndividualDeclarations.iterator().hasNext()) { // Skip empty selectors, because less will not print them
+					boolean selectorFound = false;
+					for (Selector selector2 : afterMigration.getAllSelectors()) {
+						if (checkedSelectorsIn2.contains(selector2))
+							continue;
+						if (selector1.selectorEquals(selector2)) { // Selector names should be the same (including class names, ID, Pseudos, etc).
+							checkedSelectorsIn2.add(selector2);
+							// Now check if they style similarly
+							Map<String, Declaration> individualDeclarations1 = new HashMap<>();
 
-						for (Declaration declaration : selector1FinalStylingIndividualDeclarations) {
-							individualDeclarations1.put(declaration.getProperty(), declaration);
-						}
+							for (Declaration declaration : selector1FinalStylingIndividualDeclarations) {
+								individualDeclarations1.put(declaration.getProperty(), declaration);
+							}
 
-						Map<String, Declaration> individualDeclarations2 = new HashMap<>();
-						for (Declaration declaration : selector2.getFinalStylingIndividualDeclarations()) {
-							individualDeclarations2.put(declaration.getProperty(), declaration);
-						}
+							Map<String, Declaration> individualDeclarations2 = new HashMap<>();
+							for (Declaration declaration : selector2.getFinalStylingIndividualDeclarations()) {
+								individualDeclarations2.put(declaration.getProperty(), declaration);
+							}
 
-						for (String property : individualDeclarations1.keySet()) {
-							if (!individualDeclarations2.containsKey(property)) {
-								FileLogger.getLogger(this.getClass()).warn("PRESENTATION: Declaration not found for {} ", property);
-								return false;
-							} else {
-								Declaration declaration2 = individualDeclarations2.get(property);
-								Declaration declaration1 = individualDeclarations1.get(property);
-								if (!declaration2.declarationIsEquivalent(declaration1)) {
-									FileLogger.getLogger(this.getClass()).warn("PRESENTATION: declarationIsEquivalent is false {} AND {} ", declaration1, declaration2);
-									declaration2.declarationIsEquivalent(declaration1);
-									if ((declaration2.isImportant() && !declaration1.isImportant()) ||
-											(!declaration2.isImportant() && declaration1.isImportant())) {
-										FileLogger.getLogger(this.getClass()).warn("PRESENTATION: !important is different {} AND {} ", declaration1, declaration2);
+							for (String property : individualDeclarations1.keySet()) {
+								if (!individualDeclarations2.containsKey(property)) {
+									String msg = "Declaration not found for " + property;
+									statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
+								} else {
+									Declaration declaration2 = individualDeclarations2.get(property);
+									Declaration declaration1 = individualDeclarations1.get(property);
+									if (!declaration2.declarationIsEquivalent(declaration1)) {
+										String msg = String.format("Declarations are not equivalent: %s AND %s ", declaration1, declaration2);
+										statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
+										if ((declaration2.isImportant() && !declaration1.isImportant()) ||
+												(!declaration2.isImportant() && declaration1.isImportant())) {
+											msg = String.format("!important is different: %s AND %s ", declaration1, declaration2);
+											statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
+											break; // fail fast, we could continue
+										}
 									}
-									return false;
 								}
 							}
+							selectorFound = true;
+							break;
 						}
-						selectorFound = true;
-						break;
 					}
-				}
-				if (!selectorFound) {
-					FileLogger.getLogger(this.getClass()).warn("PRESENTATION: Selector {} not found ", selector1);
-					return false;
+					if (!selectorFound) {
+						String msg = "PRESENTATION: Selector not found: " + selector1;
+						statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
+					}
 				}
 			}
 		}
-		
-		return true;
+
+		return statusToReturn;
 	}
 	
 	@Override

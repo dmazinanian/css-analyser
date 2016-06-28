@@ -27,6 +27,7 @@ import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.DependenciesNotSatisfiableException;
+import ca.concordia.cssanalyser.migration.topreprocessors.TransformationStatus;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorType;
 import ca.concordia.cssanalyser.migration.topreprocessors.differences.StylePropertyValuesDifferenceInValues;
@@ -560,7 +561,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 
 	public abstract String getMixinReferenceString(Selector selector);
 
-	public abstract boolean preservesPresentation();
+	public abstract TransformationStatus preservesPresentation();
 
 	/**
 	 * When we remove a shorthand because of a virtual individual, we should add

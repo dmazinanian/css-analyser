@@ -24,6 +24,8 @@ import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.io.CSVColumns;
 import ca.concordia.cssanalyser.io.IOHelper;
+import ca.concordia.cssanalyser.migration.topreprocessors.TransformationStatus;
+import ca.concordia.cssanalyser.migration.topreprocessors.TransformationStatus.TransformationStatusEntry;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessHelper;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMigrationOpportunitiesDetector;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMixinMigrationOpportunity;
@@ -269,7 +271,7 @@ public class CSSAnalyserCLI {
 								int i = 0;
 								for (MixinMigrationOpportunity<com.github.sommeri.less4j.core.ast.StyleSheet> migrationOpportunity : migrationOpportunities) {
 
-									boolean preservesPresentation = migrationOpportunity.preservesPresentation();
+									boolean preservesPresentation = migrationOpportunity.preservesPresentation().isOK();
 									if (!preservesPresentation) {
 										LOGGER.warn("The following migration opportunity do not preserve the presentation:");
 									}
@@ -487,12 +489,16 @@ public class CSSAnalyserCLI {
 							}
 						}			
 
-						boolean preservesPresentation = migrationOpportunity.preservesPresentation();
-						if (!preservesPresentation) {
+						TransformationStatus transformationStatus = migrationOpportunity.preservesPresentation();
+						if (!transformationStatus.isOK()) {
 							StringBuilder builder = new StringBuilder();
 							builder.append(pathToLessFile).append(System.lineSeparator());
 							builder.append(migrationOpportunity.getInvolvedSelectors()).append(System.lineSeparator());
 							builder.append(migrationOpportunity.toString()).append(System.lineSeparator());
+							List<TransformationStatusEntry> statusEntries = transformationStatus.getStatusEntries();
+							for (TransformationStatusEntry entry : statusEntries) {
+								builder.append(entry.toString()).append(System.lineSeparator());
+							}
 							builder.append("-------------").append(System.lineSeparator()).append(System.lineSeparator());
 							IOHelper.writeStringToFile(builder.toString(), outfolder + "/notpreserving.txt", true);
 						}
