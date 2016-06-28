@@ -145,7 +145,7 @@ public class CSSAnalyserCLI {
 				LOGGER.warn(fnfe.getMessage());
 			}
 		} else {
-			LOGGER.error("Please provide an input folder with --infolder:in/folder");
+			LOGGER.error("Please provide an input folder with --in-folder \"in/folder\"");
 			return;
 		}
 		cssAnalyser.analyse(params.getFPGrowthMinsup());
@@ -155,7 +155,7 @@ public class CSSAnalyserCLI {
 		List<String> folders = getFolderPathsFromParameters(params);
 
 		if (folders.size() == 0) {
-			LOGGER.error("Please provide an input folder with --infolder:in/folder or list of folders using --foldersfile:path/to/file.");
+			LOGGER.error("Please provide an input folder with --in-folder \"in/folder\" or list of folders using --folders-file \"path/to/file\".");
 		} else {
 
 			for (String folder : folders) {
@@ -186,10 +186,10 @@ public class CSSAnalyserCLI {
 
 	private static void doCloneRefactoringInCrawlMode(ParametersParser params) throws IOException {
 		if (params.getOutputFolderPath() == null) {
-			LOGGER.error("Please provide an output folder using --outfolder:out/folder.");
+			LOGGER.error("Please provide an output folder using --out-folder \"out/folder\".");
 			return;
 		} else if (params.getUrl() == null && params.getListOfURLsToAnalyzeFilePath() == null) {
-			LOGGER.error("Please provide a url using --url:http://url/to/site or the file containing list of urls using --urlfile:path/to/url");
+			LOGGER.error("Please provide a url using --url \"http://url/to/site\" or the file containing list of urls using --urls-file \"path/to/url\"");
 			return;
 		}
 

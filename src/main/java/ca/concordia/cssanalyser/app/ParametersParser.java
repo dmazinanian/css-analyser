@@ -1,13 +1,16 @@
 package ca.concordia.cssanalyser.app;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 
 import ca.concordia.cssanalyser.io.IOHelper;
@@ -22,46 +25,48 @@ class ParametersParser {
 	
 	private static Logger LOGGER = FileLogger.getLogger(ParametersParser.class);
 	
-	private Map<String, String> params;
+	@Option(name="--mode", usage="Mode")
+	private ProgramMode mode;
+	
+	@Option(name="--url", usage="Url for analysis")
+    private String url;
+	
+	@Option(name="--min-sup", usage="Minimum support count for duplicated declarations")
+	private int minsup;
+	
+	@Option(name="--max-declarations", usage="Maximum number of declarations extracted in each mixin")
+	private int maxDeclarations = -1;
+	
+	@Option(name="--max-calls", usage="Maximum numbef of times a mixin is called")
+	private int maxCalls = -1;
+	
+	@Option(name="--max-parameters", usage="Maximum number of the involved parameters")
+	private int maxParameters = -1;
+	
+	@Option(name="--out-folder", usage="Folder for the output stuff")
+	private String outFolder;
+
+	@Option(name="--in-folder", usage="Input folder")
+	private String inFolder;
+
+	@Option(name="--folders-file", usage="File containing the paths to the folders")
+	private String foldersFile;
+
+	@Option(name="--urls-file", usage="File containing the list of URLs for analysis")
+	private String urlsFile;
+	
+	@Option(name="--input-file", usage="File containing the list of URLs for analysis")
+	private String inputFile;
+
+	private final CmdLineParser parser;
 
 	public ParametersParser(String[] args) {
-		parseParameters(args);
-	}
-	
-	private void parseParameters(String[] args) {
-		
-		params = new HashMap<>();
-		
-		if (args.length == 0) {
-			return;
-		} else {
-			for (String s : args) {
-				if (s.startsWith("--")) {
-					// Parameters
-					String parameter = s.substring(2, s.indexOf(":")).toLowerCase();
-					String value = s.substring(s.indexOf(":") + 1);
-					switch(parameter) {
-					case "url":
-					case "minsup":
-					case "mode":
-					case "to":
-					case "max-declarations":
-					case "max-calls":
-					case "max-parameters":
-						params.put(parameter, value);
-						break;
-					case "outfolder":
-					case "infolder":
-					case "foldersfile":
-					case "urlsfile":
-					case "css1":
-					case "css2":
-					case "file":
-						params.put(parameter, formatPath(value));
-						break;
-					}
-				}
-			}
+		parser = new CmdLineParser(this);
+		try {
+			parser.parseArgument(args);
+		} catch (CmdLineException e) {
+			LOGGER.error(e.getMessage());
+			parser.printUsage(System.out);
 		}
 	}
 
@@ -80,103 +85,64 @@ class ParametersParser {
 	}
 	
 	public ProgramMode getProgramMode() {
-		try {
-			return ProgramMode.valueOf(params.get("mode").toUpperCase());
-		} 
-		catch (NullPointerException npe) {
+		if (mode == null) {
 			LOGGER.info("No mode parameters is provided. CRAWL mode is selected by default.");
-			params.put("mode", "CRAWL");
-			return ProgramMode.CRAWL;
+			mode = ProgramMode.CRAWL;
 		}
-		catch (IllegalArgumentException iae) {
-			LOGGER.error("Invalid mode parameter is provided. please see documentation for the allowed parameters.");
-			return null;
-		}
+		return mode;
 	}
 	
 	public String getOutputFolderPath() {
-		if (params.containsKey("outfolder"))
-			return params.get("outfolder");
-		else {
-			String currentDirectory = formatPath(System.getProperty("user.dir"));
-			LOGGER.warn(String.format("No output folder was provided, %s is selected by default.", currentDirectory));
-			params.put("outfolder", currentDirectory);
-			return currentDirectory;
+		if (outFolder == null) {
+			outFolder = formatPath(System.getProperty("user.dir"));
+			LOGGER.warn(String.format("No output folder was provided, %s is selected by default.", outFolder));
 		}
+		return outFolder;
+	}
+	
+	public String getInputFolderPath() {
+		return inFolder;
 	}
 	
 	public String getUrl() {
-		return params.get("url");
+		return url;
 	}
 	
 	/**
 	 * Returns minimum support count for FP-Growth.
-	 * The minimum support count is 2.
+	 * The minimum (and default) value is 2.
 	 * @return
 	 */
 	public int getFPGrowthMinsup() {
-		String minsup = params.get("minsup");
-		try {
-			if (minsup != null)
-				return Integer.valueOf(minsup);
-			else 
-				LOGGER.warn("Nothing was given for minsup, 2 is selected by default.");
-		} catch (NumberFormatException nfe) {
-			LOGGER.warn("Invalid number was given for minsup, 2 is selected by default.");
+		if (minsup < 2) {
+			minsup = 2;
+			LOGGER.warn("Invalid number (or nothing) was given for minimum support count (--min-sup), 2 is selected by default.");
 		}	
-		params.put("minsup", "2");
-		return 2;
+		return minsup;
 	}
-	
-	public String getInputFolderPath() {
-		return formatPath(params.get("infolder"));
-	}
-	
+
 	/**
 	 * Returns the file path, provided by user, which includes
 	 * a list of folder path's in which program analyze crawled data.
 	 * @return
 	 */
 	public String getListOfFoldersPathsToBeAnayzedFile() {
-		return params.get("foldersfile");
+		return foldersFile;
 	}
 	
 	public String getListOfURLsToAnalyzeFilePath() {
-		return params.get("urlsfile");
+		return urlsFile;
 	}
 	
-	public String getCSS1FilePath() {
-		return params.get("css1");
-	}
-	
-	public String getCSS2FilePath() {
-		return params.get("css2");
-	}
-
 	public int getMaxDeclarations() {
-		int maxDeclarations = -1;
-		String value = params.get("max-declarations");
-		if (value != null) {
-			maxDeclarations = Integer.valueOf(value);
-		}
 		return maxDeclarations;
 	}
 	
 	public int getMaxParameters() {
-		int maxParameters = -1;
-		String value = params.get("max-parameters");
-		if (value != null) {
-			maxParameters = Integer.valueOf(value);
-		}
 		return maxParameters;
 	}
 	
 	public int getMaxCalls() {
-		int maxCalls = -1;
-		String value = params.get("max-calls");
-		if (value != null) {
-			maxCalls = Integer.valueOf(value);
-		}
 		return maxCalls;
 	}
 	
@@ -239,20 +205,17 @@ class ParametersParser {
 		} catch (IOException ioe) {
 			LOGGER.error("IO Exception in reading file " + getListOfFoldersPathsToBeAnayzedFile());
 		}
-		//System.out.println(folderPaths.size());
 		return folderPaths;
-	}
-
-	public String getFilePath() {
-		return params.get("file");
 	}
 	
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		for (String key : params.keySet()) {
-			builder.append("--" + key + ":\"" + params.get(key) + "\" ");
-		}
-		return builder.toString().trim();
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		parser.printUsage(outputStream);
+		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
+	}
+
+	public String getFilePath() {
+		return inputFile;
 	}
 }

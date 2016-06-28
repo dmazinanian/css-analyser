@@ -20,6 +20,7 @@ dependencies {
 	compile "com.crawljax.plugins:crawloverview-plugin:${crawljax_crawloverview_plugin_version}"
 	compile "com.github.sommeri:less4j:${less4j_version}"
 	compile "org.w3c.css:sac:${sac_version}"
+	compile "args4j:args4j:${args4j_version}"
 	testCompile "junit:junit:${junit_version}"
 }
 
