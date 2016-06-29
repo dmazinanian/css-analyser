@@ -505,12 +505,15 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 
 	/**
 	 * Get all the mixin declarations (real declarations plus parameterized ones)
-	 * sorted based on the mixin declaration number (if set)
+	 * sorted based on the position of declarations in the first selector
 	 * @return
 	 */
 	public Iterable<MixinDeclaration> getAllMixinDeclarations() {
 		calculateParameters();
-		return mixinDeclarations.values();
+		List<MixinDeclaration> toReturn = new ArrayList<>();
+		for (String property : mixinDeclarations.keySet())
+			toReturn.add(mixinDeclarations.get(property));
+		return toReturn;
 	}
 	
 	/**
