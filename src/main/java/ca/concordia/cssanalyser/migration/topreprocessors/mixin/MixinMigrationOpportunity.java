@@ -19,6 +19,9 @@ import org.chocosolver.solver.constraints.IntConstraintFactory;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.VariableFactory;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+
 import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
@@ -27,9 +30,9 @@ import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.migration.topreprocessors.DependenciesNotSatisfiableException;
-import ca.concordia.cssanalyser.migration.topreprocessors.TransformationStatus;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorMigrationOpportunity;
 import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorType;
+import ca.concordia.cssanalyser.migration.topreprocessors.TransformationStatus;
 import ca.concordia.cssanalyser.migration.topreprocessors.differences.StylePropertyValuesDifferenceInValues;
 import ca.concordia.cssanalyser.migration.topreprocessors.less.LessMixinMigrationOpportunity;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
@@ -329,7 +332,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		}
 		
 		Set<Integer> alreadyMerged = new HashSet<>();
-		
+		int lastParamIndex = 0;
 		for (int i = 0; i < parameters.size(); i++) {
 			if (alreadyMerged.contains(i))
 				continue;
@@ -348,9 +351,19 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			
 			if (candidatesForMerging.size() > 1) {
 				MixinParameter parameterToMergeWith = parameters.get(candidatesForMerging.get(0));
+				String parameterName = parameterToMergeWith.getName();
 				for (int j = 1; j < candidatesForMerging.size(); j++) {
 					Integer candidateParameterForMergingIndex = candidatesForMerging.get(j);
 					MixinParameter parameterToMerge = parameters.get(candidateParameterForMergingIndex);
+					if (!"".equals(parameterName)) {
+						parameterName = getLongestCommonPropertyName(parameterName, parameterToMerge.getName());
+						if (parameterName.startsWith("_")) {
+							parameterName = parameterName.substring(1, parameterName.length());
+						}
+						if (parameterName.endsWith("_")) {
+							parameterName = parameterName.substring(0, parameterName.length() - 1);
+						}
+					}
 					alreadyMerged.add(candidateParameterForMergingIndex);
 					for (MixinParameterizedValue parameterizedValue : mixinParameterToParameterizedValuesMap.get(parameterToMerge)) {
 						parameterizedValue.setMixinParameter(parameterToMergeWith);
@@ -365,6 +378,11 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 						}
 					}
 				}
+				if (!"".equals(parameterName)) {
+					parameterToMergeWith.setName(parameterName);
+				} else {
+					parameterToMergeWith.setName("arg" + lastParamIndex++);
+				}
 			}
 			
 		}
@@ -378,6 +396,73 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		
 		this.parameters = newMixinParameters;
 	}
+
+	private String getLongestCommonPropertyName(String property1, String property2) {
+		BiMap<String, Character> partsToLettersMap = HashBiMap.create();
+		String seq1 = getCharacterSequence(property1, partsToLettersMap);
+		String seq2 = getCharacterSequence(property2, partsToLettersMap);
+		String longestCommonSubsequence = getLongestCommonSubsequence(seq1, seq2);
+		String longestCommonPropertyName = "";
+		for (int i = 0; i < longestCommonSubsequence.length(); i++) {
+			longestCommonPropertyName += partsToLettersMap.inverse().get(longestCommonSubsequence.charAt(i));
+			if (i < longestCommonPropertyName.length() - 1) {
+				longestCommonPropertyName += "_";
+			}
+		}
+		return longestCommonPropertyName;
+	}
+
+	private String getCharacterSequence(String property, Map<String, Character> partsToLettersMap) {
+		char currentChar = '@'; // Char before A
+		for (Character chr : partsToLettersMap.values()) {
+			if (chr > currentChar) {
+				currentChar = chr;
+			}
+		}
+		currentChar++;
+		String parts1[] = property.split("_");
+		String toReturn = "";
+		for (int i = 0; i < parts1.length; i++) {
+			String part = parts1[i];
+			if (!partsToLettersMap.containsKey(part)) {
+				partsToLettersMap.put(part, currentChar);
+				currentChar++;
+			}
+			String letter = String.valueOf(partsToLettersMap.get(part));
+			toReturn += letter;
+		}
+		return toReturn;
+	}
+
+	public String getLongestCommonSubsequence(String string1, String string2) {
+        int l1 = string1.length();
+        int l2 = string2.length();
+
+        int[][] arr = new int[l1 + 1][l2 + 1];
+
+        for (int i = l1 - 1; i >= 0; i--) {
+            for (int j = l2 - 1; j >= 0; j--) {
+                if (string1.charAt(i) == string2.charAt(j))
+                    arr[i][j] = arr[i + 1][j + 1] + 1;
+                else
+                    arr[i][j] = Math.max(arr[i + 1][j], arr[i][j + 1]);
+            }
+        }
+
+        int i = 0, j = 0;
+        StringBuffer sb = new StringBuffer();
+        while (i < l1 && j < l2) {
+            if (string1.charAt(i) == string2.charAt(j)) {
+                sb.append(string1.charAt(i));
+                i++;
+                j++;
+            } else if (arr[i + 1][j] >= arr[i][j + 1])
+                i++;
+            else
+                j++;
+        }
+        return sb.toString();
+    }
 
 	private boolean haveTheSameValues(List<MixinParameterizedValue> list1, List<MixinParameterizedValue> list2) {
 	
