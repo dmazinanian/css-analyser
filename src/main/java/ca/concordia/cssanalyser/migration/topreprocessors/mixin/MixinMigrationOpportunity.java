@@ -853,7 +853,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 						break;		
 					}
 				}
-//				involvedDeclarations.add(declaration);
+
 			} else {
 				// Check for possible shorthand
 				Set<String> individuals = ShorthandDeclaration.getIndividualPropertiesForAShorthand(declaration.getProperty());
@@ -994,14 +994,6 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			}
 			return toReturn;
 		} else {
-//			Set<String> set = new HashSet<>();
-//			for (Declaration declaration : otherDeclarations) {
-//				String p = declaration.getProperty();
-//				if (set.contains(p)) {
-//					throw new DependenciesNotSatisfiableException("Not solvable, duplicated properties!"); 
-//				}
-//				set.add(p);
-//			}
 			throw new DependenciesNotSatisfiableException("Not solvable!");
 		}
 	}
