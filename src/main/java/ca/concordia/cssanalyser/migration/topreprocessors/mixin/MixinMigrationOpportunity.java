@@ -349,12 +349,6 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 					MixinParameter parameterToMerge = parameters.get(candidateParameterForMergingIndex);
 					if (!"".equals(parameterName)) {
 						parameterName = getLongestCommonPropertyName(parameterName, parameterToMerge.getName());
-						if (parameterName.startsWith("_")) {
-							parameterName = parameterName.substring(1, parameterName.length());
-						}
-						if (parameterName.endsWith("_")) {
-							parameterName = parameterName.substring(0, parameterName.length() - 1);
-						}
 					}
 					alreadyMerged.add(candidateParameterForMergingIndex);
 					for (MixinParameterizedValue parameterizedValue : mixinParameterToParameterizedValuesMap.get(parameterToMerge)) {
@@ -397,7 +391,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		String longestCommonPropertyName = "";
 		for (int i = 0; i < longestCommonSubsequence.length(); i++) {
 			longestCommonPropertyName += partsToLettersMap.inverse().get(longestCommonSubsequence.charAt(i));
-			if (i < longestCommonPropertyName.length() - 1) {
+			if (i < longestCommonSubsequence.length() - 1) {
 				longestCommonPropertyName += "_";
 			}
 		}
