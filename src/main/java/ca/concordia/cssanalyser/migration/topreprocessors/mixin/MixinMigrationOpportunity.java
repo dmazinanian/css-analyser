@@ -482,13 +482,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 				return false;
 			}
 		}
-//			Collection<DeclarationValue> forValues1 = value1.getForValues();
-//			for (MixinParameterizedValue value2 : list2) {
-//				Collection<DeclarationValue> forValues2 = value2.getForValues();
-//				if (!forValues1.equals(forValues2))
-//					return false;
-//			}
-
+		
 		return true;
 	}
 
