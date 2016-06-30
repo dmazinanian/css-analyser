@@ -280,16 +280,8 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			}
 		}
 		
-		//Get the order from the first selector, if it is different in others, the change is not possible
+		// Get the order from the first selector, if it is different in others, the change is not possible
 		declarations.forEach(declaration -> propertiesInOrder.add(declaration.getProperty()));
-		
-//		CSSValueOverridingDependencyList intraSelectorOverridingDependencies = firstSelector.getIntraSelectorOverridingDependencies();
-//		if (intraSelectorOverridingDependencies.size() != 0) {
-//			for (int i = 1; i < selectors.size(); i++) {
-//				Selector selectorToCheckWith = selectors.get(i);
-//				
-//			}
-//		}  
 		
 		return propertiesInOrder;
 	}
