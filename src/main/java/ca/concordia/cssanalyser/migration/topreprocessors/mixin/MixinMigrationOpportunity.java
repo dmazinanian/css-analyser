@@ -365,6 +365,11 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 					}
 				}
 				if (!"".equals(parameterName)) {
+					int paramIndex = 0;
+					while (parameterNameExists(parameterName)) {
+						paramIndex++;
+						parameterName += paramIndex;
+					}
 					parameterToMergeWith.setName(parameterName);
 				} else {
 					parameterToMergeWith.setName("arg" + lastParamIndex++);
@@ -381,6 +386,15 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		}
 		
 		this.parameters = newMixinParameters;
+	}
+
+	private boolean parameterNameExists(String parameterName) {
+		for (int k = 0; k < parameters.size(); k++) {
+			if (parameters.get(k).getName().equals(parameterName)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private String getLongestCommonPropertyName(String property1, String property2) {
