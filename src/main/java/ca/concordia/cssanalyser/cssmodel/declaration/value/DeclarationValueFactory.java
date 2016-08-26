@@ -196,6 +196,8 @@ public class DeclarationValueFactory {
 					
 					
 					eqValue = ColorHelper.RGBAFromHSLA(h, s, l, a);
+				} else if (NamedColorsHelper.isNamedColor(value)) {
+					return new DeclarationEquivalentValue(value, NamedColorsHelper.getRGBAColor(value), ValueType.COLOR);
 				}
 				return new DeclarationEquivalentValue(value, eqValue, ValueType.COLOR);
 			}
