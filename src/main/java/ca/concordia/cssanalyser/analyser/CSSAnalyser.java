@@ -32,7 +32,7 @@ import ca.concordia.cssanalyser.parser.CSSParser;
 import ca.concordia.cssanalyser.parser.CSSParserFactory;
 import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
 import ca.concordia.cssanalyser.refactoring.BatchGroupingRefactoringResult;
-import ca.concordia.cssanalyser.refactoring.RefactorDuplications;
+import ca.concordia.cssanalyser.refactoring.RefactorDuplicationsToGroupingSelector;
 
 
 /**
@@ -267,7 +267,7 @@ public class CSSAnalyser {
 				LOGGER.info("Applying grouping refactoring opportunities");
 				start = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				BatchGroupingRefactoringResult refactoringResults;
-				RefactorDuplications refactorDuplications = new RefactorDuplications(styleSheet);
+				RefactorDuplicationsToGroupingSelector refactorDuplications = new RefactorDuplicationsToGroupingSelector(styleSheet);
 				if (!dontUseDOM) {
 					refactoringResults = refactorDuplications.refactorGroupingOpportunities(MIN_SUPPORT, analyticsFolderPath, fpgrowthResults, model.getDocument(), true);
 				} else {

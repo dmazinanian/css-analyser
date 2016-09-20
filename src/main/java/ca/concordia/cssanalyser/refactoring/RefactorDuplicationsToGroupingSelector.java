@@ -29,13 +29,13 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDepen
 
 
 
-public class RefactorDuplications {
+public class RefactorDuplicationsToGroupingSelector {
 	
-	Logger LOGGER = FileLogger.getLogger(RefactorDuplications.class);
+	Logger LOGGER = FileLogger.getLogger(RefactorDuplicationsToGroupingSelector.class);
 	
 	private StyleSheet originalStyleSheet;
 	
-	public RefactorDuplications(StyleSheet styleSheet) {
+	public RefactorDuplicationsToGroupingSelector(StyleSheet styleSheet) {
 		originalStyleSheet = styleSheet;
 	}
 	
