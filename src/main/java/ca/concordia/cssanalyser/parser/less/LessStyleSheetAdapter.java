@@ -189,7 +189,9 @@ public class LessStyleSheetAdapter {
 			GroupingSelector grouping = new GroupingSelector();
 
 			for (com.github.sommeri.less4j.core.ast.Selector lessSelector : ruleSetNode.getSelectors()) {
-				grouping.add(getBaseSelectorFromLessSelector(lessSelector));					
+				BaseSelector baseSelectorFromLessSelector = getBaseSelectorFromLessSelector(lessSelector);
+				grouping.add(baseSelectorFromLessSelector);
+				baseSelectorFromLessSelector.setParentGroupSelector(grouping);
 			}
 			
 			selector = grouping;
