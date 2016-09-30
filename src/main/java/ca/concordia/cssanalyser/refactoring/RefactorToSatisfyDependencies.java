@@ -16,6 +16,8 @@ import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOverridingDependency;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOverridingDependency.InterSelectorDependencyReason;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependency;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
@@ -90,19 +92,22 @@ public class RefactorToSatisfyDependencies {
 		
 		// 2. Create variables through the variable factory
 		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
+			if (dependency instanceof CSSInterSelectorValueOverridingDependency) {
+				CSSInterSelectorValueOverridingDependency interSelectorValueOverridingDependency = (CSSInterSelectorValueOverridingDependency) dependency;
+				if (interSelectorValueOverridingDependency.getDependencyReason() == InterSelectorDependencyReason.DUE_TO_CASCADING) {
+					Selector[] correspondingSelectors = dependencyNodeToRealSelectorsMap.get(dependency);
+					
+					if (correspondingSelectors == null || correspondingSelectors[0] == null || correspondingSelectors[1] == null)
+						continue;
 
-			Selector[] correspondingSelectors = dependencyNodeToRealSelectorsMap.get(dependency);
-			
-			if (correspondingSelectors == null || correspondingSelectors[0] == null || correspondingSelectors[1] == null)
-				continue;
+					// Get the ChocoSolver variables for the dependency
+					IntVar x = createdVars.get(correspondingSelectors[0]);
+					IntVar y = createdVars.get(correspondingSelectors[1]);
 
-			// Get the ChocoSolver variables for the dependency
-			IntVar x = createdVars.get(correspondingSelectors[0]);
-			IntVar y = createdVars.get(correspondingSelectors[1]);
-
-			// 3. Create and post constraints by using constraint factories
-			solver.post(IntConstraintFactory.arithm(x, "<", y));
-
+					// 3. Create and post constraints by using constraint factories
+					solver.post(IntConstraintFactory.arithm(x, "<", y));		
+				}
+			}
 		}
 		
 		// All the variables have to have unique values

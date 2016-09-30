@@ -13,6 +13,7 @@ import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.dom.DOMNodeWrapper;
+import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOverridingDependency.InterSelectorDependencyReason;
 
 public class CSSDependencyDetector {
 	
@@ -138,9 +139,24 @@ public class CSSDependencyDetector {
 															oldDeclarationEntry.baseSelector,
 															oldDeclarationEntry.declaration,
 															selector, declaration,
-															possiblyStyledProperty);
+															possiblyStyledProperty,
+															InterSelectorDependencyReason.DUE_TO_CASCADING);
+												} else if (oldDeclarationEntry.baseSelector.getSpecificity() >= selector.getSpecificity()) {
+													newDependency = new CSSInterSelectorValueOverridingDependency(
+															selector, 
+															declaration,
+															oldDeclarationEntry.baseSelector,
+															oldDeclarationEntry.declaration,
+															possiblyStyledProperty,
+															InterSelectorDependencyReason.DUE_TO_SPECIFICITY);
 												} else {
-													
+													newDependency = new CSSInterSelectorValueOverridingDependency(
+															oldDeclarationEntry.baseSelector,
+															oldDeclarationEntry.declaration,
+															selector, 
+															declaration,
+															possiblyStyledProperty,
+															InterSelectorDependencyReason.DUE_TO_SPECIFICITY);
 												}
 											}
 
