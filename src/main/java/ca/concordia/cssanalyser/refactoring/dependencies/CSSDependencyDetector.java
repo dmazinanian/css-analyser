@@ -239,7 +239,9 @@ public class CSSDependencyDetector {
 	}
 
 	private CSSValueOverridingDependencyList findDomFreeSelectorDependencies() {
-		return CSSDomFreeDependencyDetector.findOverridingDependencies(this.styleSheet);
+        CSSDomFreeDependencyDetector d
+            = new CSSDomFreeDependencyDetector(this.styleSheet);
+		return d.findOverridingDependencies();
     }
 
 }
