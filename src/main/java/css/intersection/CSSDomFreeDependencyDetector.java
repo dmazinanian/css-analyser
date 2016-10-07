@@ -1,6 +1,7 @@
 
 package css.intersection;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -26,8 +27,8 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOv
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 public class CSSDomFreeDependencyDetector {
-    private static final int NUM_WORKERS
-        = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+
+    private static final String PYTHON_COMMAND = "./intersection-tool.sh";
 
     private static Logger LOGGER
         = FileLogger.getLogger(CSSDomFreeDependencyDetector.class);
@@ -138,14 +139,21 @@ public class CSSDomFreeDependencyDetector {
             buildOverlapMap();
             return buildDependencyList();
         } catch (IOException e) {
-            LOGGER.error("IOException calculating dependencies, returning no deps.\n" + e);
-            return new CSSValueOverridingDependencyList();
+            LOGGER.error("IOException calculating dependencies, aborting.\n" + e);
+            System.exit(-1);
+            return null;
         }
     }
 
     private void startPython() throws IOException {
+        File pythonCommand = new File(PYTHON_COMMAND);
+        if (!pythonCommand.exists())
+            throw new IOException("Please create " +
+                                  PYTHON_COMMAND +
+                                  " script to start emptiness checker tool (you probably want a script that runs \"python <path to our main.py> -e\"");
+
         emptinessChecker =
-            new ProcessBuilder().command("pypy", "/home/matt/research/css/satcss/implementation/main.py", "-e").start();
+            new ProcessBuilder().command(PYTHON_COMMAND).start();
 
         OutputStream out = emptinessChecker.getOutputStream();
         empOut = new OutputStreamWriter(out);
