@@ -8,10 +8,10 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.slf4j.Logger;
 
@@ -26,9 +26,8 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOv
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 public class CSSDomFreeDependencyDetector {
-
     private static final int NUM_WORKERS
-        = Runtime.getRuntime().availableProcessors();
+        = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
 
     private static Logger LOGGER
         = FileLogger.getLogger(CSSDomFreeDependencyDetector.class);
@@ -75,9 +74,9 @@ public class CSSDomFreeDependencyDetector {
         public String property;
         public int specificity;
 
-        public PropSpec(String property, int specificityArg) {
+        public PropSpec(String property, int specificity) {
             this.property = property;
-            this.specificity = specificityArg;
+            this.specificity = specificity;
         }
 
         public boolean equals(Object o) {
@@ -94,7 +93,6 @@ public class CSSDomFreeDependencyDetector {
         }
     }
 
-
     /**
      * To overcome slowness in communicating with python, we're going to run a
      * number of different instances that take tasks from a BlockingQueue whose
@@ -105,11 +103,6 @@ public class CSSDomFreeDependencyDetector {
         public SelDec sd2;
         public String property;
 
-        /** Use only for "poison" task **/
-        public DependencyTask() {
-            this.sd1 = null;
-        }
-
         public DependencyTask(SelDec sd1,
                               SelDec sd2,
                               String property) {
@@ -117,121 +110,8 @@ public class CSSDomFreeDependencyDetector {
             this.sd2 = sd2;
             this.property = property;
         }
-
-        public boolean isPoison() {
-            return sd1 == null;
-        }
     }
 
-    private final static DependencyTask POISON = new DependencyTask();
-
-    /**
-     * These are the workers who will communicate with python to complete tasks
-     * posted to a queue by the main thread
-     */
-    private class DependencyWorkerThread extends Thread {
-        private BlockingQueue<DependencyTask> queue;
-        private CSSValueOverridingDependencyList dependencies;
-
-        // The python process
-        private Process emptinessChecker;
-        private OutputStreamWriter empOut;
-        private InputStreamReader empIn;
-
-        /**
-         * @param queue a blocking queue where tasks will be posted
-         * @param dependencies the dependency list to add found dependencies to
-         * (will synchronize on it to avoid concurrency errors)
-         */
-        public DependencyWorkerThread(BlockingQueue<DependencyTask> queue,
-                                      CSSValueOverridingDependencyList dependencies) {
-            this.queue = queue;
-            this.dependencies = dependencies;
-
-            try {
-                emptinessChecker =
-                    new ProcessBuilder().command("pypy", "/home/matt/research/css/satcss/implementation/main.py", "-e").start();
-
-                OutputStream out = emptinessChecker.getOutputStream();
-                empOut = new OutputStreamWriter(out);
-
-                InputStream in = emptinessChecker.getInputStream();
-                empIn = new InputStreamReader(in);
-            } catch (IOException e) {
-                LOGGER.error("Failed to start python emptiness checker, will assume all selectors can overlap." + e);
-                emptinessChecker = null;
-            }
-
-        }
-
-        public void run() {
-            try {
-                for (;;) {
-                    DependencyTask task = queue.take();
-
-                    if (task.isPoison())
-                        break;
-
-                    SelDec sd1 = task.sd1;
-                    SelDec sd2 = task.sd2;
-                    String property = task.property;
-
-                    if (selectorsOverlap(sd1.selector,
-                                         sd2.selector)) {
-                        CSSInterSelectorValueOverridingDependency dep;
-                        if (sd1.preceeds(sd2)) {
-                            dep = new CSSInterSelectorValueOverridingDependency(
-                                            sd1.selector,
-                                            sd1.declaration,
-                                            sd2.selector,
-                                            sd2.declaration,
-                                            property,
-                                            InterSelectorDependencyReason.DUE_TO_CASCADING);
-                        } else {
-                            dep = new CSSInterSelectorValueOverridingDependency(
-                                            sd2.selector,
-                                            sd2.declaration,
-                                            sd1.selector,
-                                            sd1.declaration,
-                                            property,
-                                            InterSelectorDependencyReason.DUE_TO_CASCADING);
-                        }
-
-                        synchronized (dependencies) {
-                            dependencies.add(dep);
-                        }
-                    }
-
-
-                }
-            } catch (InterruptedException e) {
-                // do nothing but die
-            }
-        }
-
-        private boolean selectorsOverlap(BaseSelector s1,
-                                         BaseSelector s2) {
-            if (emptinessChecker == null)
-                return true;
-
-            try {
-                empOut.write(s1 + "\n");
-                empOut.write(s2 + "\n");
-                empOut.flush();
-
-                int result = empIn.read();
-
-                if (result == -1)
-                    throw new IOException("Unexpected end of python emptiness checker input stream.");
-
-                return result != 'E';
-            } catch (IOException e) {
-                LOGGER.error("Error communicating with python emptiness checker, assuming all selectors overlap." + e);
-                emptinessChecker = null;
-                return true;
-            }
-        }
-    }
 
     // (p, spec) -> { ... (s, d) ... }
     // collects rules with the same property and specificity
@@ -239,17 +119,39 @@ public class CSSDomFreeDependencyDetector {
         = new HashMap<PropSpec, Set<SelDec>>();
     private StyleSheet styleSheet;
 
+    private Process emptinessChecker;
+    private OutputStreamWriter empOut;
+    private InputStreamReader empIn;
+
     public CSSDomFreeDependencyDetector(StyleSheet styleSheet) {
         this.styleSheet = styleSheet;
     }
+
+
     /**
      * @return the orderings within the file that must be respected.  I.e. there
      * exists a DOM where reordering the dependencies would cause a different
      * rendering
      */
     public CSSValueOverridingDependencyList findOverridingDependencies() {
-        buildOverlapMap();
-        return buildDependencyList();
+        try {
+            buildOverlapMap();
+            return buildDependencyList();
+        } catch (IOException e) {
+            LOGGER.error("IOException calculating dependencies, returning no deps.\n" + e);
+            return new CSSValueOverridingDependencyList();
+        }
+    }
+
+    private void startPython() throws IOException {
+        emptinessChecker =
+            new ProcessBuilder().command("pypy", "/home/matt/research/css/satcss/implementation/main.py", "-e").start();
+
+        OutputStream out = emptinessChecker.getOutputStream();
+        empOut = new OutputStreamWriter(out);
+
+        InputStream in = emptinessChecker.getInputStream();
+        empIn = new InputStreamReader(in);
     }
 
     /**
@@ -258,23 +160,19 @@ public class CSSDomFreeDependencyDetector {
      *
      * @return the dependency list
      */
-    private CSSValueOverridingDependencyList buildDependencyList() {
+    private CSSValueOverridingDependencyList buildDependencyList()
+            throws IOException {
+        startPython();
+
+        LOGGER.info("Starting to find dependencies...");
 
         long startTime = System.currentTimeMillis();
 
 		CSSValueOverridingDependencyList dependencies = new CSSValueOverridingDependencyList();
 
-        BlockingQueue<DependencyTask> queue
-            = new LinkedBlockingQueue<DependencyTask>();
+        List<DependencyTask> tasks = new LinkedList<DependencyTask>();
 
-        DependencyWorkerThread[] workers
-            = new DependencyWorkerThread[NUM_WORKERS];
-
-        for (int i = 0; i < NUM_WORKERS; ++i) {
-            workers[i] = new DependencyWorkerThread(queue, dependencies);
-            workers[i].start();
-        }
-
+        // first post all comparisons to python
         for (Map.Entry<PropSpec, Set<SelDec>> e : overlapMap.entrySet()) {
             String property = e.getKey().property;
             Set<SelDec> sds = e.getValue();
@@ -283,19 +181,46 @@ public class CSSDomFreeDependencyDetector {
                 for (SelDec sd2 : sds) {
                     if (!sd1.equals(sd2) &&
                         !sd1.declaration.equals(sd2.declaration)) {
-                        queue.add(new DependencyTask(sd1, sd2, property));
+                        empOut.write(sd1.selector + "\n");
+                        empOut.write(sd2.selector + "\n");
+                        tasks.add(new DependencyTask(sd1, sd2, property));
                     }
                 }
             }
         }
 
-        for (int i = 0; i < NUM_WORKERS; ++i)
-            queue.add(POISON);
-        for (int i = 0; i < NUM_WORKERS; ++i) {
-            try {
-                workers[i].join();
-            } catch (InterruptedException e) {
-                LOGGER.error("Interrupted joining with worker threads, dependencies may be wrong!" + e);
+        // close, forcing python to flush
+        empOut.close();
+
+        // get results
+        for (DependencyTask t : tasks) {
+            SelDec sd1 = t.sd1;
+            SelDec sd2 = t.sd2;
+            String property = t.property;
+            CSSInterSelectorValueOverridingDependency dep;
+
+            int result = empIn.read();
+
+            if ((char)result == 'N') {
+                if (sd1.preceeds(sd2)) {
+                    dep = new CSSInterSelectorValueOverridingDependency(
+                                    sd1.selector,
+                                    sd1.declaration,
+                                    sd2.selector,
+                                    sd2.declaration,
+                                    property,
+                                    InterSelectorDependencyReason.DUE_TO_CASCADING);
+                } else {
+                    dep = new CSSInterSelectorValueOverridingDependency(
+                                    sd2.selector,
+                                    sd2.declaration,
+                                    sd1.selector,
+                                    sd1.declaration,
+                                    property,
+                                    InterSelectorDependencyReason.DUE_TO_CASCADING);
+                }
+
+                dependencies.add(dep);
             }
         }
 
@@ -306,6 +231,29 @@ public class CSSDomFreeDependencyDetector {
                     "ms.");
 
         return dependencies;
+    }
+
+    private boolean selectorsOverlap(BaseSelector s1,
+                                     BaseSelector s2) {
+        if (emptinessChecker == null)
+            return true;
+
+        try {
+            empOut.write(s1 + "\n");
+            empOut.write(s2 + "\n");
+            empOut.flush();
+
+            int result = empIn.read();
+
+            if (result == -1)
+                throw new IOException("Unexpected end of python emptiness checker input stream.");
+
+            return result != 'E';
+        } catch (IOException e) {
+            LOGGER.error("Error communicating with python emptiness checker, assuming all selectors overlap." + e);
+            emptinessChecker = null;
+            return true;
+        }
     }
 
 
