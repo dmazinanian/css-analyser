@@ -181,16 +181,12 @@ public class CSSDomFreeDependencyDetector {
         try {
             empOut.write(s1 + "\n");
             empOut.write(s2 + "\n");
-
-            LOGGER.info("Written to python");
+            empOut.flush();
 
             int result = empIn.read();
-            // read \n
-            empIn.read();
 
             if (result == -1)
                 throw new IOException("Unexpected end of python emptiness checker input stream.");
-            LOGGER.info("Got " + result);
 
             return result != 'E';
         } catch (IOException e) {
