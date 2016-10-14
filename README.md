@@ -1,3 +1,20 @@
+# Note
+
+This is a fork of [css-analyser](https://github.com/dmazinanian/css-analyser)
+with experimental incorporation of DOM-free dependency analysis implemented by
+[css-builder](https://github.com/matthewhague/css-builder).  In order to use,
+specify the `--dom-free-deps` command line argument, and make sure 
+
+    ./intersection-tool.sh
+
+is a shell script that runs `main.py` of
+[css-builder](https://github.com/matthewhague/css-builder).  E.g.
+
+    pypy <path-to-css-builder>/main.py
+
+The original README is replicated below.
+
+
 # css-analyser
 
 This tool is designed for analysis and safe refactoring of the CSS code.
