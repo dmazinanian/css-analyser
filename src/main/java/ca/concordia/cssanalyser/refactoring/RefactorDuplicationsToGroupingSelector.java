@@ -34,6 +34,16 @@ public class RefactorDuplicationsToGroupingSelector {
 	Logger LOGGER = FileLogger.getLogger(RefactorDuplicationsToGroupingSelector.class);
 
 	private StyleSheet originalStyleSheet;
+    private boolean domFreeDeps = false;
+
+    /**
+     * @param domFreeDeps whether to use the DOM free dependency detector
+     */
+    public RefactorDuplicationsToGroupingSelector(StyleSheet styleSheet,
+                                                  boolean domFreeDeps) {
+		originalStyleSheet = styleSheet;
+        this.domFreeDeps = domFreeDeps;
+	}
 
 	public RefactorDuplicationsToGroupingSelector(StyleSheet styleSheet) {
 		originalStyleSheet = styleSheet;
@@ -234,7 +244,7 @@ public class RefactorDuplicationsToGroupingSelector {
 
 					refactoringWasPossible = true;
 
-					CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(refactoredAndOrdered, dom);
+					CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(refactoredAndOrdered, dom, domFreeDeps);
 
 					if (writeIntermediateFiles)
 						IOHelper.writeStringToFile(refactoredAndOrdered.toString(), folderName + "/refactored-reordered" + refactoringRound + ".css");

@@ -21,15 +21,41 @@ public class CSSDependencyDetector {
 
 	private final Document document;
 	private final StyleSheet styleSheet;
+    private boolean domFreeDeps = false;
 
-	public CSSDependencyDetector(StyleSheet styleSheet, Document dom) {
+	public CSSDependencyDetector(StyleSheet styleSheet,
+                                 Document dom) {
 		this.document = dom;
 		this.styleSheet = styleSheet;
 	}
 
+    /**
+     * @param domFreeDeps whether to use dom-free dependency detector
+     */
 	public CSSDependencyDetector(StyleSheet styleSheet) {
 		this.document = null;
 		this.styleSheet = styleSheet;
+	}
+
+    /**
+     * @param domFreeDeps whether to use dom-free dependency detector
+     */
+	public CSSDependencyDetector(StyleSheet styleSheet,
+                                 Document dom,
+                                 boolean domFreeDeps) {
+		this.document = dom;
+		this.styleSheet = styleSheet;
+        this.domFreeDeps = domFreeDeps;
+	}
+
+    /**
+     * @param domFreeDeps whether to use dom-free dependency detector
+     */
+	public CSSDependencyDetector(StyleSheet styleSheet,
+                                 boolean domFreeDeps) {
+		this.document = null;
+		this.styleSheet = styleSheet;
+        this.domFreeDeps = domFreeDeps;
 	}
 
 	public Document getDocument() {
@@ -52,8 +78,11 @@ public class CSSDependencyDetector {
 		// Finding overriding dependencies across selectors
 		if (this.document == null) {
 			// Find property overriding dependencies inside selectors
-			// dependencies = findIntraSelectorDependencies();
-            dependencies = findDomFreeSelectorDependencies();
+            if (domFreeDeps) {
+                dependencies = findDomFreeSelectorDependencies();
+            } else {
+                dependencies = findIntraSelectorDependencies();
+            }
 		} else {
 			dependencies = findInterSelectorDependencies();
 

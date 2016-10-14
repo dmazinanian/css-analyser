@@ -22,27 +22,27 @@ import ca.concordia.cssanalyser.io.IOHelper;
  *
  */
 class ParametersParser {
-	
+
 	private static Logger LOGGER = FileLogger.getLogger(ParametersParser.class);
-	
+
 	@Option(name="--mode", usage="Mode")
 	private ProgramMode mode;
-	
+
 	@Option(name="--url", usage="Url for analysis")
     private String url;
-	
+
 	@Option(name="--min-sup", usage="Minimum support count for duplicated declarations")
 	private int minsup;
-	
+
 	@Option(name="--max-declarations", usage="Maximum number of declarations extracted in each mixin")
 	private int maxDeclarations = -1;
-	
+
 	@Option(name="--max-calls", usage="Maximum numbef of times a mixin is called")
 	private int maxCalls = -1;
-	
+
 	@Option(name="--max-parameters", usage="Maximum number of the involved parameters")
 	private int maxParameters = -1;
-	
+
 	@Option(name="--out-folder", usage="Folder for the output stuff")
 	private String outFolder;
 
@@ -54,9 +54,12 @@ class ParametersParser {
 
 	@Option(name="--urls-file", usage="File containing the list of URLs for analysis")
 	private String urlsFile;
-	
+
 	@Option(name="--input-file", usage="File containing the list of URLs for analysis")
 	private String inputFile;
+
+    @Option(name="--dom-free-deps", usage="Infer dependencies without the aid of a DOM (please set up ./intersection-tool.sh)")
+    private boolean domFreeDeps;
 
 	private final CmdLineParser parser;
 
@@ -83,7 +86,7 @@ class ParametersParser {
 			toReturn = toReturn + "/";
 		return toReturn;
 	}
-	
+
 	public ProgramMode getProgramMode() {
 		if (mode == null) {
 			LOGGER.info("No mode parameters is provided. CRAWL mode is selected by default.");
@@ -91,7 +94,7 @@ class ParametersParser {
 		}
 		return mode;
 	}
-	
+
 	public String getOutputFolderPath() {
 		if (outFolder == null) {
 			outFolder = formatPath(System.getProperty("user.dir"));
@@ -99,15 +102,15 @@ class ParametersParser {
 		}
 		return outFolder;
 	}
-	
+
 	public String getInputFolderPath() {
 		return inFolder;
 	}
-	
+
 	public String getUrl() {
 		return url;
 	}
-	
+
 	/**
 	 * Returns minimum support count for FP-Growth.
 	 * The minimum (and default) value is 2.
@@ -117,7 +120,7 @@ class ParametersParser {
 		if (minsup < 2) {
 			minsup = 2;
 			LOGGER.warn("Invalid number (or nothing) was given for minimum support count (--min-sup), 2 is selected by default.");
-		}	
+		}
 		return minsup;
 	}
 
@@ -129,34 +132,34 @@ class ParametersParser {
 	public String getListOfFoldersPathsToBeAnayzedFile() {
 		return foldersFile;
 	}
-	
+
 	public String getListOfURLsToAnalyzeFilePath() {
 		return urlsFile;
 	}
-	
+
 	public int getMaxDeclarations() {
 		return maxDeclarations;
 	}
-	
+
 	public int getMaxParameters() {
 		return maxParameters;
 	}
-	
+
 	public int getMaxCalls() {
 		return maxCalls;
 	}
-	
+
 	/**
 	 * Returns a list of paths to the URLs,
 	 * which are provided in the url list file using --urlsfile:path/to/file
 	 * @return
 	 */
 	public Collection<? extends String> getURLs() {
-		
+
 		List<String> urls = new ArrayList<>();
-		
+
 		try {
-			
+
 			String file = IOHelper.readFileToString(getListOfURLsToAnalyzeFilePath());
 			String[] lines = file.split("\n|\r|\r\n");
 			for (String line : lines) {
@@ -167,11 +170,11 @@ class ParametersParser {
 					urls.add(line);
 				}
 			}
-			
+
 		} catch (IOException ioe) {
 			LOGGER.error("Error reading file " + getListOfURLsToAnalyzeFilePath());
 		}
-		
+
 		return urls;
 	}
 
@@ -180,9 +183,9 @@ class ParametersParser {
 	 * @return
 	 */
 	public Collection<? extends String> getFoldersListToBeAnalyzed() {
-		
+
 		List<String> folderPaths = new ArrayList<>();
-		
+
 		try {
 			String folderPathsFile = getListOfFoldersPathsToBeAnayzedFile();
 			String file = IOHelper.readFileToString(folderPathsFile);
@@ -199,7 +202,7 @@ class ParametersParser {
 						folderPaths.add(path);
 					else
 						LOGGER.warn("\"" + path + "\" is not a valid relative or abolute path.");
-						
+
 				}
 			}
 		} catch (IOException ioe) {
@@ -207,7 +210,7 @@ class ParametersParser {
 		}
 		return folderPaths;
 	}
-	
+
 	@Override
 	public String toString() {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -218,4 +221,8 @@ class ParametersParser {
 	public String getFilePath() {
 		return inputFile;
 	}
+
+    public boolean getDomFreeDeps() {
+        return domFreeDeps;
+    }
 }
