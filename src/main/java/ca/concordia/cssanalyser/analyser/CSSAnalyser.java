@@ -281,9 +281,9 @@ public class CSSAnalyser {
 				BatchGroupingRefactoringResult refactoringResults;
 				RefactorDuplicationsToGroupingSelector refactorDuplications = new RefactorDuplicationsToGroupingSelector(styleSheet, domFreeDeps);
 				if (!dontUseDOM) {
-					refactoringResults = refactorDuplications.refactorGroupingOpportunities(MIN_SUPPORT, analyticsFolderPath, fpgrowthResults, model.getDocument(), true);
+					refactoringResults = refactorDuplications.refactorGroupingOpportunities(MIN_SUPPORT, analyticsFolderPath, fpgrowthResults, model.getDocument(), true, false);
 				} else {
-					refactoringResults = refactorDuplications.refactorGroupingOpportunities(MIN_SUPPORT, analyticsFolderPath, fpgrowthResults, true);
+					refactoringResults = refactorDuplications.refactorGroupingOpportunities(MIN_SUPPORT, analyticsFolderPath, fpgrowthResults, true, domFreeDeps);
 				}
 				end = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 				time = (end - start) / 1000000L;

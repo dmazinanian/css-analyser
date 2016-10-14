@@ -118,10 +118,11 @@ public class RefactorDuplicationsToGroupingSelector {
 	 * @param MIN_SUPPORT
 	 * @param folderName
 	 * @param fpgrowthResults
+     * @param domFreeDeps whether to calculate deps without dom if no dom
 	 * @return
 	 */
-	public BatchGroupingRefactoringResult refactorGroupingOpportunities(final int MIN_SUPPORT, String folderName, List<ItemSetList> fpgrowthResults,  boolean writeIntermediateFiles) {
-		return refactorGroupingOpportunities(MIN_SUPPORT, folderName, fpgrowthResults, null, writeIntermediateFiles);
+	public BatchGroupingRefactoringResult refactorGroupingOpportunities(final int MIN_SUPPORT, String folderName, List<ItemSetList> fpgrowthResults,  boolean writeIntermediateFiles, boolean domFreeDeps) {
+		return refactorGroupingOpportunities(MIN_SUPPORT, folderName, fpgrowthResults, null, writeIntermediateFiles, domFreeDeps);
 	}
 
 	/**
@@ -131,13 +132,14 @@ public class RefactorDuplicationsToGroupingSelector {
 	 * @param folderName The folder to which the files should be written to
 	 * @param fpgrowthResults
 	 * @param dom
+     * @param domFreeDeps whether to calculate dependencies without dom
 	 * @return
 	 */
-	public BatchGroupingRefactoringResult refactorGroupingOpportunities(int MIN_SUPPORT, String folderName,	List<ItemSetList> fpgrowthResults, Document dom, boolean writeIntermediateFiles) {
+	public BatchGroupingRefactoringResult refactorGroupingOpportunities(int MIN_SUPPORT, String folderName,	List<ItemSetList> fpgrowthResults, Document dom, boolean writeIntermediateFiles, boolean domFreeDeps) {
 
 		StyleSheet stylesheetToBeRefactored = this.originalStyleSheet;
 
-		CSSValueOverridingDependencyList originalDependencies = stylesheetToBeRefactored.getValueOverridingDependencies(dom);
+		CSSValueOverridingDependencyList originalDependencies = stylesheetToBeRefactored.getValueOverridingDependencies(dom, domFreeDeps);
 
 		IOHelper.writeStringToFile(originalDependencies.toString(), folderName + "/orderDependencies.txt");
 
@@ -220,7 +222,7 @@ public class RefactorDuplicationsToGroupingSelector {
 				ex.printStackTrace();
 			}
 
-			CSSValueOverridingDependencyList refactoredDependencies = newStyleSheet.getValueOverridingDependencies(dom);
+			CSSValueOverridingDependencyList refactoredDependencies = newStyleSheet.getValueOverridingDependencies(dom, domFreeDeps);
 
 			LOGGER.info("Checking differences in the dependencies " + refactoredDependencies);
 			CSSDependencyDifferenceList differences = originalDependencies.getDifferencesWith(refactoredDependencies);
@@ -244,12 +246,12 @@ public class RefactorDuplicationsToGroupingSelector {
 
 					refactoringWasPossible = true;
 
-					CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(refactoredAndOrdered, dom, domFreeDeps);
+					CSSDependencyDetector dependencyDetector2 = new CSSDependencyDetector(refactoredAndOrdered, dom);
 
 					if (writeIntermediateFiles)
 						IOHelper.writeStringToFile(refactoredAndOrdered.toString(), folderName + "/refactored-reordered" + refactoringRound + ".css");
 
-					CSSValueOverridingDependencyList dependenciesReordered = dependencyDetector2.findOverridingDependancies();
+					CSSValueOverridingDependencyList dependenciesReordered = dependencyDetector2.findOverridingDependancies(domFreeDeps);
 					differences = originalDependencies.getDifferencesWith(dependenciesReordered);
 
 					if (differences.size() > 0) {

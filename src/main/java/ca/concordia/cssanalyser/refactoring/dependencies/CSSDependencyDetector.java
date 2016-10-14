@@ -21,7 +21,6 @@ public class CSSDependencyDetector {
 
 	private final Document document;
 	private final StyleSheet styleSheet;
-    private boolean domFreeDeps = false;
 
 	public CSSDependencyDetector(StyleSheet styleSheet,
                                  Document dom) {
@@ -29,33 +28,9 @@ public class CSSDependencyDetector {
 		this.styleSheet = styleSheet;
 	}
 
-    /**
-     * @param domFreeDeps whether to use dom-free dependency detector
-     */
 	public CSSDependencyDetector(StyleSheet styleSheet) {
 		this.document = null;
 		this.styleSheet = styleSheet;
-	}
-
-    /**
-     * @param domFreeDeps whether to use dom-free dependency detector
-     */
-	public CSSDependencyDetector(StyleSheet styleSheet,
-                                 Document dom,
-                                 boolean domFreeDeps) {
-		this.document = dom;
-		this.styleSheet = styleSheet;
-        this.domFreeDeps = domFreeDeps;
-	}
-
-    /**
-     * @param domFreeDeps whether to use dom-free dependency detector
-     */
-	public CSSDependencyDetector(StyleSheet styleSheet,
-                                 boolean domFreeDeps) {
-		this.document = null;
-		this.styleSheet = styleSheet;
-        this.domFreeDeps = domFreeDeps;
 	}
 
 	public Document getDocument() {
@@ -71,7 +46,7 @@ public class CSSDependencyDetector {
 	 * It doesn't take into account the specificity of selectors.
 	 * @return
 	 */
-	public CSSValueOverridingDependencyList findOverridingDependancies() {
+	public CSSValueOverridingDependencyList findOverridingDependancies(boolean domFreeDeps) {
 
 		CSSValueOverridingDependencyList dependencies;
 
