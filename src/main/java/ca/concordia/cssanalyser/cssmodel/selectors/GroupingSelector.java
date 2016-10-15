@@ -17,7 +17,8 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 
 	private Set<BaseSelector> listOfBaseSelectors;
 	private int hashCode = -1;
-	
+	private int selectorHashCode = -1;
+
 	public GroupingSelector() {
 		this(new LocationInfo());
 	}
@@ -31,7 +32,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 	public Iterable<BaseSelector> getBaseSelectors() {
 		return listOfBaseSelectors;
 	}
-	
+
 	public int getBaseSelectorsSize() {
 		return listOfBaseSelectors.size();
 	}
@@ -44,7 +45,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		// The parent of the selector must be the grouping selector
 		super.addDeclaration(declaration);
 	}
-	
+
 	@Override
 	public void removeDeclaration(Declaration d) {
 		hashCode = -1;
@@ -52,7 +53,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 			baseSelector.removeDeclaration(d);
 		super.removeDeclaration(d);
 	}
-	
+
 	@Override
 	public Iterator<BaseSelector> iterator() {
 		return listOfBaseSelectors.iterator();
@@ -64,10 +65,10 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		for (BaseSelector baseSelector : listOfBaseSelectors)
 			result.append(baseSelector + ", ");
 		// Remove last , and space
-		result.delete(result.length() - 2, result.length()); 
+		result.delete(result.length() - 2, result.length());
 		return result.toString();
 	}
-	
+
 	/**
 	 * Returns true of the list of selector for both
 	 * GroupingSelector are the same, regardless of the
@@ -100,6 +101,24 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		return true;
 	}
 
+	/**
+     * @param considerMediaQueryLists
+	 * @return hashCode that ignores location info
+	 */
+	@Override
+	public int selectorHashCode(boolean considerMediaQueryLists) {
+        if (selectorHashCode == -1) {
+            selectorHashCode = 0;
+            if (considerMediaQueryLists)
+                selectorHashCode += mediaQueryListsHashCode();
+            for (Selector selector : listOfBaseSelectors) {
+                selectorHashCode += selector.selectorHashCode(considerMediaQueryLists);
+            }
+        }
+		return selectorHashCode;
+	}
+
+
 	private boolean generalEquals(Object otherSelector) {
 		if (otherSelector == null)
 			return false;
@@ -109,11 +128,11 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 			return false;
 		return true;
 	}
-	
+
 	/**
 	 * Two grouped selectors are equal if they are
-	 * in the same line and columns in the file and 
-	 * their atomic selectors are equal. The order of 
+	 * in the same line and columns in the file and
+	 * their atomic selectors are equal. The order of
 	 * selectors are important for being equal.
 	 */
 	@Override
@@ -122,7 +141,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 			return false;
 		return obj.hashCode() == hashCode();
 	}
-	
+
 	@Override
 	public int hashCode() {
 		if (hashCode == -1) {
@@ -199,8 +218,8 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 	@Override
 	public <T> T[] toArray(T[] arg0) {
 		return listOfBaseSelectors.toArray(arg0);
-	}	
-	
+	}
+
 	@Override
 	public Selector clone() {
 		GroupingSelector newOne = new GroupingSelector();
@@ -218,7 +237,7 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 	@Override
 	public String getXPath() throws UnsupportedSelectorToXPathException {
 		StringBuilder xPath = new StringBuilder();
-		for (BaseSelector atomicSelector : listOfBaseSelectors) 
+		for (BaseSelector atomicSelector : listOfBaseSelectors)
 			xPath.append(atomicSelector.getXPath() + " | ");
 		if (xPath.length() > 3)
 			xPath.delete(xPath.length() - 3, xPath.length());
@@ -229,5 +248,5 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 	public CSSValueOverridingDependencyList getIntraSelectorOverridingDependencies() {
 		return CSSDependencyDetector.getValueOverridingDependenciesForSelector(this.listOfBaseSelectors.iterator().next());
 	}
-	
+
 }

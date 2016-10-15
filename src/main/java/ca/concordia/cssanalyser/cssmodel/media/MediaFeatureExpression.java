@@ -8,14 +8,14 @@ import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
  *
  */
 public class MediaFeatureExpression extends CSSModelObject {
-	
+
 	private final String feature;
 	private String expression;
-	
+
 	public MediaFeatureExpression(String feature) {
 		this(feature, "");
 	}
-	
+
 	public MediaFeatureExpression(String feature, String expression) {
 		this.feature = feature;
 		this.expression = expression;
@@ -28,12 +28,12 @@ public class MediaFeatureExpression extends CSSModelObject {
 	public String getExpression() {
 		return expression;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "(" + feature + 
+		return "(" + feature +
 				(!"".equals(expression) ? ": " + expression : "") +
-				")"; 
+				")";
 	}
 
 	@Override
@@ -65,9 +65,9 @@ public class MediaFeatureExpression extends CSSModelObject {
 		}
 		return mediaFeatureEquals(other);
 	}
-	
+
 	/**
-	 * Compares two media features only based on 
+	 * Compares two media features only based on
 	 * their expressions and features
 	 * @param other
 	 * @return
@@ -86,7 +86,19 @@ public class MediaFeatureExpression extends CSSModelObject {
 		return true;
 	}
 
+    /**
+     * @return hashCode not based on location
+     */
+    public int mediaFeatureHashCode() {
+        int hashCode = 0;
+        if (feature != null)
+            hashCode += feature.hashCode();
+        if (expression != null)
+            hashCode += expression.hashCode();
+        return hashCode;
+    }
+
 	public MediaFeatureExpression clone() {
 		return new MediaFeatureExpression(feature, expression);
-	}	
+	}
 }

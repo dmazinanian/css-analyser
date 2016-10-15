@@ -19,7 +19,7 @@ public class MediaQuery extends CSSModelObject {
 	private final MediaQueryPrefix prefix;
 	private String mediaType;
 	private final Set<MediaFeatureExpression> mediaFeatureExpresions;
-	
+
 
 	public MediaQuery(String mediaTypeName) {
 		this(null, mediaTypeName);
@@ -34,15 +34,15 @@ public class MediaQuery extends CSSModelObject {
 	public String getMediaType() {
 		return mediaType;
 	}
-	
+
 	public void addMediaFeatureExpression(MediaFeatureExpression expression) {
 		mediaFeatureExpresions.add(expression);
 	}
-	
+
 	public Iterable<MediaFeatureExpression> getMediaFeatureExpressions() {
 		return mediaFeatureExpresions;
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder toReturn = new StringBuilder();
@@ -111,9 +111,9 @@ public class MediaQuery extends CSSModelObject {
 			return false;
 		return true;
 	}
-	
+
 	/**
-	 * Compares two media queries only based on 
+	 * Compares two media queries only based on
 	 * their media types, prefixes and media feature expressions.
 	 * Media feature expressions are checked with {@link MediaFeatureExpression#mediaFeatureEquals()}}.
 	 * The order of media feature expressions is not important
@@ -147,9 +147,32 @@ public class MediaQuery extends CSSModelObject {
 				}
 				if (!found)
 					return false;
-			}			
+			}
 		}
-		
+
 		return true;
 	}
+
+
+	/**
+	 * hashCode only based on their media types, prefixes and media feature expressions.
+	 * Media feature expressions are checked with {@link MediaFeatureExpression#mediaFeatureHashCode()}}.
+	 * The order of media feature expressions is not important
+	 * @return
+	 */
+	public int mediaQueryHashCode() {
+        int hashCode = 0;
+		if (mediaType != null)
+            hashCode += mediaType.hashCode();
+		hashCode += prefix.hashCode();
+
+        if (mediaFeatureExpresions != null) {
+			for (MediaFeatureExpression mediaFeatureExpression : mediaFeatureExpresions) {
+                hashCode += mediaFeatureExpression.mediaFeatureHashCode();
+			}
+		}
+
+		return hashCode;
+	}
+
 }

@@ -22,14 +22,14 @@ import ca.concordia.cssanalyser.dom.DOMNodeWrapperList;
 
 
 /**
- * An atomic element selector, is a selector 
+ * An atomic element selector, is a selector
  * in the format element#id.class1.class2....:PseudoClass1...:PseudoClassK::PseudoElement
- * 
+ *
  * @author Davood Mazinanian
  *
  */
 public class SimpleSelector extends BaseSelector {
-	
+
 	private String selectedElementName = "";
 	private List<String> selectedClasses;
 	private String selectedID = "";
@@ -37,7 +37,8 @@ public class SimpleSelector extends BaseSelector {
 	private List<PseudoClass> pseudoClasses;
 	private List<PseudoElement> pseudoElements;
 	private int hashCode = -1;
-	
+	private int selectorHashCode = -1;
+
 	private static final Logger LOGGER = FileLogger.getLogger(SimpleSelector.class);
 
 	public SimpleSelector() {
@@ -53,15 +54,15 @@ public class SimpleSelector extends BaseSelector {
 	}
 
 	/**
-	 * 
-	 * @param 	parent Parent GroupingSelector object. In a selector 
-	 * 			like "p, div", the "p, div" is a parent GroupingSelector
-	 * 			object and "p" and "div" would be the atomic element selectors
+	 *
+	 * @param	parent Parent GroupingSelector object. In a selector
+	 *			like "p, div", the "p, div" is a parent GroupingSelector
+	 *			object and "p" and "div" would be the atomic element selectors
 	 * @param fileLineNumber
-	 * 			Line number of the source of container stylesheet.
+	 *			Line number of the source of container stylesheet.
 	 * @param fileColumnNumber
-	 * 			Column number of the source of container stylesheet.
-	 * 
+	 *			Column number of the source of container stylesheet.
+	 *
 	 */
 	public SimpleSelector(GroupingSelector parent, LocationInfo locationInfo) {
 		super(parent, locationInfo);
@@ -79,12 +80,12 @@ public class SimpleSelector extends BaseSelector {
 	public String getSelectedElementName() {
 		return selectedElementName;
 	}
-	
+
 	public void addClassName(String className) {
 		hashCode = -1;
 		selectedClasses.add(className);
 	}
-	
+
 	public List<String> getClassNames() {
 		return selectedClasses;
 	}
@@ -93,7 +94,7 @@ public class SimpleSelector extends BaseSelector {
 		hashCode = -1;
 		selectedID = idName;
 	}
-	
+
 	/**
 	 * Returns the ID of the current selector. For example,
 	 * selector "#test" would have "test" as its ID name
@@ -113,7 +114,7 @@ public class SimpleSelector extends BaseSelector {
 		hashCode = -1;
 		conditions.add(condition);
 	}
-	
+
 	public List<SelectorCondition> getConditions() {
 		return conditions;
 	}
@@ -122,7 +123,7 @@ public class SimpleSelector extends BaseSelector {
 		hashCode = -1;
 		pseudoClasses.add(pseudoClass);
 	}
-	
+
 	/**
 	 * Returns all PseudoClasses of current selector
 	 * @return
@@ -139,7 +140,7 @@ public class SimpleSelector extends BaseSelector {
 		hashCode = -1;
 		pseudoElements.add(pseudoElement);
 	}
-	
+
 	/**
 	 * Returns the pseudo elements of current selector (like ::selector)
 	 * @return
@@ -147,19 +148,19 @@ public class SimpleSelector extends BaseSelector {
 	public List<PseudoElement> getPseudoElements() {
 		return pseudoElements;
 	}
-	
+
 	@Override
 	public boolean selectorEquals(Selector otherSelector, boolean considerMediaQueryLists) {
 		if (!generalEquals(otherSelector))
 			return false;
-		
+
 		SimpleSelector otherSimpleSelector = (SimpleSelector)otherSelector;
-		
+
 		if (!((selectedElementName.equalsIgnoreCase(otherSimpleSelector.selectedElementName) ||
 				("*".equals(selectedElementName.trim()) && "".equals(otherSimpleSelector.selectedElementName.trim())) ||
 				("".equals(selectedElementName.trim()) && "*".equals(otherSimpleSelector.selectedElementName.trim()))) &&
 				selectedID.equalsIgnoreCase(otherSimpleSelector.selectedID) &&
-				selectedClasses.size() == otherSimpleSelector.selectedClasses.size() && 
+				selectedClasses.size() == otherSimpleSelector.selectedClasses.size() &&
 					selectedClasses.containsAll(otherSimpleSelector.selectedClasses) &&
 				conditions.size() == otherSimpleSelector.conditions.size() &&
 					conditions.containsAll(otherSimpleSelector.conditions) &&
@@ -167,16 +168,41 @@ public class SimpleSelector extends BaseSelector {
 				pseudoElements.equals(otherSimpleSelector.pseudoElements))) {
 			return false;
 		}
-		
+
 		if (considerMediaQueryLists)
 			return mediaQueryListsEqual(otherSimpleSelector);
-		
+
 		return true;
 	}
-	
+
+
+	@Override
+	public int selectorHashCode(boolean considerMediaQueryLists) {
+		if (selectorHashCode == -1) {
+			hashCode = 17;
+			hashCode = 31 * hashCode + getLocationInfo().hashCode();
+			if (selectedID != null)
+				hashCode = 31 * hashCode + ("#" + selectedID).hashCode();
+			if (selectedElementName != null)
+				hashCode = 31 * hashCode + selectedElementName.hashCode();
+			for (String c : selectedClasses)
+				hashCode += ("." + c).hashCode();
+			for (SelectorCondition condition : conditions)
+				hashCode += (condition == null ? 0 : condition.hashCode());
+			for (PseudoClass pseudoClass : pseudoClasses)
+				hashCode = 31 * hashCode + (pseudoClass == null ? 0 : pseudoClass.hashCode());
+			for (PseudoElement pElement : pseudoElements)
+				hashCode = 31 * hashCode + (pElement == null ? 0 : pElement.hashCode());
+			if (mediaQueryLists != null)
+				hashCode = 31 * hashCode + mediaQueryLists.hashCode();
+		}
+		return hashCode;
+	}
+
+
 	/**
 	 * Two atomic element selectors are equal
-	 * if they are in the same line anc column in the file, 
+	 * if they are in the same line anc column in the file,
 	 */
 	@Override
 	public boolean equals(Object obj) {
@@ -224,7 +250,7 @@ public class SimpleSelector extends BaseSelector {
 		StringBuilder result = new StringBuilder();
 		if (selectedElementName != null) {
 			if (!selectedElementName.equals("*") || (
-					"".equals(selectedID) && 
+					"".equals(selectedID) &&
 					selectedClasses.size() == 0 &&
 					conditions.size() == 0 &&
 					pseudoClasses.size() == 0 &&
@@ -256,33 +282,33 @@ public class SimpleSelector extends BaseSelector {
 		newOne.selectedClasses = new ArrayList<>();
 		for (String clazz : selectedClasses)
 			newOne.addClassName(clazz);
-		
+
 		newOne.selectedID = selectedID;
-		
+
 		newOne.conditions = new ArrayList<>();
 		for (SelectorCondition condition : this.conditions)
 			newOne.addCondition(condition.clone());
-		
+
 		newOne.pseudoClasses = new ArrayList<>();
 		for (PseudoClass pseudoClass : this.pseudoClasses)
 			newOne.addPseudoClass(pseudoClass.clone());
-		
+
 		newOne.pseudoElements = new ArrayList<>();
 		for (PseudoElement pseudoElement : this.pseudoElements)
 			newOne.addPseudoElement(pseudoElement.clone());
-		
+
 		for (Declaration d : this.declarations.keySet())
 			newOne.addDeclaration(d.clone());
-		
+
 		return newOne;
 	}
-	
+
 	/**
 	 * Returns the condition based on the given value which could be an+b, even, odd
 	 * @param function
 	 * @param value
 	 * @return
-	 * @throws UnsupportedSelectorToXPathException 
+	 * @throws UnsupportedSelectorToXPathException
 	 */
 	protected String getPositionCondition(String function, String value) throws UnsupportedSelectorToXPathException {
 		// Treat even and odd as the general an+b pattern
@@ -290,22 +316,22 @@ public class SimpleSelector extends BaseSelector {
 			value = "2n";
 		else if ("odd".equals(value))
 			value = "2n+1";
-		
-		/* 
+
+		/*
 		 * Based on http://www.w3.org/TR/css3-selectors/#nth-child-pseudo
 		 */
 		String patternString = "(([-+]?(?:\\d+)?)[nN])?+\\s*([-+]?\\s*\\d+)?";
-		
+
 		Pattern pattern = Pattern.compile(patternString);
 		Matcher matcher = pattern.matcher(value);
-		
+
 		//if (!Pattern.matches(patternString, value))
-		//	return null; 
+		//	return null;
 		if (!matcher.matches())
 			throw new UnsupportedSelectorToXPathException(this); // To select nothing, if the pattern is not correct
-		
+
 		try {
-		
+
 			String aString = matcher.group(2);
 			/*
 			 * In cases like +n or -n, we have the aString would be + or -
@@ -318,12 +344,12 @@ public class SimpleSelector extends BaseSelector {
 			if ("+".equals(aString) || "-".equals(aString))
 				aString += "1";
 			int a = Integer.valueOf(aString);
-			
+
 			String bString = matcher.group(3);
 			if (bString == null)
 				bString = "0";
 			int b = Integer.valueOf(bString);
-			
+
 			if (a != 0) {// "an" or "an+b"
 
 				String s = "";
@@ -332,41 +358,41 @@ public class SimpleSelector extends BaseSelector {
 				} else { // nth-last-child
 					s = "((position() + (%s)) mod -(%s) = 0) and (position() < (last() - (%s)))";
 				}
-				
+
 				return String.format(s, b, a, b);
-				
+
 			} else {
 
 				String s = "";
 				if ("nth-child".equals(function) || "nth-of-type".equals(function)) {
-					s = "position() - (%s) = 0";	
+					s = "position() - (%s) = 0";
 				} else { // nth-last-child
 					s = "position() + (%s - 1) = last()";
 				}
-				
+
 				return String.format(s, b);
 
 			}
-		
+
 		} catch (Exception ex) {
 			LOGGER.warn("Error in an+b pattern: " + value);
 			throw new UnsupportedSelectorToXPathException(this);
 		}
-		
+
 	}
-	
+
 	protected String getXPathConditionsString(List<String> xpathConditions) throws UnsupportedSelectorToXPathException {
-		
-		/* 
+
+		/*
 		 * We will postpone adding the element name to the XPath.
 		 * The reason is, for some of the selectors, we need to add the
-		 * element name to a place which is not right after beginning "//" 
+		 * element name to a place which is not right after beginning "//"
 		 */
 		boolean elementAdded = false;
 
 		String prefix = "";
-		
-		if (this.getElementID() != "") 
+
+		if (this.getElementID() != "")
 			xpathConditions.add(String.format("@id='%s'", this.getElementID()));
 
 		if (this.getClassNames().size() > 0) {
@@ -376,10 +402,10 @@ public class SimpleSelector extends BaseSelector {
 		}
 
 		if (this.getPseudoClasses().size() > 0) {
-			// TODO: Move this code to the PseudoClass class?? 
+			// TODO: Move this code to the PseudoClass class??
 			for (PseudoClass pseudoClass : this.getPseudoClasses()) {
 				/* In case if the pseudo class is unsupported, we need to return an
-				 * empty string so the analyzer would skip this selector 
+				 * empty string so the analyzer would skip this selector
 				 */
 				if (pseudoClass.isPseudoclassWithNoXpathEquivalence())
 					//throw new UnsupportedSelectorToXPathException(this);
@@ -395,9 +421,9 @@ public class SimpleSelector extends BaseSelector {
 				case "nth-last-child":
 					// Select the element if it is the first, last, first nth or last nth child of its parent
 
-					/* 
+					/*
 					 * In these cases the xpath condition would start with name() = 'elementName'
-					 * (if elementName != *) and we will add more conditions to it. 
+					 * (if elementName != *) and we will add more conditions to it.
 					 */
 					String xpathCondition = "";
 					if (!"*".equals(this.getSelectedElementName()))
@@ -412,7 +438,7 @@ public class SimpleSelector extends BaseSelector {
 					// Treat first and last as nth-first and nth-last
 					if ("first-child".equals(function)) {
 						// treat as nth-child(1)
-						value = "1"; 
+						value = "1";
 						function = "nth-child";
 					}
 					else if ("last-child".equals(function)) {
@@ -440,7 +466,7 @@ public class SimpleSelector extends BaseSelector {
 					// Treat first and last as nth-first and nth-last
 					if ("first-of-type".equals(function)) {
 						// treat as nth-of-type(1)
-						value = "1"; 
+						value = "1";
 						function = "nth-of-type";
 					}
 					else if ("last-of-type".equals(function)) {
@@ -449,7 +475,7 @@ public class SimpleSelector extends BaseSelector {
 						function = "nth-last-of-type";
 					}
 
-					xpathCondition = getPositionCondition(function, value);					
+					xpathCondition = getPositionCondition(function, value);
 					xpathConditions.add(xpathCondition);
 					break;
 
@@ -460,32 +486,32 @@ public class SimpleSelector extends BaseSelector {
 					xpathConditions.add("(last() = 1)");
 					break;
 				case "only-child":
-					/* 
-					 * Select the element if it is the only child of its parent 
+					/*
+					 * Select the element if it is the only child of its parent
 					 * xpath must be //* /*[(name = '%s') and (last() = 1)]
 					 */
 					prefix = "*/*";
 					String s = "";
 					if (!"*".equals(this.getSelectedElementName()))
 						s = String.format("(name() = '%s') and ", this.getSelectedElementName().toUpperCase());
-					
+
 					xpathConditions.add(s + "(last() = 1)");
 					elementAdded = true;
 					break;
 				case "empty":
-					/* 
-					 * Select the element if it has no children and text nodes 
+					/*
+					 * Select the element if it has no children and text nodes
 					 * xpath must be element[not(*) and not(normalize-space())]
 					 */
 					xpathConditions.add("not(*) and not(normalize-space())");
 					break;
 				case "checked":
 					/*
-					 * Select only input and option elements which are selected 
+					 * Select only input and option elements which are selected
 					 */
 					xpathConditions.add("(@selected or @checked) and (name() = 'INPUT' or name() = 'OPTION')");
 					break;
-				case "contains": 
+				case "contains":
 					/*
 					 * Seems to be deprecated, but we are supporting it
 					 */
@@ -507,7 +533,7 @@ public class SimpleSelector extends BaseSelector {
 					break;
 				case "root":
 					/*
-					 * Name must be the same as the name of the root element, 
+					 * Name must be the same as the name of the root element,
 					 * and it should not have any other parents
 					 */
 					xpathConditions.add("(name() = name(/*) and (name(..) = ''))");
@@ -532,7 +558,7 @@ public class SimpleSelector extends BaseSelector {
 					xpathConditions.add(String.format("contains(concat(' ', normalize-space(@%s), ' '), ' %s ')", condition.getAttributeName(), condition.getValue()));
 					break;
 				case VALUE_ENDS_WITH:
-					xpathConditions.add(String.format("substring(@%s, string-length(@%s) - %s) = '%s'", 
+					xpathConditions.add(String.format("substring(@%s, string-length(@%s) - %s) = '%s'",
 							condition.getAttributeName(), condition.getAttributeName(), condition.getValue().length() - 1, condition.getValue()));
 					break;
 				case VALUE_EQUALS_EXACTLY:
@@ -553,11 +579,11 @@ public class SimpleSelector extends BaseSelector {
 		// Currently, no support for pseudo elements like ::selector
 
 		if (!elementAdded) {
-			prefix = "*"; 
+			prefix = "*";
 			if (!"*".equals(this.getSelectedElementName()) && !"".equals(this.getSelectedElementName()))
 				xpathConditions.add(String.format("name() = '%s'", this.getSelectedElementName().toUpperCase()));
 		}
-		
+
 		return prefix;
 	}
 
@@ -568,7 +594,7 @@ public class SimpleSelector extends BaseSelector {
 		if (!this.selectedID .equals(""))
 			toReturn[0] = 1;
 		// count the number of class selectors, attributes selectors, and pseudo-classes in the selector (= b)
-		// ignore negation pseudo class, while counting the inner selector as a 
+		// ignore negation pseudo class, while counting the inner selector as a
 		toReturn[1] = selectedClasses.size() + conditions.size();
 		for (PseudoClass pseudoClass : pseudoClasses)
 			if (pseudoClass instanceof NegationPseudoClass) {
@@ -583,7 +609,7 @@ public class SimpleSelector extends BaseSelector {
 		// count the number of type selectors and pseudo-elements in the selector (= c)
 		// ignore the universal selector
 		toReturn[2] += pseudoElements.size() + (selectedElementName.equals("*") ? 0 : 1);
-		
+
 		return toReturn;
 	}
 
@@ -596,7 +622,7 @@ public class SimpleSelector extends BaseSelector {
 			for (int i = 0; i < nodes.getLength(); i++) {
 				toReturn.add(new DOMNodeWrapper(nodes.item(i), unsupportedPseudoClasses));
 			}
-			
+
 		} catch (BadXPathException | UnsupportedSelectorToXPathException e) {
 			e.printStackTrace();
 		}

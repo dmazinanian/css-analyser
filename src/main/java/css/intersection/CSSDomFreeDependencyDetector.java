@@ -64,6 +64,8 @@ public class CSSDomFreeDependencyDetector {
                 SelDec sd = (SelDec)o;
                 return this.selector_number == sd.selector_number &&
                        this.declaration_number == sd.declaration_number &&
+                       // selector equals kind of makes sense here because
+                       // location is important for dependency
                        this.selector.equals(sd.selector) &&
                        this.declaration.equals(sd.declaration);
             }
@@ -112,6 +114,46 @@ public class CSSDomFreeDependencyDetector {
             this.property = property;
         }
     }
+
+
+    /**
+     * Commutative pair of selector strings for hash key
+     */
+    private static class SelPair {
+        public BaseSelector sel1;
+        public BaseSelector sel2;
+
+        public SelPair() { }
+
+        public SelPair(BaseSelector sel1, BaseSelector sel2) {
+            this.sel1 = sel1;
+            this.sel2 = sel2;
+        }
+
+        public boolean equals(Object o) {
+            if (o instanceof SelPair) {
+                SelPair s = (SelPair)o;
+                // use selectorEquals since it ignores location and we don't
+                // care about those for overlapping
+                return ((sel1.selectorEquals(s.sel1, false) &&
+                         sel2.selectorEquals(s.sel2, false)) ||
+                        (sel1.selectorEquals(s.sel2, false) &&
+                         sel2.selectorEquals(s.sel1, false)));
+            }
+            return false;
+        }
+
+        public int hashCode() {
+            return sel1.selectorHashCode(false) +
+                   sel2.selectorHashCode(false);
+        }
+    }
+
+    // Memoize calls to overlap checker for all instances
+    private static Map<SelPair, Boolean> overlapMemo
+        = new HashMap<SelPair, Boolean>();
+    // Temp SelPair to avoid creating objects just to check membership
+    private static SelPair tempSelPair = new SelPair();
 
 
     // (p, spec) -> { ... (s, d) ... }
@@ -189,9 +231,14 @@ public class CSSDomFreeDependencyDetector {
                 for (SelDec sd2 : sds) {
                     if (!sd1.equals(sd2) &&
                         !sd1.declaration.equals(sd2.declaration)) {
-                        empOut.write(sd1.selector + "\n");
-                        empOut.write(sd2.selector + "\n");
-                        tasks.add(new DependencyTask(sd1, sd2, property));
+                        Boolean memoRes = getMemoResult(sd1.selector, sd2.selector);
+                        if (memoRes == null) {
+                            empOut.write(sd1.selector + "\n");
+                            empOut.write(sd2.selector + "\n");
+                            tasks.add(new DependencyTask(sd1, sd2, property));
+                        } else if (memoRes.equals(Boolean.TRUE)) {
+                            dependencies.add(makeDependency(sd1, sd2, property));
+                        }
                     }
                 }
             }
@@ -202,33 +249,13 @@ public class CSSDomFreeDependencyDetector {
 
         // get results
         for (DependencyTask t : tasks) {
-            SelDec sd1 = t.sd1;
-            SelDec sd2 = t.sd2;
-            String property = t.property;
-            CSSInterSelectorValueOverridingDependency dep;
-
             int result = empIn.read();
 
             if ((char)result == 'N') {
-                if (sd1.preceeds(sd2)) {
-                    dep = new CSSInterSelectorValueOverridingDependency(
-                                    sd1.selector,
-                                    sd1.declaration,
-                                    sd2.selector,
-                                    sd2.declaration,
-                                    property,
-                                    InterSelectorDependencyReason.DUE_TO_CASCADING);
-                } else {
-                    dep = new CSSInterSelectorValueOverridingDependency(
-                                    sd2.selector,
-                                    sd2.declaration,
-                                    sd1.selector,
-                                    sd1.declaration,
-                                    property,
-                                    InterSelectorDependencyReason.DUE_TO_CASCADING);
-                }
-
-                dependencies.add(dep);
+                dependencies.add(makeDependency(t.sd1, t.sd2, t.property));
+                setMemoResult(t.sd1.selector, t.sd2.selector, true);
+            } else {
+                setMemoResult(t.sd1.selector, t.sd2.selector, false);
             }
         }
 
@@ -241,27 +268,62 @@ public class CSSDomFreeDependencyDetector {
         return dependencies;
     }
 
-    private boolean selectorsOverlap(BaseSelector s1,
-                                     BaseSelector s2) {
-        if (emptinessChecker == null)
-            return true;
 
-        try {
-            empOut.write(s1 + "\n");
-            empOut.write(s2 + "\n");
-            empOut.flush();
+    /**
+     * @param sel1
+     * @param sel2
+     * @return null if overlap test of pair not memoed, boolean for true if
+     * there is an overlap, boolean of false if not
+     */
+    private Boolean getMemoResult(BaseSelector sel1,
+                                  BaseSelector sel2) {
+        tempSelPair.sel1 = sel1;
+        tempSelPair.sel2 = sel2;
+        return overlapMemo.get(tempSelPair);
+    }
 
-            int result = empIn.read();
+    /**
+     * Memoizes overlap result
+     *
+     * @param sel1
+     * @param sel2
+     * @param overlap true if sel1 and sel2 can overlap
+     */
+    private void setMemoResult(BaseSelector sel1,
+                               BaseSelector sel2,
+                               boolean overlap) {
+        SelPair sp = new SelPair(sel1, sel2);
+        overlapMemo.put(sp, Boolean.valueOf(overlap));
+    }
 
-            if (result == -1)
-                throw new IOException("Unexpected end of python emptiness checker input stream.");
-
-            return result != 'E';
-        } catch (IOException e) {
-            LOGGER.error("Error communicating with python emptiness checker, assuming all selectors overlap." + e);
-            emptinessChecker = null;
-            return true;
+    /**
+     * @param sd1
+     * @param sd2
+     * @param property the property that sd1 and sd2 pertain to
+     * @return a new dependency object calculate by order of sd1 and sd2
+     */
+    private CSSInterSelectorValueOverridingDependency makeDependency(SelDec sd1,
+                                                                     SelDec sd2,
+                                                                     String property) {
+        CSSInterSelectorValueOverridingDependency dep;
+        if (sd1.preceeds(sd2)) {
+            dep = new CSSInterSelectorValueOverridingDependency(
+                            sd1.selector,
+                            sd1.declaration,
+                            sd2.selector,
+                            sd2.declaration,
+                            property,
+                            InterSelectorDependencyReason.DUE_TO_CASCADING);
+        } else {
+            dep = new CSSInterSelectorValueOverridingDependency(
+                            sd2.selector,
+                            sd2.declaration,
+                            sd1.selector,
+                            sd1.declaration,
+                            property,
+                            InterSelectorDependencyReason.DUE_TO_CASCADING);
         }
+        return dep;
     }
 
 
