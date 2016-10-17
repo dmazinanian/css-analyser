@@ -161,9 +161,9 @@ public class CSSDomFreeDependencyDetector {
         = new HashMap<PropSpec, Set<SelDec>>();
     private StyleSheet styleSheet;
 
-    private Process emptinessChecker;
-    private OutputStreamWriter empOut;
-    private InputStreamReader empIn;
+    private static Process emptinessChecker = null;
+    private static OutputStreamWriter empOut = null;
+    private static InputStreamReader empIn = null;
 
     public CSSDomFreeDependencyDetector(StyleSheet styleSheet) {
         this.styleSheet = styleSheet;
@@ -193,14 +193,16 @@ public class CSSDomFreeDependencyDetector {
                                   PYTHON_COMMAND +
                                   " script to start emptiness checker tool (you probably want a script that runs \"python <path to our main.py> -e\"");
 
-        emptinessChecker =
-            new ProcessBuilder().command(PYTHON_COMMAND).start();
+        if (emptinessChecker == null) {
+            emptinessChecker =
+                new ProcessBuilder().command(PYTHON_COMMAND).start();
 
-        OutputStream out = emptinessChecker.getOutputStream();
-        empOut = new OutputStreamWriter(out);
+            OutputStream out = emptinessChecker.getOutputStream();
+            empOut = new OutputStreamWriter(out);
 
-        InputStream in = emptinessChecker.getInputStream();
-        empIn = new InputStreamReader(in);
+            InputStream in = emptinessChecker.getInputStream();
+            empIn = new InputStreamReader(in);
+        }
     }
 
     /**
@@ -248,8 +250,9 @@ public class CSSDomFreeDependencyDetector {
             }
         }
 
-        // close, forcing python to flush
-        empOut.close();
+        // force python to flush
+        empOut.write(".\n");
+        empOut.flush();
 
         long midTime = System.currentTimeMillis();
 
