@@ -17,6 +17,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 
 import ca.concordia.cssanalyser.app.FileLogger;
+import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
@@ -36,17 +37,11 @@ public class CSSDomFreeDependencyDetector {
     private static class SelDec {
         public BaseSelector selector;
         public Declaration declaration;
-        public int selector_number;
-        public int declaration_number;
 
         public SelDec(BaseSelector selector,
-                      Declaration declaration,
-                      int selector_number,
-                      int declaration_number) {
+                      Declaration declaration) {
             this.selector = selector;
             this.declaration = declaration;
-            this.selector_number = selector_number;
-            this.declaration_number = declaration_number;
         }
 
         /**
@@ -54,17 +49,21 @@ public class CSSDomFreeDependencyDetector {
          * @return true iff this declaration preceeds sd in the styleSheet
          */
         public boolean preceeds(SelDec sd) {
-            return ((this.selector_number < sd.selector_number) ||
-                    ((this.selector_number == sd.selector_number) &&
-                     (this.declaration_number < sd.declaration_number)));
+            LocationInfo li1 = selector.getSelectorNameLocationInfo();
+            LocationInfo li2 = sd.selector.getSelectorNameLocationInfo();
+
+            int line1 = li1.getLineNumber();
+            int line2 = li2.getLineNumber();
+
+            return ((line1 < line2) ||
+                    ((line1 == line2) &&
+                     (li1.getColumnNumber() < li2.getColumnNumber())));
         }
 
         public boolean equals(Object o) {
             if (o instanceof SelDec) {
                 SelDec sd = (SelDec)o;
-                return this.selector_number == sd.selector_number &&
-                       this.declaration_number == sd.declaration_number &&
-                       // selector equals kind of makes sense here because
+                return // selector equals kind of makes sense here because
                        // location is important for dependency
                        this.selector.equals(sd.selector) &&
                        this.declaration.equals(sd.declaration);
@@ -227,8 +226,13 @@ public class CSSDomFreeDependencyDetector {
             String property = e.getKey().property;
             Set<SelDec> sds = e.getValue();
 
-            for (SelDec sd1 : sds) {
-                for (SelDec sd2 : sds) {
+            SelDec[] sdArray = sds.toArray(new SelDec[sds.size()]);
+            int len = sdArray.length;
+
+            for (int i = 0; i < len; ++i) {
+                for (int j = i + 1; j < len; ++j) {
+                    SelDec sd1 = sdArray[i];
+                    SelDec sd2 = sdArray[j];
                     if (!sd1.equals(sd2) &&
                         !sd1.declaration.equals(sd2.declaration)) {
                         Boolean memoRes = getMemoResult(sd1.selector, sd2.selector);
@@ -246,6 +250,14 @@ public class CSSDomFreeDependencyDetector {
 
         // close, forcing python to flush
         empOut.close();
+
+        long midTime = System.currentTimeMillis();
+
+        LOGGER.info("Number of dependencies tasks " +
+                    tasks.size() +
+                    " calculated in " +
+                    (midTime - startTime) +
+                    "ms.");
 
         // get results
         for (DependencyTask t : tasks) {
@@ -335,14 +347,12 @@ public class CSSDomFreeDependencyDetector {
 
         for (Selector s : styleSheet.getAllSelectors()) {
             for (Declaration d : s.getDeclarations()) {
-                int sn = styleSheet.getSelectorNumber(s);
-                int dn = s.getDeclarationNumber(d);
                 if (s instanceof BaseSelector) {
-                    addNewRule((BaseSelector)s, d, sn, dn);
+                    addNewRule((BaseSelector)s, d);
                 } else if (s instanceof GroupingSelector) {
                     GroupingSelector g = (GroupingSelector)s;
                     for (BaseSelector bs : g) {
-                        addNewRule(bs, d, sn, dn);
+                        addNewRule(bs, d);
                     }
                 }
             }
@@ -358,9 +368,7 @@ public class CSSDomFreeDependencyDetector {
      * @param declaration_number the number of the declaration
      */
     private void addNewRule(BaseSelector s,
-                            Declaration d,
-                            int selector_number,
-                            int declaration_number) {
+                            Declaration d) {
         int specificity = s.getSpecificity();
         PropSpec ps = new PropSpec(d.getProperty(), specificity);
         Set<SelDec> sds = overlapMap.get(ps);
@@ -368,7 +376,7 @@ public class CSSDomFreeDependencyDetector {
             sds = new HashSet<SelDec>();
             overlapMap.put(ps, sds);
         }
-        sds.add(new SelDec(s, d, selector_number, declaration_number));
+        sds.add(new SelDec(s, d));
     }
 
 }

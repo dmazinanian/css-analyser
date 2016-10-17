@@ -11,19 +11,19 @@ import java.util.Set;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDifference.CSSDependencyDifferenceType;
 
 /**
- * 
+ *
  */
 
 /**
  * A list of CSS dependencies. Backed by an ArrayList
- * 
+ *
  * @author Davood Mazinanian
- * 
+ *
  */
 public abstract class CSSDependencyList<T extends CSSDependency<?>> implements List<T> {
-	
+
 	protected List<T> dependencies = new ArrayList<>();
-	
+
 	@Override
 	public int size() {
 		return dependencies.size();
@@ -92,9 +92,10 @@ public abstract class CSSDependencyList<T extends CSSDependency<?>> implements L
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		for (CSSDependency<?> dependency : dependencies) {
-			builder.append(dependency + System.lineSeparator());
-		}
+        // Don't print 000s of these every iteration!
+		//for (CSSDependency<?> dependency : dependencies) {
+		//	builder.append(dependency + System.lineSeparator());
+		//}
 		builder.append(System.lineSeparator());
 		builder.append("Total number of dependencies: ").append(dependencies.size());
 		return builder.toString();
@@ -102,7 +103,7 @@ public abstract class CSSDependencyList<T extends CSSDependency<?>> implements L
 
 	@Override
 	public boolean addAll(int index, Collection<? extends T> c) {
-		
+
 		return dependencies.addAll(index, c);
 	}
 
@@ -151,12 +152,12 @@ public abstract class CSSDependencyList<T extends CSSDependency<?>> implements L
 		return dependencies.subList(fromIndex, toIndex);
 	}
 
-	
-	
+
+
 	public CSSDependencyDifferenceList getDifferencesWith(CSSDependencyList<?> otherDependencyList) {
-		
+
 		CSSDependencyDifferenceList toReturn = new CSSDependencyDifferenceList();
-		
+
 		List<CSSDependency<?>> missing = new ArrayList<>();
 		List<CSSDependency<?>> added = new ArrayList<>();
 
@@ -185,21 +186,21 @@ public abstract class CSSDependencyList<T extends CSSDependency<?>> implements L
 				}
 			}
 		}
-		
+
 		Set<Integer> toRemoveFromMissing = new HashSet<>();
 		Set<Integer> toRemoveFromAdded = new HashSet<>();
-		
+
 		for (int i = 0; i < missing.size(); i++) {
 			//if (toRemoveFromMissing.contains(i))
 			//	continue;
 			CSSDependency<?> d = missing.get(i);
-			
+
 			for (int j = 0; j < added.size(); j++) {
 				//if (toRemoveFromAdded.contains(j))
 				//	continue;
 				CSSDependency<?> rd = added.get(j);
-				
-				if (rd.getStartingNode().nodeEquals(d.getEndingNode()) && 
+
+				if (rd.getStartingNode().nodeEquals(d.getEndingNode()) &&
 						d.getStartingNode().nodeEquals(rd.getEndingNode()) &&
 						(rd.getDependencyLabels().containsAll(d.getDependencyLabels()) || d.getDependencyLabels().containsAll(rd.getDependencyLabels()))) {
 					toRemoveFromMissing.add(i);
@@ -208,12 +209,12 @@ public abstract class CSSDependencyList<T extends CSSDependency<?>> implements L
 				}
 			}
 		}
-		
+
 		for (int i = 0; i < missing.size(); i++) {
 			if (!toRemoveFromMissing.contains(i))
 				toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.MISSING, missing.get(i)));
 		}
-		
+
 		for (int i = 0; i < added.size(); i++) {
 			if (!toRemoveFromAdded.contains(i))
 				toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.ADDED, added.get(i)));
