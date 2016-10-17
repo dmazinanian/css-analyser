@@ -164,6 +164,7 @@ public class CSSDomFreeDependencyDetector {
     private static Process emptinessChecker = null;
     private static OutputStreamWriter empOut = null;
     private static InputStreamReader empIn = null;
+    private static long totalTime = 0;
 
     public CSSDomFreeDependencyDetector(StyleSheet styleSheet) {
         this.styleSheet = styleSheet;
@@ -276,9 +277,14 @@ public class CSSDomFreeDependencyDetector {
 
         long endTime = System.currentTimeMillis();
 
+        long thisTime = endTime - startTime;
+        totalTime += thisTime;
+
         LOGGER.info("Calculating dependencies took " +
-                    (endTime - startTime) +
-                    "ms.");
+                    thisTime +
+                    "ms (total: " +
+                    totalTime +
+                    "ms).");
 
         return dependencies;
     }
