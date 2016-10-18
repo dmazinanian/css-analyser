@@ -43,6 +43,8 @@ import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessMixinDeclaratio
 import ca.concordia.cssanalyser.preprocessors.empiricalstudy.EmpiricalStudy;
 import ca.concordia.cssanalyser.preprocessors.util.less.ImportInliner;
 
+import css.intersection.CSSDomFreeDependencyDetector;
+
 public class CSSAnalyserCLI {
 
 	public static Logger LOGGER = FileLogger.getLogger(CSSAnalyserCLI.class);
@@ -77,6 +79,9 @@ public class CSSAnalyserCLI {
 			break;
 		default:
 		}
+
+        // Seems hacky to have to call this, but such is life
+        CSSDomFreeDependencyDetector.killExecutor();
 	}
 
 	interface ProcessLessFiles {

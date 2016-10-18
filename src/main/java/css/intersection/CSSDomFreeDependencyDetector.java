@@ -200,6 +200,13 @@ public class CSSDomFreeDependencyDetector {
         }
     }
 
+    /**
+     * Needs to be called for program to terminate!
+     */
+    public static void killExecutor() {
+        executor.shutdown();
+    }
+
     private void startPython() throws IOException {
         File pythonCommand = new File(PYTHON_COMMAND);
         if (!pythonCommand.exists())
