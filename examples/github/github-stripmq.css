@@ -2445,6 +2445,11 @@ a.tabnav-extra:hover {
   border-right-color: rgba(0,0,0,0.8);
 }
 
+/**
+ * MATT: changed from 
+ *     .tooltipped-multiline: after
+ * because of parsing error
+ */
 .tooltipped-multiline:after {
   width: -webkit-max-content;
   width: -moz-max-content;

@@ -235,7 +235,7 @@ public class CSSDomFreeDependencyDetector {
 
 		CSSValueOverridingDependencyList dependencies = new CSSValueOverridingDependencyList();
 
-        // for creating tasks, null will be the final poison task
+        // for creating tasks, finish with a poison task
         BlockingQueue<DependencyTask> tasks = new LinkedBlockingQueue<DependencyTask>();
 
         // first post all comparisons to python in an executor
@@ -254,7 +254,8 @@ public class CSSDomFreeDependencyDetector {
                             SelDec sd2 = sdArray[j];
                             if (!sd1.equals(sd2) &&
                                 !sd1.declaration.equals(sd2.declaration)) {
-                                Boolean memoRes = getMemoResult(sd1.selector, sd2.selector);
+                                Boolean memoRes = getMemoResult(sd1.selector,
+                                                                sd2.selector);
                                 if (memoRes == null) {
                                     empOut.write(sd1.selector + "\n");
                                     empOut.write(sd2.selector + "\n");
