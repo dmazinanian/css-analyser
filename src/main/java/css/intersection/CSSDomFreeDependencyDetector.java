@@ -13,6 +13,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import org.slf4j.Logger;
 
@@ -96,14 +100,18 @@ public class CSSDomFreeDependencyDetector {
     }
 
     /**
-     * To overcome slowness in communicating with python, we're going to run a
-     * number of different instances that take tasks from a BlockingQueue whose
-     * end is marked by a "poison" task.
+     * Tasks are created then sent to Python which writes the result back later.
+     * A poison task marks the end of the created tasks
      */
     private static class DependencyTask {
-        public SelDec sd1;
+        public static final DependencyTask POISON = new DependencyTask();
+
+        public SelDec sd1 = null;
         public SelDec sd2;
         public String property;
+
+        // poison
+        public DependencyTask() { }
 
         public DependencyTask(SelDec sd1,
                               SelDec sd2,
@@ -111,6 +119,10 @@ public class CSSDomFreeDependencyDetector {
             this.sd1 = sd1;
             this.sd2 = sd2;
             this.property = property;
+        }
+
+        public boolean isPoison() {
+            return this.sd1 == null;
         }
     }
 
@@ -165,6 +177,7 @@ public class CSSDomFreeDependencyDetector {
     private static OutputStreamWriter empOut = null;
     private static InputStreamReader empIn = null;
     private static long totalTime = 0;
+    private static ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public CSSDomFreeDependencyDetector(StyleSheet styleSheet) {
         this.styleSheet = styleSheet;
@@ -222,57 +235,76 @@ public class CSSDomFreeDependencyDetector {
 
 		CSSValueOverridingDependencyList dependencies = new CSSValueOverridingDependencyList();
 
-        List<DependencyTask> tasks = new LinkedList<DependencyTask>();
+        // for creating tasks, null will be the final poison task
+        BlockingQueue<DependencyTask> tasks = new LinkedBlockingQueue<DependencyTask>();
 
-        // first post all comparisons to python
-        for (Map.Entry<PropSpec, Set<SelDec>> e : overlapMap.entrySet()) {
-            String property = e.getKey().property;
-            Set<SelDec> sds = e.getValue();
+        // first post all comparisons to python in an executor
+        executor.submit(() -> {
+            try {
+                for (Map.Entry<PropSpec, Set<SelDec>> e : overlapMap.entrySet()) {
+                    String property = e.getKey().property;
+                    Set<SelDec> sds = e.getValue();
 
-            SelDec[] sdArray = sds.toArray(new SelDec[sds.size()]);
-            int len = sdArray.length;
+                    SelDec[] sdArray = sds.toArray(new SelDec[sds.size()]);
+                    int len = sdArray.length;
 
-            for (int i = 0; i < len; ++i) {
-                for (int j = i + 1; j < len; ++j) {
-                    SelDec sd1 = sdArray[i];
-                    SelDec sd2 = sdArray[j];
-                    if (!sd1.equals(sd2) &&
-                        !sd1.declaration.equals(sd2.declaration)) {
-                        Boolean memoRes = getMemoResult(sd1.selector, sd2.selector);
-                        if (memoRes == null) {
-                            empOut.write(sd1.selector + "\n");
-                            empOut.write(sd2.selector + "\n");
-                            tasks.add(new DependencyTask(sd1, sd2, property));
-                        } else if (memoRes.equals(Boolean.TRUE)) {
-                            dependencies.add(makeDependency(sd1, sd2, property));
+                    for (int i = 0; i < len; ++i) {
+                        for (int j = i + 1; j < len; ++j) {
+                            SelDec sd1 = sdArray[i];
+                            SelDec sd2 = sdArray[j];
+                            if (!sd1.equals(sd2) &&
+                                !sd1.declaration.equals(sd2.declaration)) {
+                                Boolean memoRes = getMemoResult(sd1.selector, sd2.selector);
+                                if (memoRes == null) {
+                                    empOut.write(sd1.selector + "\n");
+                                    empOut.write(sd2.selector + "\n");
+                                    tasks.add(new DependencyTask(sd1, sd2, property));
+                                } else if (memoRes.equals(Boolean.TRUE)) {
+                                    CSSInterSelectorValueOverridingDependency dep
+                                        = makeDependency(sd1, sd2, property);
+                                    synchronized (dependencies) {
+                                        dependencies.add(dep);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+
+                // force python to flush
+                empOut.write(".\n");
+                empOut.flush();
+            } catch (IOException ex) {
+                LOGGER.error("Exception generating dependency tasks!" + ex);
+                System.exit(-1);
+            } finally {
+                tasks.add(DependencyTask.POISON);
             }
-        }
+        });
 
-        // force python to flush
-        empOut.write(".\n");
-        empOut.flush();
+        // get results while the executor above is generating them
+        try {
+            while (true) {
+                DependencyTask t = tasks.take();
+                if (t.isPoison())
+                    break;
 
-        long midTime = System.currentTimeMillis();
+                int result = empIn.read();
 
-        LOGGER.info("Number of dependencies tasks " +
-                    tasks.size() +
-                    " calculated in " +
-                    (midTime - startTime) +
-                    "ms.");
-
-        // get results
-        for (DependencyTask t : tasks) {
-            int result = empIn.read();
-
-            if ((char)result == 'N') {
-                dependencies.add(makeDependency(t.sd1, t.sd2, t.property));
-                setMemoResult(t.sd1.selector, t.sd2.selector, true);
-            } else {
-                setMemoResult(t.sd1.selector, t.sd2.selector, false);
+                if ((char)result == 'N') {
+                    CSSInterSelectorValueOverridingDependency dep
+                        = makeDependency(t.sd1, t.sd2, t.property);
+                    synchronized (dependencies) {
+                        dependencies.add(dep);
+                    }
+                    setMemoResult(t.sd1.selector, t.sd2.selector, true);
+                } else {
+                    setMemoResult(t.sd1.selector, t.sd2.selector, false);
+                }
             }
+        } catch (InterruptedException ex) {
+            LOGGER.error("Interrupted during task consumption: " + ex);
+            System.exit(-1);
         }
 
         long endTime = System.currentTimeMillis();
@@ -298,9 +330,12 @@ public class CSSDomFreeDependencyDetector {
      */
     private Boolean getMemoResult(BaseSelector sel1,
                                   BaseSelector sel2) {
-        tempSelPair.sel1 = sel1;
-        tempSelPair.sel2 = sel2;
-        return overlapMemo.get(tempSelPair);
+        // because buildOverlapMap is multithreaded
+        synchronized (overlapMemo) {
+            tempSelPair.sel1 = sel1;
+            tempSelPair.sel2 = sel2;
+            return overlapMemo.get(tempSelPair);
+        }
     }
 
     /**
@@ -313,8 +348,11 @@ public class CSSDomFreeDependencyDetector {
     private void setMemoResult(BaseSelector sel1,
                                BaseSelector sel2,
                                boolean overlap) {
-        SelPair sp = new SelPair(sel1, sel2);
-        overlapMemo.put(sp, Boolean.valueOf(overlap));
+        // because buildOverlapMap is multithreaded
+        synchronized (overlapMemo) {
+            SelPair sp = new SelPair(sel1, sel2);
+            overlapMemo.put(sp, Boolean.valueOf(overlap));
+        }
     }
 
     /**

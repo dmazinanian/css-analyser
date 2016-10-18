@@ -18,55 +18,55 @@ public class LessCSSParser implements CSSParser {
 
 	@Override
 	public StyleSheet parseCSSString(String css) throws ParseException {
-		
+
 		com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet = getLessStyleSheet(new LessSource.StringSource(css));
-		
+
 		try {
-			
+
 			LessStyleSheetAdapter adapter = new LessStyleSheetAdapter(lessStyleSheet);
 			return adapter.getAdaptedStyleSheet();
-			
+
 		} catch (RuntimeException ex) {
 			throw new ParseException(ex);
-		}	
+		}
 	}
 
 	@Override
 	public StyleSheet parseExternalCSS(String path) throws ParseException {
-		
+
 		com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet = getLessStyleSheet(new ModifiedLessFileSource(new File(path)));
-		
+
 		try {
-			
+
 			LessStyleSheetAdapter adapter = new LessStyleSheetAdapter(lessStyleSheet);
 			return adapter.getAdaptedStyleSheet();
-			
+
 		} catch (RuntimeException ex) {
 			throw new ParseException(ex);
-		}	
+		}
 
 	}
 
 	public static com.github.sommeri.less4j.core.ast.StyleSheet getLessStyleSheet(LessSource source) throws ParseException {
-		
+
 		ANTLRParser parser = new ANTLRParser();
-		
+
 		ANTLRParser.ParseResult result;
 		ProblemsHandler problemsHandler = new ProblemsHandler();
 		com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet;
 		ASTBuilder astBuilder = new ASTBuilder(problemsHandler);
 		try {
-			
+
 			result = parser.parseStyleSheet(source.getContent(), source);
 
-			lessStyleSheet = astBuilder.parseStyleSheet(result.getTree());			
+			lessStyleSheet = astBuilder.parseStyleSheet(result.getTree());
 
 		} catch (FileNotFound | CannotReadFile | BugHappened ex) {
 			throw new ParseException(ex);
 		}
 		return lessStyleSheet;
 	}
-	
+
 	public static com.github.sommeri.less4j.core.ast.StyleSheet getLessParserFromStyleSheet(StyleSheet styleSheet) throws ParseException {
 
 		if (styleSheet.getFilePath() == null) {
@@ -74,7 +74,7 @@ public class LessCSSParser implements CSSParser {
 		} else {
 			return getLessStyleSheet(new ModifiedLessFileSource(new File(styleSheet.getFilePath())));
 		}
-		
+
 	}
 
 }
