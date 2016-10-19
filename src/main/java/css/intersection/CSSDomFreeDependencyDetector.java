@@ -24,6 +24,7 @@ import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.declaration.value.DeclarationValue;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.GroupingSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
@@ -260,7 +261,7 @@ public class CSSDomFreeDependencyDetector {
                             SelDec sd1 = sdArray[i];
                             SelDec sd2 = sdArray[j];
                             if (!sd1.equals(sd2) &&
-                                !sd1.declaration.equals(sd2.declaration)) {
+                                !declareSameValues(sd1.declaration, sd2.declaration)) {
                                 Boolean memoRes = getMemoResult(sd1.selector,
                                                                 sd2.selector);
                                 if (memoRes == null) {
@@ -324,9 +325,32 @@ public class CSSDomFreeDependencyDetector {
                     thisTime +
                     "ms (total: " +
                     totalTime +
-                    "ms).");
+                    "ms).  Found " +
+                    dependencies.size() +
+                    ".");
 
         return dependencies;
+    }
+
+
+    /**
+     * NOTE: what am i not getting about css-analyser that means i have to
+     * implement this (and so badly)...
+     *
+     * @param d1
+     * @param d2
+     * @return true if the two delcaration agree on their values
+     */
+    private boolean declareSameValues(Declaration d1, Declaration d2) {
+        Set<DeclarationValue> s1 = new HashSet<DeclarationValue>();
+        Set<DeclarationValue> s2 = new HashSet<DeclarationValue>();
+
+        for (DeclarationValue v : d1.getDeclarationValues())
+            s1.add(v);
+        for (DeclarationValue v : d2.getDeclarationValues())
+            s2.add(v);
+
+        return s1.equals(s2);
     }
 
 
