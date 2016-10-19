@@ -179,24 +179,23 @@ public class SimpleSelector extends BaseSelector {
 	@Override
 	public int selectorHashCode(boolean considerMediaQueryLists) {
 		if (selectorHashCode == -1) {
-			hashCode = 17;
-			hashCode = 31 * hashCode + getLocationInfo().hashCode();
+			selectorHashCode = 17;
 			if (selectedID != null)
-				hashCode = 31 * hashCode + ("#" + selectedID).hashCode();
+				selectorHashCode = 31 * selectorHashCode + ("#" + selectedID).hashCode();
 			if (selectedElementName != null)
-				hashCode = 31 * hashCode + selectedElementName.hashCode();
+				selectorHashCode = 31 * selectorHashCode + selectedElementName.hashCode();
 			for (String c : selectedClasses)
-				hashCode += ("." + c).hashCode();
+				selectorHashCode += ("." + c).hashCode();
 			for (SelectorCondition condition : conditions)
-				hashCode += (condition == null ? 0 : condition.hashCode());
+				selectorHashCode += (condition == null ? 0 : condition.hashCode());
 			for (PseudoClass pseudoClass : pseudoClasses)
-				hashCode = 31 * hashCode + (pseudoClass == null ? 0 : pseudoClass.hashCode());
+				selectorHashCode = 31 * selectorHashCode + (pseudoClass == null ? 0 : pseudoClass.hashCode());
 			for (PseudoElement pElement : pseudoElements)
-				hashCode = 31 * hashCode + (pElement == null ? 0 : pElement.hashCode());
+				selectorHashCode = 31 * selectorHashCode + (pElement == null ? 0 : pElement.hashCode());
 			if (mediaQueryLists != null)
-				hashCode = 31 * hashCode + mediaQueryLists.hashCode();
+				selectorHashCode = 31 * selectorHashCode + mediaQueryLists.hashCode();
 		}
-		return hashCode;
+		return selectorHashCode;
 	}
 
 
@@ -206,9 +205,9 @@ public class SimpleSelector extends BaseSelector {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-
 		if (!generalEquals(obj))
 			return false;
+        // Um...
 		return hashCode() == obj.hashCode();
 	}
 

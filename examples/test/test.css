@@ -1,5 +1,6 @@
 .a {
     font-size: 12pt;
+    border: black solid; 
 }
 
 .b {
@@ -8,6 +9,7 @@
 
 .c {
     font-size: 12pt;
+    border: solid black; 
 }
 
 img {

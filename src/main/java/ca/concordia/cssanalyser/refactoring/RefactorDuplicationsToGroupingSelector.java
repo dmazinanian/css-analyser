@@ -225,11 +225,18 @@ public class RefactorDuplicationsToGroupingSelector {
 			CSSValueOverridingDependencyList refactoredDependencies = newStyleSheet.getValueOverridingDependencies(dom, domFreeDeps);
 
 			LOGGER.info("Checking differences in the dependencies " + refactoredDependencies);
+            long startTime = System.currentTimeMillis();
 			CSSDependencyDifferenceList differences = originalDependencies.getDifferencesWith(refactoredDependencies);
+            long endTime = System.currentTimeMillis();
+            LOGGER.info("Took " + (endTime - startTime) + "ms.");
 
 			if (differences.size() > 0 && !differences.allMissing()) {
 
+                LOGGER.info("Writing to file");
+                startTime = System.currentTimeMillis();
 				IOHelper.writeStringToFile(differences.toString(), folderName + "/dependency-differences" + refactoringRound + ".txt");
+                endTime = System.currentTimeMillis();
+                LOGGER.info("Took " + (endTime - startTime) + "ms.");
 
 				LOGGER.info("Reordering needed at round " + refactoringRound);
 

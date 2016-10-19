@@ -109,6 +109,17 @@ public abstract class Selector extends CSSModelObject  {
 		return selectorEquals(otherSelector, true);
 	}
 
+    /**
+     * Similarly to selectorEquals, selectorHashCode provides a hashCode that
+     * doesn't take into account selector location.
+     *
+     * @param considerMediaQueryLists
+     * @return a hashcode independent of selector location
+     */
+    public int selectorHashCode() {
+        return selectorHashCode(true);
+    }
+
 	/**
 	 * The equals() method for different selectors have different meanings
 	 * but in all of them selectors should be exactly the same and are appeared

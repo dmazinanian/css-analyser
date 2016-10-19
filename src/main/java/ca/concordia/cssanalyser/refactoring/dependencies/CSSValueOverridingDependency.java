@@ -17,36 +17,36 @@ public abstract class CSSValueOverridingDependency extends CSSDependency<String>
 	public Declaration getDeclaration2() {
 		return getEndingNode().getDeclaration();
 	}
-	
+
 	public Selector getSelector1() {
 		return getStartingNode().getSelector();
 	}
 	public Selector getSelector2() {
 		return getEndingNode().getSelector();
 	}
-	
+
 	@Override
 	public CSSValueOverridingDependencyNode getStartingNode() {
 		return (CSSValueOverridingDependencyNode)super.getStartingNode();
 	}
-	
+
 	@Override
 	public CSSValueOverridingDependencyNode getEndingNode() {
 		return (CSSValueOverridingDependencyNode)super.getEndingNode();
 	}
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result
-				+ ((getStartingNode() == null) ? 0 : getStartingNode().hashCode());
+				+ ((getStartingNode() == null) ? 0 : getStartingNode().nodeHashCode());
 		result = prime * result + ((getLabelsString() == null) ? 0 : getLabelsString().hashCode());
-		result = prime * result + ((getEndingNode() == null) ? 0 : getEndingNode().hashCode());
+		result = prime * result + ((getEndingNode() == null) ? 0 : getEndingNode().nodeHashCode());
 		return result;
 	}
 
-		
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -73,7 +73,7 @@ public abstract class CSSValueOverridingDependency extends CSSDependency<String>
 			return false;
 		return true;
 	}
-	
+
 	/**
 	 * TODO
 	 * @param selector
@@ -83,7 +83,7 @@ public abstract class CSSValueOverridingDependency extends CSSDependency<String>
 		//return getSelector1().selectorEquals(selector) || getSelector2().selectorEquals(selector);
 		return getDeclaration1().getSelector().selectorEquals(selector) || getDeclaration2().getSelector().selectorEquals(selector);
 	}
-	
+
 	@Override
 	public int getSpecialHashCode() {
 		return getSpecialHashCode(this.getSelector1(), this.getDeclaration1(), this.getSelector2(), this.getDeclaration2());
@@ -92,7 +92,7 @@ public abstract class CSSValueOverridingDependency extends CSSDependency<String>
 	public static int getSpecialHashCode(Selector s1, Declaration d1, Selector s2, Declaration d2) {
 		return (s1 + "$" + d1 + " -> " + s2 + "$" + d2).hashCode();
 	}
-	
+
 	@Override
 	public String toString() {
 		return getStartingNode() + " -> " + getEndingNode() + "(" + getLabelsString() + ")";

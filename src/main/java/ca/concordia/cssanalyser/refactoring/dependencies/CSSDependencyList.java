@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
+import org.slf4j.Logger;
+
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDifference.CSSDependencyDifferenceType;
 
 /**
@@ -21,6 +24,8 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDifference
  *
  */
 public abstract class CSSDependencyList<T extends CSSDependency<?>> implements List<T> {
+
+	Logger LOGGER = FileLogger.getLogger(CSSDependencyList.class);
 
 	protected List<T> dependencies = new ArrayList<>();
 
@@ -92,9 +97,10 @@ public abstract class CSSDependencyList<T extends CSSDependency<?>> implements L
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		for (CSSDependency<?> dependency : dependencies) {
-			builder.append(dependency + System.lineSeparator());
-		}
+        // Don't output 000s of rules
+		//for (CSSDependency<?> dependency : dependencies) {
+		//	builder.append(dependency + System.lineSeparator());
+		//}
 		builder.append(System.lineSeparator());
 		builder.append("Total number of dependencies: ").append(dependencies.size());
 		return builder.toString();
@@ -157,67 +163,134 @@ public abstract class CSSDependencyList<T extends CSSDependency<?>> implements L
 
 		CSSDependencyDifferenceList toReturn = new CSSDependencyDifferenceList();
 
-		List<CSSDependency<?>> missing = new ArrayList<>();
-		List<CSSDependency<?>> added = new ArrayList<>();
+        long startTime = System.currentTimeMillis();
 
-		for (CSSDependency<?> d : dependencies) {
-			boolean found = false;
-			for (CSSDependency<?> rd : otherDependencyList)
-				if (rd.equals(d)) {
-					found = true;
-					break;
-				}
-			if (!found) {
-				missing.add(d);
-			}
-		}
+        Set<CSSDependency<?>> missing
+            = new HashSet<CSSDependency<?>>(dependencies);
 
-		for (CSSDependency<?> rd : otherDependencyList) {
-			boolean found = false;
-			for (CSSDependency<?> d : dependencies)
-				if (rd.equals(d)) {
-					found = true;
-					break;
-				}
-			if (!found) {
-				if (!found) {
-					added.add(rd);
-				}
-			}
-		}
+        for (CSSDependency<?> d : otherDependencyList)
+            missing.remove(d);
 
-		Set<Integer> toRemoveFromMissing = new HashSet<>();
-		Set<Integer> toRemoveFromAdded = new HashSet<>();
+        // Leaving this here to use when i lose confidence in my improved
+        // difference detection
+        //for (CSSDependency<?> d1 : dependencies)
+        //    for (CSSDependency<?> d2 : otherDependencyList)
+        //        if (d1.equals(d2) && d1.hashCode() != d2.hashCode()) {
+        //            LOGGER.info("Unequal, hashes " +
+        //                        d1.hashCode() +
+        //                        " and " +
+        //                        d2.hashCode());
+        //            LOGGER.info(d1 + " vs " + d2);
+        //        }
 
-		for (int i = 0; i < missing.size(); i++) {
-			//if (toRemoveFromMissing.contains(i))
-			//	continue;
-			CSSDependency<?> d = missing.get(i);
+        Set<CSSDependency<?>> added
+            = new HashSet<CSSDependency<?>>(otherDependencyList);
+        for (CSSDependency<?> d : dependencies)
+            added.remove(d);
 
-			for (int j = 0; j < added.size(); j++) {
-				//if (toRemoveFromAdded.contains(j))
-				//	continue;
-				CSSDependency<?> rd = added.get(j);
+        long endTime = System.currentTimeMillis();
 
+        LOGGER.info("added/missing took " + (endTime - startTime) + "ms.");
+
+        startTime = System.currentTimeMillis();
+
+		Set<CSSDependency<?>> toRemoveFromMissing = new HashSet<>();
+		Set<CSSDependency<?>> toRemoveFromAdded = new HashSet<>();
+
+		for (CSSDependency<?> d : missing) {
+			for (CSSDependency<?> rd : added) {
 				if (rd.getStartingNode().nodeEquals(d.getEndingNode()) &&
 						d.getStartingNode().nodeEquals(rd.getEndingNode()) &&
 						(rd.getDependencyLabels().containsAll(d.getDependencyLabels()) || d.getDependencyLabels().containsAll(rd.getDependencyLabels()))) {
-					toRemoveFromMissing.add(i);
-					toRemoveFromAdded.add(j);
+					toRemoveFromMissing.add(d);
+					toRemoveFromAdded.add(rd);
 					toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.REVERSED, d));
 				}
 			}
 		}
 
-		for (int i = 0; i < missing.size(); i++) {
-			if (!toRemoveFromMissing.contains(i))
-				toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.MISSING, missing.get(i)));
+        endTime = System.currentTimeMillis();
+
+        LOGGER.info("Finding reversed took " + (endTime - startTime) + "ms.");
+
+        startTime = System.currentTimeMillis();
+
+		for (CSSDependency<?> d : missing) {
+			if (!toRemoveFromMissing.contains(d))
+				toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.MISSING, d));
 		}
 
-		for (int i = 0; i < added.size(); i++) {
-			if (!toRemoveFromAdded.contains(i))
-				toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.ADDED, added.get(i)));
+		for (CSSDependency<?> d : added) {
+			if (!toRemoveFromAdded.contains(d))
+				toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.ADDED, d));
 		}
+
+        endTime = System.currentTimeMillis();
+
+        LOGGER.info("Finishing up took " + (endTime - startTime) + "ms.");
+
+        //List<CSSDependency<?>> missing = new ArrayList<>();
+		//List<CSSDependency<?>> added = new ArrayList<>();
+
+
+		//for (CSSDependency<?> d : dependencies) {
+		//	boolean found = false;
+		//	for (CSSDependency<?> rd : otherDependencyList)
+		//		if (rd.equals(d)) {
+		//			found = true;
+		//			break;
+		//		}
+		//	if (!found) {
+		//		missing.add(d);
+		//	}
+		//}
+
+		//for (CSSDependency<?> rd : otherDependencyList) {
+		//	boolean found = false;
+		//	for (CSSDependency<?> d : dependencies)
+		//		if (rd.equals(d)) {
+		//			found = true;
+		//			break;
+		//		}
+		//	if (!found) {
+		//		if (!found) {
+		//			added.add(rd);
+		//		}
+		//	}
+		//}
+
+		//Set<CSSDependency<?>> toRemoveFromMissing = new HashSet<>();
+		//Set<CSSDependency<?>> toRemoveFromAdded = new HashSet<>();
+
+		//for (int i = 0; i < missing.size(); i++) {
+		//	//if (toRemoveFromMissing.contains(i))
+		//	//	continue;
+		//	CSSDependency<?> d = missing.get(i);
+
+		//	for (int j = 0; j < added.size(); j++) {
+		//		//if (toRemoveFromAdded.contains(j))
+		//		//	continue;
+		//		CSSDependency<?> rd = added.get(j);
+
+		//		if (rd.getStartingNode().nodeEquals(d.getEndingNode()) &&
+		//				d.getStartingNode().nodeEquals(rd.getEndingNode()) &&
+		//				(rd.getDependencyLabels().containsAll(d.getDependencyLabels()) || d.getDependencyLabels().containsAll(rd.getDependencyLabels()))) {
+		//			toRemoveFromMissing.add(i);
+		//			toRemoveFromAdded.add(j);
+		//			toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.REVERSED, d));
+		//		}
+		//	}
+		//}
+        //
+		//for (int i = 0; i < missing.size(); i++) {
+		//	if (!toRemoveFromMissing.contains(i))
+		//		toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.MISSING, missing.get(i)));
+		//}
+
+		//for (int i = 0; i < added.size(); i++) {
+		//	if (!toRemoveFromAdded.contains(i))
+		//		toReturn.add(new CSSDependencyDifference<>(CSSDependencyDifferenceType.ADDED, added.get(i)));
+		//}
 
 		return toReturn;
 	}

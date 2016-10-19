@@ -3,11 +3,17 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+
+import ca.concordia.cssanalyser.app.FileLogger;
+
 /**
  * selector1 ~ selector2
  * @author Davood Mazinanian
  */
 public class SiblingSelector extends Combinator {
+
+    Logger LOGGER = FileLogger.getLogger(SiblingSelector.class);
 
 	protected final BaseSelector beforeMainSelector;
 	protected final SimpleSelector mainSelector;
@@ -57,6 +63,7 @@ public class SiblingSelector extends Combinator {
 			return false;
 		SiblingSelector otherIndirectAdjacentSelector = (SiblingSelector)otherSelector;
 		return mainSelector.selectorEquals(otherIndirectAdjacentSelector.mainSelector, considerMediaQueryLists) &&
+                getCombinatorCharacter() == otherIndirectAdjacentSelector.getCombinatorCharacter() &&
 				beforeMainSelector.selectorEquals(otherIndirectAdjacentSelector.beforeMainSelector, considerMediaQueryLists);
 
 	}

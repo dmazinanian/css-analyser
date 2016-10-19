@@ -9,8 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+
 import org.w3c.dom.Document;
 
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
@@ -29,6 +32,8 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDepen
  * @author Davood Mazinanian
  */
 public class StyleSheet extends CSSModelObject {
+
+    Logger LOGGER = FileLogger.getLogger(StyleSheet.class);
 
 	private Map<Selector, Integer> selectors;
 	private String cssFilePath;
@@ -275,8 +280,9 @@ public class StyleSheet extends CSSModelObject {
 			selectors.remove(s);
 		// Update the numbers associated with every declaration
 		int i = 1;
-		for (Selector s : selectors.keySet())
+		for (Selector s : selectors.keySet()) {
 			selectors.put(s, i++);
+        }
 	}
 
 	public int getSelectorNumber(Selector selector) {
