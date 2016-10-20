@@ -2,18 +2,12 @@ package ca.concordia.cssanalyser.refactoring;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.slf4j.Logger;
 
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.IntConstraintFactory;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.VariableFactory;
 import org.jgrapht.alg.CycleDetector;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -22,7 +16,6 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOverridingDependency;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOverridingDependency.InterSelectorDependencyReason;
@@ -62,24 +55,10 @@ public class RefactorToSatisfyDependencies {
 	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld, List<Integer> newOrdering) {
 		newOrdering.clear();
 
-        long startTime = System.currentTimeMillis();
-
 		DefaultDirectedGraph<Selector, DefaultEdge> graph
 			= buildDirectedGraph(styleSheet, listOfDependenciesToBeHeld);
 
-        long midTime = System.currentTimeMillis();
-
-        LOGGER.info("Reordering took (building graph): " +
-                    (midTime - startTime));
-
-        boolean notCyclic = graphNotCyclic(graph);
-
-        long midTime2 = System.currentTimeMillis();
-
-        LOGGER.info("Reordering took (cycles): " +
-                    (midTime2 - midTime));
-
-		if (notCyclic) {
+		if (graphNotCyclic(graph)) {
 			StyleSheet refactoredStyleSheet = new StyleSheet();
 
 			// Put the selectors in the style sheet in order
@@ -89,10 +68,6 @@ public class RefactorToSatisfyDependencies {
 				newOrdering.add(selector.getSelectorNumber());
 				refactoredStyleSheet.addSelector(selector);
 			}
-
-            long endTime = System.currentTimeMillis();
-            LOGGER.info("Reordering took (order): " +
-                        (endTime - midTime2));
 
 			return refactoredStyleSheet;
 		}
@@ -115,8 +90,6 @@ public class RefactorToSatisfyDependencies {
 		int count = 0;
 		Selector lastSel = null;
 
-        long startTime = System.currentTimeMillis();
-
 		for (Selector s : styleSheet.getAllSelectors()) {
 			graph.addVertex(s);
 			if (lastSel != null && count < numSels - 1)
@@ -125,17 +98,8 @@ public class RefactorToSatisfyDependencies {
 			count++;
 		}
 
-        long midTime = System.currentTimeMillis();
-        LOGGER.info("Reordering took (adding vertexes and basic edge): " +
-                    (midTime - startTime));
-
 		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToRealSelectorsMap
 				= getDependencyToSelectorsMap(styleSheet, listOfDependenciesToBeHeld);
-
-        long midTime2 = System.currentTimeMillis();
-        LOGGER.info("Reordering took (building map): " +
-                    (midTime2 - midTime));
-
 
 		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
 			if (dependency instanceof CSSInterSelectorValueOverridingDependency) {
@@ -151,10 +115,6 @@ public class RefactorToSatisfyDependencies {
 				}
 			}
 		}
-
-        long endTime = System.currentTimeMillis();
-        LOGGER.info("Reordering took (adding deps): " +
-                    (endTime - midTime2));
 
 		return graph;
 	}
