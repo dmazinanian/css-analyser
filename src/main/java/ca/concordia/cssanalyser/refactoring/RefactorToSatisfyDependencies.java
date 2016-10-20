@@ -54,50 +54,50 @@ public class RefactorToSatisfyDependencies {
 	 * @return
 	 */
 	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld, List<Integer> newOrdering) {
-        newOrdering.clear();
+		newOrdering.clear();
 
-        DefaultDirectedGraph<Selector, DefaultEdge> graph
-            = buildDirectedGraph(styleSheet, listOfDependenciesToBeHeld);
+		DefaultDirectedGraph<Selector, DefaultEdge> graph
+			= buildDirectedGraph(styleSheet, listOfDependenciesToBeHeld);
 
-        if (graphNotCyclic(graph)) {
+		if (graphNotCyclic(graph)) {
 			StyleSheet refactoredStyleSheet = new StyleSheet();
 
 			// Put the selectors in the style sheet in order
-            Iterator<Selector> i = new TopologicalOrderIterator<>(graph);
+			Iterator<Selector> i = new TopologicalOrderIterator<>(graph);
 			while (i.hasNext()) {
-                Selector selector = i.next();
+				Selector selector = i.next();
 				newOrdering.add(selector.getSelectorNumber());
 				refactoredStyleSheet.addSelector(selector);
 			}
 
 			return refactoredStyleSheet;
-        }
+		}
 
-        return null;
-    }
+		return null;
+	}
 
 
 	private DefaultDirectedGraph<Selector, DefaultEdge>
-        buildDirectedGraph(StyleSheet styleSheet,
-                           CSSValueOverridingDependencyList listOfDependenciesToBeHeld) {
+		buildDirectedGraph(StyleSheet styleSheet,
+						   CSSValueOverridingDependencyList listOfDependenciesToBeHeld) {
 
-        DefaultDirectedGraph<Selector, DefaultEdge> graph
-            = new DefaultDirectedGraph<>(DefaultEdge.class);
+		DefaultDirectedGraph<Selector, DefaultEdge> graph
+			= new DefaultDirectedGraph<>(DefaultEdge.class);
 
-        // to enforce minimal changes, selector order should be maintained
-        // except the last selector whose position may move, so add ordering
-        // between each selector and it's previous, except the last
-        int numSels = styleSheet.getNumberOfSelectors();
-        int count = 0;
-        Selector lastSel = null;
+		// to enforce minimal changes, selector order should be maintained
+		// except the last selector whose position may move, so add ordering
+		// between each selector and it's previous, except the last
+		int numSels = styleSheet.getNumberOfSelectors();
+		int count = 0;
+		Selector lastSel = null;
 
 		for (Selector s : styleSheet.getAllSelectors()) {
-            graph.addVertex(s);
-            if (lastSel != null && count < numSels - 1)
-                graph.addEdge(lastSel, s);
-            lastSel = s;
-            count++;
-        }
+			graph.addVertex(s);
+			if (lastSel != null && count < numSels - 1)
+				graph.addEdge(lastSel, s);
+			lastSel = s;
+			count++;
+		}
 
 
 		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToRealSelectorsMap
@@ -112,21 +112,21 @@ public class RefactorToSatisfyDependencies {
 					if (correspondingSelectors == null || correspondingSelectors[0] == null || correspondingSelectors[1] == null)
 						continue;
 
-                    graph.addEdge(correspondingSelectors[0],
-                                  correspondingSelectors[1]);
+					graph.addEdge(correspondingSelectors[0],
+								  correspondingSelectors[1]);
 				}
 			}
 		}
 
-        return graph;
-    }
+		return graph;
+	}
 
 
-    private boolean graphNotCyclic(DefaultDirectedGraph<Selector, DefaultEdge> graph) {
-        CycleDetector<Selector, DefaultEdge> detector
-            = new CycleDetector<>(graph);
-        return !detector.detectCycles();
-    }
+	private boolean graphNotCyclic(DefaultDirectedGraph<Selector, DefaultEdge> graph) {
+		CycleDetector<Selector, DefaultEdge> detector
+			= new CycleDetector<>(graph);
+		return !detector.detectCycles();
+	}
 
 
 	/**
