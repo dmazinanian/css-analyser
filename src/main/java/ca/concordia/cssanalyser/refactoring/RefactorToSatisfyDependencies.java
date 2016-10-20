@@ -54,6 +54,7 @@ public class RefactorToSatisfyDependencies {
 	 * @return
 	 */
 	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld, List<Integer> newOrdering) {
+        newOrdering.clear();
 
         DefaultDirectedGraph<Selector, DefaultEdge> graph
             = buildDirectedGraph(styleSheet, listOfDependenciesToBeHeld);
