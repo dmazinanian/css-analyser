@@ -240,8 +240,13 @@ public class RefactorDuplicationsToGroupingSelector {
 
 				LOGGER.info("Reordering needed at round " + refactoringRound);
 
+                startTime = System.currentTimeMillis();
 				RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
 				StyleSheet refactoredAndOrdered = r.refactorToSatisfyOverridingDependencies(newStyleSheet, originalDependencies);
+                endTime = System.currentTimeMillis();
+                LOGGER.info("Reordering took " +
+                            (endTime - startTime) +
+                            "ms.");
 
 				if (refactoredAndOrdered == null) { // It was not possible to satisfy constraints
 
