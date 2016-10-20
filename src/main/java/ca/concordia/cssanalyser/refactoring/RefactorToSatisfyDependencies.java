@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.IntConstraintFactory;
 import org.chocosolver.solver.variables.IntVar;
@@ -17,6 +19,7 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
@@ -27,6 +30,9 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDepen
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 public class RefactorToSatisfyDependencies {
+
+    private static Logger LOGGER
+        = FileLogger.getLogger(RefactorToSatisfyDependencies.class);
 
 	/**
 	 * Refactores a stylesheet (that possibly breaks some dependencies) to satisfy the given dependencies,
@@ -56,10 +62,24 @@ public class RefactorToSatisfyDependencies {
 	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld, List<Integer> newOrdering) {
 		newOrdering.clear();
 
+        long startTime = System.currentTimeMillis();
+
 		DefaultDirectedGraph<Selector, DefaultEdge> graph
 			= buildDirectedGraph(styleSheet, listOfDependenciesToBeHeld);
 
-		if (graphNotCyclic(graph)) {
+        long midTime = System.currentTimeMillis();
+
+        LOGGER.info("Reordering took (building graph): " +
+                    (midTime - startTime));
+
+        boolean notCyclic = graphNotCyclic(graph);
+
+        long midTime2 = System.currentTimeMillis();
+
+        LOGGER.info("Reordering took (cycles): " +
+                    (midTime2 - midTime));
+
+		if (notCyclic) {
 			StyleSheet refactoredStyleSheet = new StyleSheet();
 
 			// Put the selectors in the style sheet in order
@@ -69,6 +89,10 @@ public class RefactorToSatisfyDependencies {
 				newOrdering.add(selector.getSelectorNumber());
 				refactoredStyleSheet.addSelector(selector);
 			}
+
+            long endTime = System.currentTimeMillis();
+            LOGGER.info("Reordering took (order): " +
+                        (endTime - midTime2));
 
 			return refactoredStyleSheet;
 		}
@@ -91,6 +115,8 @@ public class RefactorToSatisfyDependencies {
 		int count = 0;
 		Selector lastSel = null;
 
+        long startTime = System.currentTimeMillis();
+
 		for (Selector s : styleSheet.getAllSelectors()) {
 			graph.addVertex(s);
 			if (lastSel != null && count < numSels - 1)
@@ -99,9 +125,17 @@ public class RefactorToSatisfyDependencies {
 			count++;
 		}
 
+        long midTime = System.currentTimeMillis();
+        LOGGER.info("Reordering took (adding vertexes and basic edge): " +
+                    (midTime - startTime));
 
 		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToRealSelectorsMap
 				= getDependencyToSelectorsMap(styleSheet, listOfDependenciesToBeHeld);
+
+        long midTime2 = System.currentTimeMillis();
+        LOGGER.info("Reordering took (building map): " +
+                    (midTime2 - midTime));
+
 
 		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
 			if (dependency instanceof CSSInterSelectorValueOverridingDependency) {
@@ -117,6 +151,10 @@ public class RefactorToSatisfyDependencies {
 				}
 			}
 		}
+
+        long endTime = System.currentTimeMillis();
+        LOGGER.info("Reordering took (adding deps): " +
+                    (endTime - midTime2));
 
 		return graph;
 	}
@@ -142,35 +180,25 @@ public class RefactorToSatisfyDependencies {
 
 		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap = new HashMap<>();
 
-		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
-			for (BaseSelector selector : styleSheet.getAllBaseSelectors()) {
-				if (dependency.getSelector1().selectorEquals(selector)) {
-					for (Declaration declaration : selector.getDeclarations()) {
-						if (declaration.declarationIsEquivalent(dependency.getDeclaration1())) {
-							// Put the declaration's selector (the selector in the new StyleSheet)
-							putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 0);
-						}
-					}
-				} else if (dependency.getSelector2().selectorEquals(selector)) {
-					for (Declaration declaration : selector.getDeclarations()) {
-						if (declaration.declarationIsEquivalent(dependency.getDeclaration2())) {
-							putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 1);
-						}
-					}
-				}
-			}
-		}
+        SelectorEqualsMap lookup
+            = new SelectorEqualsMap(styleSheet.getAllBaseSelectors());
 
-		// IntraSelector dependency shouldn't be here
-		Set<CSSValueOverridingDependency> markedDependenciesToRemove = new HashSet<>();
-		for (CSSValueOverridingDependency d : dependencyNodeToSelectorMap.keySet()) {
-			Selector[] selectors = getCorrespondingRealSelectors(dependencyNodeToSelectorMap, d);
-			if (selectors[0] == selectors[1]) {
-				markedDependenciesToRemove.add(d);
-			}
+		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
+            Selector selector = lookup.get(dependency.getSelector1());
+            for (Declaration declaration : selector.getDeclarations()) {
+                if (declaration.declarationIsEquivalent(dependency.getDeclaration1())) {
+                    // Put the declaration's selector (the selector in the new StyleSheet)
+                    putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 0);
+                }
+            }
+
+            selector = lookup.get(dependency.getSelector2());
+            for (Declaration declaration : selector.getDeclarations()) {
+                if (declaration.declarationIsEquivalent(dependency.getDeclaration2())) {
+                    putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 1);
+                }
+            }
 		}
-		for (CSSValueOverridingDependency d : markedDependenciesToRemove)
-			dependencyNodeToSelectorMap.remove(d);
 
 		return dependencyNodeToSelectorMap;
 	}
@@ -212,4 +240,56 @@ public class RefactorToSatisfyDependencies {
 		return realSelectorsForThisDependency;
 	}
 
+
+    /**
+     * Helper class for getDependencyToSelectorsMap -- maps from selector to
+     * selector, but uses selectorEquals() and selectorHashCode() instead of
+     * equals and hashCode, this way we can find the "real" selectors corresponding to
+     * dependendencies without a nested loop
+     */
+    private class SelectorEqualsMap {
+        private class SelWrap {
+            private Selector sel;
+
+            public SelWrap(Selector sel) {
+                this.sel = sel;
+            }
+
+            public final void setSelector(Selector sel) {
+                this.sel = sel;
+            }
+
+            public final boolean equals(Object o) {
+                if (o instanceof SelWrap) {
+                    SelWrap w = (SelWrap)o;
+                    return sel.selectorEquals(w.sel);
+                }
+                return false;
+            }
+
+            public final int hashCode() {
+                return sel.selectorHashCode();
+            }
+        }
+
+        // So we don't have to create an object when looking up
+        private SelWrap lookup = new SelWrap(null);
+
+        private Map<SelWrap, Selector> selMap;
+
+        public SelectorEqualsMap(List<? extends Selector> selectors) {
+            selMap = new HashMap<>(selectors.size());
+            for (Selector s : selectors)
+                add(s);
+        }
+
+        public final void add(Selector s) {
+            selMap.put(new SelWrap(s), s);
+        }
+
+        public final Selector get(Selector s) {
+            lookup.setSelector(s);
+            return selMap.get(lookup);
+        }
+    }
 }
