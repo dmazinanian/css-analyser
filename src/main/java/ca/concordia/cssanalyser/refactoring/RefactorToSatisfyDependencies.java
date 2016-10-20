@@ -83,9 +83,6 @@ public class RefactorToSatisfyDependencies {
         DefaultDirectedGraph<Selector, DefaultEdge> graph
             = new DefaultDirectedGraph<>(DefaultEdge.class);
 
-        // TODO: do we really need to create a list here?
-		List<Selector> selectors =  new  ArrayList<>();
-
         // to enforce minimal changes, selector order should be maintained
         // except the last selector whose position may move, so add ordering
         // between each selector and it's previous, except the last
@@ -94,7 +91,6 @@ public class RefactorToSatisfyDependencies {
         Selector lastSel = null;
 
 		for (Selector s : styleSheet.getAllSelectors()) {
-			selectors.add(s);
             graph.addVertex(s);
             if (lastSel != null && count < numSels - 1)
                 graph.addEdge(lastSel, s);
