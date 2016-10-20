@@ -3,6 +3,7 @@ package ca.concordia.cssanalyser.refactoring;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -144,18 +145,20 @@ public class RefactorToSatisfyDependencies {
             = new SelectorEqualsMap(styleSheet.getAllBaseSelectors());
 
 		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
-            Selector selector = lookup.get(dependency.getSelector1());
-            for (Declaration declaration : selector.getDeclarations()) {
-                if (declaration.declarationIsEquivalent(dependency.getDeclaration1())) {
-                    // Put the declaration's selector (the selector in the new StyleSheet)
-                    putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 0);
+            for (Selector selector : lookup.get(dependency.getSelector1())) {
+                for (Declaration declaration : selector.getDeclarations()) {
+                    if (declaration.declarationIsEquivalent(dependency.getDeclaration1())) {
+                        // Put the declaration's selector (the selector in the new StyleSheet)
+                        putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 0);
+                    }
                 }
             }
 
-            selector = lookup.get(dependency.getSelector2());
-            for (Declaration declaration : selector.getDeclarations()) {
-                if (declaration.declarationIsEquivalent(dependency.getDeclaration2())) {
-                    putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 1);
+            for (Selector selector : lookup.get(dependency.getSelector2())) {
+                for (Declaration declaration : selector.getDeclarations()) {
+                    if (declaration.declarationIsEquivalent(dependency.getDeclaration2())) {
+                        putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 1);
+                    }
                 }
             }
 		}
@@ -235,7 +238,7 @@ public class RefactorToSatisfyDependencies {
         // So we don't have to create an object when looking up
         private SelWrap lookup = new SelWrap(null);
 
-        private Map<SelWrap, Selector> selMap;
+        private Map<SelWrap, List<Selector>> selMap;
 
         public SelectorEqualsMap(List<? extends Selector> selectors) {
             selMap = new HashMap<>(selectors.size());
@@ -244,10 +247,17 @@ public class RefactorToSatisfyDependencies {
         }
 
         public final void add(Selector s) {
-            selMap.put(new SelWrap(s), s);
+            List<Selector> l = get(s);
+            if (l == null) {
+                l = new LinkedList<>();
+                l.add(s);
+                selMap.put(new SelWrap(s), l);
+            } else {
+                l.add(s);
+            }
         }
 
-        public final Selector get(Selector s) {
+        public final List<Selector> get(Selector s) {
             lookup.setSelector(s);
             return selMap.get(lookup);
         }
