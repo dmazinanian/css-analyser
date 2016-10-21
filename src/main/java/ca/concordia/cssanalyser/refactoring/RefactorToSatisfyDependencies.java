@@ -145,19 +145,27 @@ public class RefactorToSatisfyDependencies {
             = new SelectorEqualsMap(styleSheet.getAllBaseSelectors());
 
 		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
-            for (Selector selector : lookup.get(dependency.getSelector1())) {
-                for (Declaration declaration : selector.getDeclarations()) {
-                    if (declaration.declarationIsEquivalent(dependency.getDeclaration1())) {
-                        // Put the declaration's selector (the selector in the new StyleSheet)
-                        putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 0);
+            List<Selector> selList = lookup.get(dependency.getSelector1());
+            // TODO: check if it's ok these can be null!
+            if (selList != null) {
+                for (Selector selector : selList) {
+                    for (Declaration declaration : selector.getDeclarations()) {
+                        if (declaration.declarationIsEquivalent(dependency.getDeclaration1())) {
+                            // Put the declaration's selector (the selector in the new StyleSheet)
+                            putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 0);
+                        }
                     }
                 }
             }
 
-            for (Selector selector : lookup.get(dependency.getSelector2())) {
-                for (Declaration declaration : selector.getDeclarations()) {
-                    if (declaration.declarationIsEquivalent(dependency.getDeclaration2())) {
-                        putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 1);
+            selList = lookup.get(dependency.getSelector2());
+            // TODO: check if it's ok these can be null!
+            if (selList != null) {
+                for (Selector selector : selList) {
+                    for (Declaration declaration : selector.getDeclarations()) {
+                        if (declaration.declarationIsEquivalent(dependency.getDeclaration2())) {
+                            putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 1);
+                        }
                     }
                 }
             }
@@ -222,6 +230,12 @@ public class RefactorToSatisfyDependencies {
                 this.sel = sel;
             }
 
+            // Not used at moment, but used in commented code in get method
+            // below
+            public final Selector getSelector() {
+                return sel;
+            }
+
             public final boolean equals(Object o) {
                 if (o instanceof SelWrap) {
                     SelWrap w = (SelWrap)o;
@@ -259,7 +273,26 @@ public class RefactorToSatisfyDependencies {
 
         public final List<Selector> get(Selector s) {
             lookup.setSelector(s);
-            return selMap.get(lookup);
+            List<Selector> sels = selMap.get(lookup);
+            // Leaving this here because i'm not sure it's ok that these lookups
+            // sometimes fail.  Initial experiments suggest it is ok (they would
+            // have failed silently before i rewrote this code), but i'm still
+            // not sure.
+            //if (sels == null) {
+            //    LOGGER.error("Failed to find " + s);
+            //    for (SelWrap w : selMap.keySet()) {
+            //        if (w.getSelector().equals(s)) {
+            //            LOGGER.error("But found match: " + w.getSelector());
+            //            LOGGER.error("Hashes " +
+            //                         lookup.hashCode() +
+            //                         " vs " +
+            //                         w.hashCode());
+            //            LOGGER.error("Wrap eq? " +
+            //                         w.equals(lookup));
+            //        }
+            //    }
+            //}
+            return sels;
         }
     }
 }
