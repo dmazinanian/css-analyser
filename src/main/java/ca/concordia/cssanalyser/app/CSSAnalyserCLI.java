@@ -43,6 +43,8 @@ import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessMixinDeclaratio
 import ca.concordia.cssanalyser.preprocessors.empiricalstudy.EmpiricalStudy;
 import ca.concordia.cssanalyser.preprocessors.util.less.ImportInliner;
 
+import css.intersection.CSSDomFreeDependencyDetector;
+
 public class CSSAnalyserCLI {
 
 	public static Logger LOGGER = FileLogger.getLogger(CSSAnalyserCLI.class);
@@ -76,9 +78,12 @@ public class CSSAnalyserCLI {
 			doInlineImports(params);
 			break;
 		default:
-		}		
+		}
+
+        // Seems hacky to have to call this, but such is life
+        CSSDomFreeDependencyDetector.killExecutor();
 	}
-	
+
 	interface ProcessLessFiles {
 		void process(int percentage, String website, String pathToMainFile);
 	}
@@ -88,9 +93,9 @@ public class CSSAnalyserCLI {
 		String outfolder = params.getOutputFolderPath();
 
 		if (folders.size() > 0) {
-			
+
 			for (String folder : folders) {
-				
+
 				FileLogger.addFileAppender(outfolder + "/log.log", false);
 				List<File> listOfFilesContainingMainFiles = IOHelper.searchForFiles(folder, "mainfiles.txt", true);
 
@@ -101,7 +106,7 @@ public class CSSAnalyserCLI {
 
 					LOGGER.info(String.format("%3s%%: %s", Math.round((float)(mainFileIndex + 1)/ listOfFilesContainingMainFiles.size() * 100), mainFilesPathsFile.getAbsolutePath()));
 					try {
-					
+
 						String[] mainFilesRelativePaths = IOHelper.readFileToString(mainFilesPathsFile.getAbsolutePath()).split("\n");
 						List<String> filesToConsider = new ArrayList<>();
 						for (String mainFileRelativePath : mainFilesRelativePaths) {
@@ -150,7 +155,8 @@ public class CSSAnalyserCLI {
 			LOGGER.error("Please provide an input folder with --in-folder \"in/folder\"");
 			return;
 		}
-		cssAnalyser.analyse(params.getFPGrowthMinsup());
+		cssAnalyser.analyse(params.getFPGrowthMinsup(),
+                            params.getDomFreeDeps());
 	}
 
 	private static void doCloneRefactoringInFolderMode(ParametersParser params) throws IOException {
@@ -161,7 +167,7 @@ public class CSSAnalyserCLI {
 		} else {
 
 			for (String folder : folders) {
-				List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");	
+				List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");
 				if (allStatesFiles.size() == 0) {
 					LOGGER.warn("No HTML file found in " + folder + "crawljax/doms, skipping this folder");
 				} else {
@@ -210,8 +216,8 @@ public class CSSAnalyserCLI {
 			Crawler crawler = new Crawler(currentUrl, outputFolderPath);
 			crawler.start();
 
-			// Get all ca.concordia.cssanalyser.dom states in outputFolder/crawljax/doms		
-			List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "crawljax/doms", "html");	
+			// Get all ca.concordia.cssanalyser.dom states in outputFolder/crawljax/doms
+			List<File> allStatesFiles = IOHelper.searchForFiles(outputFolderPath + "crawljax/doms", "html");
 			for (File domStateHtml : allStatesFiles) {
 
 				String stateName = domStateHtml.getName();
@@ -236,11 +242,11 @@ public class CSSAnalyserCLI {
 		List<String> folders = getFolderPathsFromParameters(params);
 		String outFolder = params.getOutputFolderPath();
 		LessPrinter lessPrinter = new LessPrinter();
-		
+
 		if (folders.size() > 0) {
 
 			for (String folder : folders) {
-				List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");	
+				List<File> allStatesFiles = IOHelper.searchForFiles(folder + "crawljax/doms", "html");
 				if (allStatesFiles.size() == 0) {
 					LOGGER.warn("No HTML file found in " + folder + "crawljax/doms, skipping this folder");
 				} else {
@@ -303,7 +309,7 @@ public class CSSAnalyserCLI {
 				e.printStackTrace();
 			}
 		}
-		else 
+		else
 			LOGGER.error("No CSS file is provided.");
 	}
 
@@ -313,9 +319,9 @@ public class CSSAnalyserCLI {
 		int maxDeclarations = params.getMaxDeclarations();
 		int maxParameters = params.getMaxParameters();
 		int maxCalls = params.getMaxCalls();
-		
+
 		LOGGER.info("Max Mixin calls {}, Max Declarations {}, Max Parameters {}", maxCalls, maxDeclarations, maxParameters);
-		
+
 		String opportunitiesCsvOutputPath = outfolder + String.format("/migrationOpportunities[maxDecls%s, maxParams%s, maxCalls%s].csv", maxDeclarations, maxParameters, maxCalls);
 		CSVColumns fileColumns = new CSVColumns("WebSite", "File", "Parameters", "Declarations", "DeclarationsUsingParams",
 				"CrossBrowserDeclarations", "NonCrossBrowserDeclarations", "UniqueParametersUsedInMoreThanOneKindOfDeclaration",
@@ -323,22 +329,22 @@ public class CSSAnalyserCLI {
 				/*"GlobalVarsAccessed",*/ "NameOfTheMappedMixinName", "MappedMixinFile", /*"PreservesPresentation",*/
 				"Support", "ExactProperties", "ExactSelectors", "NumbefOfInvolvedSelectors", "NumberOfDependenciesInMixin", "NumberOfDependenciesAffectingMixinCallPosition");
 		IOHelper.writeStringToFile(fileColumns.getHeader(true), opportunitiesCsvOutputPath);
-		
+
 		String cssFilesCSVOutputPath = outfolder + String.format("/cssFiles[maxDecls%s, maxParams%s, maxCalls%s].csv", maxDeclarations, maxParameters, maxCalls);
 		CSVColumns cssFileColumns = new CSVColumns("WebSite", "File", "MixinsToConsider", "Selectors", "Declarations", "MigrationOpportunities", "NonOverlapping");
 		IOHelper.writeStringToFile(cssFileColumns.getHeader(true), cssFilesCSVOutputPath);
-		
+
 		String mixinsToConsiderCSVPath = outfolder + "/mixinsToConsider.csv";
 		CSVColumns mixinsCSVColumns = new CSVColumns("WebSite", "File", "MixinName", "Parameters", "Declarations", "DeclarationsUsingParams",
-				"CrossBrowserDeclarations", "NonCrossBrowserDeclarations", "UniqueParametersUsedInMoreThanOneKindOfDeclaration", 
+				"CrossBrowserDeclarations", "NonCrossBrowserDeclarations", "UniqueParametersUsedInMoreThanOneKindOfDeclaration",
 				"DeclarationsHavingOnlyHardCoded", "ParametersReusedInVendorSpecific", "VendorSpecificSharingParam",
 				"GlobalVarsAccessed", "MixinCalls");
-		
+
 		IOHelper.writeStringToFile(mixinsCSVColumns.getHeader(true), mixinsToConsiderCSVPath, false);
-		
-		
+
+
 		String differencesPath = outfolder + String.format("/differences.txt[maxDecls%s, maxParams%s, maxCalls%s].csv", maxDeclarations, maxParameters, maxCalls);
-		
+
 		processLessFiles(params, (percentage, website, pathToLessFile) -> {
 
 			LOGGER.info(String.format("%3s%%: Parsing %s", percentage, pathToLessFile));
@@ -348,10 +354,10 @@ public class CSSAnalyserCLI {
 				com.github.sommeri.less4j.core.ast.StyleSheet styleSheet = LessCSSParser.getLessStyleSheet(new ModifiedLessFileSource(new File(pathToLessFile)));
 
 				LOGGER.info(String.format("%3s%%: Finding mixins in %s", percentage, pathToLessFile));
-				
+
 				LessASTQueryHandler lessASTQueryHandler = new LessASTQueryHandler(styleSheet);
 				Map<LessMixinDeclaration, Set<Selector>> mixinCallsMap = lessASTQueryHandler.getMixinDeclarationsAndSelectorsTheyWereCalledIn();
-				
+
 				List<LessMixinDeclaration> mixinsToConsider = mixinCallsMap.keySet().stream()
 						.filter(mixinDeclaration -> mixinDeclaration.getPropertiesAtTheDeepestLevel(false).size() > 0 && mixinCallsMap.get(mixinDeclaration).size() >= 2)
 						.collect(Collectors.toList());
@@ -359,13 +365,13 @@ public class CSSAnalyserCLI {
 				if (mixinsToConsider.size() == 0) {
 					LOGGER.warn("No mixin found in {} that was called more than once", website);
 				} else {
-					
+
 					int numberOfMixinsToConsider = mixinsToConsider.size();
-					
+
 					writeMixinsToFile(mixinsToConsiderCSVPath, website, mixinCallsMap, mixinsCSVColumns);
 
 					LOGGER.info(String.format("%3s%%: Compiling %s", percentage, pathToLessFile));
-	
+
 					// Compile the less style sheet to CSS
 					StyleSheet compiled = LessHelper.compileLESSStyleSheet(styleSheet);
 					/*
@@ -383,44 +389,44 @@ public class CSSAnalyserCLI {
 					LessMigrationOpportunitiesDetector preprocessorOpportunityDetector = new LessMigrationOpportunitiesDetector(compiled);
 					// Get mixin opportunities, without subsumed
 					List<LessMixinMigrationOpportunity> migrationOpportunities = preprocessorOpportunityDetector.findMixinOpportunities(true);
-					
+
 					if (maxDeclarations > 1) {
 						migrationOpportunities = migrationOpportunities.stream()
 								.filter(migrationOpportunity -> ((Collection<MixinDeclaration>)migrationOpportunity.getAllMixinDeclarations()).size() <= maxDeclarations)
 								.collect(Collectors.toList());
 					}
-					
+
 					if (maxParameters >= 0) {
 						migrationOpportunities = migrationOpportunities.stream()
 								.filter(migrationOpportunity -> migrationOpportunity.getNumberOfParameters() <= maxParameters)
 								.collect(Collectors.toList());
 					}
-					
+
 					if (maxCalls > 2) {
 						migrationOpportunities = migrationOpportunities.stream()
 								.filter(migrationOpportunity -> ((Collection<Selector>)migrationOpportunity.getInvolvedSelectors()).size() <= maxCalls)
 								.collect(Collectors.toList());
 					}
-					
+
 					int numberOfMigrationOpportunities = migrationOpportunities.size();
 					int numberOfSelectors = ((Set<Selector>)compiled.getAllSelectors()).size();
 					int numberOfDeclarations = (compiled.getAllDeclarations()).size();
 					LOGGER.info(String.format("Found %s migration opportunities", numberOfMigrationOpportunities)) ;
 					Set<LessMixinDeclaration> foundRealMixins = new HashSet<>();
-					
+
 					if (maxParameters >= 0) {
 						numberOfMigrationOpportunities = 0;
 					}
-					
+
 					int numberOfNonOverlappingOpportunities = 0;
 					List<Set<String>> alreadySeenProperties = new ArrayList<>();
-					List<Set<Selector>> alreadySeenSelectors = new ArrayList<>(); 
+					List<Set<Selector>> alreadySeenSelectors = new ArrayList<>();
 					for (LessMixinMigrationOpportunity migrationOpportunity : migrationOpportunities) {
-						
+
 						if (maxParameters >= 0 && migrationOpportunity.getNumberOfParameters() <= maxParameters) {
 							numberOfMigrationOpportunities++;
 						}
-						
+
 						Set<String> propertiesInOpportunity = migrationOpportunity.getPropertiesAtTheDeepestLevel();
 						Set<Selector> involvedSelectors = (Set<Selector>)migrationOpportunity.getInvolvedSelectors();
 						boolean hasOverlap = false;
@@ -434,21 +440,21 @@ public class CSSAnalyserCLI {
 								break;
 							}
 						}
-						
+
 						if (!hasOverlap) {
 							numberOfNonOverlappingOpportunities++;
 						}
-						
+
 						alreadySeenProperties.add(propertiesInOpportunity);
 						alreadySeenSelectors.add(involvedSelectors);
-						
-						
+
+
 						String mixinMappedToName = "";
 						String mixinMappedToFile = "";
-						boolean exactProperties = false; 
+						boolean exactProperties = false;
 						boolean exactSelectors = false;
 						for (LessMixinDeclaration realLessMixinDeclaration : mixinsToConsider) {
-							exactProperties = false; 
+							exactProperties = false;
 							exactSelectors = false;
 							Set<String> propertiesInRealMixin = realLessMixinDeclaration.getPropertiesAtTheDeepestLevel(false);
 							if (propertiesInOpportunity.containsAll(propertiesInRealMixin)) {
@@ -458,7 +464,7 @@ public class CSSAnalyserCLI {
 								for (Selector realMixinCalledIn : realMixinCalledInSelectors) {
 									boolean selectorFound = false;
 									for (Selector selectorInvolvedForOpportunity : opportunityCalledInSelectors) {
-										if (!selectorsIntersection.contains(selectorInvolvedForOpportunity) && 
+										if (!selectorsIntersection.contains(selectorInvolvedForOpportunity) &&
 												realMixinCalledIn.selectorEquals(selectorInvolvedForOpportunity, false)) {
 												selectorsIntersection.add(selectorInvolvedForOpportunity);
 												selectorFound = true;
@@ -477,7 +483,7 @@ public class CSSAnalyserCLI {
 									foundRealMixins.add(realLessMixinDeclaration);
 								}
 							}
-						}			
+						}
 
 						TransformationStatus transformationStatus = migrationOpportunity.preservesPresentation();
 						if (!transformationStatus.isOK()) {
@@ -499,7 +505,7 @@ public class CSSAnalyserCLI {
 								migrationOpportunity.getNumberOfParameters(),
 								migrationOpportunity.getNumberOfMixinDeclarations(),
 								migrationOpportunity.getNumberOfDeclarationsUsingParameters(),
-								migrationOpportunity.getNumberOfUniqueCrossBrowserDeclarations(), 
+								migrationOpportunity.getNumberOfUniqueCrossBrowserDeclarations(),
 								migrationOpportunity.getNumberOfNonCrossBrowserDeclarations(),
 								migrationOpportunity.getNumberOfUniqueParametersUsedInMoreThanOneKindOfDeclaration(),
 								migrationOpportunity.getNumberOfDeclarationsHavingOnlyHardCodedValues(),
@@ -517,14 +523,14 @@ public class CSSAnalyserCLI {
 								migrationOpportunity.getNumberOfIntraSelectorDependenciesAffectingMixinCallPosition()
 								);
 
-						IOHelper.writeStringToFile(row.replace("#", "\\#"), opportunitiesCsvOutputPath, true);	
+						IOHelper.writeStringToFile(row.replace("#", "\\#"), opportunitiesCsvOutputPath, true);
 
 					}
 					mixinsToConsider.removeAll(foundRealMixins);
 					if (mixinsToConsider.size() > 0) {
 						IOHelper.writeStringToFile(pathToLessFile + ":" + mixinsToConsider.toString() + "\n", differencesPath, true);
 					}
-					
+
 					String cssRow = String.format(cssFileColumns.getRowFormat(true),
 							website,
 							pathToLessFile,
@@ -533,7 +539,7 @@ public class CSSAnalyserCLI {
 							numberOfDeclarations,
 							numberOfMigrationOpportunities,
 							numberOfNonOverlappingOpportunities);
-					
+
 					IOHelper.writeStringToFile(cssRow.replace("#", "\\#"), cssFilesCSVOutputPath, true);
 
 				}
@@ -559,7 +565,7 @@ public class CSSAnalyserCLI {
 								mixinDeclarationInfo.getNumberOfParams(),
 								mixinDeclarationInfo.getNumberOfDeclarations(),
 								mixinDeclarationInfo.getNumberOfDeclarationsUsingParameters(),
-								mixinDeclarationInfo.getNumberOfUniqueCrossBrowserDeclarations(), 
+								mixinDeclarationInfo.getNumberOfUniqueCrossBrowserDeclarations(),
 								mixinDeclarationInfo.getNumberOfNonCrossBrowserDeclarations(),
 								mixinDeclarationInfo.getNumberOfUniqueParametersUsedInMoreThanOneKindOfDeclaration(),
 								mixinDeclarationInfo.getNumberOfDeclarationsHavingOnlyHardCodedValues(),
@@ -599,5 +605,5 @@ public class CSSAnalyserCLI {
 		}
 		return folders;
 	}
-	
+
 }

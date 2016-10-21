@@ -2,19 +2,21 @@ package ca.concordia.cssanalyser.refactoring;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.IntConstraintFactory;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.VariableFactory;
+import org.slf4j.Logger;
 
+import org.jgrapht.alg.CycleDetector;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.traverse.TopologicalOrderIterator;
+
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
-import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOverridingDependency;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOverridingDependency.InterSelectorDependencyReason;
@@ -22,7 +24,10 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDepen
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
 public class RefactorToSatisfyDependencies {
-	
+
+    private static Logger LOGGER
+        = FileLogger.getLogger(RefactorToSatisfyDependencies.class);
+
 	/**
 	 * Refactores a stylesheet (that possibly breaks some dependencies) to satisfy the given dependencies,
 	 * by re-ordering selectors.
@@ -34,7 +39,7 @@ public class RefactorToSatisfyDependencies {
 	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld) {
 		return refactorToSatisfyOverridingDependencies(styleSheet, listOfDependenciesToBeHeld, new ArrayList<>());
 	}
-	
+
 	/**
 	 * Refactores a stylesheet (that possibly breaks some dependencies) to satisfy the given dependencies,
 	 * by re-ordering selectors.
@@ -43,117 +48,90 @@ public class RefactorToSatisfyDependencies {
 	 * @param newOrdering A List<Integer> should be passed. This list will be cleared,
 	 * and will be filled by the selector numbers in the new ordering.
 	 * For instance, if this list contains {3, 1, 2}, this means that the selector
-	 * which was placed 3rd in the style sheet is 
+	 * which was placed 3rd in the style sheet is
 	 * placed in position 1 of the new style sheet and so forth.
 	 * This can be used to track changes in the UI, etc.
 	 * @return
 	 */
 	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld, List<Integer> newOrdering) {
-		
 		newOrdering.clear();
-	
-		/*
-		 * We map every dependency in the original CSS file to the new selectors in the 
-		 * given style sheet.
-		 * Every dependency has two selectors, so the map is from dependency to an array
-		 * of selectors that has two members always.
-		 */
-		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToRealSelectorsMap 
+
+		DefaultDirectedGraph<Selector, DefaultEdge> graph
+			= buildDirectedGraph(styleSheet, listOfDependenciesToBeHeld);
+
+		if (graphNotCyclic(graph)) {
+			StyleSheet refactoredStyleSheet = new StyleSheet();
+
+			// Put the selectors in the style sheet in order
+			Iterator<Selector> i = new TopologicalOrderIterator<>(graph);
+			while (i.hasNext()) {
+				Selector selector = i.next();
+				newOrdering.add(selector.getSelectorNumber());
+				refactoredStyleSheet.addSelector(selector);
+			}
+
+			return refactoredStyleSheet;
+		}
+
+		return null;
+	}
+
+
+	private DefaultDirectedGraph<Selector, DefaultEdge>
+		buildDirectedGraph(StyleSheet styleSheet,
+						   CSSValueOverridingDependencyList listOfDependenciesToBeHeld) {
+
+		DefaultDirectedGraph<Selector, DefaultEdge> graph
+			= new DefaultDirectedGraph<>(DefaultEdge.class);
+
+		// to enforce minimal changes, selector order should be maintained
+		// except the last selector whose position may move, so add ordering
+		// between each selector and it's previous, except the last
+		int numSels = styleSheet.getNumberOfSelectors();
+		int count = 0;
+		Selector lastSel = null;
+
+		for (Selector s : styleSheet.getAllSelectors()) {
+			graph.addVertex(s);
+			if (lastSel != null && count < numSels - 1)
+				graph.addEdge(lastSel, s);
+			lastSel = s;
+			count++;
+		}
+
+		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToRealSelectorsMap
 				= getDependencyToSelectorsMap(styleSheet, listOfDependenciesToBeHeld);
-		
-		
-		// 1. Create a Solver 
-		Solver solver = new Solver("Selector reordering problem");
-		
-		// Map every selector to a Solver variable
-		Map<Selector, IntVar> createdVars = new HashMap<>();
-		
-		List<Selector> selectors =  new  ArrayList<>();
-		for (Selector s : styleSheet.getAllSelectors())
-			selectors.add(s);
-		
-		// Create one variable for each selector in the style sheet
-		for (int i = 0; i < selectors.size(); i++) {
-			Selector selectorToBeAdded = selectors.get(i);
-			IntVar x = VariableFactory.bounded(i + ": " + selectorToBeAdded.toString(), 1, styleSheet.getNumberOfSelectors(), solver);
-			createdVars.put(selectorToBeAdded, x);
-		}
-		
-		/*
-		 * Make sure that the changes are minimum.
-		 * For all the selectors in the style sheet but the new one, make a constraint so the order
-		 * of them are preserved,  
-		 */
-		for (int i = 0; i < selectors.size() - 2; i++) {
-			IntVar x = createdVars.get(selectors.get(i));
-			IntVar y = createdVars.get(selectors.get(i + 1));
-			solver.post(IntConstraintFactory.arithm(x, "<", y));
-		}
-		
-		// 2. Create variables through the variable factory
+
 		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
 			if (dependency instanceof CSSInterSelectorValueOverridingDependency) {
 				CSSInterSelectorValueOverridingDependency interSelectorValueOverridingDependency = (CSSInterSelectorValueOverridingDependency) dependency;
 				if (interSelectorValueOverridingDependency.getDependencyReason() == InterSelectorDependencyReason.DUE_TO_CASCADING) {
 					Selector[] correspondingSelectors = dependencyNodeToRealSelectorsMap.get(dependency);
-					
+
 					if (correspondingSelectors == null || correspondingSelectors[0] == null || correspondingSelectors[1] == null)
 						continue;
 
-					// Get the ChocoSolver variables for the dependency
-					IntVar x = createdVars.get(correspondingSelectors[0]);
-					IntVar y = createdVars.get(correspondingSelectors[1]);
-
-					// 3. Create and post constraints by using constraint factories
-					solver.post(IntConstraintFactory.arithm(x, "<", y));		
+					graph.addEdge(correspondingSelectors[0],
+								  correspondingSelectors[1]);
 				}
 			}
 		}
-		
-		// All the variables have to have unique values
-		IntVar[] allVars = new IntVar[createdVars.size()];
-		allVars = createdVars.values().toArray(allVars);
-		// "BC" = bound-consistency
-		solver.post(IntConstraintFactory.alldifferent(allVars, "BC"));
-	 
-		// 4. Define the search strategy (?)
-		//solver.set(IntStrategyFactory.inputOrder_InDomainMin(test));
-		
-		// 5. Launch the resolution process
-		boolean result = solver.findSolution();
-		
-		if (result) {
-			/*
-			 * Reverse the the map, because we need to see which number is assigned
-			 * to which selector
-			 */
-			Map<Integer, Selector> assignmentToSelectorMap = new HashMap<>();
-			for (Selector s : createdVars.keySet()) {
-				assignmentToSelectorMap.put(createdVars.get(s).getValue(), s);
-			}
-			
-			StyleSheet refactoredStyleSheet = new StyleSheet();
-			
-			// Put the selectors in the style sheet in order
-			for (int i = 1; i <= assignmentToSelectorMap.size(); i++) {
-				Selector selector = assignmentToSelectorMap.get(i);
-				newOrdering.add(selector.getSelectorNumber());
-				refactoredStyleSheet.addSelector(selector);
-			}
-		
-			return refactoredStyleSheet;
-			
-		} else {
-			return null;
-			// It is better to throw something at least. I know.
-		}
-		
+
+		return graph;
 	}
+
+
+	private boolean graphNotCyclic(DefaultDirectedGraph<Selector, DefaultEdge> graph) {
+		CycleDetector<Selector, DefaultEdge> detector
+			= new CycleDetector<>(graph);
+		return !detector.detectCycles();
+	}
+
 
 	/**
 	 * Returns a Map that maps each dependency to an array (always of size 2) of Selectors.
 	 * The first and second items of this array are the selectors in the given style sheet
-	 * corresponding to the From and To selectors of each of the given dependencies. 
+	 * corresponding to the From and To selectors of each of the given dependencies.
 	 * @param styleSheet
 	 * @param listOfDependenciesToBeHeld
 	 * @return
@@ -162,42 +140,42 @@ public class RefactorToSatisfyDependencies {
 			CSSValueOverridingDependencyList listOfDependenciesToBeHeld) {
 
 		Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap = new HashMap<>();
-		
+
+        SelectorEqualsMap lookup
+            = new SelectorEqualsMap(styleSheet.getAllBaseSelectors());
+
 		for (CSSValueOverridingDependency dependency : listOfDependenciesToBeHeld) {
-			for (BaseSelector selector : styleSheet.getAllBaseSelectors()) {
-				if (dependency.getSelector1().selectorEquals(selector)) {
-					for (Declaration declaration : selector.getDeclarations()) {
-						if (declaration.declarationIsEquivalent(dependency.getDeclaration1())) {
-							// Put the declaration's selector (the selector in the new StyleSheet)
-							putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 0);
-						}
-					}
-				} else if (dependency.getSelector2().selectorEquals(selector)) {
-					for (Declaration declaration : selector.getDeclarations()) {
-						if (declaration.declarationIsEquivalent(dependency.getDeclaration2())) {
-							putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 1);
-						}
-					}
-				}
-			}
+            List<Selector> selList = lookup.get(dependency.getSelector1());
+            // TODO: check if it's ok these can be null!
+            if (selList != null) {
+                for (Selector selector : selList) {
+                    for (Declaration declaration : selector.getDeclarations()) {
+                        if (declaration.declarationIsEquivalent(dependency.getDeclaration1())) {
+                            // Put the declaration's selector (the selector in the new StyleSheet)
+                            putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 0);
+                        }
+                    }
+                }
+            }
+
+            selList = lookup.get(dependency.getSelector2());
+            // TODO: check if it's ok these can be null!
+            if (selList != null) {
+                for (Selector selector : selList) {
+                    for (Declaration declaration : selector.getDeclarations()) {
+                        if (declaration.declarationIsEquivalent(dependency.getDeclaration2())) {
+                            putCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency, declaration.getSelector(), 1);
+                        }
+                    }
+                }
+            }
 		}
-		
-		// IntraSelector dependency shouldn't be here
-		Set<CSSValueOverridingDependency> markedDependenciesToRemove = new HashSet<>();
-		for (CSSValueOverridingDependency d : dependencyNodeToSelectorMap.keySet()) {
-			Selector[] selectors = getCorrespondingRealSelectors(dependencyNodeToSelectorMap, d);
-			if (selectors[0] == selectors[1]) {
-				markedDependenciesToRemove.add(d);
-			}
-		}
-		for (CSSValueOverridingDependency d : markedDependenciesToRemove)
-			dependencyNodeToSelectorMap.remove(d);
-		
+
 		return dependencyNodeToSelectorMap;
 	}
 
 	/**
-	 * 
+	 *
 	 * @param dependencyNodeToSelectorMap
 	 * @param dependency
 	 * @param selector
@@ -205,11 +183,11 @@ public class RefactorToSatisfyDependencies {
 	 */
 	private void putCorrespondingRealSelectors(Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap,
 			CSSValueOverridingDependency dependency, Selector selector, int i) {
-		
+
 		Selector[] realSelectorsForThisDependency = getCorrespondingRealSelectors(dependencyNodeToSelectorMap, dependency);
 		realSelectorsForThisDependency[i] = selector;
 		dependencyNodeToSelectorMap.put(dependency, realSelectorsForThisDependency);
-		
+
 	}
 
 	/**
@@ -224,13 +202,97 @@ public class RefactorToSatisfyDependencies {
 	 */
 	private Selector[] getCorrespondingRealSelectors(Map<CSSValueOverridingDependency, Selector[]> dependencyNodeToSelectorMap,
 			CSSValueOverridingDependency dependency) {
-		
-		Selector[] realSelectorsForThisDependency = dependencyNodeToSelectorMap.get(dependency); 
-		
+
+		Selector[] realSelectorsForThisDependency = dependencyNodeToSelectorMap.get(dependency);
+
 		if (realSelectorsForThisDependency == null) {
 			realSelectorsForThisDependency = new Selector[2];
 		}
 		return realSelectorsForThisDependency;
 	}
-	
+
+
+    /**
+     * Helper class for getDependencyToSelectorsMap -- maps from selector to
+     * selector, but uses selectorEquals() and selectorHashCode() instead of
+     * equals and hashCode, this way we can find the "real" selectors corresponding to
+     * dependendencies without a nested loop
+     */
+    private class SelectorEqualsMap {
+        private class SelWrap {
+            private Selector sel;
+
+            public SelWrap(Selector sel) {
+                this.sel = sel;
+            }
+
+            public final void setSelector(Selector sel) {
+                this.sel = sel;
+            }
+
+            // Not used at moment, but used in commented code in get method
+            // below
+            public final Selector getSelector() {
+                return sel;
+            }
+
+            public final boolean equals(Object o) {
+                if (o instanceof SelWrap) {
+                    SelWrap w = (SelWrap)o;
+                    return sel.selectorEquals(w.sel);
+                }
+                return false;
+            }
+
+            public final int hashCode() {
+                return sel.selectorHashCode();
+            }
+        }
+
+        // So we don't have to create an object when looking up
+        private SelWrap lookup = new SelWrap(null);
+
+        private Map<SelWrap, List<Selector>> selMap;
+
+        public SelectorEqualsMap(List<? extends Selector> selectors) {
+            selMap = new HashMap<>(selectors.size());
+            for (Selector s : selectors)
+                add(s);
+        }
+
+        public final void add(Selector s) {
+            List<Selector> l = get(s);
+            if (l == null) {
+                l = new LinkedList<>();
+                l.add(s);
+                selMap.put(new SelWrap(s), l);
+            } else {
+                l.add(s);
+            }
+        }
+
+        public final List<Selector> get(Selector s) {
+            lookup.setSelector(s);
+            List<Selector> sels = selMap.get(lookup);
+            // Leaving this here because i'm not sure it's ok that these lookups
+            // sometimes fail.  Initial experiments suggest it is ok (they would
+            // have failed silently before i rewrote this code), but i'm still
+            // not sure.
+            //if (sels == null) {
+            //    LOGGER.error("Failed to find " + s);
+            //    for (SelWrap w : selMap.keySet()) {
+            //        if (w.getSelector().equals(s)) {
+            //            LOGGER.error("But found match: " + w.getSelector());
+            //            LOGGER.error("Hashes " +
+            //                         lookup.hashCode() +
+            //                         " vs " +
+            //                         w.hashCode());
+            //            LOGGER.error("Wrap eq? " +
+            //                         w.equals(lookup));
+            //        }
+            //    }
+            //}
+            return sels;
+        }
+    }
 }

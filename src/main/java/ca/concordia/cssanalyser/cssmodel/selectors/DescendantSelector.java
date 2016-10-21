@@ -11,21 +11,22 @@ import java.util.List;
  * @author Davood Mazinanian
  */
 public class DescendantSelector extends Combinator {
-	
+
 	protected final BaseSelector parentSelector;
 	protected final SimpleSelector childSelector;
-	private int hashCode = -1; 
-	
+	private int hashCode = -1;
+	private int selectorHashCode = -1;
+
 	public DescendantSelector(BaseSelector parent, SimpleSelector child) {
 		this(parent, child, ' ');
 	}
-	
+
 	public DescendantSelector(BaseSelector parent, SimpleSelector child, char combinatorCharacter) {
 		super(combinatorCharacter);
 		parentSelector = parent;
 		childSelector = child;
 	}
-	
+
 	/**
 	 * Returns the parent selector (the selector on the left hand side
 	 * of a descendant selector)
@@ -34,7 +35,7 @@ public class DescendantSelector extends Combinator {
 	public BaseSelector getParentSelector() {
 		return parentSelector;
 	}
-	
+
 	/**
 	 * Returns the child selector (the selector on the right hand side
 	 * of a descendant selector)
@@ -43,12 +44,12 @@ public class DescendantSelector extends Combinator {
 	public SimpleSelector getChildSelector() {
 		return childSelector;
 	}
-	
+
 	@Override
 	public String toString() {
 		return parentSelector + String.valueOf(getCombinatorCharacter()) + childSelector;
 	}
-	
+
 	@Override
 	public boolean selectorEquals(Selector otherSelector, boolean considerMediaQueryLists) {
 		if (!generalEquals(otherSelector))
@@ -59,7 +60,19 @@ public class DescendantSelector extends Combinator {
 		return parentSelector.selectorEquals(otherDesendantSelector.parentSelector, considerMediaQueryLists) &&
 				childSelector.selectorEquals(otherDesendantSelector.childSelector, considerMediaQueryLists);
 	}
-	
+
+    @Override
+	public int selectorHashCode(boolean considerMediaQueryLists) {
+        if (selectorHashCode == -1) {
+            selectorHashCode = 0;
+            if (considerMediaQueryLists)
+                selectorHashCode += mediaQueryListsHashCode();
+            selectorHashCode += parentSelector.selectorHashCode(considerMediaQueryLists);
+            selectorHashCode += childSelector.selectorHashCode(considerMediaQueryLists);
+        }
+        return selectorHashCode;
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!generalEquals(obj))
@@ -76,7 +89,7 @@ public class DescendantSelector extends Combinator {
 			return false;
 		return true;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		if (hashCode  == -1) {
@@ -90,7 +103,7 @@ public class DescendantSelector extends Combinator {
 		}
 		return hashCode;
 	}
-	
+
 	@Override
 	public DescendantSelector clone() {
 		DescendantSelector newOne = new DescendantSelector(this.parentSelector.clone(), this.childSelector.clone());
@@ -101,7 +114,7 @@ public class DescendantSelector extends Combinator {
 
 	@Override
 	protected String getXPathConditionsString(List<String> xpathConditions) throws UnsupportedSelectorToXPathException {
-		 
+
 		// if selector combinator is " " or ">"
 		BaseSelector parent = this.getParentSelector();
 		BaseSelector child = this.getChildSelector();
@@ -114,12 +127,12 @@ public class DescendantSelector extends Combinator {
 		List<String> childConditions = new ArrayList<>();
 		String childPrefix = child.getXPathConditionsString(childConditions);
 		String childXPath = generateXpath(childPrefix, childConditions);
-		
+
 		return String.format("%s/%s%s", parentXPath, modifier, childXPath);
-		
-	
+
+
 	}
-	
+
 	@Override
 	protected int[] getSpecificityElements() {
 		int[] toReturn = new int[3];
@@ -141,5 +154,5 @@ public class DescendantSelector extends Combinator {
 		return parentSelector;
 	}
 
-	
+
 }

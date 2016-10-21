@@ -34,26 +34,26 @@ public abstract class Selector extends CSSModelObject  {
 	protected CSSSource source = CSSSource.EXTERNAL;
 	protected CSSOrigin origin = CSSOrigin.AUTHOR;
 	private Selector originalSelector;
-	
+
 	public Selector() {
 		this(new LocationInfo());
 	}
-	
+
 	public Selector(LocationInfo locationInfo) {
 		this.locationInfo = locationInfo;
 		declarations = new LinkedHashMap<>();
 		mediaQueryLists = new LinkedHashSet<>();
 	}
-	
+
 	/**
-	 * Gets the parent style sheet of this Selector 
+	 * Gets the parent style sheet of this Selector
 	 * @return the parentStyleSheet
 	 */
 	public StyleSheet getParentStyleSheet() {
 		return parentStyleSheet;
 	}
 
-	/** 
+	/**
 	 * Sets the parent style sheet of this Selector.
 	 * If the selector is not currently in the StyleSheet,
 	 * it will add it to the StyleSheet.
@@ -64,39 +64,39 @@ public abstract class Selector extends CSSModelObject  {
 		if (!parentStyleSheet.containsSelector(this))
 			parentStyleSheet.addSelector(this);
 	}
-		
+
 	public LocationInfo getSelectorNameLocationInfo() {
 		return this.selectorNameLocationInfo;
 	}
-	
+
 	public void setSelectorNameLocationInfo(LocationInfo locationInfo) {
 		this.selectorNameLocationInfo = locationInfo;
 	}
-	
+
 	public void addDeclaration(Declaration declaration) {
 		if (!declarations.containsKey(declaration))
 			declarations.put(declaration, declarations.size() + 1);
 		declaration.setSelector(this);
 	}
-	
+
 	public int getNumberOfDeclarations() {
 		return declarations.size();
 	}
-		
+
 	public Iterable<Declaration> getDeclarations() {
 		return declarations.keySet();
 	}
-	
+
 	public boolean containsDeclaration(Declaration declaration) {
 		return this.declarations.containsKey(declaration);
-	}	
-	
+	}
+
 	public int getDeclarationNumber(Declaration declaration) {
 		if (!containsDeclaration(declaration))
 			return -1;
 		return declarations.get(declaration);
 	}
-	
+
 	/**
 	 * Returns the selector number in the style sheet
 	 * @return
@@ -104,11 +104,22 @@ public abstract class Selector extends CSSModelObject  {
 	public int getSelectorNumber() {
 		return parentStyleSheet.getSelectorNumber(this);
 	}
-	
+
 	public boolean selectorEquals(Selector otherSelector) {
 		return selectorEquals(otherSelector, true);
 	}
-	
+
+    /**
+     * Similarly to selectorEquals, selectorHashCode provides a hashCode that
+     * doesn't take into account selector location.
+     *
+     * @param considerMediaQueryLists
+     * @return a hashcode independent of selector location
+     */
+    public int selectorHashCode() {
+        return selectorHashCode(true);
+    }
+
 	/**
 	 * The equals() method for different selectors have different meanings
 	 * but in all of them selectors should be exactly the same and are appeared
@@ -120,11 +131,20 @@ public abstract class Selector extends CSSModelObject  {
 	 * @return
 	 */
 	public abstract boolean selectorEquals(Selector otherSelector, boolean considerMediaQueryLists);
-	
+
+    /**
+     * Similarly to selectorEquals, selectorHashCode provides a hashCode that
+     * doesn't take into account selector location.
+     *
+     * @param considerMediaQueryLists
+     * @return a hashcode independent of selector location
+     */
+    public abstract int selectorHashCode(boolean considerMediaQueryLists);
+
 	public abstract Selector clone();
-	
+
 	public abstract String getXPath() throws UnsupportedSelectorToXPathException;
-	
+
 	@SuppressWarnings("serial")
 	public static class UnsupportedSelectorToXPathException extends Exception {
 		private Selector selector;
@@ -158,24 +178,24 @@ public abstract class Selector extends CSSModelObject  {
 		newEmptySelector.declarations.clear();
 		return newEmptySelector;
 	}
-	
+
 	public void addMediaQueryLists(Iterable<MediaQueryList> currentMediaQueryLists) {
 		for (MediaQueryList currentMediaQueryList : currentMediaQueryLists)
 			mediaQueryLists.add(currentMediaQueryList.clone());
 	}
-	
+
 	public void removeMediaQueryList(MediaQueryList mediaQueryList) {
 		mediaQueryLists.remove(mediaQueryList);
 	}
-	
+
 	public Set<MediaQueryList> getMediaQueryLists() {
 		return mediaQueryLists;
 	}
 
 	public void addMediaQueryList(MediaQueryList forMedia) {
-		mediaQueryLists.add(forMedia);		
+		mediaQueryLists.add(forMedia);
 	}
-	
+
 	/**
 	 * Compares two selectors only based on their MediaQueryList's.
 	 * It uses {@link MediaQueryList#mediaQueryListEquals()}
@@ -204,11 +224,26 @@ public abstract class Selector extends CSSModelObject  {
 	}
 
 	/**
+	 * A hashCode from MediaQueryLists only.
+	 * It uses {@link MediaQueryList#mediaQueryListHashCode()}
+	 * and does not consider order of MediaQueryLists.
+	 * @return
+	 */
+	public int mediaQueryListsHashCode() {
+        int hashCode = 0;
+		for (MediaQueryList mediaQueryList : mediaQueryLists) {
+            hashCode += mediaQueryList.mediaQueryListHashCode();
+		}
+		return hashCode;
+	}
+
+
+	/**
 	 * Returns all virtual shorthand declarations for this selector.
-	 * Please note that, virtual shorthand declarations <b>DO NOT</b> have the 
+	 * Please note that, virtual shorthand declarations <b>DO NOT</b> have the
 	 * real values, because it is not easy to get, from individual declarations, the values
 	 * for the equivalent shorthand declarations.
-	 * Therefore, from a virtual shorthand declaration, only use 1) property name and 2) individual properties 
+	 * Therefore, from a virtual shorthand declaration, only use 1) property name and 2) individual properties
 	 * @return
 	 */
 	public Iterable<ShorthandDeclaration> getVirtualShorthandDeclarations() {
@@ -224,7 +259,7 @@ public abstract class Selector extends CSSModelObject  {
 		 * to the mentioned set.
 		 */
 		Map<String, Set<Declaration>> shorthandedDeclarations = new HashMap<>();
-	
+
 		for (Declaration declaration : getDeclarations()) {
 			String property = declaration.getProperty();
 			/*
@@ -249,14 +284,14 @@ public abstract class Selector extends CSSModelObject  {
 				shorthandedDeclarations.put(shorthand, currentIndividuals);
 			}
 		}
-	
+
 		/*
 		 * Make a virtual shorthand for every possibility
-		 * 
+		 *
 		 */
 		List<ShorthandDeclaration> virtualShorthands = new ArrayList<>();
 		for (Entry<String, Set<Declaration>> entry : shorthandedDeclarations.entrySet()) {
-	
+
 			// Create a shorthand
 			ShorthandDeclaration virtualShorthand = new ShorthandDeclaration(entry.getKey(), new ArrayList<DeclarationValue>(), this, false, false, new LocationInfo(-1, -1));
 
@@ -272,20 +307,20 @@ public abstract class Selector extends CSSModelObject  {
 						shouldSkipDueToDifferentImportance = true;
 						break;
 					}
-					
+
 				}
 			}
-			
+
 			if (shouldSkipDueToDifferentImportance) {
 				// Don't add this, because some of the individual declarations have different importance
 				continue;
 			}
-			
+
 			virtualShorthand.isImportant(isImportant);
-			
+
 			/*
 			 * Check if the new virtual shorthand is styling the same
-			 * properties as the individual ones 
+			 * properties as the individual ones
 			 * This is, BTW, a HACK.
 			 * A better implementation needs using default values for all properties
 			 * to insert them when the corresponding individual declarations do not exist.
@@ -296,11 +331,11 @@ public abstract class Selector extends CSSModelObject  {
 			((ShorthandDeclaration)toTest).isVirtual(true);
 			if (toTest.getAllSetPropertyAndLayers().equals(virtualShorthand.getAllSetPropertyAndLayers()))
 				virtualShorthands.add(virtualShorthand);
-			
+
 		}
 		return virtualShorthands;
-	}	
-	
+	}
+
 	/**
 	 * Returns all the declarations for this selector including virtual shorthand ones
 	 * @return
@@ -315,7 +350,7 @@ public abstract class Selector extends CSSModelObject  {
 		}
 		return toReturn;
 	}
-	
+
 	/**
 	 * Returns all individual declarations which are styled in this selector.
 	 * First, we convert all shorthand declarations to their individual ones (as individual as possible!)
@@ -332,10 +367,10 @@ public abstract class Selector extends CSSModelObject  {
 				allIndividualDeclarations.add(declaration);
 			}
 		}
-		
+
 		// Handle overrides
 		Map<String, Declaration> finalDeclarations = new LinkedHashMap<>(); //Keep the order!
-		
+
 		// Loop from down to top
 		for (int i = allIndividualDeclarations.size() - 1; i >= 0; i--) {
 			Declaration currentIndividualDeclaration = allIndividualDeclarations.get(i);
@@ -344,27 +379,27 @@ public abstract class Selector extends CSSModelObject  {
 				if (currentIndividualDeclaration.isImportant() && !finalDeclarations.get(property).isImportant()) {
 					// If current is important, it should override
 					finalDeclarations.put(property, currentIndividualDeclaration);
-				} 
+				}
 			} else {
 				finalDeclarations.put(property, currentIndividualDeclaration);
 			}
 		}
-		
+
 		List<Declaration> toReturn = new ArrayList<>();
 		finalDeclarations.entrySet().forEach(entry -> toReturn.add(entry.getValue()));
-		
+
 		return toReturn;
 	}
-	
+
 	/**
 	 * Returns all the declarations of this selector normally, except when we have an intra-selector dependency.
 	 * In this case, this method removes the redundant declarations.
 	 * If one of the participating declarations is a shorthand, the method will break it down to the individual ones.
-	 * 
+	 *
 	 */
 	public Iterable<Declaration> getDeclarationsWithIntraSelectorDependenciesRemoved() {
 		Map<String, Declaration> toReturn = new LinkedHashMap<>();
-		
+
 		Set<Declaration> toExpand = new HashSet<>();
 		CSSValueOverridingDependencyList intraSelectorOverridingDependencies = getIntraSelectorOverridingDependencies();
 		for (CSSValueOverridingDependency dependency : intraSelectorOverridingDependencies) {
@@ -377,7 +412,7 @@ public abstract class Selector extends CSSModelObject  {
 				toExpand.add(d2);
 			}
 		}
-		
+
 		for (Declaration declaration : getDeclarations()) {
 			if (toExpand.contains(declaration)) {
 				for (Declaration individual : ((ShorthandDeclaration)declaration).getIndividualDeclarationsAtTheDeepestLevel()) {
@@ -387,7 +422,7 @@ public abstract class Selector extends CSSModelObject  {
 				toReturn.put(declaration.getProperty(), declaration);
 			}
 		}
-		
+
 		return new ArrayList<>(toReturn.values());
 	}
 
@@ -414,5 +449,5 @@ public abstract class Selector extends CSSModelObject  {
 	public void setOriginalSelector(Selector originalSelector) {
 		this.originalSelector = originalSelector;
 	}
-	
+
 }

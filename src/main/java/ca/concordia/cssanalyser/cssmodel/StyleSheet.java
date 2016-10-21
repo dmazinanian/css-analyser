@@ -9,8 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+
 import org.w3c.dom.Document;
 
+import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
@@ -25,21 +28,23 @@ import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDepen
 
 /**
  * This class is the main class storing all CSS data in the memory
- * 
+ *
  * @author Davood Mazinanian
  */
 public class StyleSheet extends CSSModelObject {
 
+    Logger LOGGER = FileLogger.getLogger(StyleSheet.class);
+
 	private Map<Selector, Integer> selectors;
 	private String cssFilePath;
 	private CSSValueOverridingDependencyList orderDependencies;
-	
-	
+
+
 
 	public StyleSheet() {
 		selectors = new LinkedHashMap<>();
 	}
-	
+
 	public void setPath(String path) {
 		cssFilePath = path;
 	}
@@ -47,7 +52,7 @@ public class StyleSheet extends CSSModelObject {
 	/**
 	 * Adds a new selector (whether single or grouped) to the selectors list of
 	 * this style sheet.
-	 * 
+	 *
 	 * @param selector
 	 */
 	public void addSelector(Selector selector) {
@@ -56,10 +61,10 @@ public class StyleSheet extends CSSModelObject {
 		}
 		selector.setParentStyleSheet(this);
 	}
-	
+
 	/**
 	 * Returns all the selectors, whether single or grouped in the style sheet.
-	 * 
+	 *
 	 * @return List<Selector>
 	 */
 	public Iterable<Selector> getAllSelectors() {
@@ -70,7 +75,7 @@ public class StyleSheet extends CSSModelObject {
 	 * This method returns all the single selectors in the style sheet, in
 	 * addition to the all single selectors inside the grouped selectors. It
 	 * preserves the order of single selectors.
-	 * 
+	 *
 	 * @return List<BaseSelector>
 	 */
 	public List<BaseSelector> getAllBaseSelectors() {
@@ -83,7 +88,7 @@ public class StyleSheet extends CSSModelObject {
 				for (BaseSelector bs : ((GroupingSelector)selector).getBaseSelectors()) {
 					allBaseSelectors.add(bs);
 				}
-				
+
 			}
 		}
 		return allBaseSelectors;
@@ -92,7 +97,7 @@ public class StyleSheet extends CSSModelObject {
 	/**
 	 * This method returns all the declarations inside a style sheet, preserving
 	 * their order in which they have been defined.
-	 * 
+	 *
 	 * @return List<Declaration>
 	 */
 	public Set<Declaration> getAllDeclarations() {
@@ -126,7 +131,7 @@ public class StyleSheet extends CSSModelObject {
 					}
 					lastMediaQueryLists = s.getMediaQueryLists();
 				}
-				
+
 				toReturn.append(getIndentsString(currentIndentation) + s + " {" + System.lineSeparator());
 				for (Declaration d : s.getDeclarations()) {
 					if (d instanceof ShorthandDeclaration) {
@@ -139,7 +144,7 @@ public class StyleSheet extends CSSModelObject {
 					toReturn.append(";" + System.lineSeparator());
 				}
 				toReturn.append(getIndentsString(currentIndentation) + "}" + System.lineSeparator() + System.lineSeparator());
-				
+
 				if (selectorIterator.hasNext()) {
 					s = selectorIterator.next();
 					if (lastMediaQueryLists != null) {
@@ -157,13 +162,13 @@ public class StyleSheet extends CSSModelObject {
 					break;
 				}
 			}
-			
+
 			while (currentIndentation > 0) { // unclosed media queries
 				currentIndentation--;
 				toReturn.append(getIndentsString(currentIndentation) + "}" + System.lineSeparator()); // close media query
-			
+
 			}
-			
+
 		}
 
 		return toReturn.toString();
@@ -180,11 +185,11 @@ public class StyleSheet extends CSSModelObject {
 		for (Selector selector : s.getAllSelectors())
 			addSelector(selector);
 	}
-	
+
 	public String getFilePath() {
 		return cssFilePath;
 	}
-	
+
 	@Override
 	public StyleSheet clone() {
 		StyleSheet styleSheet = new StyleSheet();
@@ -217,7 +222,7 @@ public class StyleSheet extends CSSModelObject {
 	 * @return
 	 */
 	public Map<DOMNodeWrapper, List<BaseSelector>> getCSSClassesForDOMNodes(Document document) {
-			
+
 		// Map every node in the DOM tree to a list of selectors in the stylesheet
 		Map<DOMNodeWrapper, List<BaseSelector>> nodeToSelectorsMapping = new HashMap<>();
 		for (BaseSelector selector : getAllBaseSelectors()) {
@@ -238,31 +243,32 @@ public class StyleSheet extends CSSModelObject {
 		for (Selector s : selectors.keySet())
 			s.addMediaQueryList(forMedia);
 	}
-	
+
 	public CSSValueOverridingDependencyList getLastComputetOrderDependencies() {
 		return orderDependencies;
 	}
 
-	public CSSValueOverridingDependencyList getValueOverridingDependencies(Document dom) {
-		
+	public CSSValueOverridingDependencyList getValueOverridingDependencies(Document dom, boolean domFreeDeps) {
+
 		CSSDependencyDetector dependencyDetector;
-		
-		if (dom != null) {                                                                                               
+
+		if (dom != null) {
 			dependencyDetector = new CSSDependencyDetector(this, dom);
-		} else {                                                                                                         
-			dependencyDetector = new CSSDependencyDetector(this);                                     
+		} else {
+			dependencyDetector = new CSSDependencyDetector(this);
 		}
-		
-		orderDependencies = dependencyDetector.findOverridingDependancies();
-		
+
+		orderDependencies
+            = dependencyDetector.findOverridingDependancies(domFreeDeps);
+
 		return orderDependencies;
-		
+
 	}
-	
-	public CSSValueOverridingDependencyList getValueOverridingDependencies() {
-		
-		return getValueOverridingDependencies(null);
-		
+
+	public CSSValueOverridingDependencyList getValueOverridingDependencies(boolean domFreeDeps) {
+
+		return getValueOverridingDependencies(null, domFreeDeps);
+
 	}
 
 	public int getNumberOfSelectors() {
@@ -274,8 +280,9 @@ public class StyleSheet extends CSSModelObject {
 			selectors.remove(s);
 		// Update the numbers associated with every declaration
 		int i = 1;
-		for (Selector s : selectors.keySet())
+		for (Selector s : selectors.keySet()) {
 			selectors.put(s, i++);
+        }
 	}
 
 	public int getSelectorNumber(Selector selector) {

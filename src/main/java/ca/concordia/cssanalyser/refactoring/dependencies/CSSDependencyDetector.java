@@ -15,21 +15,24 @@ import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.dom.DOMNodeWrapper;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOverridingDependency.InterSelectorDependencyReason;
 
+import css.intersection.CSSDomFreeDependencyDetector;
+
 public class CSSDependencyDetector {
-	
+
 	private final Document document;
 	private final StyleSheet styleSheet;
 
-	public CSSDependencyDetector(StyleSheet styleSheet, Document dom) {
+	public CSSDependencyDetector(StyleSheet styleSheet,
+                                 Document dom) {
 		this.document = dom;
 		this.styleSheet = styleSheet;
 	}
-	
+
 	public CSSDependencyDetector(StyleSheet styleSheet) {
 		this.document = null;
 		this.styleSheet = styleSheet;
 	}
-	
+
 	public Document getDocument() {
 		return document;
 	}
@@ -43,33 +46,37 @@ public class CSSDependencyDetector {
 	 * It doesn't take into account the specificity of selectors.
 	 * @return
 	 */
-	public CSSValueOverridingDependencyList findOverridingDependancies() {
-	
+	public CSSValueOverridingDependencyList findOverridingDependancies(boolean domFreeDeps) {
+
 		CSSValueOverridingDependencyList dependencies;
 
-		// Finding overriding dependencies across selectors 
+		// Finding overriding dependencies across selectors
 		if (this.document == null) {
 			// Find property overriding dependencies inside selectors
-			dependencies = findIntraSelectorDependencies();
+            if (domFreeDeps) {
+                dependencies = findDomFreeSelectorDependencies();
+            } else {
+                dependencies = findIntraSelectorDependencies();
+            }
 		} else {
 			dependencies = findInterSelectorDependencies();
 
 		}
-		
+
 		return dependencies;
 	}
 
 	private CSSValueOverridingDependencyList findInterSelectorDependencies() {
-		
+
 		CSSValueOverridingDependencyList dependencies = new CSSValueOverridingDependencyList();
-		Map<Integer, CSSValueOverridingDependency> dependenciesSpecialHashMapper = new HashMap<>();		
-		
+		Map<Integer, CSSValueOverridingDependency> dependenciesSpecialHashMapper = new HashMap<>();
+
 		// For each node, we find all the classes that select that node.
 		Map<DOMNodeWrapper, List<BaseSelector>> nodeToSelectorsMapping = styleSheet.getCSSClassesForDOMNodes(document);
 
 
 		// We have to keep track of the base selector in which the declaration exists
-		// For grouping selectors, the declaration's selector 
+		// For grouping selectors, the declaration's selector
 		class Entry {
 			private Declaration declaration;
 			private BaseSelector baseSelector;
@@ -82,7 +89,7 @@ public class CSSDependencyDetector {
 				return this.baseSelector + "$" + this.declaration;
 			}
 		}
-		
+
 		for (DOMNodeWrapper node : nodeToSelectorsMapping.keySet()) {
 			List<BaseSelector> selectorsForCurrentNode = nodeToSelectorsMapping.get(node);
 			//if (selectorsForCurrentNode.size() > 1) {
@@ -92,11 +99,11 @@ public class CSSDependencyDetector {
 
 				for (BaseSelector selector : selectorsForCurrentNode) {
 					for (Declaration declaration : selector.getDeclarations()) {
-						
+
 //						if (declaration instanceof ShorthandDeclaration && ((ShorthandDeclaration)declaration).isVirtual())
 //							continue;
-						
-						// We find all possible properties which could be styled using this declaration 
+
+						// We find all possible properties which could be styled using this declaration
 						Set<String> possiblyStyledPropertiesSet = new HashSet<>();
 						// The first possible property is the real property of the declaration.
 						possiblyStyledPropertiesSet.add(declaration.getProperty());
@@ -114,10 +121,10 @@ public class CSSDependencyDetector {
 
 								for (Entry oldDeclarationEntry : declarationsStylingThisProperty) {
 									if (!oldDeclarationEntry.declaration.declarationIsEquivalent(declaration, true)) {
-										/*!oldDeclarationEntry.baseSelector.selectorEquals(selector) &&*/  
+										/*!oldDeclarationEntry.baseSelector.selectorEquals(selector) &&*/
 
 										// Check to see whether such a dependency is there already
-										
+
 										int specialHashCode = CSSValueOverridingDependency.getSpecialHashCode(
 												oldDeclarationEntry.baseSelector, oldDeclarationEntry.declaration,
 												selector, declaration);
@@ -143,7 +150,7 @@ public class CSSDependencyDetector {
 															InterSelectorDependencyReason.DUE_TO_CASCADING);
 												} else if (oldDeclarationEntry.baseSelector.getSpecificity() >= selector.getSpecificity()) {
 													newDependency = new CSSInterSelectorValueOverridingDependency(
-															selector, 
+															selector,
 															declaration,
 															oldDeclarationEntry.baseSelector,
 															oldDeclarationEntry.declaration,
@@ -153,7 +160,7 @@ public class CSSDependencyDetector {
 													newDependency = new CSSInterSelectorValueOverridingDependency(
 															oldDeclarationEntry.baseSelector,
 															oldDeclarationEntry.declaration,
-															selector, 
+															selector,
 															declaration,
 															possiblyStyledProperty,
 															InterSelectorDependencyReason.DUE_TO_SPECIFICITY);
@@ -197,7 +204,7 @@ public class CSSDependencyDetector {
 	public static CSSValueOverridingDependencyList getValueOverridingDependenciesForSelector(BaseSelector selector) {
 		CSSValueOverridingDependencyList dependencies;
 		dependencies = new CSSValueOverridingDependencyList();
-		Map<Integer, CSSValueOverridingDependency> dependenciesSpecialHashMapper = new HashMap<>();		
+		Map<Integer, CSSValueOverridingDependency> dependenciesSpecialHashMapper = new HashMap<>();
 		Map<String, Set<Declaration>> propertyToDeclarationMapping = new HashMap<>();
 		for (Declaration declaration : selector.getDeclarations()) {
 			Set<String> possiblyStyledProperties;
@@ -207,7 +214,7 @@ public class CSSDependencyDetector {
 				possiblyStyledProperties = new HashSet<>();
 			}
 			possiblyStyledProperties.add(declaration.getProperty());
-			
+
 			for (String possibleIndividualProperty : possiblyStyledProperties) {
 				Set<Declaration> correspondingDeclarations = propertyToDeclarationMapping.get(possibleIndividualProperty);
 				if (correspondingDeclarations == null) {
@@ -215,7 +222,7 @@ public class CSSDependencyDetector {
 				} else {
 					for (Declaration d : correspondingDeclarations) {
 						if (!d.declarationEquals(declaration)) {
-							CSSValueOverridingDependency newDependency = 
+							CSSValueOverridingDependency newDependency =
 									dependenciesSpecialHashMapper.get(CSSValueOverridingDependency.getSpecialHashCode(selector, d, selector, declaration));
 							if (newDependency != null) {
 								newDependency.addDependencyLabel(possibleIndividualProperty);
@@ -224,7 +231,7 @@ public class CSSDependencyDetector {
 								dependencies.add(newDependency);
 								dependenciesSpecialHashMapper.put(newDependency.getSpecialHashCode(), newDependency);
 							}
-							
+
 						}
 					}
 				}
@@ -234,4 +241,11 @@ public class CSSDependencyDetector {
 		}
 		return dependencies;
 	}
+
+	private CSSValueOverridingDependencyList findDomFreeSelectorDependencies() {
+        CSSDomFreeDependencyDetector d
+            = new CSSDomFreeDependencyDetector(this.styleSheet);
+		return d.findOverridingDependencies();
+    }
+
 }

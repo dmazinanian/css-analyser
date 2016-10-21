@@ -24,24 +24,24 @@ public class MediaQueryList extends CSSModelObject implements Iterable<MediaQuer
 			addMediaQuery(atomicMedia);
 		}
 	}
-	
+
 	public void removeMediaQuery(MediaQuery media) {
 		listOfMediaQueries.remove(media);
 	}
-	
+
 	public void removeAllMediaQueries(MediaQueryList mediaQueryList) {
 		for (MediaQuery mediaQuery : mediaQueryList)
 			listOfMediaQueries.remove(mediaQuery);
 	}
-	
+
 	public int size() {
 		return listOfMediaQueries.size();
 	}
 
 
 	/**
-	 * Compares two MediaQueryList's only based on 
-	 * their media queries and {@link MediaQuery#mediaQueryEquals()}, 
+	 * Compares two MediaQueryList's only based on
+	 * their media queries and {@link MediaQuery#mediaQueryEquals()},
 	 * The order of media queries is not important.
 	 * @param otherMediaQuery
 	 * @return
@@ -70,6 +70,25 @@ public class MediaQueryList extends CSSModelObject implements Iterable<MediaQuer
 		}
 		return true;
 	}
+
+	/**
+	 * Compute hashCode from
+	 * their media queries and {@link MediaQuery#mediaQueryHashCode()},
+	 * The order of media queries is not important.
+	 * @return
+	 */
+	public int mediaQueryListHashCode() {
+		if (listOfMediaQueries == null)
+            return 0;
+        else {
+            int hashCode = 0;
+			for (MediaQuery mediaQuery : listOfMediaQueries) {
+                hashCode += mediaQuery.mediaQueryHashCode();
+			}
+            return hashCode;
+		}
+	}
+
 
 	@Override
 	public Iterator<MediaQuery> iterator() {
@@ -113,10 +132,10 @@ public class MediaQueryList extends CSSModelObject implements Iterable<MediaQuer
 			if (iterator.hasNext())
 				toReturn.append(", ");
 		}
-		
+
 		return toReturn.toString();
 	}
-	
+
 	public MediaQueryList clone() {
 		MediaQueryList newOne = new MediaQueryList();
 		for (MediaQuery query : listOfMediaQueries) {

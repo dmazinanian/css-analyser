@@ -14,32 +14,32 @@ public abstract class CSSDependency<E> {
 	private Set<E> labels = new HashSet<>();
 	private final CSSDependencyNode fromNode;
 	private final CSSDependencyNode toNode;
-	
+
 	public CSSDependency(CSSDependencyNode fromNode, CSSDependencyNode toNode) {
 		this.fromNode = fromNode;
 		this.toNode = toNode;
 	}
-	
+
 	public Set<E> getDependencyLabels() {
 		return this.labels;
 	}
-	
+
 	public boolean addDependencyLabel(E label) {
 		return this.labels.add(label);
 	}
-	
+
 	public boolean removeDependencyLabel(E label) {
 		return this.labels.remove(label);
 	}
-	
+
 	public CSSDependencyNode getStartingNode() {
 		return this.fromNode;
 	}
-	
+
 	public CSSDependencyNode getEndingNode() {
 		return this.toNode;
 	}
-	
+
 	protected String getLabelsString() {
 		StringBuilder builder = new StringBuilder();
 		for (E label : getDependencyLabels()) {
@@ -48,8 +48,8 @@ public abstract class CSSDependency<E> {
 		if (builder.length() > 2)
 			builder.delete(builder.length() - 2, builder.length());
 		return builder.toString();
-	}	
-	
+	}
+
 	public abstract int getSpecialHashCode();
 }
- 
+

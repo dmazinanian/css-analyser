@@ -3,41 +3,48 @@ package ca.concordia.cssanalyser.cssmodel.selectors;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+
+import ca.concordia.cssanalyser.app.FileLogger;
+
 /**
  * selector1 ~ selector2
  * @author Davood Mazinanian
  */
 public class SiblingSelector extends Combinator {
-	
+
+    Logger LOGGER = FileLogger.getLogger(SiblingSelector.class);
+
 	protected final BaseSelector beforeMainSelector;
 	protected final SimpleSelector mainSelector;
 	private int hashCode = -1;
-	
+	private int selectorHashCode = -1;
+
 	public SiblingSelector(BaseSelector firstSelector, SimpleSelector secondSelector) {
 		this(firstSelector, secondSelector, '~');
 	}
-	
+
 	public SiblingSelector(BaseSelector firstSelector, SimpleSelector secondSelector, char combinatorCharacter) {
 		super(combinatorCharacter);
 		beforeMainSelector = firstSelector;
 		mainSelector = secondSelector;
 	}
-	
+
 	public BaseSelector getFirstSelector() {
 		return beforeMainSelector;
 	}
-	
+
 	public SimpleSelector getSecondSelector() {
 		return mainSelector;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!generalEquals(obj))
 			return false;
 		return hashCode() == obj.hashCode();
 	}
-	
+
 	private boolean generalEquals(Object obj) {
 		if (obj == null)
 			return false;
@@ -47,7 +54,7 @@ public class SiblingSelector extends Combinator {
 			return false;
 		return true;
 	}
-	
+
 	@Override
 	public boolean selectorEquals(Selector otherSelector, boolean considerMediaQueryLists) {
 		if (!generalEquals(otherSelector))
@@ -56,8 +63,23 @@ public class SiblingSelector extends Combinator {
 			return false;
 		SiblingSelector otherIndirectAdjacentSelector = (SiblingSelector)otherSelector;
 		return mainSelector.selectorEquals(otherIndirectAdjacentSelector.mainSelector, considerMediaQueryLists) &&
+                getCombinatorCharacter() == otherIndirectAdjacentSelector.getCombinatorCharacter() &&
 				beforeMainSelector.selectorEquals(otherIndirectAdjacentSelector.beforeMainSelector, considerMediaQueryLists);
-				
+
+	}
+
+    @Override
+	public int selectorHashCode(boolean considerMediaQueryLists) {
+		if (selectorHashCode == -1) {
+			selectorHashCode = 17;
+			selectorHashCode = 31 * selectorHashCode + Character.hashCode(getCombinatorCharacter());
+			selectorHashCode = 31 * selectorHashCode + (beforeMainSelector == null ? 0 : beforeMainSelector.selectorHashCode(considerMediaQueryLists));
+			selectorHashCode = 31 * selectorHashCode + (mainSelector == null ? 0 : mainSelector.selectorHashCode(considerMediaQueryLists));
+			if (considerMediaQueryLists) {
+				selectorHashCode = 31 * selectorHashCode + mediaQueryListsHashCode();
+			}
+		}
+		return selectorHashCode;
 	}
 
 	@Override
@@ -74,7 +96,7 @@ public class SiblingSelector extends Combinator {
 		}
 		return hashCode;
 	}
-	
+
 	@Override
 	public SiblingSelector clone() {
 		SiblingSelector newOne = new SiblingSelector(beforeMainSelector.clone(), mainSelector.clone());
@@ -90,7 +112,7 @@ public class SiblingSelector extends Combinator {
 
 		BaseSelector left = this.getFirstSelector();
 		BaseSelector right = this.getSecondSelector();
-		
+
 		List<String> rightXPathConditions = new ArrayList<>();
 		String rightXPathPrefix = right.getXPathConditionsString(xpathConditions);
 		// If this is a "+" selector:
@@ -99,14 +121,14 @@ public class SiblingSelector extends Combinator {
 			xpathConditions.add("position() = 1");
 		}
 		String rightXPath = generateXpath(rightXPathPrefix, rightXPathConditions);
-		
+
 		List<String> leftXPathConditions = new ArrayList<>();
 		String leftXPathPrefix = left.getXPathConditionsString(leftXPathConditions);
-		
+
 		String leftXPath = generateXpath(leftXPathPrefix, leftXPathConditions);
-		
+
 		return String.format("%s/following-sibling::%s", leftXPath, rightXPath);
-	
+
 	}
 
 	@Override

@@ -10,30 +10,38 @@ public class CSSValueOverridingDependencyNode implements CSSDependencyNode {
 		this.declaration = declaration;
 		this.selector = selector;
 	}
-	
+
 	public Declaration getDeclaration() {
 		return this.declaration;
 	}
-	
+
 	public Selector getSelector() {
 		return this.selector;
 	}
-		
-	@Override                                                                                                                    
-	public boolean nodeEquals(CSSDependencyNode otherCSSDependencyNode) {                                                        
-		if (!(otherCSSDependencyNode instanceof CSSValueOverridingDependencyNode))                                                  
-			return false;                                                                                                        
-		                                                                                                                         
+
+	@Override
+	public boolean nodeEquals(CSSDependencyNode otherCSSDependencyNode) {
+		if (!(otherCSSDependencyNode instanceof CSSValueOverridingDependencyNode))
+			return false;
+
 		CSSValueOverridingDependencyNode otherValueOverridingDependencyNode = (CSSValueOverridingDependencyNode)otherCSSDependencyNode;
-		                                                                                                                         
+
 		return this.selector.selectorEquals(otherValueOverridingDependencyNode.getSelector()); // &&
 				//(this.declaration.declarationEquals(otherValueOverridingDependencyNode.declaration) ||
-				//this.declaration.declarationIsEquivalent(otherValueOverridingDependencyNode.declaration));                    
-				                                                                                                                 
+				//this.declaration.declarationIsEquivalent(otherValueOverridingDependencyNode.declaration));
+
 	}
-		
-	
-	
+
+    public int nodeHashCode() {
+		return this.selector.selectorHashCode();
+				//(this.declaration.declarationEquals(otherValueOverridingDependencyNode.declaration) ||
+				//this.declaration.declarationIsEquivalent(otherValueOverridingDependencyNode.declaration));
+
+	}
+
+
+
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -71,6 +79,6 @@ public class CSSValueOverridingDependencyNode implements CSSDependencyNode {
 	public String toString() {
 		return selector.toString() + "<" + selector.getMediaQueryLists()  + ">" + "$" + declaration.toString();
 	}
-	
-	
+
+
 }

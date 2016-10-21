@@ -9,6 +9,7 @@ apply plugin: 'application'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 mainClassName = 'ca.concordia.cssanalyser.app.CSSAnalyserCLI'
+libsDirName = 'lib'
 
 repositories {
 	mavenCentral()
@@ -22,6 +23,7 @@ dependencies {
 	compile "org.w3c.css:sac:${sac_version}"
 	compile "args4j:args4j:${args4j_version}"
 	compile "com.google.guava:guava:${guava_version}"
+    compile "org.jgrapht:jgrapht:${jgrapht_version}"
 	testCompile "junit:junit:${junit_version}"
 }
 
@@ -30,7 +32,7 @@ jar {
 
     manifest {
         attributes 'Main-Class': mainClassName,
-                   "Class-Path": configurations.compile.collect { "libs/${it.getName()}" }.join(' ')
+                   "Class-Path": configurations.compile.collect { "lib/${it.getName()}" }.join(' ')
     }
 }
 
@@ -39,7 +41,7 @@ test {
 }
 
 task copyToLibs(type: Copy) {
-    into "$buildDir/libs/libs"
+    into "$buildDir/lib"
     from configurations.runtime
 }
 
