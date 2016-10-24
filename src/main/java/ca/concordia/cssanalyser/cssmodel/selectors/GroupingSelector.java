@@ -9,6 +9,7 @@ import java.util.Set;
 
 import ca.concordia.cssanalyser.cssmodel.LocationInfo;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.media.MediaQueryList;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSDependencyDetector;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSValueOverridingDependencyList;
 
@@ -51,6 +52,30 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 		for (BaseSelector baseSelector : this.listOfBaseSelectors)
 			baseSelector.removeDeclaration(d);
 		super.removeDeclaration(d);
+	}
+	
+	@Override
+	public void addMediaQueryLists(Iterable<MediaQueryList> currentMediaQueryLists) {
+		for (BaseSelector baseSelector : listOfBaseSelectors) {
+			baseSelector.addMediaQueryLists(currentMediaQueryLists);
+		}
+		super.addMediaQueryLists(currentMediaQueryLists);
+	}
+	
+	@Override
+	public void removeMediaQueryList(MediaQueryList mediaQueryList) {
+		for (BaseSelector baseSelector : listOfBaseSelectors) {
+			baseSelector.removeMediaQueryList(mediaQueryList);
+		}
+		super.removeMediaQueryList(mediaQueryList);
+	}
+	
+	@Override
+	public void addMediaQueryList(MediaQueryList forMedia) {
+		for (BaseSelector baseSelector : listOfBaseSelectors) {
+			baseSelector.addMediaQueryList(forMedia);
+		}	
+		super.addMediaQueryList(forMedia);	
 	}
 	
 	@Override
