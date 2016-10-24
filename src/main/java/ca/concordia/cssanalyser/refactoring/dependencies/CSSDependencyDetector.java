@@ -12,6 +12,7 @@ import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
 import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
+import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.dom.DOMNodeWrapper;
 import ca.concordia.cssanalyser.refactoring.dependencies.CSSInterSelectorValueOverridingDependency.InterSelectorDependencyReason;
 
@@ -126,37 +127,64 @@ public class CSSDependencyDetector {
 											newDependency.addDependencyLabel(possiblyStyledProperty);
 										} else {
 											if (oldDeclarationEntry.baseSelector == selector) {
+												Declaration fromDeclaration = oldDeclarationEntry.declaration;
+												Declaration toDeclaration = declaration;
+												if (fromDeclaration.isImportant() && !toDeclaration.isImportant()) {
+													fromDeclaration = declaration;
+													toDeclaration = oldDeclarationEntry.declaration;
+												}
 												// Intra-selector dependency
 												newDependency = new CSSIntraSelectorValueOverridingDependency(
 														selector,
-														oldDeclarationEntry.declaration,
-														declaration,
+														fromDeclaration,
+														toDeclaration,
 														possiblyStyledProperty);
 											} else {
-												// if specificities of selectors are the same, then there is a value overriding dependency
-												if (oldDeclarationEntry.baseSelector.getSpecificity() == selector.getSpecificity()) {
+												// The more important declaration wins, regardless of the cascading/specificity
+												if (oldDeclarationEntry.declaration.isImportant() != declaration.isImportant()) {
+													Selector fromSelector = oldDeclarationEntry.baseSelector;
+													Declaration fromDeclaration = oldDeclarationEntry.declaration;
+													Selector toSelector = selector; 
+													Declaration toDeclaration = declaration;
+													if (fromDeclaration.isImportant() && !toDeclaration.isImportant()) {
+														fromSelector = selector;
+														fromDeclaration = declaration; 
+														toSelector = oldDeclarationEntry.baseSelector; 
+														toDeclaration = oldDeclarationEntry.declaration;
+													}
 													newDependency = new CSSInterSelectorValueOverridingDependency(
-															oldDeclarationEntry.baseSelector,
-															oldDeclarationEntry.declaration,
-															selector, declaration,
+															fromSelector,
+															fromDeclaration,
+															toSelector,
+															toDeclaration,
 															possiblyStyledProperty,
-															InterSelectorDependencyReason.DUE_TO_CASCADING);
-												} else if (oldDeclarationEntry.baseSelector.getSpecificity() >= selector.getSpecificity()) {
-													newDependency = new CSSInterSelectorValueOverridingDependency(
-															selector, 
-															declaration,
-															oldDeclarationEntry.baseSelector,
-															oldDeclarationEntry.declaration,
-															possiblyStyledProperty,
-															InterSelectorDependencyReason.DUE_TO_SPECIFICITY);
+															InterSelectorDependencyReason.DUE_TO_IMPORTANCE);
 												} else {
-													newDependency = new CSSInterSelectorValueOverridingDependency(
-															oldDeclarationEntry.baseSelector,
-															oldDeclarationEntry.declaration,
-															selector, 
-															declaration,
-															possiblyStyledProperty,
-															InterSelectorDependencyReason.DUE_TO_SPECIFICITY);
+													// if specificities of selectors are the same, then there is a value overriding dependency
+													if (oldDeclarationEntry.baseSelector.getSpecificity() == selector.getSpecificity()) {
+														newDependency = new CSSInterSelectorValueOverridingDependency(
+																oldDeclarationEntry.baseSelector,
+																oldDeclarationEntry.declaration,
+																selector, declaration,
+																possiblyStyledProperty,
+																InterSelectorDependencyReason.DUE_TO_CASCADING);
+													} else if (oldDeclarationEntry.baseSelector.getSpecificity() >= selector.getSpecificity()) {
+														newDependency = new CSSInterSelectorValueOverridingDependency(
+																selector, 
+																declaration,
+																oldDeclarationEntry.baseSelector,
+																oldDeclarationEntry.declaration,
+																possiblyStyledProperty,
+																InterSelectorDependencyReason.DUE_TO_SPECIFICITY);
+													} else {
+														newDependency = new CSSInterSelectorValueOverridingDependency(
+																oldDeclarationEntry.baseSelector,
+																oldDeclarationEntry.declaration,
+																selector, 
+																declaration,
+																possiblyStyledProperty,
+																InterSelectorDependencyReason.DUE_TO_SPECIFICITY);
+													}
 												}
 											}
 

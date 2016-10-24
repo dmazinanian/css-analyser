@@ -7,7 +7,8 @@ public class CSSInterSelectorValueOverridingDependency extends CSSValueOverridin
 	
 	public enum InterSelectorDependencyReason {
 		DUE_TO_SPECIFICITY,
-		DUE_TO_CASCADING
+		DUE_TO_CASCADING,
+		DUE_TO_IMPORTANCE
 	}
 	
 	private final InterSelectorDependencyReason dependencyReason;
@@ -19,7 +20,7 @@ public class CSSInterSelectorValueOverridingDependency extends CSSValueOverridin
 		this.dependencyReason = reason;
 	}
 	
-	public boolean areMediaQueryListsDifferent() {
+	public boolean areMediaQueryListsEqual() {
 		return getSelector1().mediaQueryListsEqual(getSelector2());
 	}
 
