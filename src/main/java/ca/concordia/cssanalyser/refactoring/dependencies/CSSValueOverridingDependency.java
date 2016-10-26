@@ -25,6 +25,20 @@ public abstract class CSSValueOverridingDependency extends CSSDependency<String>
 		return getEndingNode().getSelector();
 	}
 	
+	/**
+	 * @see CSSValueOverridingDependencyNode#getRealSelector()
+	 */
+	public Selector getRealSelector1() {
+		return getStartingNode().getRealSelector();
+	}
+
+	/**
+	 * @see CSSValueOverridingDependencyNode#getRealSelector()
+	 */
+	public Selector getRealSelector2() {
+		return getEndingNode().getRealSelector();
+	}
+	
 	@Override
 	public CSSValueOverridingDependencyNode getStartingNode() {
 		return (CSSValueOverridingDependencyNode)super.getStartingNode();
@@ -97,4 +111,5 @@ public abstract class CSSValueOverridingDependency extends CSSDependency<String>
 	public String toString() {
 		return getStartingNode() + " -> " + getEndingNode() + "(" + getLabelsString() + ")";
 	}
+
 }

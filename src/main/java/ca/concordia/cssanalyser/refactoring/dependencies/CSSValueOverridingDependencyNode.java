@@ -1,6 +1,7 @@
 package ca.concordia.cssanalyser.refactoring.dependencies;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 
 public class CSSValueOverridingDependencyNode implements CSSDependencyNode {
@@ -18,6 +19,24 @@ public class CSSValueOverridingDependencyNode implements CSSDependencyNode {
 	public Selector getSelector() {
 		return this.selector;
 	}
+	
+	/**
+	 * Dependencies are between declarations in two base selectors.
+	 * This method returns the parent grouping selector, if the base selector
+	 * is not simple
+	 * @param selector
+	 * @return
+	 */
+	public Selector getRealSelector() {
+		Selector realSelector = selector;
+		if (selector instanceof BaseSelector) {
+			BaseSelector baseSelector = (BaseSelector) selector;
+			if (baseSelector.getParentGroupingSelector() != null) {
+				realSelector = baseSelector.getParentGroupingSelector();
+			}
+		}
+		return realSelector;
+	}
 		
 	@Override                                                                                                                    
 	public boolean nodeEquals(CSSDependencyNode otherCSSDependencyNode) {                                                        
@@ -28,12 +47,9 @@ public class CSSValueOverridingDependencyNode implements CSSDependencyNode {
 		                                                                                                                         
 		return this.selector.selectorEquals(otherValueOverridingDependencyNode.getSelector()); // &&
 				//(this.declaration.declarationEquals(otherValueOverridingDependencyNode.declaration) ||
-				//this.declaration.declarationIsEquivalent(otherValueOverridingDependencyNode.declaration));                    
-				                                                                                                                 
+				//this.declaration.declarationIsEquivalent(otherValueOverridingDependencyNode.declaration));                    				                                                                                                                 
 	}
-		
-	
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -71,6 +87,5 @@ public class CSSValueOverridingDependencyNode implements CSSDependencyNode {
 	public String toString() {
 		return selector.toString() + "<" + selector.getMediaQueryLists()  + ">" + "$" + declaration.toString();
 	}
-	
 	
 }
