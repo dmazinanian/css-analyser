@@ -184,11 +184,17 @@ public class RefactorDuplicationsToGroupingSelector {
 				for (ItemSetList isl : fpgrowthResults) {
 					for (ItemSet is : isl) {
 						if (is.getGroupingRefactoringImpact() > 0) {
-							if (is.isApplicable())
+							if (is.isApplicable()) {
 								itemSetsTreeSet.add(is);
+                            }
 						}
-                        if (is.size() == 2)
+                        // TODO: experiment with these
+                        if (is.getGroupingRefactoringImpact() > 0 &&
+                            is.isApplicable() &&
+                            is.size() == 2) {
                             pairs.add(is);
+                        }
+
 					}
 				}
 
@@ -213,7 +219,7 @@ public class RefactorDuplicationsToGroupingSelector {
                             badCount++;
                         }
                         total++;
-                        LOGGER.debug("Done " + total + " pairs");
+                        LOGGER.info("Done " + total + " pairs");
                     }
                 }
                 LOGGER.info("Found " + badCount + " bad pairs");
@@ -222,7 +228,7 @@ public class RefactorDuplicationsToGroupingSelector {
                 // do it now for info
                 int removedCount = 0;
                 for (ItemSet is : itemSetsTreeSet) {
-                    if (containsItemSet(listOfInfeasibleRefactorings, is)) {
+                    if (containsSubItemSet(listOfInfeasibleRefactorings, is)) {
                         removedCount++;
                     }
                 }
@@ -262,8 +268,8 @@ public class RefactorDuplicationsToGroupingSelector {
                                                           dom,
                                                           domFreeDeps,
                                                           originalDependencies);
-
-            if(result.refactoringWasPossible) {
+            refactoringWasPossible = result.refactoringWasPossible;
+            if(refactoringWasPossible) {
 				stylesheetToBeRefactored = result.newStyleSheet;
 				DuplicationDetector duplicationFinderRefacored = new DuplicationDetector(stylesheetToBeRefactored);
 				duplicationFinderRefacored.findDuplications();
@@ -293,19 +299,22 @@ public class RefactorDuplicationsToGroupingSelector {
                                                  CSSValueOverridingDependencyList originalDependencies) {
         RefactoringResult result = new RefactoringResult();
 
-        StyleSheet newStyleSheet = groupingRefactoring(stylesheetToBeRefactored, itemSet);
+        result.newStyleSheet = groupingRefactoring(stylesheetToBeRefactored, itemSet);
 
         if (writeIntermediateFiles)
-            IOHelper.writeStringToFile(newStyleSheet.toString(), folderName + "/refactored" + refactoringRound + ".css");
+            IOHelper.writeStringToFile(result.newStyleSheet.toString(),
+                                       folderName + "/refactored" + refactoringRound + ".css");
 
         CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
         try {
-            newStyleSheet = parser.parseExternalCSS(folderName + "/refactored" + refactoringRound + ".css");
+            result.newStyleSheet
+                = parser.parseExternalCSS(folderName + "/refactored" + refactoringRound + ".css");
         } catch (Exception ex) {
             ex.printStackTrace();
         }
 
-        CSSValueOverridingDependencyList refactoredDependencies = newStyleSheet.getValueOverridingDependencies(dom, domFreeDeps);
+        CSSValueOverridingDependencyList refactoredDependencies
+            = result.newStyleSheet.getValueOverridingDependencies(dom, domFreeDeps);
 
         LOGGER.info("Checking differences in the dependencies " + refactoredDependencies);
         long startTime = System.currentTimeMillis();
@@ -325,7 +334,7 @@ public class RefactorDuplicationsToGroupingSelector {
 
             startTime = System.currentTimeMillis();
             RefactorToSatisfyDependencies r = new RefactorToSatisfyDependencies();
-            StyleSheet refactoredAndOrdered = r.refactorToSatisfyOverridingDependencies(newStyleSheet, originalDependencies);
+            StyleSheet refactoredAndOrdered = r.refactorToSatisfyOverridingDependencies(result.newStyleSheet, originalDependencies);
             endTime = System.currentTimeMillis();
             LOGGER.info("Reordering took " +
                         (endTime - startTime) +
@@ -366,8 +375,8 @@ public class RefactorDuplicationsToGroupingSelector {
     }
 
 	private boolean containsItemSet(List<ItemSet> listOfItemSetsToCheck, ItemSet itemSet) {
-		boolean itemSetFound = true;
 		for (ItemSet is : listOfItemSetsToCheck) {
+		    boolean itemSetFound = true;
 			if (is.size() == itemSet.size() && is.getSupportSize() == itemSet.getSupportSize()) {
 				for (Item i : is) {
 					boolean itemFound = false;
@@ -389,5 +398,27 @@ public class RefactorDuplicationsToGroupingSelector {
 		return false;
 	}
 
+	private boolean containsSubItemSet(List<ItemSet> listOfItemSetsToCheck,
+                                       ItemSet itemSet) {
+		for (ItemSet is : listOfItemSetsToCheck) {
+		    boolean itemSetFound = true;
+            for (Item i : is) {
+                boolean itemFound = false;
+                for (Item j : itemSet) {
+                    if (i.getFirstDeclaration().declarationEquals(j.getFirstDeclaration())) {
+                        itemFound = true;
+                        break;
+                    }
+                }
+                if (!itemFound) {
+                    itemSetFound = false;
+                    break;
+                }
+            }
+            if (itemSetFound)
+                return true;
+		}
+		return false;
+	}
 
 }

@@ -56,8 +56,14 @@ public class RefactorToSatisfyDependencies {
 	public StyleSheet refactorToSatisfyOverridingDependencies(StyleSheet styleSheet, CSSValueOverridingDependencyList listOfDependenciesToBeHeld, List<Integer> newOrdering) {
 		newOrdering.clear();
 
+        long startTime = System.currentTimeMillis();
+
 		DefaultDirectedGraph<Selector, DefaultEdge> graph
 			= buildDirectedGraph(styleSheet, listOfDependenciesToBeHeld);
+
+        long midTime = System.currentTimeMillis();
+
+        LOGGER.info("Buildling graph took " + (midTime - startTime));
 
 		if (graphNotCyclic(graph)) {
 			StyleSheet refactoredStyleSheet = new StyleSheet();
@@ -69,6 +75,9 @@ public class RefactorToSatisfyDependencies {
 				newOrdering.add(selector.getSelectorNumber());
 				refactoredStyleSheet.addSelector(selector);
 			}
+
+            long endTime = System.currentTimeMillis();
+            LOGGER.info("Testing graph took " + (endTime - midTime));
 
 			return refactoredStyleSheet;
 		}
