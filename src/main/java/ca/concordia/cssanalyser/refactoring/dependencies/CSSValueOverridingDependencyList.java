@@ -1,27 +1,51 @@
 package ca.concordia.cssanalyser.refactoring.dependencies;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
+import ca.concordia.cssanalyser.cssmodel.selectors.BaseSelector;
 
 
 public class CSSValueOverridingDependencyList extends CSSDependencyList<CSSValueOverridingDependency> {
 
-//	/**
-//	 * Return a dependency which is from a given declaration to another given declaration
-//	 * @param declaration1
-//	 * @param declaration2
-//	 * @return
-//	 */
-//	public CSSValueOverridingDependency getDependency(BaseSelector selector1, Declaration declaration1, 
-//													BaseSelector selector2, Declaration declaration2) {
-//		for (CSSValueOverridingDependency dependency : dependencies) {
-//			CSSValueOverridingDependency vDependency = (CSSValueOverridingDependency) dependency;
-//			if (vDependency.getDeclaration1().declarationEquals(declaration1) &&
-//					vDependency.getDeclaration2().declarationEquals(declaration2))
-//				return dependency;
-//		}
-//		return null;
-//	}
+	/**
+	 * Return a dependency which is from a given declaration to another given declaration
+	 * @param declaration1
+	 * @param declaration2
+	 * @return
+	 */
+	public CSSValueOverridingDependency getDependency(BaseSelector selector1, Declaration declaration1, 
+													BaseSelector selector2, Declaration declaration2) {
+		for (CSSValueOverridingDependency dependency : dependencies) {
+			if (dependency.getDeclaration1() == declaration1 &&
+					dependency.getDeclaration2() == declaration2)
+				return dependency;
+		}
+		return null;
+	}
+	
+	public List<CSSValueOverridingDependency> getDependenciesStartingFrom(Declaration declaration) {
+		List<CSSValueOverridingDependency> toReturn = new ArrayList<>();
+		for (CSSValueOverridingDependency dependency : dependencies) {
+			if (dependency.getDeclaration1() == declaration) {
+				toReturn.add(dependency);
+			}
+		}
+		return toReturn;
+	}
+	
+	public List<CSSValueOverridingDependency> getDependenciesEndingTo(Declaration declaration) {
+		List<CSSValueOverridingDependency> toReturn = new ArrayList<>();
+		for (CSSValueOverridingDependency dependency : dependencies) {
+			if (dependency.getDeclaration2() == declaration) {
+				toReturn.add(dependency);
+			}
+		}
+		return toReturn;
+	}
 	
 	@Override
 	public boolean equals(Object obj) {
