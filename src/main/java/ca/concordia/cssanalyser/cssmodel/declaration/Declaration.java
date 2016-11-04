@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import ca.concordia.cssanalyser.csshelper.CSSPropertyCategoryHelper;
+import ca.concordia.cssanalyser.csshelper.CSSPropertyCategory;
 import ca.concordia.cssanalyser.cssmodel.CSSModelObject;
 import ca.concordia.cssanalyser.cssmodel.CSSOrigin;
 import ca.concordia.cssanalyser.cssmodel.CSSSource;
@@ -28,6 +30,7 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 	protected boolean isImportant;
 	protected CSSOrigin origin = CSSOrigin.AUTHOR;
 	protected CSSSource source = CSSSource.EXTERNAL;
+	protected final CSSPropertyCategory propertyCategory;
 	
 	/**
 	 * Declarations can be the building blocks of a shorthand declaration.
@@ -41,6 +44,7 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 		parentSelector = belongsTo;
 		isImportant = important;
 		locationInfo = location;
+		propertyCategory = CSSPropertyCategoryHelper.getCSSCategoryOfProperty(getNonVendorProperty(getNonHackedProperty(property)));
 	}
 	
 	/**
@@ -331,6 +335,8 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 		this.parentShorthand = parentShorthand;
 	}
 	
-	
+	public CSSPropertyCategory getPropertyCategory() {
+		return propertyCategory;
+	}
 		
 }
