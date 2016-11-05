@@ -7,11 +7,10 @@ import java.util.Map;
 
 public final class CSSPropertyCategoryHelper {
 	
-	private static final Map<CSSPropertyCategory, List<String>> moduleToPropertiesMap = new HashMap<>();
-	private static final Map<String, CSSPropertyCategory> propertyToModuleMap = new HashMap<>();
-	
-	{
-		moduleToPropertiesMap.put(CSSPropertyCategory.ANIMATION,
+	@SuppressWarnings("serial")
+	private static final Map<CSSPropertyCategory, List<String>> moduleToPropertiesMap = new HashMap<CSSPropertyCategory, List<String>>() {
+		{
+		put(CSSPropertyCategory.ANIMATION,
 				Arrays.asList(new String[] {
 						"animation",
 						"animation-delay",
@@ -25,7 +24,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.AURAL,
+		put(CSSPropertyCategory.AURAL,
 				Arrays.asList(new String[] {
 						"azimuth",
 						"cue",
@@ -50,7 +49,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.BACKGROUND,
+		put(CSSPropertyCategory.BACKGROUND,
 				Arrays.asList(new String[] {
 						"background",
 						"background-attachement",
@@ -70,13 +69,13 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.BEHAVIORAL,
+		put(CSSPropertyCategory.BEHAVIORAL,
 				Arrays.asList(new String[] {
 						"behavior" }
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.BORDER,
+		put(CSSPropertyCategory.BORDER,
 				Arrays.asList(new String[] {
 						"border",
 						"border-bottom",
@@ -124,7 +123,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.BOX,
+		put(CSSPropertyCategory.BOX,
 				Arrays.asList(new String[] {
 						"bottom",
 						"clear",
@@ -164,26 +163,26 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.COLOR,
+		put(CSSPropertyCategory.COLOR,
 				Arrays.asList(new String[] {
 						"color",
 						"opacity" }
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.DEVICE_ADAPTATION,
+		put(CSSPropertyCategory.DEVICE_ADAPTATION,
 				Arrays.asList(new String[] {
 						"zoom" }
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.FILTER_EFFECTS,
+		put(CSSPropertyCategory.FILTER_EFFECTS,
 				Arrays.asList(new String[] {
 						"filter" }
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.FLEXIBLE_BOX,
+		put(CSSPropertyCategory.FLEXIBLE_BOX,
 				Arrays.asList(new String[] {
 						"align-items",
 						"align-content",
@@ -206,7 +205,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.FONT,
+		put(CSSPropertyCategory.FONT,
 				Arrays.asList(new String[] {
 						"font",
 						"font-color",
@@ -234,14 +233,14 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.GENERATED_CONTENT,
+		put(CSSPropertyCategory.GENERATED_CONTENT,
 				Arrays.asList(new String[] {
 						"marks",
 						"quotes" }
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.IMAGE_VALUE,
+		put(CSSPropertyCategory.IMAGE_VALUE,
 				Arrays.asList(new String[] {
 						"image-orientation",
 						"image-resolution",
@@ -251,7 +250,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.LISTS,
+		put(CSSPropertyCategory.LISTS,
 				Arrays.asList(new String[] {
 						"counter-increment",
 						"counter-reset",
@@ -264,7 +263,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.MARQUEE,
+		put(CSSPropertyCategory.MARQUEE,
 				Arrays.asList(new String[] {
 						"marquee-direction",
 						"marquee-play-count",
@@ -273,7 +272,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.MASKING,
+		put(CSSPropertyCategory.MASKING,
 				Arrays.asList(new String[] {
 						"mask-box-image",
 						"mask-image",
@@ -282,7 +281,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.MULTI_COLUMN_LAYOUT,
+		put(CSSPropertyCategory.MULTI_COLUMN_LAYOUT,
 				Arrays.asList(new String[] {
 						"column-count",
 						"column-fill",
@@ -301,7 +300,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.PAGED_MEDIA,
+		put(CSSPropertyCategory.PAGED_MEDIA,
 				Arrays.asList(new String[] {
 						"orphans",
 						"page-break-before",
@@ -311,20 +310,20 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.POINTER_EVENTS,
+		put(CSSPropertyCategory.POINTER_EVENTS,
 				Arrays.asList(new String[] {
 						"touch-action" }
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.REPLACED_CONTENT,
+		put(CSSPropertyCategory.REPLACED_CONTENT,
 				Arrays.asList(new String[] {
 						"object-position",
 						"object-fit" }
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.SPEECH,
+		put(CSSPropertyCategory.SPEECH,
 				Arrays.asList(new String[] {
 						"mark",
 						"mark-after",
@@ -343,7 +342,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.SVG,
+		put(CSSPropertyCategory.SVG,
 				Arrays.asList(new String[] {
 						"fill",
 						"fill-opacity",
@@ -358,7 +357,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.TABLE,
+		put(CSSPropertyCategory.TABLE,
 				Arrays.asList(new String[] {
 						"border-collapse",
 						"border-spacing",
@@ -368,7 +367,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.TEXT,
+		put(CSSPropertyCategory.TEXT,
 				Arrays.asList(new String[] {
 						"tap-highlight-color",
 						"text-shadow",
@@ -377,7 +376,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.TEXT_DECORATION,
+		put(CSSPropertyCategory.TEXT_DECORATION,
 				Arrays.asList(new String[] {
 						"text-decoration-color",
 						"text-decoration-line",
@@ -388,7 +387,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.TEXT,
+		put(CSSPropertyCategory.TEXT,
 				Arrays.asList(new String[] {
 						"hyphens",
 						"letter-spacing",
@@ -408,7 +407,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.TRANSFORM,
+		put(CSSPropertyCategory.TRANSFORM,
 				Arrays.asList(new String[] {
 						"backface-visibility",
 						"perspective",
@@ -420,7 +419,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.TRANSITION,
+		put(CSSPropertyCategory.TRANSITION,
 				Arrays.asList(new String[] {
 						"transition",
 						"transition-delay",
@@ -430,7 +429,7 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.UI,
+		put(CSSPropertyCategory.UI,
 				Arrays.asList(new String[] {
 						"appearance",
 						"box-sizing",
@@ -463,13 +462,13 @@ public final class CSSPropertyCategoryHelper {
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.VIEW,
+		put(CSSPropertyCategory.VIEW,
 				Arrays.asList(new String[] {
 						"scroll-behavior" }
 						)
 				);
 
-		moduleToPropertiesMap.put(CSSPropertyCategory.WRITING_MODE,
+		put(CSSPropertyCategory.WRITING_MODE,
 				Arrays.asList(new String[] {
 						"text-combine-upright ",
 						"text-orientation",
@@ -479,16 +478,21 @@ public final class CSSPropertyCategoryHelper {
 						"unicode-bidi" }
 						)
 				);
-		
-		for (CSSPropertyCategory category : moduleToPropertiesMap.keySet()) {
-			List<String> properties = moduleToPropertiesMap.get(category);
-			for (String property : properties) {
-				propertyToModuleMap.put(property, category);
+		}
+	};
+	
+	@SuppressWarnings("serial")
+	private static final Map<String, CSSPropertyCategory> propertyToModuleMap = new HashMap<String, CSSPropertyCategory>() {
+		{
+			for (CSSPropertyCategory category : moduleToPropertiesMap.keySet()) {
+				List<String> properties = moduleToPropertiesMap.get(category);
+				for (String property : properties) {
+					put(property, category);
+				}
 			}
 		}
-
-	}
-
+	};
+	
 	public static CSSPropertyCategory getCSSCategoryOfProperty(String property) {
 		CSSPropertyCategory cssPropertyCategory = propertyToModuleMap.get(property);
 		if (cssPropertyCategory == null) {
