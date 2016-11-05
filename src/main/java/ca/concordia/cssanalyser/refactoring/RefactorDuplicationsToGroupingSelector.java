@@ -274,8 +274,8 @@ public class RefactorDuplicationsToGroupingSelector {
 	}
 	
 	private boolean containsItemSet(List<ItemSet> listOfItemSetsToCheck, ItemSet itemSet) {
-		boolean itemSetFound = true;
 		for (ItemSet is : listOfItemSetsToCheck) {
+			boolean itemSetFound = true;
 			if (is.size() == itemSet.size() && is.getSupportSize() == itemSet.getSupportSize()) {
 				for (Item i : is) {
 					boolean itemFound = false;
@@ -290,12 +290,12 @@ public class RefactorDuplicationsToGroupingSelector {
 						break;
 					}
 				}
-				if (itemSetFound)
+				if (itemSetFound) {
 					return true;
+				}
 			}
 		}
 		return false;
 	}
 	
-
 }
