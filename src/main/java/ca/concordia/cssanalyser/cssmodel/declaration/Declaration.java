@@ -1,5 +1,6 @@
 package ca.concordia.cssanalyser.cssmodel.declaration;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -73,6 +74,8 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 		prefixes.add("-wap-");
 		prefixes.add("-xv-");
 		
+		prefixes.add("-moz-osx-");
+		
 		for (String prefix : prefixes)
 			if (torReturn.startsWith(prefix)) {
 				torReturn = torReturn.substring(prefix.length());
@@ -101,6 +104,68 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 		if (!property.equals(nonVendorproperty))
 			prefix = property.substring(0, property.indexOf(nonVendorproperty));
 		return prefix;
+	}
+	
+	public static boolean canHaveVendorPrefixedProperty(String property) {
+		Set<String> havingVendorPrefixedProperty = new HashSet<>(Arrays.asList("align-content",
+				"align-items",
+				"align-self",
+				"animation-delay",
+				"animation-duration",
+				"animation-fill-mode",
+				"animation-iteration-count",
+				"animation-name",
+				"appearance",
+				"backface-visibility",
+				"background-clip",
+				"background-size",
+				"border-bottom-colors",
+				"border-bottom-left-radius",
+				"border-bottom-right-radius",
+				"border-left-colors",
+				"border-radius-bottom-left",
+				"border-radius-bottom-right",
+				"border-radius-top-left",
+				"border-radius-top-right",
+				"border-right-colors",
+				"border-top-colors",
+				"border-top-left-radius",
+				"border-top-right-radius",
+				"box-shadow",
+				"box-sizing",
+				"column-count",
+				"filter",
+				"flex-basis",
+				"flex-direction",
+				"flex-pack",
+				"flex-shrink",
+				"flex-wrap",
+				"font-feature-settings",
+				"font-smoothing",
+				"hyphens",
+				"interpolation-mode",
+				"justify-content",
+				"opacity",
+				"overflow-scrolling",
+				"overflow-style",
+				"perspective",
+				"pointer-events",
+				"tab-size",
+				"tap-highlight-color",
+				"text-size-adjust",
+				"touch-callout",
+				"transform",
+				"transform-origin",
+				"transform-style",
+				"transition-delay",
+				"transition-duration",
+				"transition-property",
+				"transition-timing-function",
+				"user-drag",
+				"user-select",
+				"writing-mode"));
+		
+		return havingVendorPrefixedProperty.contains(getNonHackedProperty(getNonVendorProperty(property)));
 	}
 	
 	/**
