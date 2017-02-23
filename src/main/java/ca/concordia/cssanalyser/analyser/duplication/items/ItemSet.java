@@ -474,4 +474,27 @@ public class ItemSet implements Set<Item>, Cloneable {
 		}
 		return toReturn;
 	}
+	
+	// This is more or less a duplicated logic from FPGrowth
+	public ItemSetList getAllSubItemSets() {
+		ItemSetList subsets = new ItemSetList();
+		List<Item> items = new ArrayList<>(itemset);
+		if (size() > 2) {
+			for (int i = 1; i < Math.pow(2, size()); i++) {
+				ItemSet newSubSet = new ItemSet();
+				String bits = Integer.toBinaryString(i);
+				// Add leading zeros
+				int zerosToAdd = size() - bits.length();
+				for (int j = 0; j < zerosToAdd; j++) {
+					bits = "0" + bits;
+				}
+				for (int j = 0; j < bits.length(); j++) {
+					if (bits.charAt(j) == '1')
+						newSubSet.add(items.get(bits.length() - j - 1));
+				}
+				subsets.add(newSubSet);
+			}
+		}
+		return subsets;
+	}
 }
