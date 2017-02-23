@@ -48,7 +48,7 @@ public final class IOHelper {
 				});
 			for (File directory : directories) {
 				if (!fileNamesToIgnore.contains(directory.getName() + "/"))
-					toReturn.addAll(searchForFiles(directory.getAbsolutePath(), suffix));
+					toReturn.addAll(searchForFiles(directory.getAbsolutePath(), suffix, recursive));
 			}
 		}
 		
