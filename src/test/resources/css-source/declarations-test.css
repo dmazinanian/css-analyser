@@ -1,0 +1,7 @@
+.vendor-specific { 
+	-webkit-transition: opacity 3s ease 1s;
+	   -moz-transition: opacity 3s ease 1s;
+		-ms-transition: opacity 3s ease 1s;
+		 -o-transition: opacity 3s ease 1s;
+	 	    transition: opacity 3s ease 1s;
+}

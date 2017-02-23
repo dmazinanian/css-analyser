@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.Set;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -1140,14 +1141,18 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 	}
 
 	public static Set<String> getIndividualPropertiesForAShorthand(String shorthandProperty) {
-		Set<String> result = new HashSet<>();
-		Set<String> currentLevel = shorthandProperties.get(shorthandProperty);
+		Set<String> results = new HashSet<>();
+		String prefix = Declaration.getVendorPrefixForProperty(shorthandProperty);
+		String nonPrefixedshorthandProperty = Declaration.getNonHackedProperty(Declaration.getNonVendorProperty(shorthandProperty));
+		Set<String> currentLevel = shorthandProperties.get(nonPrefixedshorthandProperty);
 		if (currentLevel != null) {
-			result.addAll(currentLevel);
-			for (String property : currentLevel)
-				result.addAll(getIndividualPropertiesForAShorthand(property));
+			results.addAll(currentLevel.stream().map(s -> prefix + s).collect(Collectors.toSet()));
+			for (String property : currentLevel) {
+				Set<String> individualPropertiesForAShorthand = getIndividualPropertiesForAShorthand(property);
+				results.addAll(individualPropertiesForAShorthand.stream().map(s -> prefix + s).collect(Collectors.toSet()));
+			}
 		}
-		return result;
+		return results;
 	}
 
 	/**
@@ -1184,7 +1189,7 @@ public class ShorthandDeclaration extends MultiValuedDeclaration {
 	public void addIndividualDeclaration(String propertyName, List<DeclarationValue> values) {
 		
 		String vendorPrefix = getVendorPrefixForProperty(this.property);
-		if (!"".equals(vendorPrefix)) {
+		if (!"".equals(vendorPrefix) && !propertyName.startsWith(vendorPrefix)) {
 			propertyName = vendorPrefix + propertyName;
 		}
 		
