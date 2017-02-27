@@ -13,6 +13,7 @@ import ca.concordia.cssanalyser.fixturesutil.FixturesUtil;
 import ca.concordia.cssanalyser.parser.ParseException;
 import ca.concordia.cssanalyser.parser.less.LessCSSParser;
 import ca.concordia.cssanalyser.parser.less.ModifiedLessFileSource;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessASTQueryHandler;
 
 @RunWith(Suite.class)
 @SuiteClasses({

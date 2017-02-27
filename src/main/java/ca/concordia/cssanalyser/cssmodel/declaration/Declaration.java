@@ -121,6 +121,7 @@ public abstract class Declaration extends CSSModelObject implements Cloneable {
 				"background-clip",
 				"background-size",
 				"border-bottom-colors",
+				"border-radius",
 				"border-bottom-left-radius",
 				"border-bottom-right-radius",
 				"border-left-colors",
