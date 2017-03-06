@@ -1,20 +1,20 @@
-package ca.concordia.cssanalyser.preprocessors.constructsinfo;
+package ca.concordia.cssanalyser.preprocessors.constructsinfo.sass;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import com.github.sommeri.less4j.core.ast.Declaration;
-import com.github.sommeri.less4j.core.ast.ReusableStructure;
-import com.github.sommeri.less4j.core.ast.StyleSheet;
-
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.PreprocessorMixinDeclaration;
 
-public class LessMixinDeclaration extends LessConstruct {
+public class SassMixinDeclaration implements PreprocessorMixinDeclaration {
 	
-	private final ReusableStructure reusableNode;
+	private String mixinName;
+	private Set<String> properties = new HashSet<>();
+	private String styleSheetPath;
+	private int numberOfCalls;
+	private int numberOfParameters;
 	
-	private int numberOfDeclarations = 0, 
-			numberOfDeclarationsUsingParameters = 0,
+	private int numberOfDeclarationsUsingParameters = 0,
 			numberOfNonCrossBrowserDeclarations = 0,
 			numberOfUniqueCrossBrowserDeclarations = 0,
 			numberOfUniqueParametersUsedInMoreThanOneKindOfDeclaration = 0,
@@ -23,27 +23,23 @@ public class LessMixinDeclaration extends LessConstruct {
 			numberOfVendorSpecificSharingParameter = 0,
 			numberOfVariablesOutOfScopeAccessed;
 
-	public LessMixinDeclaration(ReusableStructure reusableStructure, StyleSheet parentStyleSheet) {
-		super(parentStyleSheet);
-		this.reusableNode = reusableStructure;
+	public SassMixinDeclaration(String mixinName, String styleSheetPath, int params, int numberOfCalls) {
+		this.mixinName = mixinName;
+		this.styleSheetPath = styleSheetPath;
+		this.numberOfParameters = params;
+		this.numberOfCalls = numberOfCalls;	
 	}
 	
-	public  ReusableStructure getReusableNode() {
-		return this.reusableNode;
+	public void addProperty(String property) {
+		properties.add(property);
 	}
-
+	
 	public String getMixinName() {
-		String mixinName = reusableNode.getNamesAsStrings().toString();
-		mixinName = mixinName.substring(1, mixinName.length() - 1);
 		return mixinName;
 	}
 
-	public int getNumberOfParams() {
-		return reusableNode.getParameters().size();
-	}
-
 	public int getNumberOfDeclarations() {
-		return numberOfDeclarations;
+		return properties.size();
 	}
 
 	public int getNumberOfDeclarationsUsingParameters() {
@@ -83,7 +79,7 @@ public class LessMixinDeclaration extends LessConstruct {
 	}
 
 	public void increaseNumberOfDeclarations(int i) {
-		this.numberOfDeclarations += i;
+		
 	}
 
 	public void increaseNumberOfDeclarationsUsingParameters(int i) {
@@ -114,29 +110,10 @@ public class LessMixinDeclaration extends LessConstruct {
 		this.numberOfVariablesOutOfScopeAccessed += i;
 	}
 
-	public Set<Declaration> getDeclarations() {
-		return getDeclarations(true);
-	}
 	
-	public Set<Declaration> getDeclarations(boolean includeNesting) {
-		return LessASTQueryHandler.getAllDeclarations(this.reusableNode.getBody(), includeNesting);
-	}
-
-	public String getMixinHashString() {
-		return String.format("%s(%s)", getMixinNodeName(), reusableNode.getParameters().size());
-	}
-
-	private String getMixinNodeName() {
-		String nodeName = LessASTQueryHandler.getNodeName(reusableNode);
-		nodeName = nodeName.substring(0, nodeName.indexOf('('));
-		return nodeName;
-	}
-
 	public Set<String> getPropertiesAtTheDeepestLevel(boolean includeNesting) {
 		Set<String> propertiesToReturn = new HashSet<>();
-		Set<Declaration> declarations = getDeclarations(includeNesting);
-		for (Declaration declaration : declarations) {
-			String property = declaration.getNameAsString();
+		for (String property : properties) {
 			if (ShorthandDeclaration.isShorthandProperty(property)) {
 				propertiesToReturn.addAll(ShorthandDeclaration.getIndividualPropertiesForAShorthand(property));
 			} else {
@@ -151,15 +128,29 @@ public class LessMixinDeclaration extends LessConstruct {
 		}
 		return propertiesToReturn;
 	}
-	
+
+	@Override
+	public String getStyleSheetPath() {
+		return styleSheetPath;
+	}
+
+	@Override
+	public int getNumberOfParams() {
+		return this.numberOfParameters;
+	}
+
+	public int getNumberOfCalls() {
+		return numberOfCalls;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((getMixinHashString() == null) ? 0 : getMixinHashString().hashCode());
-		result = prime * result + ((getStyleSheetPath() == null) ? 0 : getStyleSheetPath().hashCode());
-		result = prime * result + reusableNode.getSourceLine();
-		result = prime * result + reusableNode.getSourceColumn();
+		result = prime * result + ((mixinName == null) ? 0 : mixinName.hashCode());
+		result = prime * result + numberOfCalls;
+		result = prime * result + ((properties == null) ? 0 : properties.hashCode());
+		result = prime * result + ((styleSheetPath == null) ? 0 : styleSheetPath.hashCode());
 		return result;
 	}
 
@@ -171,21 +162,23 @@ public class LessMixinDeclaration extends LessConstruct {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		LessMixinDeclaration other = (LessMixinDeclaration) obj;
-		
-		if (getMixinHashString() == null) {
-			if (other.getMixinHashString() != null)
+		SassMixinDeclaration other = (SassMixinDeclaration) obj;
+		if (mixinName == null) {
+			if (other.mixinName != null)
 				return false;
-		} else if (!getMixinHashString().equals(other.getMixinHashString()))
+		} else if (!mixinName.equals(other.mixinName))
 			return false;
-		if (getStyleSheetPath() == null) {
-			if (other.getStyleSheetPath() != null)
+		if (numberOfCalls != other.numberOfCalls)
+			return false;
+		if (properties == null) {
+			if (other.properties != null)
 				return false;
-		} else if (!getStyleSheetPath().equals(other.getStyleSheetPath()))
+		} else if (!properties.equals(other.properties))
 			return false;
-		if (reusableNode.getSourceColumn() != other.reusableNode.getSourceColumn())
-			return false;
-		if (reusableNode.getSourceLine() != other.reusableNode.getSourceLine())
+		if (styleSheetPath == null) {
+			if (other.styleSheetPath != null)
+				return false;
+		} else if (!styleSheetPath.equals(other.styleSheetPath))
 			return false;
 		return true;
 	}
@@ -193,6 +186,10 @@ public class LessMixinDeclaration extends LessConstruct {
 	@Override
 	public String toString() {
 		return getMixinHashString();
+	}
+	
+	public String getMixinHashString() {
+		return String.format("%s(%s)",getMixinName(), getNumberOfParams());
 	}
 	
 }

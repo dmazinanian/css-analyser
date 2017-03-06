@@ -6,6 +6,9 @@ import java.util.List;
 
 import org.junit.Test;
 
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessASTQueryHandler;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessMixinCall;
+
 public class LessASTQueryHandlerTest {
 
 	private static final LessASTQueryHandler QUERY_HANDLER = ConstructsInfoSuite.getQueryHandler();

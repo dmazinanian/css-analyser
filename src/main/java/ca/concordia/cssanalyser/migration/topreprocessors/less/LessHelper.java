@@ -1,9 +1,6 @@
 package ca.concordia.cssanalyser.migration.topreprocessors.less;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 
 import com.github.sommeri.less4j.Less4jException;
 import com.github.sommeri.less4j.LessCompiler.CompilationResult;
@@ -21,8 +18,7 @@ import com.github.sommeri.less4j.core.problems.ProblemsHandler;
 
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.io.IOHelper;
-import ca.concordia.cssanalyser.parser.CSSParserFactory;
-import ca.concordia.cssanalyser.parser.CSSParserFactory.CSSParserType;
+import ca.concordia.cssanalyser.migration.topreprocessors.PreprocessorHelper;
 import ca.concordia.cssanalyser.parser.ParseException;
 import ca.concordia.cssanalyser.parser.less.LessCSSParser;
 import ca.concordia.cssanalyser.parser.less.LessStyleSheetAdapter;
@@ -92,7 +88,8 @@ public class LessHelper {
 				filePath = tempFile.getAbsolutePath();
 			}
 
-			StyleSheet resultingStyleSheet = compileStyleSheetOnWindowsUsingLessJS(filePath);
+			StyleSheet resultingStyleSheet = //compileStyleSheetUsingLess4J(filePath);
+					compileStyleSheetOnWindowsUsingLessJS(filePath);
 
 			resultingStyleSheet.setPath(filePath + ".css");
 
@@ -143,26 +140,8 @@ public class LessHelper {
 	}
 
 	public static StyleSheet compileStyleSheetOnWindowsUsingLessJS(String filePath) throws ParseException {
-		Runtime runtime = Runtime.getRuntime();
 		String[] command = new String[] { "cmd.exe", "/c", "lessc", filePath };
-		try {
-			Process process = runtime.exec(command);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-			StringBuilder builder = new StringBuilder();
-			String line;
-			while ((line = reader.readLine()) != null) {
-				builder.append(line);
-			}
-			process.waitFor();  // wait for process to complete
-
-			StyleSheet resultingStyleSheet = CSSParserFactory.getCSSParser(CSSParserType.LESS).parseCSSString(builder.toString());
-			return resultingStyleSheet;
-
-		} catch(IOException | InterruptedException ex) {
-			ex.printStackTrace();
-		}
-		return null;
+		return PreprocessorHelper.runProcessToCompilePreprocessorCode(command);
 	}
 	
 

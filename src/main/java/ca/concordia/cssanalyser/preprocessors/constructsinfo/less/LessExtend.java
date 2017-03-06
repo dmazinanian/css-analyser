@@ -1,4 +1,4 @@
-package ca.concordia.cssanalyser.preprocessors.constructsinfo;
+package ca.concordia.cssanalyser.preprocessors.constructsinfo.less;
 
 import com.github.sommeri.less4j.core.ast.ASTCssNode;
 import com.github.sommeri.less4j.core.ast.Extend;

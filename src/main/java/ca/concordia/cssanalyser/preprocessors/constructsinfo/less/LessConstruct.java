@@ -1,8 +1,10 @@
-package ca.concordia.cssanalyser.preprocessors.constructsinfo;
+package ca.concordia.cssanalyser.preprocessors.constructsinfo.less;
 
 import com.github.sommeri.less4j.core.ast.StyleSheet;
 
-public abstract class LessConstruct {
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.PreprocessorConstruct;
+
+public abstract class LessConstruct implements PreprocessorConstruct {
 	
 	private final StyleSheet styleSheet;
 	
@@ -14,6 +16,7 @@ public abstract class LessConstruct {
 		return styleSheet;
 	}
 	
+	@Override
 	public String getStyleSheetPath() {
 		String path = null;
 		if (this.styleSheet != null)

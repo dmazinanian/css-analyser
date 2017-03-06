@@ -1,4 +1,4 @@
-package ca.concordia.cssanalyser.preprocessors.constructsinfo;
+package ca.concordia.cssanalyser.preprocessors.constructsinfo.less;
 
 import java.util.ArrayList;
 import java.util.HashMap;

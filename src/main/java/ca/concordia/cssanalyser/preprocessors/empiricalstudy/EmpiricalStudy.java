@@ -16,16 +16,16 @@ import ca.concordia.cssanalyser.io.IOHelper;
 import ca.concordia.cssanalyser.parser.ParseException;
 import ca.concordia.cssanalyser.parser.less.LessCSSParser;
 import ca.concordia.cssanalyser.parser.less.ModifiedLessFileSource;
-import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessASTQueryHandler;
-import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessEmbeddedScriptInfo;
-import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessExtend;
-import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessInterpolationInfo;
-import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessMixinCall;
-import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessMixinDeclaration;
-import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessNesting;
-import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessSelector;
-import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessVariableDeclaration;
-import ca.concordia.cssanalyser.preprocessors.constructsinfo.LessVariableDeclaration.VariableType;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessASTQueryHandler;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessEmbeddedScriptInfo;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessExtend;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessInterpolationInfo;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessMixinCall;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessMixinDeclaration;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessNesting;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessSelector;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessVariableDeclaration;
+import ca.concordia.cssanalyser.preprocessors.constructsinfo.less.LessVariableDeclaration.VariableType;
 
 public class EmpiricalStudy {
 	
