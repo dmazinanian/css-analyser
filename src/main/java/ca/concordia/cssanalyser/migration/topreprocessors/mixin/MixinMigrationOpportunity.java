@@ -23,6 +23,8 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 
 import ca.concordia.cssanalyser.app.FileLogger;
+import ca.concordia.cssanalyser.csshelper.CSSPropertyCategory;
+import ca.concordia.cssanalyser.csshelper.CSSPropertyCategoryHelper;
 import ca.concordia.cssanalyser.cssmodel.StyleSheet;
 import ca.concordia.cssanalyser.cssmodel.declaration.Declaration;
 import ca.concordia.cssanalyser.cssmodel.declaration.PropertyAndLayer;
@@ -725,23 +727,23 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	
 	public int getNumberOfDeclarationsUsingParameters() {
 		calculateParameters();
-		int numberOfDeclarationsUsingParameters = 0;
+		Set<MixinDeclaration> declarationsUsingParams = new HashSet<>();
 		for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
 			for (MixinValue mixinValue : mixinDeclaration.getMixinValues()) {
 				if (mixinValue instanceof MixinParameter) {
-					numberOfDeclarationsUsingParameters++;
+					declarationsUsingParams.add(mixinDeclaration);
+					break;
 				}
 			}
 		}
-		return numberOfDeclarationsUsingParameters;
+		return declarationsUsingParams.size();
 	}
 
 	public int getNumberOfUniqueCrossBrowserDeclarations() {
 		Set<String> uniqueCrossBrowserDeclarations = new HashSet<>();
 		for (String property : realDeclarations.keySet()) {
-			String nonVendorProperty = Declaration.getNonVendorProperty(property);
-			if (!property.equals(nonVendorProperty)) {
-				uniqueCrossBrowserDeclarations.add(nonVendorProperty);
+			if (Declaration.canHaveVendorPrefixedProperty(property)) {
+				uniqueCrossBrowserDeclarations.add(Declaration.getNonHackedProperty(Declaration.getNonVendorProperty(property)));
 			}
 		}
 		return uniqueCrossBrowserDeclarations.size();
@@ -750,8 +752,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 	public int getNumberOfNonCrossBrowserDeclarations() {
 		Set<String> numberOfNonCrossBrowserDeclarations = new HashSet<>();
 		for (String property : realDeclarations.keySet()) {
-			String nonVendorProperty = Declaration.getNonVendorProperty(property);
-			if (property.equals(nonVendorProperty)) {
+			if (!Declaration.canHaveVendorPrefixedProperty(property)) {
 				numberOfNonCrossBrowserDeclarations.add(property);
 			}
 		}
@@ -777,14 +778,26 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		Set<String> vendorSpecificSharingParams = new HashSet<>();
 
 		for (MixinParameter parameter : parameters) {
+			Map<String, Integer> uniqueVendorSpecificSharingThisParam = new HashMap<>();
 			for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
-				for (MixinValue value : mixinDeclaration.getMixinValues()) {
-					if (parameter == value) {
-						String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
-						if (!nonVendorProperty.equals(mixinDeclaration.getPropertyName()))
-							vendorSpecificSharingParams.add(nonVendorProperty);
-						break;
+				if (Declaration.canHaveVendorPrefixedProperty(mixinDeclaration.getPropertyName())) {
+					for (MixinValue value : mixinDeclaration.getMixinValues()) {
+						if (parameter == value) {
+							String nonVendorProperty = 
+									Declaration.getNonHackedProperty(Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName()));
+							Integer countForThisParamAndProperty = uniqueVendorSpecificSharingThisParam.get(nonVendorProperty);
+							if (countForThisParamAndProperty == null) {
+								countForThisParamAndProperty = 0;
+							}
+							uniqueVendorSpecificSharingThisParam.put(nonVendorProperty, countForThisParamAndProperty + 1);
+							break;
+						}
 					}
+				}
+			}
+			for (String property : uniqueVendorSpecificSharingThisParam.keySet()) {
+				if (uniqueVendorSpecificSharingThisParam.get(property) > 1) {
+					vendorSpecificSharingParams.add(property);
 				}
 			}
 		}
@@ -831,7 +844,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
 				for (MixinValue value : mixinDeclaration.getMixinValues()) {
 					if (parameter == value) {
-						String nonVendorProperty = Declaration.getNonVendorProperty(mixinDeclaration.getPropertyName());
+						String nonVendorProperty = Declaration.getNonVendorProperty(Declaration.getNonHackedProperty(mixinDeclaration.getPropertyName()));
 						distinctProperties.add(nonVendorProperty);
 						break;
 					}
@@ -1083,5 +1096,13 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			}
 		}
 		return subOpportunity;
+	}
+	
+	public Set<CSSPropertyCategory> getPropertyCategories() {
+		Set<CSSPropertyCategory> categories = new HashSet<>();
+		for (String property : getPropertiesAtTheDeepestLevel()) {
+			categories.add(CSSPropertyCategoryHelper.getCSSCategoryOfProperty(Declaration.getNonVendorProperty(Declaration.getNonHackedProperty(property))));
+		}
+		return categories;
 	}
 }
