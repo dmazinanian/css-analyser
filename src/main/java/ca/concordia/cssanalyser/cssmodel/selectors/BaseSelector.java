@@ -59,7 +59,7 @@ public abstract class BaseSelector extends Selector {
 	 * Selectors inside the negation pseudo-class are counted like any other, but the negation itself does not count as a pseudo-class. <br />
 	 * Concatenating the three numbers a-b-c (in a number system with a large base) gives the specificity. <br />
 	 * <br />
-	 * Note: Repeated occurrances of the same simple selector are allowed and do increase specificity. <br />
+	 * Note: Repeated occurrences of the same simple selector are allowed and do increase specificity. <br />
 	 * Note: the specificity of the styles specified in an HTML style attribute is described in CSS 2.1.. <br />
 	 * 
 	 * @return
