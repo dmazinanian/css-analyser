@@ -1056,6 +1056,16 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 		return numberOfDependencies ;
 	}
 	
+	public int getNumberOfCrossBrowserProperties() {
+		int numberOfCrossBrowser = 0;
+		for (MixinDeclaration mixinDeclaration : mixinDeclarations.values()) {
+			if (Declaration.canHaveVendorPrefixedProperty(mixinDeclaration.getPropertyName())) {
+				numberOfCrossBrowser++;
+			}
+		}
+		return numberOfCrossBrowser;
+	}
+	
 	public MixinMigrationOpportunity<?> getSubOpportunity(Set<String> propertiesComingTogetherInAMixin, Set<Selector> forSelectors) {
 		if (propertiesComingTogetherInAMixin.equals(this.getPropertiesAtTheDeepestLevel()) &&
 				forSelectors.equals(getInvolvedSelectors())) {
@@ -1104,5 +1114,51 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			categories.add(CSSPropertyCategoryHelper.getCSSCategoryOfProperty(Declaration.getNonVendorProperty(Declaration.getNonHackedProperty(property))));
 		}
 		return categories;
+	}
+	
+	@Override
+	public double getRank() {
+		final double INTERCEPT								=  2.302644;
+		final double COEF_DECLS 							=  0;
+		final double COEF_INVOLVED_SELECTORS 				=  0;
+		final double COEF_PARAMETERS 						= -0.022847;
+		final double COEF_DECLS_USING_PARAMS 				=  0.059436;
+		final double COEF_DECLS_ONLY_HARDCODED				= -0.043330;
+		final double COEF_SHARED_PARAMS 					=  1.748880;
+		final double COEF_UNIQUE_CROSS_BROWSER 				= -2.356965;
+		final double COEF_NON_CROSS_BROWSER					= -0.757800;
+		final double COEF_VENDOR_SPECIFIC_SHARING_PARAM		= -0.110271;
+		final double COEF_DEPENDENCIES_IN_MIXIN				=  0.008295;
+		final double COEF_DEPENDENCIES_AFFECTING_MIXIN_CALL =  0.162829;
+		final double COEF_PROPERTY_CATEGORIES 				= -2.013569;
+		
+		/*Parameters                                         -0.022847
+		DeclarationsUsingParams                             0.059436
+		DeclarationsHavingOnlyHardCoded                    -0.043330
+		UniqueParametersUsedInMoreThanOneKindOfDeclaration  1.748880
+		CrossBrowserDeclarations                           -2.356965
+		NonCrossBrowserDeclarations                        -0.757800
+		VendorSpecificSharingParam                         -0.110271
+		NumberOfDependenciesInMixin                         0.008295
+		NumberOfDependenciesAffectingMixinCallPosition      0.162829
+		NumberOfPropertyCategories                         -2.013569*/
+		
+		double sum = 
+			INTERCEPT +
+			mixinDeclarations.keySet().size()									* COEF_DECLS +
+			((Set<Selector>)involvedSelectors).size()							* COEF_INVOLVED_SELECTORS +
+			parameters.size() 													* COEF_PARAMETERS +
+			getNumberOfDeclarationsUsingParameters() 							* COEF_DECLS_USING_PARAMS +
+			getNumberOfDeclarationsHavingOnlyHardCodedValues() 					* COEF_DECLS_ONLY_HARDCODED +
+			getNumberOfUniqueParametersUsedInMoreThanOneKindOfDeclaration() 	* COEF_SHARED_PARAMS +
+			getNumberOfUniqueCrossBrowserDeclarations() 						* COEF_UNIQUE_CROSS_BROWSER +
+			getNumberOfNonCrossBrowserDeclarations()							* COEF_NON_CROSS_BROWSER +
+			getNumberOfVendorSpecificSharingParameter() 						* COEF_VENDOR_SPECIFIC_SHARING_PARAM +
+			getNumberOfIntraSelectorDependenciesInMixin()						* COEF_DEPENDENCIES_IN_MIXIN +
+			getNumberOfIntraSelectorDependenciesAffectingMixinCallPosition()	* COEF_DEPENDENCIES_AFFECTING_MIXIN_CALL +
+			getPropertyCategories().size() 										* COEF_PROPERTY_CATEGORIES;
+		
+		double exp = Math.exp(sum);
+		return exp / (1 + exp);
 	}
 }

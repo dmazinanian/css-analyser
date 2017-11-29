@@ -29,5 +29,5 @@ enum ProgramMode {
 	/** Inline imports in the given less files */
 	INLINE_IMPORTS,
 	/** Empirical study for migrating to Mixins */
-	MIXIN_MIGRATION_EMPIRICAL
+	MIXIN_MIGRATION_EMPIRICAL_LESS, MIXIN_MIGRATION_EMPIRICAL_SASS, MIXIN_RANKING
 }
