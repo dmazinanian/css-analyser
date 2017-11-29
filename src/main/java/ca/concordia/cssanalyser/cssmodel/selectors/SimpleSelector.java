@@ -582,7 +582,7 @@ public class SimpleSelector extends BaseSelector {
 				toReturn[1] += pseudoClasses.size();
 		// count the number of type selectors and pseudo-elements in the selector (= c)
 		// ignore the universal selector
-		toReturn[2] += pseudoElements.size() + (selectedElementName.equals("*") ? 0 : 1);
+		toReturn[2] += pseudoElements.size() + (selectedElementName.equals("*") || selectedElementName.equals("") ? 0 : 1);
 		
 		return toReturn;
 	}
