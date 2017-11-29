@@ -110,23 +110,26 @@ public class SassMixinDeclaration implements PreprocessorMixinDeclaration {
 		this.numberOfVariablesOutOfScopeAccessed += i;
 	}
 
-	
+	Set<String> props = null;
 	public Set<String> getPropertiesAtTheDeepestLevel(boolean includeNesting) {
-		Set<String> propertiesToReturn = new HashSet<>();
-		for (String property : properties) {
-			if (ShorthandDeclaration.isShorthandProperty(property)) {
-				propertiesToReturn.addAll(ShorthandDeclaration.getIndividualPropertiesForAShorthand(property));
-			} else {
-				propertiesToReturn.add(property);
+		if (props == null) {
+			Set<String> propertiesToReturn = new HashSet<>();
+			for (String property : properties) {
+				if (ShorthandDeclaration.isShorthandProperty(property)) {
+					propertiesToReturn.addAll(ShorthandDeclaration.getIndividualPropertiesForAShorthand(property));
+				} else {
+					propertiesToReturn.add(property);
+				}
 			}
+			// remove existing shorthands
+			for (String property : new HashSet<>(propertiesToReturn)) {
+				if (ShorthandDeclaration.isShorthandProperty(property) &&
+						propertiesToReturn.containsAll(ShorthandDeclaration.getIndividualPropertiesForAShorthand(property)))
+					propertiesToReturn.remove(property);
+			}
+			props = propertiesToReturn;
 		}
-		// remove existing shorthands
-		for (String property : new HashSet<>(propertiesToReturn)) {
-			if (ShorthandDeclaration.isShorthandProperty(property) &&
-					propertiesToReturn.containsAll(ShorthandDeclaration.getIndividualPropertiesForAShorthand(property)))
-				propertiesToReturn.remove(property);
-		}
-		return propertiesToReturn;
+		return props;
 	}
 
 	@Override
