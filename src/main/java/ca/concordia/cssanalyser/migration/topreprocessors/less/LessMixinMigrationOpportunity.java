@@ -283,9 +283,4 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		
 	}
 	
-	@Override
-	public double getRank() {
-		return -1;
-	}
-	
 }
