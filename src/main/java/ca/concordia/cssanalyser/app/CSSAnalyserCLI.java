@@ -117,8 +117,8 @@ public class CSSAnalyserCLI {
 				for (String mainFileRelativePath : mainFilesRelativePaths) {
 					mainFileRelativePath = mainFileRelativePath.replace("\r", "");
 					if (!"".equals(mainFileRelativePath)) {
-						String absolutePathToMainLessFile = mainFilesPathsFile.getParentFile().getAbsolutePath() + File.separator + mainFileRelativePath;
-						filesToConsider.add(absolutePathToMainLessFile);
+						String absolutePathToMainPreprocessorFile = mainFilesPathsFile.getParentFile().getAbsolutePath() + File.separator + mainFileRelativePath;
+						filesToConsider.add(absolutePathToMainPreprocessorFile);
 					}
 				}
 				for (String pathToLessFile : filesToConsider) {
