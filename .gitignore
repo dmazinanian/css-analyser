@@ -9,3 +9,4 @@ desktop.ini
 .classpath
 /.idea
 *.iml
+/target/
