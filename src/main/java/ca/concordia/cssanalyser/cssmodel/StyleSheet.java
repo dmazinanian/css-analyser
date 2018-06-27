@@ -213,7 +213,6 @@ public class StyleSheet extends CSSModelObject {
 	 * Returns a list of documents' node in addition to the CSS selectors which
 	 * select each node
 	 * @param document
-	 * @param styleSheet
 	 * @return
 	 */
 	public Map<DOMNodeWrapper, List<BaseSelector>> getCSSClassesForDOMNodes(Document document) {
