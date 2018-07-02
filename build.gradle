@@ -22,6 +22,7 @@ dependencies {
 	compile "org.w3c.css:sac:${sac_version}"
 	compile "args4j:args4j:${args4j_version}"
 	compile "com.google.guava:guava:${guava_version}"
+	compile "io.bit3:jsass:${jsass_version}"
 	testCompile "junit:junit:${junit_version}"
 }
 

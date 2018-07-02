@@ -329,8 +329,8 @@ public class CSSAnalyserCLI {
 	
 	private static Function<String, StyleSheet> sassStyleSheetCompilerFunction = pathToSassFile -> {
 		try {
-			return SassHelper.compileStyleSheetOnWindowsUsingSass(pathToSassFile);
-		} catch (ParseException e) {
+			return SassHelper.compileSassFile(pathToSassFile);
+		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		}

@@ -66,5 +66,10 @@
 			<version>4.12</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>io.bit3</groupId>
+			<artifactId>jsass</artifactId>
+			<version>5.7.3</version>
+		</dependency>
 	</dependencies>
 </project>
