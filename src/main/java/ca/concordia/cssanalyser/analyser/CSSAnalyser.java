@@ -56,7 +56,7 @@ public class CSSAnalyser {
 	 * folder containing all CSS files (or a single CSS file). Program will search
 	 * for all files with extension ".css" in the given folder and conducts the 
 	 * analysis for each file.
-	 * @param cssContainingFolder
+	 * @param cssContainingFolderOrFilePath
 	 * @param domStateHTMLPath
 	 * @throws FileNotFoundException Could not find the given directory or css file.
 	 */
@@ -128,15 +128,12 @@ public class CSSAnalyser {
 		for (File file : files) {
 			String filePath = file.getAbsolutePath();
 			LOGGER.info("Now parsing " + filePath);
-			//FluteCSSParser parser = new FluteCSSParser();
 			CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
 			try {
-				//StyleSheet styleSheet = parser.parseExternalCSS(filePath);
 				StyleSheet styleSheet = parser.parseExternalCSS(filePath);
 				model.addStyleSheet(styleSheet);
 			} catch (Exception ex) {
-				throw new RuntimeException(ex);
-				//LOGGER.warn("Couldn't parse " + file + ". Skipping to the next file.");
+				LOGGER.warn("Couldn't parse " + file + ". Skipping to the next file.");
 			}
 		}
 		
