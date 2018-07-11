@@ -61,7 +61,7 @@ public class LessHelper {
 
 		Function<String, StyleSheet> compileFunction = filePath -> {
 			try {
-				return compileLessOnNonWindowsUsingLessJS(filePath);
+				return compileStyleSheetUsingLess4J(filePath);
 			} catch (ParseException e) {
 				e.printStackTrace();
 			}
