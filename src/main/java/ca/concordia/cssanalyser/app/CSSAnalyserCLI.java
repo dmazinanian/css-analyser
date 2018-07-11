@@ -6,15 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -338,8 +330,8 @@ public class CSSAnalyserCLI {
 	
 	private static void doMixinsExtractionEmpiricalStudyLess(ParametersParser params) {
 		
-		BiFunction<String, String, Map<? extends PreprocessorMixinDeclaration, Set<Selector>>> getMixinDeclarationsAndCallsFunction = (website, pathToLessFile) -> {		
-					
+		BiFunction<String, String, Map<? extends PreprocessorMixinDeclaration, Set<Selector>>> getMixinDeclarationsAndCallsFunction = (website, pathToLessFile) -> {
+
 			com.github.sommeri.less4j.core.ast.StyleSheet styleSheet = getLessStyleSheetFromPath(pathToLessFile);
 			
 			LessASTQueryHandler lessASTQueryHandler = new LessASTQueryHandler(styleSheet);
@@ -364,32 +356,50 @@ public class CSSAnalyserCLI {
 	
 	private static void doMixinsExtractionEmpiricalStudySass(ParametersParser params) {
 		
-		String outputPath = params.getInputFolderPath();
+		String inputPath = params.getInputFolderPath();
 		
-		Map<String, List<PreprocessorMixinDeclaration>> websitesToMixinDeclarationsMap = new HashMap<>();
+		Map<String, List<SassMixinDeclaration>> websitesToMixinDeclarationsMap = new HashMap<>();
 		
-		websitesToMixinDeclarationsMap.putAll(readSassOutputFile(outputPath + "/libraries-scss-mixinProperties.txt"));
-		websitesToMixinDeclarationsMap.putAll(readSassOutputFile(outputPath + "/websites-sass-mixinProperties.txt"));
-		websitesToMixinDeclarationsMap.putAll(readSassOutputFile(outputPath + "/websites-scss-mixinProperties.txt"));
-		
-		//mixinDeclarationsToCalledSelectorsLibrariesMap.get(null);
+		websitesToMixinDeclarationsMap.putAll(readSassOutputFile(inputPath + "/sass-libraries-mixin-properties.txt"));
+		websitesToMixinDeclarationsMap.putAll(readSassOutputFile(inputPath + "/scss-libraries-mixin-properties.txt"));
+		websitesToMixinDeclarationsMap.putAll(readSassOutputFile(inputPath + "/sass-websites-mixin-properties.txt"));
+		websitesToMixinDeclarationsMap.putAll(readSassOutputFile(inputPath + "/scss-websites-mixin-properties.txt"));
 
-		
+
 		BiFunction<String, String, Map<? extends PreprocessorMixinDeclaration, Set<Selector>>> getMixinDeclarationsAndCallsFunction = (website, pathToSassFile) -> {
 			
 			Map<PreprocessorMixinDeclaration, Set<Selector>> mixinDeclarationsToCalledSelectorsMap = new HashMap<>();
 			
-			List<PreprocessorMixinDeclaration> mixinDeclarationsForThisWebsite = websitesToMixinDeclarationsMap.get(website);
+			List<SassMixinDeclaration> mixinDeclarationsForThisWebsite = websitesToMixinDeclarationsMap.get(website);
 			
 			if (mixinDeclarationsForThisWebsite != null) {
 			
 				for (PreprocessorMixinDeclaration mixinDeclaration : mixinDeclarationsForThisWebsite) {
 					SassMixinDeclaration sassMixinDeclaration = (SassMixinDeclaration)mixinDeclaration;
+					CSSParser parser = CSSParserFactory.getCSSParser(CSSParserType.LESS);
 					Set<Selector> selectorsForThisMixin = new HashSet<>();
-					for (int i = 0; i < sassMixinDeclaration.getNumberOfCalls(); i++) {
-						SimpleSelector selector = new SimpleSelector();
-						selector.addClassName("dummySelector" + i);
-						selectorsForThisMixin.add(selector);
+					if (!sassMixinDeclaration.getCalledInSelectors().isEmpty()) {
+						selectorsForThisMixin = sassMixinDeclaration.getCalledInSelectors().stream()
+								.map(selectorString -> {
+									StyleSheet parsed = null;
+									try {
+										parsed = parser.parseCSSString(selectorString.replace(" &", "") + " {}");
+									} catch (ParseException e) {
+										parsed = null;
+									}
+									if (null != parsed && parsed.getNumberOfSelectors() == 0) {
+										parsed = null;
+									}
+									if (parsed == null) {
+										LOGGER.warn("Failed parsing {}", selectorString);
+										try {
+											parsed = parser.parseCSSString(".not-parsable-selector {}");
+										} catch (ParseException e1) {
+										}
+									}
+									return parsed.getAllSelectors().iterator().next();
+								})
+								.collect(Collectors.toSet());
 					}
 					mixinDeclarationsToCalledSelectorsMap.put(sassMixinDeclaration, selectorsForThisMixin);
 				}
@@ -403,31 +413,33 @@ public class CSSAnalyserCLI {
 		doMixinsExtractionEmpiricalStudy(params, getMixinDeclarationsAndCallsFunction, sassStyleSheetCompilerFunction);
 	}
 
-
-	private static Map<String, List<PreprocessorMixinDeclaration>> readSassOutputFile(String path) {
-		Map<String, List<PreprocessorMixinDeclaration>> toReturn = new HashMap<>(); 
+	private static Map<String, List<SassMixinDeclaration>> readSassOutputFile(String path) {
+		Map<String, List<SassMixinDeclaration>> toReturn = new HashMap<>();
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(new File(path)));
 			String line;
 			while ((line = reader.readLine()) != null) {
 				if (!"".equals(line)) {
+					//#{@website}|#{path_to_main_sass_file}|#{file_name}|#{mixin_name}|#{n_params}|#{n_calls}|#{n_declarations}|#{n_rules_called}
 					String[] headerLine = line.split("\\|");
 					String website = headerLine[0];
-					String styleSheetPath = headerLine[1];
-					String mixinName = headerLine[2];
-					int params = Integer.parseInt(headerLine[3]);
-					int numberOfCalls = Integer.parseInt(headerLine[4]);
-					int numberOfProperties = Integer.parseInt(headerLine[5]);
-					SassMixinDeclaration sassMixinDeclaration = new SassMixinDeclaration(mixinName, styleSheetPath, params, numberOfCalls);
+					String mainStyleSheetPath = headerLine[1];
+					String mixinContainingFile = headerLine[2];
+					String mixinName = headerLine[3];
+					int params = Integer.parseInt(headerLine[4]);
+					int numberOfCalls = Integer.parseInt(headerLine[5]);
+					int numberOfProperties = Integer.parseInt(headerLine[6]);
+					int numberOfStyleRulesCallingMixin = Integer.parseInt(headerLine[7]);
+
+					SassMixinDeclaration sassMixinDeclaration = new SassMixinDeclaration(mixinName, mixinContainingFile, params, numberOfCalls);
+					for (int i = 0; i < numberOfStyleRulesCallingMixin; i++) {
+						sassMixinDeclaration.addSelector(reader.readLine());
+					}
 					for (int i = 0; i < numberOfProperties; i++) {
 						sassMixinDeclaration.addProperty(reader.readLine());
 					}
-					List<PreprocessorMixinDeclaration> mixinsForThisWebsite = toReturn.get(website);
-					if (mixinsForThisWebsite == null) {
-						mixinsForThisWebsite = new ArrayList<>();
-					}
+					List<SassMixinDeclaration> mixinsForThisWebsite = toReturn.computeIfAbsent(website, k -> new ArrayList<>());
 					mixinsForThisWebsite.add(sassMixinDeclaration);
-					toReturn.put(website, mixinsForThisWebsite);
 				}
 			}
 			reader.close();
@@ -584,30 +596,30 @@ public class CSSAnalyserCLI {
 			BiFunction<String, String, Map<? extends PreprocessorMixinDeclaration, Set<Selector>>> mixinCallsMapFunctoin,
 			Function<String, StyleSheet> styleSheetCompilerFunction) {
 
-		String outfolder = params.getOutputFolderPath();
+		String outFolder = params.getOutputFolderPath();
 		int maxDeclarations = params.getMaxDeclarations();
 		int maxParameters = params.getMaxParameters();
 		int maxCalls = params.getMaxCalls();
 		
-		FileLogger.addFileAppender(outfolder + "/log.log", false);
+		FileLogger.addFileAppender(outFolder + "/log.log", false);
 		
 		LOGGER.info("Max Mixin calls {}, Max Declarations {}, Max Parameters {}", maxCalls, maxDeclarations, maxParameters);
 		
-		String opportunitiesCsvOutputPath = outfolder + String.format("/migrationOpportunities[maxDecls%s, maxParams%s, maxCalls%s].csv", maxDeclarations, maxParameters, maxCalls);
+		String opportunitiesCsvOutputPath = outFolder + String.format("/migrationOpportunities[maxDecls%s, maxParams%s, maxCalls%s].csv", maxDeclarations, maxParameters, maxCalls);
 		CSVColumns fileColumns = new CSVColumns("WebSite", "File", "Parameters", "Declarations", "DeclarationsUsingParams",
 				"CrossBrowserDeclarations", "NonCrossBrowserDeclarations", "UniqueParametersUsedInMoreThanOneKindOfDeclaration",
 				"DeclarationsHavingOnlyHardCoded", "ParametersReusedInVendorSpecific", "VendorSpecificSharingParam",
-				/*"GlobalVarsAccessed",*/ "NameOfTheMappedMixinName", "MappedMixinFile", /*"PreservesPresentation",*/
-				"Support", "ExactProperties", "ExactSelectors",
-				"NumbefOfInvolvedSelectors", "NumberOfDependenciesInMixin", "NumberOfDependenciesAffectingMixinCallPosition",
+				/*"GlobalVarsAccessed",*/ "MappedMixinName", "MappedMixinFile", "SelectorsMappedMixinCalledIn", "PreservesPresentation",
+				"OpportunityRank", "ExactProperties", "ExactSelectors",
+				"NumberOfInvolvedSelectors", "NumberOfDependenciesInMixin", "NumberOfDependenciesAffectingMixinCallPosition",
 				"NumberOfPropertyCategories");
 		IOHelper.writeStringToFile(fileColumns.getHeader(true), opportunitiesCsvOutputPath);
 		
-		String cssFilesCSVOutputPath = outfolder + String.format("/cssFiles[maxDecls%s, maxParams%s, maxCalls%s].csv", maxDeclarations, maxParameters, maxCalls);
+		String cssFilesCSVOutputPath = outFolder + String.format("/cssFiles[maxDecls%s, maxParams%s, maxCalls%s].csv", maxDeclarations, maxParameters, maxCalls);
 		CSVColumns cssFileColumns = new CSVColumns("WebSite", "File", "MixinsToConsider", "Selectors", "Declarations", "MigrationOpportunities", "NonOverlapping");
 		IOHelper.writeStringToFile(cssFileColumns.getHeader(true), cssFilesCSVOutputPath);
 		
-		String mixinsToConsiderCSVPath = outfolder + "/mixinsToConsider.csv";
+		String mixinsToConsiderCSVPath = outFolder + "/mixinsToConsider.csv";
 		CSVColumns mixinsCSVColumns = new CSVColumns("WebSite", "File", "MixinName", "Parameters", "Declarations", "DeclarationsUsingParams",
 				"CrossBrowserDeclarations", "NonCrossBrowserDeclarations", "UniqueParametersUsedInMoreThanOneKindOfDeclaration", 
 				"DeclarationsHavingOnlyHardCoded", "ParametersReusedInVendorSpecific", "VendorSpecificSharingParam",
@@ -616,188 +628,141 @@ public class CSSAnalyserCLI {
 		
 		IOHelper.writeStringToFile(mixinsCSVColumns.getHeader(true), mixinsToConsiderCSVPath, false);
 		
-		String timeOutputPath = outfolder + "/time.csv";
+		String timeOutputPath = outFolder + "/time.csv";
 		
 		CSVColumns timeColumns = new CSVColumns("WebSite", "File", "OpportunitiesDetectionNanoTime", "OpportunitiesMilliTime");
 		IOHelper.writeStringToFile(timeColumns.getHeader(true), timeOutputPath);
 		
 		
-		String differencesPath = outfolder + String.format("/differences.txt[maxDecls%s, maxParams%s, maxCalls%s].csv", maxDeclarations, maxParameters, maxCalls);
+		String differencesPath = outFolder + String.format("/differences.txt[maxDecls%s, maxParams%s, maxCalls%s].csv", maxDeclarations, maxParameters, maxCalls);
 		
-		processPreprocessorFiles(params.getInputFolderPath(), (percentage, website, pathToLessFile) -> {
-
-			LOGGER.info(String.format("%3s%%: Parsing %s", percentage, pathToLessFile));
+		processPreprocessorFiles(params.getInputFolderPath(), (percentage, website, pathToPreprocessorFile) -> {
 
 			try {
 				
-				LOGGER.info(String.format("%3s%%: Finding mixins in %s", percentage, pathToLessFile));
+				LOGGER.info(String.format("%3s%%: Finding manually-developed mixins in %s", percentage, pathToPreprocessorFile));
 				
-				Map<? extends PreprocessorMixinDeclaration, Set<Selector>> mixinCallsMap = mixinCallsMapFunctoin.apply(website, pathToLessFile); 
+				Map<? extends PreprocessorMixinDeclaration, Set<Selector>> mixinCallsMap = mixinCallsMapFunctoin.apply(website, pathToPreprocessorFile);
 				
-				List<PreprocessorMixinDeclaration> mixinsToConsider = mixinCallsMap.keySet().stream()
+				List<PreprocessorMixinDeclaration> realMixinsToConsider = mixinCallsMap.keySet().stream()
 						.filter(mixinDeclaration -> mixinDeclaration.getPropertiesAtTheDeepestLevel(false).size() > 0 
 								&& mixinCallsMap.get(mixinDeclaration).size() >= 2)
 						.collect(Collectors.toList());
 				
-				if (mixinsToConsider.size() == 0) {
-					LOGGER.warn("No mixin found in {} that was called more than once", website);
+				if (realMixinsToConsider.size() == 0) {
+					LOGGER.warn("No mixin was found in {} with two or more calls", website);
 				} else {
 					
-					int numberOfMixinsToConsider = mixinsToConsider.size();
+					int numberOfMixinsToConsider = realMixinsToConsider.size();
 					
 					writeMixinsToFile(mixinsToConsiderCSVPath, website, mixinCallsMap, mixinsCSVColumns);
-					LOGGER.info(String.format("%3s%%: Compiling %s", percentage, pathToLessFile));
+					LOGGER.info(String.format("%3s%%: Compiling %s", percentage, pathToPreprocessorFile));
 	
 					// Compile the preprocessor style sheet to CSS
-					StyleSheet compiled = styleSheetCompilerFunction.apply(pathToLessFile);
+					StyleSheet compiledStyleSheet = styleSheetCompilerFunction.apply(pathToPreprocessorFile);
 					/*
 					 * Format the style sheet.
 					 * This is really important to keep the location information consistent,
 					 * as we will use the toString of the StyleSheet object
 					 * in order to re-parse the style sheet in the later phases.
 					 */
-					LOGGER.info(String.format("%3s%%: Parsing the resuling style sheet compiled from %s", percentage, pathToLessFile));
+					LOGGER.info(String.format("%3s%%: Parsing the resulting style sheet compiled from %s", percentage, pathToPreprocessorFile));
 
-					compiled = CSSParserFactory.getCSSParser(CSSParserType.LESS).parseCSSString(compiled.toString());
+					compiledStyleSheet = CSSParserFactory.getCSSParser(CSSParserType.LESS).parseCSSString(compiledStyleSheet.toString());
 
-					LOGGER.info(String.format("%3s%%: Getting migration opportunities for %s", percentage, pathToLessFile));
+					LOGGER.info(String.format("%3s%%: Getting migration opportunities for %s", percentage, pathToPreprocessorFile));
 
-					LessMigrationOpportunitiesDetector preprocessorOpportunityDetector = new LessMigrationOpportunitiesDetector(compiled);
+					LessMigrationOpportunitiesDetector preprocessorOpportunityDetector = new LessMigrationOpportunitiesDetector(compiledStyleSheet);
 					long startNanoTime = System.nanoTime();
 					long startMilliTime = System.currentTimeMillis();
 					// Get mixin opportunities, with subsumed
 					List<LessMixinMigrationOpportunity> migrationOpportunities = preprocessorOpportunityDetector.findMixinOpportunities(true);
-					
+
 					long endNanoTime = System.nanoTime();
 					long endMilliTime = System.currentTimeMillis();
-					
+
 					long nanoDifferenceTime = endNanoTime - startNanoTime;
 					long milliDifferenceTime = endMilliTime - startMilliTime;
-					
-					String timeRow = String.format(timeColumns.getRowFormat(true), 
+
+					String timeRow = String.format(timeColumns.getRowFormat(true),
 							website,
-							pathToLessFile,
+							pathToPreprocessorFile,
 							nanoDifferenceTime,
 							milliDifferenceTime);
-					
 					IOHelper.writeStringToFile(timeRow.replace("#", "\\#"), timeOutputPath, true);
-					
+
 					LOGGER.info("It took {} ({}) seconds", nanoDifferenceTime / 1000000000, milliDifferenceTime / 1000);
-										
+
 					if (maxDeclarations > 1) {
 						migrationOpportunities = migrationOpportunities.stream()
 								.filter(migrationOpportunity -> ((Collection<MixinDeclaration>)migrationOpportunity.getAllMixinDeclarations()).size() <= maxDeclarations)
 								.collect(Collectors.toList());
 					}
-					
+
 					if (maxParameters >= 0) {
 						migrationOpportunities = migrationOpportunities.stream()
 								.filter(migrationOpportunity -> migrationOpportunity.getNumberOfParameters() <= maxParameters)
 								.collect(Collectors.toList());
 					}
-					
+
 					if (maxCalls > 2) {
 						migrationOpportunities = migrationOpportunities.stream()
 								.filter(migrationOpportunity -> ((Collection<Selector>)migrationOpportunity.getInvolvedSelectors()).size() <= maxCalls)
 								.collect(Collectors.toList());
 					}
-					
+
 					int numberOfMigrationOpportunities = migrationOpportunities.size();
 					LOGGER.info(String.format("Found %s migration opportunities", numberOfMigrationOpportunities));
-
-					int numberOfSelectors = ((Set<Selector>)compiled.getAllSelectors()).size();
-					int numberOfDeclarations = (compiled.getAllDeclarations()).size();
 					
 					Set<PreprocessorMixinDeclaration> foundRealMixins = new HashSet<>();
-					
-					if (maxParameters >= 0) {
-						numberOfMigrationOpportunities = 0;
-					}
-					
 					int numberOfNonOverlappingOpportunities = 0;
-					List<Set<String>> alreadySeenProperties = new ArrayList<>();
-					List<Set<Selector>> alreadySeenSelectors = new ArrayList<>(); 
-					for (int mixinIndex = 0; mixinIndex < numberOfMigrationOpportunities; mixinIndex++) {
-						LessMixinMigrationOpportunity migrationOpportunity = migrationOpportunities.get(mixinIndex);
-						if (mixinIndex % 1000 == 0) {
-							LOGGER.info("Trying to find a matching mixin ({} of {})", mixinIndex + 1, numberOfMigrationOpportunities) ;
-						}
-						if (maxParameters >= 0 && migrationOpportunity.getNumberOfParameters() <= maxParameters) {
-							numberOfMigrationOpportunities++;
+
+					for (int opportunityIndex = 0; opportunityIndex < numberOfMigrationOpportunities; opportunityIndex++) {
+						LessMixinMigrationOpportunity migrationOpportunity = migrationOpportunities.get(opportunityIndex);
+						if (opportunityIndex % 100 == 0) {
+							LOGGER.info("Trying to find a matching mixin ({} of {})", opportunityIndex + 1, numberOfMigrationOpportunities) ;
 						}
 						
 						Set<String> propertiesInOpportunity = migrationOpportunity.getPropertiesAtTheDeepestLevel();
-						Set<Selector> involvedSelectors = (Set<Selector>)migrationOpportunity.getInvolvedSelectors();
-/*						boolean hasOverlap = false;
-						for (int i = 0; i < alreadySeenProperties.size(); i++) {
-							Set<String> properties = new HashSet<>(propertiesInOpportunity);
-							Set<Selector> selectors = new HashSet<>(involvedSelectors);
-							properties.retainAll(alreadySeenProperties.get(i));
-							selectors.retainAll(alreadySeenSelectors.get(i));
-							if (properties.size() > 0 && selectors.size() > 0) {
-								hasOverlap = true;
-								break;
-							}
-						}
-						
-						if (!hasOverlap) {
-							numberOfNonOverlappingOpportunities++;
-						}
-						
-						alreadySeenProperties.add(propertiesInOpportunity);
-						alreadySeenSelectors.add(involvedSelectors);*/
-						
-						
-						String mixinMappedToName = "";
-						String mixinMappedToFile = "";
-						boolean exactProperties = false; 
-						boolean exactSelectors = false;
-						for (PreprocessorMixinDeclaration realMixinDeclaration : mixinsToConsider) {
-							exactProperties = false; 
-							exactSelectors = false;
+						Set<Selector> selectorsOpportunityCalledIn = (Set<Selector>)migrationOpportunity.getInvolvedSelectors();
+
+						PreprocessorMixinDeclaration mappedMixinDeclaration = null;
+						boolean sameProperties = false;
+						for (PreprocessorMixinDeclaration realMixinDeclaration : realMixinsToConsider) {
 							Set<String> propertiesInRealMixin = realMixinDeclaration.getPropertiesAtTheDeepestLevel(false);
 							// The opportunity should contain all the properties of the real mixin
-							if (propertiesInOpportunity.containsAll(propertiesInRealMixin)) { // (propertiesInOpportunity.equals(propertiesInRealMixin)) {
-								//Set<BaseSelector> realMixinCalledInSelectors = getBaseSelectorsFromSelectors(mixinCallsMap.get(realLessMixinDeclaration));
-								//Set<BaseSelector> opportunityCalledInSelectors = getBaseSelectorsFromSelectors(migrationOpportunity.getInvolvedSelectors());
-								//Set<Selector> selectorsIntersection = new HashSet<>();
-								// The opportunity should be in the same selectors as the real mixin (or more)
-								/*for (Selector realMixinCalledIn : realMixinCalledInSelectors) {
-									boolean selectorFound = false;
+							if (propertiesInOpportunity.containsAll(propertiesInRealMixin)) {
+								sameProperties = propertiesInRealMixin.equals(propertiesInOpportunity);
+								Set<BaseSelector> realMixinCalledInSelectors = getBaseSelectorsFromSelectors(mixinCallsMap.get(realMixinDeclaration));
+								Set<BaseSelector> opportunityCalledInSelectors = getBaseSelectorsFromSelectors(migrationOpportunity.getInvolvedSelectors());
+								// Intersection of selectors calling the opportunity and the real mixin. It contains opportunity selectors
+								Set<Selector> selectorsIntersection = new HashSet<>();
+								// The opportunity should be called in the same selectors as the real mixin (or more)
+								for (Selector selectorRealMixinCalledIn : realMixinCalledInSelectors) {
 									for (Selector selectorInvolvedForOpportunity : opportunityCalledInSelectors) {
 										if (!selectorsIntersection.contains(selectorInvolvedForOpportunity) && 
-												realMixinCalledIn.selectorEquals(selectorInvolvedForOpportunity, false)) {
-												selectorsIntersection.add(selectorInvolvedForOpportunity);
-												selectorFound = true;
-												break;
-										}
-										if (selectorFound) {
+												selectorRealMixinCalledIn.selectorEquals(selectorInvolvedForOpportunity, false)) {
+											selectorsIntersection.add(selectorInvolvedForOpportunity);
 											break;
 										}
 									}
-								}*/
-								// Is the opportunity called in at least the same places as the real corresponding mixin?
-								//if (selectorsIntersection.size() > 0 /*== realMixinCalledInSelectors.size()*/) {
-									exactProperties = propertiesInRealMixin.equals(propertiesInOpportunity);
-									exactSelectors = /*realMixinCalledInSelectors.size()*/ mixinCallsMap.get(realMixinDeclaration).size() == involvedSelectors.size();
-									mixinMappedToName = realMixinDeclaration.toString();
-									mixinMappedToFile = realMixinDeclaration.getStyleSheetPath();
+
+								}
+								// Is the opportunity called in at least some places as the real corresponding mixin?
+								if (selectorsIntersection.size() > 0) {
+									mappedMixinDeclaration = realMixinDeclaration;
 									foundRealMixins.add(realMixinDeclaration);
-								/*}*/ /*else {
-									LOGGER.info(realLessMixinDeclaration + " is called in other places that this opportunity");
-									LOGGER.info("mixin is called in " + mixinCallsMap.get(realLessMixinDeclaration));
-									LOGGER.info("Opportunity is called in " + migrationOpportunity.getInvolvedSelectors());
-								}*/
-									if (exactProperties) {
-										break;
-									}
+								}
+								if (sameProperties) { // Don't need to check other real mixin declarations
+									break;
+								}
 							}
 						}			
 
 						TransformationStatus transformationStatus = migrationOpportunity.preservesPresentation();
 						if (!transformationStatus.isOK()) {
 							StringBuilder builder = new StringBuilder();
-							builder.append(pathToLessFile).append(System.lineSeparator());
+							builder.append(pathToPreprocessorFile).append(System.lineSeparator());
 							builder.append(migrationOpportunity.getInvolvedSelectors()).append(System.lineSeparator());
 							builder.append(migrationOpportunity.toString()).append(System.lineSeparator());
 							List<TransformationStatusEntry> statusEntries = transformationStatus.getStatusEntries();
@@ -805,12 +770,12 @@ public class CSSAnalyserCLI {
 								builder.append(entry.toString()).append(System.lineSeparator());
 							}
 							builder.append("-------------").append(System.lineSeparator()).append(System.lineSeparator());
-							IOHelper.writeStringToFile(builder.toString(), outfolder + "/notpreserving.txt", true);
+							IOHelper.writeStringToFile(builder.toString(), outFolder + "/notpreserving.txt", true);
 						}
 
 						String row = String.format(fileColumns.getRowFormat(true),
 								website,
-								pathToLessFile,
+								pathToPreprocessorFile,
 								migrationOpportunity.getNumberOfParameters(),
 								migrationOpportunity.getNumberOfMixinDeclarations(),
 								migrationOpportunity.getNumberOfDeclarationsUsingParameters(),
@@ -821,40 +786,38 @@ public class CSSAnalyserCLI {
 								migrationOpportunity.getNumberOfUniqueParametersUsedInVendorSpecific(),
 								migrationOpportunity.getNumberOfVendorSpecificSharingParameter(),
 								/*migrationOpportunity.getNumberOfVariablesOutOfScopeAccessed(),*/
-								mixinMappedToName,
-								mixinMappedToFile,
-								/*preservesPresentation,*/
+								null != mappedMixinDeclaration ? mappedMixinDeclaration.getMixinName() : "",
+								null != mappedMixinDeclaration ? mappedMixinDeclaration.getStyleSheetPath() : "",
+								null != mappedMixinDeclaration ? mixinCallsMap.get(mappedMixinDeclaration).size() : 0,
+								migrationOpportunity.preservesPresentation().isOK(),
 								migrationOpportunity.getRank(),
-								exactProperties,
-								exactSelectors,
+								sameProperties,
+								null != mappedMixinDeclaration &&
+										mixinCallsMap.get(mappedMixinDeclaration).size() == selectorsOpportunityCalledIn.size(),
 								((Set<Selector>)migrationOpportunity.getInvolvedSelectors()).size(),
 								migrationOpportunity.getNumberOfIntraSelectorDependenciesInMixin(),
 								migrationOpportunity.getNumberOfIntraSelectorDependenciesAffectingMixinCallPosition(),
 								getPropertyCategories(migrationOpportunity.getPropertiesAtTheDeepestLevel()).size()
-								);
-						
-						if (getPropertyCategories(migrationOpportunity.getPropertiesAtTheDeepestLevel()).size() == 0) {
-							//System.out.println();
-							//getPropertyCategories(migrationOpportunity.getPropertiesAtTheDeepestLevel());
-						}
-
+						);
 						IOHelper.writeStringToFile(row.replace("#", "\\#"), opportunitiesCsvOutputPath, true);	
 
 					}
-					mixinsToConsider.removeAll(foundRealMixins);
-					if (mixinsToConsider.size() > 0) {
-						IOHelper.writeStringToFile(pathToLessFile + ":" + mixinsToConsider.toString() + "\n", differencesPath, true);
+					realMixinsToConsider.removeAll(foundRealMixins);
+					if (realMixinsToConsider.size() > 0) {
+						IOHelper.writeStringToFile(pathToPreprocessorFile + ":" + realMixinsToConsider.toString() + "\n", differencesPath, true);
 					}
-					
+
+					// Write the compiled CSS file stats
+					int numberOfSelectors = ((Set<Selector>)compiledStyleSheet.getAllSelectors()).size();
+					int numberOfDeclarations = (compiledStyleSheet.getAllDeclarations()).size();
 					String cssRow = String.format(cssFileColumns.getRowFormat(true),
 							website,
-							pathToLessFile,
+							pathToPreprocessorFile,
 							numberOfMixinsToConsider,
 							numberOfSelectors,
 							numberOfDeclarations,
 							numberOfMigrationOpportunities,
 							numberOfNonOverlappingOpportunities);
-					
 					IOHelper.writeStringToFile(cssRow.replace("#", "\\#"), cssFilesCSVOutputPath, true);
 
 				}
@@ -866,7 +829,7 @@ public class CSSAnalyserCLI {
 		});
 
 	}
-	
+
 	private static Set<CSSPropertyCategory> getPropertyCategories(Iterable<String> properties) {
 		Set<CSSPropertyCategory> categories = new HashSet<>();
 		for (String property : properties) {
