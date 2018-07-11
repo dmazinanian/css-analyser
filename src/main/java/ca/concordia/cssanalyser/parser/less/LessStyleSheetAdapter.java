@@ -206,11 +206,12 @@ public class LessStyleSheetAdapter {
 	}
 	
 	private void addDeclarationsToSelectorFromLessRuleSetNode(RuleSet ruleSetNode, Selector selector) {
-		
-		for (ASTCssNode declarationNode : ruleSetNode.getBody().getDeclarations()) {
-			Declaration declaration = getDeclarationFromLessDeclaration(declarationNode);
-			if (declaration != null)
-				selector.addDeclaration(declaration);
+		if (ruleSetNode.getBody() != null) {
+			for (ASTCssNode declarationNode : ruleSetNode.getBody().getDeclarations()) {
+				Declaration declaration = getDeclarationFromLessDeclaration(declarationNode);
+				if (declaration != null)
+					selector.addDeclaration(declaration);
+			}
 		}
 	}
 
