@@ -117,19 +117,20 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 		com.github.sommeri.less4j.core.ast.StyleSheet resultingLESSStyleSheet = this.apply();
 		StyleSheet afterMigration = null;
 		String codeBefore = getStyleSheet().toString();
-		String coreAfter = new LessPrinter().getString(resultingLESSStyleSheet);
+		String codeAfter = new LessPrinter().getString(resultingLESSStyleSheet);
+
 		try {
 			afterMigration = LessHelper.compileLESSStyleSheet(resultingLESSStyleSheet, true); // Avoid re-reading from physical file
 		} catch (Exception e) {
 			String msg = "Error in compiling the resulting style sheet after applying mixin migration opportunity." 
 					+ System.lineSeparator() + e.getMessage();
-			statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
+			statusToReturn.addStatusEntry(codeBefore, codeAfter, TransformationStatusFlag.FATAL, msg);
 		}
-		if (afterMigration != null && "".equals(afterMigration.toString())) {
-			String msg = "Resulting StyleSheet is empty, possibe transpile errors";
-			statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
+		if (afterMigration == null || "".equals(afterMigration.toString())) {
+			String msg = "Resulting StyleSheet is empty, possible transpilation errors.";
+			statusToReturn.addStatusEntry(codeBefore, codeAfter, TransformationStatusFlag.FATAL, msg);
 		}
-		
+
 		if (statusToReturn.isOK()) {
 		/*
 		 * Find each selector in the second StyleSheet,
@@ -164,17 +165,17 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 							for (String property : individualDeclarations1.keySet()) {
 								if (!individualDeclarations2.containsKey(property)) {
 									String msg = "Declaration not found for " + property;
-									statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
+									statusToReturn.addStatusEntry(codeBefore, codeAfter, TransformationStatusFlag.FATAL, msg);
 								} else {
 									Declaration declaration2 = individualDeclarations2.get(property);
 									Declaration declaration1 = individualDeclarations1.get(property);
 									if (!declaration2.declarationIsEquivalent(declaration1)) {
 										String msg = String.format("Declarations are not equivalent: %s AND %s ", declaration1, declaration2);
-										statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
+										statusToReturn.addStatusEntry(codeBefore, codeAfter, TransformationStatusFlag.FATAL, msg);
 										if ((declaration2.isImportant() && !declaration1.isImportant()) ||
 												(!declaration2.isImportant() && declaration1.isImportant())) {
 											msg = String.format("!important is different: %s AND %s ", declaration1, declaration2);
-											statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
+											statusToReturn.addStatusEntry(codeBefore, codeAfter, TransformationStatusFlag.FATAL, msg);
 											break; // fail fast, we could continue
 										}
 									}
@@ -186,7 +187,7 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 					}
 					if (!selectorFound) {
 						String msg = "PRESENTATION: Selector not found: " + selector1;
-						statusToReturn.addStatusEntry(codeBefore, coreAfter, TransformationStatusFlag.FATAL, msg);
+						statusToReturn.addStatusEntry(codeBefore, codeAfter, TransformationStatusFlag.FATAL, msg);
 					}
 				}
 			}
@@ -262,7 +263,7 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 							if (nodeToAdd != null)
 								ruleSetNode.getBody().addMember(nodeToAdd);	
 							else 
-								throw new Exception ("Couln't find declaration " + declaration.toString());
+								throw new Exception ("Couldn't find declaration " + declaration.toString());
 						}
 						ruleSetNode.getBody().configureParentToAllChilds();
 					}
