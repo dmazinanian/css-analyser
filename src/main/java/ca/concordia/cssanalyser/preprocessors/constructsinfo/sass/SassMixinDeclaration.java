@@ -13,6 +13,7 @@ public class SassMixinDeclaration implements PreprocessorMixinDeclaration {
 	private String styleSheetPath;
 	private int numberOfCalls;
 	private int numberOfParameters;
+	private Set<String> calledInSelectors = new HashSet<>();
 	
 	private int numberOfDeclarationsUsingParameters = 0,
 			numberOfNonCrossBrowserDeclarations = 0,
@@ -194,5 +195,12 @@ public class SassMixinDeclaration implements PreprocessorMixinDeclaration {
 	public String getMixinHashString() {
 		return String.format("%s(%s)",getMixinName(), getNumberOfParams());
 	}
-	
+
+	public Set<String> getCalledInSelectors() {
+		return calledInSelectors;
+	}
+
+	public void addSelector(String selectorString) {
+		this.calledInSelectors.add(selectorString);
+	}
 }
