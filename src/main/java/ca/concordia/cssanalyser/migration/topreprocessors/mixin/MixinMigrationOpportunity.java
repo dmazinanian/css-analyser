@@ -367,7 +367,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 					}
 				}
 				if (!"".equals(parameterName)) {
-					if (Character.isDigit(parameterName.charAt(0))) {
+					if (Character.isDigit(parameterName.charAt(0)) || parameterName.charAt(0) == '*') {
 						if (parameterName.length() == 1) {
 							parameterName = "arg";
 						} else {
