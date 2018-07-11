@@ -85,11 +85,13 @@ public class GroupingSelector extends Selector implements Collection<BaseSelecto
 
 	@Override
 	public String toString() {
-		StringBuilder result = new StringBuilder("");
-		for (BaseSelector baseSelector : listOfBaseSelectors)
-			result.append(baseSelector + ", ");
-		// Remove last , and space
-		result.delete(result.length() - 2, result.length()); 
+		StringBuilder result = new StringBuilder();
+		for (Iterator<BaseSelector> baseSelectorIterator = listOfBaseSelectors.iterator(); baseSelectorIterator.hasNext(); ) {
+			result.append(baseSelectorIterator.next());
+			if (baseSelectorIterator.hasNext()) {
+				result.append(", ");
+			}
+		}
 		return result.toString();
 	}
 	
