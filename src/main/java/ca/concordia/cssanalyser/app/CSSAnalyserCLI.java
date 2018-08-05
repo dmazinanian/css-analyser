@@ -831,8 +831,6 @@ public class CSSAnalyserCLI {
 					for (Iterator<PreprocessorMixinDeclaration> iterator = realMixinsToConsider.iterator(); iterator.hasNext(); ) {
 						PreprocessorMixinDeclaration preprocessorMixinDeclarationToConsider = iterator.next();
 						for (PreprocessorMixinDeclaration foundRealMixin : foundRealMixins) {
-							System.out.println(foundRealMixin.getMixinName());
-							System.out.println(preprocessorMixinDeclarationToConsider.getMixinName());
 							if (foundRealMixin.getMixinName().equals(preprocessorMixinDeclarationToConsider.getMixinName())) {
 								iterator.remove();
 								break;
