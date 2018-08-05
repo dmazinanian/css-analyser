@@ -203,7 +203,7 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 			StyleSheet styleSheet = getStyleSheet();
 			com.github.sommeri.less4j.core.ast.StyleSheet lessStyleSheet = LessCSSParser.getLessParserFromStyleSheet(styleSheet);
 			
-			LessPreprocessorNodeFinder nodeFinder = new LessPreprocessorNodeFinder(lessStyleSheet);
+			LessPreprocessorNodeFinder nodeFinder = new LessPreprocessorNodeFinder(lessStyleSheet.clone());
 
 			// 1- Remove the declarations being parameterized
 			List<PreprocessorNode<ASTCssNode>> nodesToBeRemoved = new ArrayList<>();
