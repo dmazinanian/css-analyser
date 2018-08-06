@@ -430,7 +430,19 @@ public class CSSAnalyserCLI {
 					int numberOfProperties = Integer.parseInt(headerLine[6]);
 					int numberOfStyleRulesCallingMixin = Integer.parseInt(headerLine[7]);
 
-					SassMixinDeclaration sassMixinDeclaration = new SassMixinDeclaration(mixinName, mixinContainingFile, params, numberOfCalls);
+					SassMixinDeclaration sassMixinDeclaration = null;
+					if (toReturn.containsKey(website)) {
+						List<SassMixinDeclaration> mixinDeclarations = toReturn.get(website);
+						for (SassMixinDeclaration mixinDeclaration : mixinDeclarations) {
+							if (mixinDeclaration.getMixinName().equals(mixinName)) {
+								sassMixinDeclaration = mixinDeclaration;
+								break;
+							}
+						}
+					}
+					if (sassMixinDeclaration == null) {
+						sassMixinDeclaration = new SassMixinDeclaration(mixinName, mixinContainingFile, params, numberOfCalls);
+					}
 					for (int i = 0; i < numberOfStyleRulesCallingMixin; i++) {
 						sassMixinDeclaration.addSelector(reader.readLine());
 					}
