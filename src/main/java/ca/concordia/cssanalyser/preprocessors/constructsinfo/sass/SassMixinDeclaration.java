@@ -1,9 +1,9 @@
 package ca.concordia.cssanalyser.preprocessors.constructsinfo.sass;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import ca.concordia.cssanalyser.cssmodel.declaration.ShorthandDeclaration;
+import ca.concordia.cssanalyser.cssmodel.selectors.Selector;
 import ca.concordia.cssanalyser.preprocessors.constructsinfo.PreprocessorMixinDeclaration;
 
 public class SassMixinDeclaration implements PreprocessorMixinDeclaration {
@@ -13,7 +13,7 @@ public class SassMixinDeclaration implements PreprocessorMixinDeclaration {
 	private String styleSheetPath;
 	private int numberOfCalls;
 	private int numberOfParameters;
-	private Set<String> calledInSelectors = new HashSet<>();
+	private Map<String, Set<Selector>> calledInSelectors = new HashMap<>();
 	
 	private int numberOfDeclarationsUsingParameters = 0,
 			numberOfNonCrossBrowserDeclarations = 0,
@@ -196,11 +196,12 @@ public class SassMixinDeclaration implements PreprocessorMixinDeclaration {
 		return String.format("%s(%s)",getMixinName(), getNumberOfParams());
 	}
 
-	public Set<String> getCalledInSelectors() {
-		return calledInSelectors;
+	public Set<Selector> getCalledInSelectors(String containingFilePath) {
+		return calledInSelectors.getOrDefault(containingFilePath, new HashSet<>());
 	}
 
-	public void addSelector(String selectorString) {
-		this.calledInSelectors.add(selectorString);
+	public void addSelector(String containingFileName, Selector selector) {
+		Set<Selector> selectors = this.calledInSelectors.computeIfAbsent(containingFileName, key -> new HashSet<>());
+		selectors.add(selector);
 	}
 }
