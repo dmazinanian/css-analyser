@@ -4,39 +4,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.github.sommeri.less4j.core.ast.*;
 import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
 
 import com.github.sommeri.less4j.LessSource;
 import com.github.sommeri.less4j.LessSource.FileSource;
 import com.github.sommeri.less4j.LessSource.URLSource;
-import com.github.sommeri.less4j.core.ast.ASTCssNode;
-import com.github.sommeri.less4j.core.ast.AnonymousExpression;
-import com.github.sommeri.less4j.core.ast.BinaryExpression;
-import com.github.sommeri.less4j.core.ast.ColorExpression;
 import com.github.sommeri.less4j.core.ast.ColorExpression.ColorWithAlphaExpression;
-import com.github.sommeri.less4j.core.ast.CssClass;
-import com.github.sommeri.less4j.core.ast.CssString;
-import com.github.sommeri.less4j.core.ast.EscapedValue;
-import com.github.sommeri.less4j.core.ast.Expression;
-import com.github.sommeri.less4j.core.ast.FixedMediaExpression;
-import com.github.sommeri.less4j.core.ast.FunctionExpression;
-import com.github.sommeri.less4j.core.ast.IdSelector;
-import com.github.sommeri.less4j.core.ast.IdentifierExpression;
-import com.github.sommeri.less4j.core.ast.InterpolableName;
-import com.github.sommeri.less4j.core.ast.InterpolatedMediaExpression;
-import com.github.sommeri.less4j.core.ast.ListExpression;
 import com.github.sommeri.less4j.core.ast.ListExpressionOperator.Operator;
-import com.github.sommeri.less4j.core.ast.MediaExpression;
-import com.github.sommeri.less4j.core.ast.NamedColorExpression;
-import com.github.sommeri.less4j.core.ast.NamedColorWithAlphaExpression;
-import com.github.sommeri.less4j.core.ast.NamedExpression;
-import com.github.sommeri.less4j.core.ast.NestedSelectorAppender;
-import com.github.sommeri.less4j.core.ast.Nth;
-import com.github.sommeri.less4j.core.ast.NumberExpression;
-import com.github.sommeri.less4j.core.ast.RuleSet;
-import com.github.sommeri.less4j.core.ast.SelectorAttribute;
-import com.github.sommeri.less4j.core.ast.SelectorPart;
 
 import ca.concordia.cssanalyser.app.FileLogger;
 import ca.concordia.cssanalyser.cssmodel.LocationInfo;
@@ -261,25 +237,25 @@ public class LessStyleSheetAdapter {
 	}
 
 	private List<DeclarationValue> getListOfDeclarationValuesFromLessExpression(String property, Expression expression) throws ParseException {
-		
+
 		List<DeclarationValue> values = new ArrayList<>();
 
 		if (expression instanceof ListExpression) {
-			ListExpression listExpression = (ListExpression)expression;
-			for (Iterator<Expression> iterator = listExpression.getExpressions().iterator(); iterator.hasNext();) {
+			ListExpression listExpression = (ListExpression) expression;
+			for (Iterator<Expression> iterator = listExpression.getExpressions().iterator(); iterator.hasNext(); ) {
 
 				Expression expr = iterator.next();
 				List<DeclarationValue> vals = getListOfDeclarationValuesFromLessExpression(property, expr);
 				values.addAll(vals);
 				if (listExpression.getOperator() != null) {
 
-					if (listExpression.getOperator().getOperator() ==  Operator.COMMA) {
+					if (listExpression.getOperator().getOperator() == Operator.COMMA) {
 						if (iterator.hasNext()) {
 							DeclarationValue value = DeclarationValueFactory.getDeclarationValue(property, ",", ValueType.SEPARATOR);
 							value.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(listExpression.getOperator()));
 							values.add(value);
 						}
-					} else if (listExpression.getOperator().getOperator() ==  Operator.EMPTY_OPERATOR) {
+					} else if (listExpression.getOperator().getOperator() == Operator.EMPTY_OPERATOR) {
 						// Do nothing
 					} else {
 						throw new RuntimeException("Operator = " + listExpression.getOperator());
@@ -291,26 +267,44 @@ public class LessStyleSheetAdapter {
 			}
 
 		} else if (expression instanceof BinaryExpression) {
-			
-			BinaryExpression binary = (BinaryExpression)expression;
-			
+
+			BinaryExpression binary = (BinaryExpression) expression;
+
 			values.addAll(getListOfDeclarationValuesFromLessExpression(property, binary.getLeft()));
-			
+
 			// Operator
 			DeclarationValue operator = DeclarationValueFactory.getDeclarationValue(property, binary.getOperator().toString(), ValueType.OPERATOR);
 			operator.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(binary.getOperator()));
 			values.add(operator);
-			
+
 			values.addAll(getListOfDeclarationValuesFromLessExpression(property, binary.getRight()));
 
 		} else if (expression instanceof NamedExpression) {
-			
+
 			NamedExpression namedExpression = (NamedExpression) expression;
 			values.add(DeclarationValueFactory.getDeclarationValue(property, namedExpression.getName(), ValueType.IDENT));
 			values.add(DeclarationValueFactory.getDeclarationValue(property, "=", ValueType.OPERATOR));
 
 			values.addAll(getListOfDeclarationValuesFromLessExpression(property, namedExpression.getExpression()));
-			
+
+		} else if (expression instanceof ParenthesesExpression) {
+
+			ParenthesesExpression parenthesesExpression = (ParenthesesExpression) expression;
+			DeclarationValue leftParenthesis = DeclarationValueFactory.getDeclarationValue(property, "(", ValueType.SEPARATOR);
+			leftParenthesis.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(parenthesesExpression));
+			values.add(leftParenthesis);
+			values.addAll(getListOfDeclarationValuesFromLessExpression(property, parenthesesExpression.getEnclosedExpression()));
+			DeclarationValue rightParenthesis = DeclarationValueFactory.getDeclarationValue(property, ")", ValueType.SEPARATOR);
+			rightParenthesis.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(parenthesesExpression));
+			values.add(rightParenthesis);
+
+		} else if (expression instanceof SignedExpression) {
+
+			SignedExpression signedExpression = (SignedExpression) expression;
+			DeclarationValue sign = DeclarationValueFactory.getDeclarationValue(property, signedExpression.getSign().toSymbol(), ValueType.OPERATOR);
+			sign.setLocationInfo(LessPreprocessorNodeFinder.getLocationInfoForLessASTCssNode(signedExpression));
+			values.addAll(getListOfDeclarationValuesFromLessExpression(property, signedExpression.getExpression()));
+
 		} else {
 			
 			values.add(getSingleValueFromLessValueExpression(property, expression));
@@ -388,8 +382,6 @@ public class LessStyleSheetAdapter {
 			
 			value = DeclarationValueFactory.getDeclarationValue(property, "'" + ((CssString)expression).getValue() + "'", ValueType.STRING);
 			
-		//} else if (expression instanceof Variable) {
-		//	value = DeclarationValueFactory.getDeclarationValue(property, expression.toString(), ValueType.OTHER);
 		} else if (expression instanceof AnonymousExpression) {
 			AnonymousExpression anonymousExpression = (AnonymousExpression) expression; 
 			value = DeclarationValueFactory.getDeclarationValue(property, anonymousExpression.getValue(), ValueType.OTHER);
