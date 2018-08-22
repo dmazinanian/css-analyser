@@ -632,107 +632,6 @@ public class CSSAnalyserCLI {
 
 			try {
 
-				LOGGER.info(String.format("%3s%%: Compiling %s", percentage, pathToPreprocessorFile));
-				// Compile the preprocessor style sheet to CSS
-				StyleSheet compiledStyleSheet = styleSheetCompilerFunction.apply(pathToPreprocessorFile);
-				/*
-				 * Format the style sheet.
-				 * This is really important to keep the location information consistent,
-				 * as we will use the toString of the StyleSheet object
-				 * in order to re-parse the style sheet in the later phases.
-				 */
-				LOGGER.info(String.format("%3s%%: Parsing the resulting style sheet compiled from %s", percentage, pathToPreprocessorFile));
-
-				compiledStyleSheet = CSSParserFactory.getCSSParser(CSSParserType.LESS).parseCSSString(compiledStyleSheet.toString());
-
-				LOGGER.info(String.format("%3s%%: Getting migration opportunities for %s", percentage, pathToPreprocessorFile));
-
-				LessMigrationOpportunitiesDetector preprocessorOpportunityDetector = new LessMigrationOpportunitiesDetector(compiledStyleSheet);
-				long startNanoTime = System.nanoTime();
-				long startMilliTime = System.currentTimeMillis();
-				// Get mixin opportunities, with subsumed
-				List<LessMixinMigrationOpportunity> migrationOpportunities = preprocessorOpportunityDetector.findMixinOpportunities(true);
-
-				long endNanoTime = System.nanoTime();
-				long endMilliTime = System.currentTimeMillis();
-
-				long nanoDifferenceTime = endNanoTime - startNanoTime;
-				long milliDifferenceTime = endMilliTime - startMilliTime;
-
-				String timeRow = String.format(timeColumns.getRowFormat(true),
-						website,
-						pathToPreprocessorFile,
-						nanoDifferenceTime,
-						milliDifferenceTime);
-				IOHelper.writeStringToFile(timeRow.replace("#", "\\#"), timeOutputPath, true);
-
-				LOGGER.info("It took {} ({}) seconds", nanoDifferenceTime / 1000000000, milliDifferenceTime / 1000);
-
-				if (maxDeclarations > 1) {
-					migrationOpportunities = migrationOpportunities.stream()
-							.filter(migrationOpportunity -> ((Collection<MixinDeclaration>)migrationOpportunity.getAllMixinDeclarations()).size() <= maxDeclarations)
-							.collect(Collectors.toList());
-				}
-
-				if (maxParameters >= 0) {
-					migrationOpportunities = migrationOpportunities.stream()
-							.filter(migrationOpportunity -> migrationOpportunity.getNumberOfParameters() <= maxParameters)
-							.collect(Collectors.toList());
-				}
-
-				if (maxCalls > 2) {
-					migrationOpportunities = migrationOpportunities.stream()
-							.filter(migrationOpportunity -> ((Collection<Selector>)migrationOpportunity.getInvolvedSelectors()).size() <= maxCalls)
-							.collect(Collectors.toList());
-				}
-
-				int numberOfMigrationOpportunities = migrationOpportunities.size();
-				LOGGER.info(String.format("Found %s migration opportunities", numberOfMigrationOpportunities));
-
-				for (int opportunityIndex = 0; opportunityIndex < numberOfMigrationOpportunities; opportunityIndex++) {
-					LessMixinMigrationOpportunity migrationOpportunity = migrationOpportunities.get(opportunityIndex);
-					LOGGER.info("Checking presentation preservation ({} of {})", opportunityIndex + 1, numberOfMigrationOpportunities) ;
-					TransformationStatus transformationStatus = migrationOpportunity.preservesPresentation();
-					if (!transformationStatus.isOK()) {
-						StringBuilder builder = new StringBuilder();
-						builder.append(pathToPreprocessorFile).append(System.lineSeparator());
-						builder.append(migrationOpportunity.getInvolvedSelectors()).append(System.lineSeparator());
-						builder.append(migrationOpportunity.toString()).append(System.lineSeparator());
-						List<TransformationStatusEntry> statusEntries = transformationStatus.getStatusEntries();
-						for (TransformationStatusEntry entry : statusEntries) {
-							builder.append(entry.toString()).append(System.lineSeparator());
-						}
-						builder.append("-------------").append(System.lineSeparator()).append(System.lineSeparator());
-						IOHelper.writeStringToFile(builder.toString(), outFolder + "/notpreserving.txt", true);
-					}
-					LOGGER.debug("Writing results to the file ({} of {})", opportunityIndex + 1, numberOfMigrationOpportunities);
-					String row = String.format(fileColumns.getRowFormat(true),
-							opportunityIndex,
-							website,
-							pathToPreprocessorFile,
-							migrationOpportunity.getNumberOfParameters(),
-							migrationOpportunity.getNumberOfMixinDeclarations(),
-							migrationOpportunity.getPropertiesAtTheDeepestLevel().size(),
-							migrationOpportunity.getNumberOfDeclarationsUsingParameters(),
-							migrationOpportunity.getNumberOfUniqueCrossBrowserDeclarations(),
-							migrationOpportunity.getNumberOfNonCrossBrowserDeclarations(),
-							migrationOpportunity.getNumberOfUniqueParametersUsedInMoreThanOneKindOfDeclaration(),
-							migrationOpportunity.getNumberOfDeclarationsHavingOnlyHardCodedValues(),
-							migrationOpportunity.getNumberOfUniqueParametersUsedInVendorSpecific(),
-							migrationOpportunity.getNumberOfVendorSpecificSharingParameter(),
-							true,
-							migrationOpportunity.getRank(),
-							((Set<Selector>) migrationOpportunity.getInvolvedSelectors()).size(),
-							getBaseSelectorsFromSelectors(migrationOpportunity.getInvolvedSelectors()).size(),
-							migrationOpportunity.getNumberOfIntraSelectorDependenciesInMixin(),
-							migrationOpportunity.getNumberOfIntraSelectorDependenciesAffectingMixinCallPosition(),
-							getPropertyCategories(migrationOpportunity.getPropertiesAtTheDeepestLevel()).size()
-					);
-					IOHelper.writeStringToFile(row.replace("#", "\\#"), opportunitiesCsvOutputPath, true);
-				}
-
-				LOGGER.info(String.format("%3s%%: Finding manually-developed mixins in %s", percentage, pathToPreprocessorFile));
-
 				Map<? extends PreprocessorMixinDeclaration, Set<Selector>> mixinCallsMap = mixinCallsMapFunctoin.apply(website, pathToPreprocessorFile);
 
 				List<PreprocessorMixinDeclaration> realMixinsToConsider = mixinCallsMap.keySet().stream()
@@ -745,6 +644,107 @@ public class CSSAnalyserCLI {
 					LOGGER.warn("No mixin was found in {} with two or more calls", website);
 
 				} else {
+
+                    LOGGER.info(String.format("%3s%%: Compiling %s", percentage, pathToPreprocessorFile));
+                    // Compile the preprocessor style sheet to CSS
+                    StyleSheet compiledStyleSheet = styleSheetCompilerFunction.apply(pathToPreprocessorFile);
+                    /*
+                     * Format the style sheet.
+                     * This is really important to keep the location information consistent,
+                     * as we will use the toString of the StyleSheet object
+                     * in order to re-parse the style sheet in the later phases.
+                     */
+                    LOGGER.info(String.format("%3s%%: Parsing the resulting style sheet compiled from %s", percentage, pathToPreprocessorFile));
+
+                    compiledStyleSheet = CSSParserFactory.getCSSParser(CSSParserType.LESS).parseCSSString(compiledStyleSheet.toString());
+
+                    LOGGER.info(String.format("%3s%%: Getting migration opportunities for %s", percentage, pathToPreprocessorFile));
+
+                    LessMigrationOpportunitiesDetector preprocessorOpportunityDetector = new LessMigrationOpportunitiesDetector(compiledStyleSheet);
+                    long startNanoTime = System.nanoTime();
+                    long startMilliTime = System.currentTimeMillis();
+                    // Get mixin opportunities, with subsumed
+                    List<LessMixinMigrationOpportunity> migrationOpportunities = preprocessorOpportunityDetector.findMixinOpportunities(true);
+
+                    long endNanoTime = System.nanoTime();
+                    long endMilliTime = System.currentTimeMillis();
+
+                    long nanoDifferenceTime = endNanoTime - startNanoTime;
+                    long milliDifferenceTime = endMilliTime - startMilliTime;
+
+                    String timeRow = String.format(timeColumns.getRowFormat(true),
+                            website,
+                            pathToPreprocessorFile,
+                            nanoDifferenceTime,
+                            milliDifferenceTime);
+                    IOHelper.writeStringToFile(timeRow.replace("#", "\\#"), timeOutputPath, true);
+
+                    LOGGER.info("It took {} ({}) seconds", nanoDifferenceTime / 1000000000, milliDifferenceTime / 1000);
+
+                    if (maxDeclarations > 1) {
+                        migrationOpportunities = migrationOpportunities.stream()
+                                .filter(migrationOpportunity -> ((Collection<MixinDeclaration>)migrationOpportunity.getAllMixinDeclarations()).size() <= maxDeclarations)
+                                .collect(Collectors.toList());
+                    }
+
+                    if (maxParameters >= 0) {
+                        migrationOpportunities = migrationOpportunities.stream()
+                                .filter(migrationOpportunity -> migrationOpportunity.getNumberOfParameters() <= maxParameters)
+                                .collect(Collectors.toList());
+                    }
+
+                    if (maxCalls > 2) {
+                        migrationOpportunities = migrationOpportunities.stream()
+                                .filter(migrationOpportunity -> ((Collection<Selector>)migrationOpportunity.getInvolvedSelectors()).size() <= maxCalls)
+                                .collect(Collectors.toList());
+                    }
+
+                    int numberOfMigrationOpportunities = migrationOpportunities.size();
+                    LOGGER.info(String.format("Found %s migration opportunities", numberOfMigrationOpportunities));
+
+                    for (int opportunityIndex = 0; opportunityIndex < numberOfMigrationOpportunities; opportunityIndex++) {
+                        LessMixinMigrationOpportunity migrationOpportunity = migrationOpportunities.get(opportunityIndex);
+                        LOGGER.info("Checking presentation preservation ({} of {})", opportunityIndex + 1, numberOfMigrationOpportunities) ;
+                        TransformationStatus transformationStatus = migrationOpportunity.preservesPresentation();
+                        if (!transformationStatus.isOK()) {
+                            StringBuilder builder = new StringBuilder();
+                            builder.append(pathToPreprocessorFile).append(System.lineSeparator());
+                            builder.append(migrationOpportunity.getInvolvedSelectors()).append(System.lineSeparator());
+                            builder.append(migrationOpportunity.toString()).append(System.lineSeparator());
+                            List<TransformationStatusEntry> statusEntries = transformationStatus.getStatusEntries();
+                            for (TransformationStatusEntry entry : statusEntries) {
+                                builder.append(entry.toString()).append(System.lineSeparator());
+                            }
+                            builder.append("-------------").append(System.lineSeparator()).append(System.lineSeparator());
+                            IOHelper.writeStringToFile(builder.toString(), outFolder + "/notpreserving.txt", true);
+                        }
+                        LOGGER.debug("Writing results to the file ({} of {})", opportunityIndex + 1, numberOfMigrationOpportunities);
+                        String row = String.format(fileColumns.getRowFormat(true),
+                                opportunityIndex,
+                                website,
+                                pathToPreprocessorFile,
+                                migrationOpportunity.getNumberOfParameters(),
+                                migrationOpportunity.getNumberOfMixinDeclarations(),
+                                migrationOpportunity.getPropertiesAtTheDeepestLevel().size(),
+                                migrationOpportunity.getNumberOfDeclarationsUsingParameters(),
+                                migrationOpportunity.getNumberOfUniqueCrossBrowserDeclarations(),
+                                migrationOpportunity.getNumberOfNonCrossBrowserDeclarations(),
+                                migrationOpportunity.getNumberOfUniqueParametersUsedInMoreThanOneKindOfDeclaration(),
+                                migrationOpportunity.getNumberOfDeclarationsHavingOnlyHardCodedValues(),
+                                migrationOpportunity.getNumberOfUniqueParametersUsedInVendorSpecific(),
+                                migrationOpportunity.getNumberOfVendorSpecificSharingParameter(),
+                                true,
+                                migrationOpportunity.getRank(),
+                                ((Set<Selector>) migrationOpportunity.getInvolvedSelectors()).size(),
+                                getBaseSelectorsFromSelectors(migrationOpportunity.getInvolvedSelectors()).size(),
+                                migrationOpportunity.getNumberOfIntraSelectorDependenciesInMixin(),
+                                migrationOpportunity.getNumberOfIntraSelectorDependenciesAffectingMixinCallPosition(),
+                                getPropertyCategories(migrationOpportunity.getPropertiesAtTheDeepestLevel()).size()
+                        );
+                        IOHelper.writeStringToFile(row.replace("#", "\\#"), opportunitiesCsvOutputPath, true);
+                    }
+
+                    LOGGER.info(String.format("%3s%%: Finding manually-developed mixins in %s", percentage, pathToPreprocessorFile));
 
 					for (int realMixinDeclarationIndex = 0; realMixinDeclarationIndex < realMixinsToConsider.size(); realMixinDeclarationIndex++) {
 
@@ -866,7 +866,6 @@ public class CSSAnalyserCLI {
 			}
 
 		});
-
 	}
 
 	private static Set<CSSPropertyCategory> getPropertyCategories(Iterable<String> properties) {
@@ -876,7 +875,6 @@ public class CSSAnalyserCLI {
 		}
 		return categories;
 	}
-
 
 	private static Set<BaseSelector> getBaseSelectorsFromSelectors(Iterable<Selector> setOfSelectors) {
 		Set<BaseSelector> baseSelectorsToReturn = new HashSet<>();
