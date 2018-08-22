@@ -547,7 +547,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 									for (DeclarationValue value : toBeCheckedWithSet) {
 										boolean valueFound = false;
 										for (DeclarationValue checkingValue : checkingSet) {
-											if (!checkedValues.contains(checkedValues) && value.equivalent(checkingValue)) {
+											if (!checkedValues.contains(checkingValue) && value.equivalent(checkingValue)) {
 												checkedValues.add(checkingValue);
 												valueFound = true;
 												break;
@@ -971,7 +971,7 @@ public abstract class MixinMigrationOpportunity<T> extends PreprocessorMigration
 			declarationsToVariablesMap.put(declaration, VariableFactory.bounded(variableName, 1, maximumNumber, solver));
 			if (lastDeclaraion != null) {
 				// Minimize changes
-				solver.post(IntConstraintFactory.arithm(declarationsToVariablesMap.get(lastDeclaraion), "<", declarationsToVariablesMap.get(declaration)));
+				//solver.post(IntConstraintFactory.arithm(declarationsToVariablesMap.get(lastDeclaraion), "<", declarationsToVariablesMap.get(declaration)));
 			}
 			lastDeclaraion = declaration;
 		}
