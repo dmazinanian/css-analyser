@@ -231,7 +231,7 @@ public class LessMixinMigrationOpportunity extends MixinMigrationOpportunity<com
 			lessStyleSheet.getMembers().add(0, mixin);
 				
 			// 4- Add the Mixin call to the corresponding selectors
-			for (Selector involvedSelector : getInvolvedSelectors()) {									
+			for (Selector involvedSelector : getInvolvedSelectors()) {
 				String mixinCallString = getMixinReferenceString(involvedSelector);
 				ASTCssNode mixinCallNode = LessHelper.getLessNodeFromLessString(mixinCallString);
 				RuleSet ruleSetNode = 

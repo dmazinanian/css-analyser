@@ -588,6 +588,8 @@ public class CSSAnalyserCLI {
 		int maxDeclarations = params.getMaxDeclarations();
 		int maxParameters = params.getMaxParameters();
 		int maxCalls = params.getMaxCalls();
+        boolean shouldCheckForPresentationPreservation = params.shouldCheckPresentationPreservation();
+        boolean shouldCompareRealMixinsAndOpportunitiesCalls = params.shouldCompareRealMixinsAndOpportunitiesCalls();
 
 		FileLogger.addFileAppender(outFolder + "/log.log", false);
 
@@ -704,19 +706,22 @@ public class CSSAnalyserCLI {
 
                     for (int opportunityIndex = 0; opportunityIndex < numberOfMigrationOpportunities; opportunityIndex++) {
                         LessMixinMigrationOpportunity migrationOpportunity = migrationOpportunities.get(opportunityIndex);
-                        LOGGER.info("Checking presentation preservation ({} of {})", opportunityIndex + 1, numberOfMigrationOpportunities) ;
-                        TransformationStatus transformationStatus = migrationOpportunity.preservesPresentation();
-                        if (!transformationStatus.isOK()) {
-                            StringBuilder builder = new StringBuilder();
-                            builder.append(pathToPreprocessorFile).append(System.lineSeparator());
-                            builder.append(migrationOpportunity.getInvolvedSelectors()).append(System.lineSeparator());
-                            builder.append(migrationOpportunity.toString()).append(System.lineSeparator());
-                            List<TransformationStatusEntry> statusEntries = transformationStatus.getStatusEntries();
-                            for (TransformationStatusEntry entry : statusEntries) {
-                                builder.append(entry.toString()).append(System.lineSeparator());
+                        TransformationStatus transformationStatus = null;
+                        if (shouldCheckForPresentationPreservation) {
+                            LOGGER.info("Checking presentation preservation ({} of {})", opportunityIndex + 1, numberOfMigrationOpportunities);
+                            transformationStatus = migrationOpportunity.preservesPresentation();
+                            if (!transformationStatus.isOK()) {
+                                StringBuilder builder = new StringBuilder();
+                                builder.append(pathToPreprocessorFile).append(System.lineSeparator());
+                                builder.append(migrationOpportunity.getInvolvedSelectors()).append(System.lineSeparator());
+                                builder.append(migrationOpportunity.toString()).append(System.lineSeparator());
+                                List<TransformationStatusEntry> statusEntries = transformationStatus.getStatusEntries();
+                                for (TransformationStatusEntry entry : statusEntries) {
+                                    builder.append(entry.toString()).append(System.lineSeparator());
+                                }
+                                builder.append("-------------").append(System.lineSeparator()).append(System.lineSeparator());
+                                IOHelper.writeStringToFile(builder.toString(), outFolder + "/notpreserving.txt", true);
                             }
-                            builder.append("-------------").append(System.lineSeparator()).append(System.lineSeparator());
-                            IOHelper.writeStringToFile(builder.toString(), outFolder + "/notpreserving.txt", true);
                         }
                         LOGGER.debug("Writing results to the file ({} of {})", opportunityIndex + 1, numberOfMigrationOpportunities);
                         String row = String.format(fileColumns.getRowFormat(true),
@@ -733,7 +738,7 @@ public class CSSAnalyserCLI {
                                 migrationOpportunity.getNumberOfDeclarationsHavingOnlyHardCodedValues(),
                                 migrationOpportunity.getNumberOfUniqueParametersUsedInVendorSpecific(),
                                 migrationOpportunity.getNumberOfVendorSpecificSharingParameter(),
-                                true,
+                                shouldCheckForPresentationPreservation ? transformationStatus.isOK() : "NOT_CHECKED",
                                 migrationOpportunity.getRank(),
                                 ((Set<Selector>) migrationOpportunity.getInvolvedSelectors()).size(),
                                 getBaseSelectorsFromSelectors(migrationOpportunity.getInvolvedSelectors()).size(),
@@ -769,34 +774,38 @@ public class CSSAnalyserCLI {
 
 							// The opportunity should contain all the properties of the real mixin
 							if (propertiesInOpportunity.containsAll(propertiesInRealMixin)) {
+							    if (shouldCompareRealMixinsAndOpportunitiesCalls) {
+                                    // Intersection of selectors calling the opportunity and the real mixin. It contains opportunity selectors
+                                    Set<Selector> baseSelectorsIntersection = new HashSet<>();
+                                    // The opportunity should be called in the same selectors as the real mixin (or more)
+                                    for (Selector baseSelectorRealMixinCalledIn : baseSelectorsRealMixinCalledIn) {
+                                        for (Selector baseSelectorOpportunityCalledIn : baseSelectorsOpportunityCalledIn) {
+                                            if (!baseSelectorsIntersection.contains(baseSelectorOpportunityCalledIn) &&
+                                                    baseSelectorRealMixinCalledIn.selectorEquals(baseSelectorOpportunityCalledIn, false)) {
+                                                baseSelectorsIntersection.add(baseSelectorOpportunityCalledIn);
+                                                break;
+                                            }
+                                        }
 
-								// Intersection of selectors calling the opportunity and the real mixin. It contains opportunity selectors
-								Set<Selector> baseSelectorsIntersection = new HashSet<>();
-								// The opportunity should be called in the same selectors as the real mixin (or more)
-								for (Selector baseSelectorRealMixinCalledIn : baseSelectorsRealMixinCalledIn) {
-									for (Selector baseSelectorOpportunityCalledIn : baseSelectorsOpportunityCalledIn) {
-										if (!baseSelectorsIntersection.contains(baseSelectorOpportunityCalledIn) &&
-												baseSelectorRealMixinCalledIn.selectorEquals(baseSelectorOpportunityCalledIn, false)) {
-											baseSelectorsIntersection.add(baseSelectorOpportunityCalledIn);
-											break;
-										}
-									}
-
-								}
-								if (baseSelectorsIntersection.size() == baseSelectorsRealMixinCalledIn.size()) {
-									if (baseSelectorsRealMixinCalledIn.size() == baseSelectorsOpportunityCalledIn.size() &&
-											propertiesInOpportunity.equals(propertiesInRealMixin)) {
-										// Exact match found
-										matchingOpportunityIndex = opportunityIndex;
-										break;
-									} else {
-										mappedOpportunitiesCandidates.add(opportunityIndex);
-									}
-								}
+                                    }
+                                    if (baseSelectorsIntersection.size() == baseSelectorsRealMixinCalledIn.size()) {
+                                        if (baseSelectorsRealMixinCalledIn.size() == baseSelectorsOpportunityCalledIn.size() &&
+                                                propertiesInOpportunity.equals(propertiesInRealMixin)) {
+                                            // Exact match found
+                                            matchingOpportunityIndex = opportunityIndex;
+                                            break;
+                                        } else {
+                                            mappedOpportunitiesCandidates.add(opportunityIndex);
+                                        }
+                                    }
+                                } else {
+							        matchingOpportunityIndex = opportunityIndex;
+							        break;
+                                }
 							}
 						}
 
-						if (matchingOpportunityIndex == -1 && mappedOpportunitiesCandidates.size() > 0) {
+						if (shouldCompareRealMixinsAndOpportunitiesCalls && matchingOpportunityIndex == -1 && mappedOpportunitiesCandidates.size() > 0) {
 							// Find best possible match
 							for (int mappedOpportunitiesCandidateIndex : mappedOpportunitiesCandidates) {
 								LessMixinMigrationOpportunity candidateOpportunity = migrationOpportunities.get(mappedOpportunitiesCandidateIndex);
