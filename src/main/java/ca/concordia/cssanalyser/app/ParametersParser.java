@@ -42,7 +42,14 @@ class ParametersParser {
 	
 	@Option(name="--max-parameters", usage="Maximum number of the involved parameters")
 	private int maxParameters = -1;
-	
+
+	@Option(name="--check-safety", usage="When enabled, will check for the safety of the applied migration opportunities")
+	private boolean shouldCheckPresentationPreservation = false;
+
+	@Option(name="--compare-calls", usage="When enabled, each opportunity should have the same (or more) calls than the real mixin. " +
+			"Otherwise, the mixin and opportunities calls are not compared.")
+	private boolean shouldCompareRealMixinsAndOpportunitiesCalls = false;
+
 	@Option(name="--out-folder", usage="Folder for the output stuff")
 	private String outFolder;
 
@@ -217,5 +224,13 @@ class ParametersParser {
 
 	public String getFilePath() {
 		return inputFile;
+	}
+
+    public boolean shouldCheckPresentationPreservation() {
+	    return shouldCheckPresentationPreservation;
+    }
+
+	public boolean shouldCompareRealMixinsAndOpportunitiesCalls() {
+		return this.shouldCompareRealMixinsAndOpportunitiesCalls;
 	}
 }

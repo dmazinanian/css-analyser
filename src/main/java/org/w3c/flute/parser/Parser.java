@@ -38,7 +38,7 @@ import ca.concordia.cssanalyser.cssmodel.media.MediaQuery.MediaQueryPrefix;
 /**
  * A CSS2 parser
  *
- * @author Philippe Le Hégaret
+ * @author Philippe Le Hgaret
  * @version $Revision: 1.15 $
  */
 public class Parser implements org.w3c.css.sac.Parser, ParserConstants {
